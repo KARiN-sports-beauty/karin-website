@@ -5,6 +5,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import json, os
 from dotenv import load_dotenv
+import requests  # 🟢 GASにPOSTするために追加
 
 # =====================================
 # ▼ .envを読み込む
@@ -29,7 +30,7 @@ app.config['MAIL_DEFAULT_SENDER'] = ("KARiN. 初診受付フォーム", app.conf
 mail = Mail(app)
 
 # =====================================
-# ▼ Google Sheets API設定
+# ▼ Google Sheets API設定 （※Renderで未使用）
 # =====================================
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -42,6 +43,12 @@ else:
 
 client = gspread.authorize(creds)
 SPREADSHEET_ID = "1bFmUphFbci_H2N2HF2Vf-ZvK-4iYhovHSsIa_K_PJuI"
+
+# =====================================
+# ▼ GAS Webhook URL（🟢 新追加）
+# =====================================
+GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxwY-01BQjrneGxlxDaYAxfS7PAZNzVWvDzc5UUEppDGvzle961tynQctdtQYHn1Wah3w/exec"
+GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbxic_oSKyB_HC_IFmSXlbwer43n1AxqqCVqt1TasEA6nB4pkezOc72s1mRmwDF6jaxt/exec"
 
 # =====================================
 # ▼ ユーティリティ関数
@@ -154,96 +161,164 @@ def form():
 # ===================================================
 # ✅ 初診フォーム送信
 # ===================================================
+# @app.route("/submit_form", methods=["POST"])
+# def submit_form():
+#     name = request.form.get("name")
+#     kana = request.form.get("kana")
+#     age = request.form.get("age")
+#     gender = request.form.get("gender")
+#     phone = request.form.get("phone")
+#     email = request.form.get("email")
+#     address = request.form.get("address")
+#     preferred_date1 = format_datetime(request.form.get("preferred_date1"))
+#     preferred_date2 = format_datetime(request.form.get("preferred_date2"))
+#     preferred_date3 = format_datetime(request.form.get("preferred_date3"))
+#     chief_complaint = request.form.get("chief_complaint")
+#     onset = request.form.get("onset")
+#     pain_level = request.form.get("pain_level")
+#     shinkyu_pref = request.form.get("shinkyu_pref")
+#     electric_pref = request.form.get("electric_pref")
+#     pressure_pref = request.form.get("pressure_pref")
+#     heart = request.form.get("heart")
+#     pregnant = request.form.get("pregnant")
+#     chronic = request.form.get("chronic")
+#     surgery = request.form.get("surgery")
+#     under_medical = request.form.get("under_medical")
+#     signature = request.form.get("signature")
+#     year_sel = request.form.get("agree_year")
+#     month_sel = request.form.get("agree_month")
+#     day_sel = request.form.get("agree_day")
+#     agreed_date = f"{year_sel}年{month_sel}月{day_sel}日"
+
+#     # --- メール送信 ---
+#     body_lines = [
+#         f"お名前: {name}", f"フリガナ: {kana}", f"年齢: {age}", f"性別: {gender}",
+#         f"電話番号: {phone}", f"メール: {email}", f"住所: {address}", "",
+#         f"第1希望: {preferred_date1}", f"第2希望: {preferred_date2}", f"第3希望: {preferred_date3}", "",
+#         f"主訴: {chief_complaint}", f"発症時期: {onset}", f"痛み: {pain_level}", "",
+#         f"鍼灸: {shinkyu_pref}", f"電気: {electric_pref}", f"圧: {pressure_pref}", "",
+#         f"心疾患: {heart}", f"妊娠: {pregnant}", f"慢性: {chronic}", f"手術: {surgery}", f"医師治療: {under_medical}", "",
+#         f"署名: {signature}", f"日付: {agreed_date}"
+#     ]
+
+#     msg = Message("【KARiN.】初診受付フォーム送信", recipients=["karin.sports.beauty@gmail.com"], body="\n".join(body_lines))
+#     mail.send(msg)
+
+#     # --- Googleスプレッドシート登録 ---
+#     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+#     sheet.append_row([
+#         name, kana, age, gender, phone, email, address,
+#         preferred_date1, preferred_date2, preferred_date3,
+#         chief_complaint, onset, pain_level,
+#         shinkyu_pref, electric_pref, pressure_pref,
+#         heart, pregnant, chronic, surgery, under_medical,
+#         signature, agreed_date
+#     ])
+
+#     # ✅ thanks.html に動的メッセージを渡す
+#     return redirect(url_for(
+#         "thanks",
+#         message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
+#     ))
+
+
+# ===================================================
+# ✅ 初診フォーム送信（🟢 GAS経由に変更）
+# ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
-    name = request.form.get("name")
-    kana = request.form.get("kana")
-    age = request.form.get("age")
-    gender = request.form.get("gender")
-    phone = request.form.get("phone")
-    email = request.form.get("email")
-    address = request.form.get("address")
-    preferred_date1 = format_datetime(request.form.get("preferred_date1"))
-    preferred_date2 = format_datetime(request.form.get("preferred_date2"))
-    preferred_date3 = format_datetime(request.form.get("preferred_date3"))
-    chief_complaint = request.form.get("chief_complaint")
-    onset = request.form.get("onset")
-    pain_level = request.form.get("pain_level")
-    shinkyu_pref = request.form.get("shinkyu_pref")
-    electric_pref = request.form.get("electric_pref")
-    pressure_pref = request.form.get("pressure_pref")
-    heart = request.form.get("heart")
-    pregnant = request.form.get("pregnant")
-    chronic = request.form.get("chronic")
-    surgery = request.form.get("surgery")
-    under_medical = request.form.get("under_medical")
-    signature = request.form.get("signature")
-    year_sel = request.form.get("agree_year")
-    month_sel = request.form.get("agree_month")
-    day_sel = request.form.get("agree_day")
-    agreed_date = f"{year_sel}年{month_sel}月{day_sel}日"
+    try:
+        # フォームデータ収集
+        data = {
+            "name": request.form.get("name"),
+            "furigana": request.form.get("kana"),
+            "age": request.form.get("age"),
+            "gender": request.form.get("gender"),
+            "phone": request.form.get("phone"),
+            "email": request.form.get("email"),
+            "address": request.form.get("address"),
+            "first_preference": format_datetime(request.form.get("preferred_date1")),
+            "second_preference": format_datetime(request.form.get("preferred_date2")),
+            "third_preference": format_datetime(request.form.get("preferred_date3")),
+            "symptom": request.form.get("chief_complaint"),
+            "onset": request.form.get("onset"),
+            "pain_level": request.form.get("pain_level"),
+            "acupuncture": request.form.get("shinkyu_pref"),
+            "electric_stim": request.form.get("electric_pref"),
+            "pressure": request.form.get("pressure_pref"),
+            "history": request.form.get("heart"),
+            "pregnant": request.form.get("pregnant"),
+            "chronic": request.form.get("chronic"),
+            "surgery": request.form.get("surgery"),
+            "under_treatment": request.form.get("under_medical"),
+            "signature": request.form.get("signature"),
+            "date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
+        }
 
-    # --- メール送信 ---
-    body_lines = [
-        f"お名前: {name}", f"フリガナ: {kana}", f"年齢: {age}", f"性別: {gender}",
-        f"電話番号: {phone}", f"メール: {email}", f"住所: {address}", "",
-        f"第1希望: {preferred_date1}", f"第2希望: {preferred_date2}", f"第3希望: {preferred_date3}", "",
-        f"主訴: {chief_complaint}", f"発症時期: {onset}", f"痛み: {pain_level}", "",
-        f"鍼灸: {shinkyu_pref}", f"電気: {electric_pref}", f"圧: {pressure_pref}", "",
-        f"心疾患: {heart}", f"妊娠: {pregnant}", f"慢性: {chronic}", f"手術: {surgery}", f"医師治療: {under_medical}", "",
-        f"署名: {signature}", f"日付: {agreed_date}"
-    ]
+        # 🟢 GASへ送信
+        response = requests.post(GAS_URL_FORM, json=data)
+        if response.status_code == 200:
+            return redirect(url_for("thanks", message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"))
+        else:
+            return f"送信エラー: {response.text}", 500
 
-    msg = Message("【KARiN.】初診受付フォーム送信", recipients=["karin.sports.beauty@gmail.com"], body="\n".join(body_lines))
-    mail.send(msg)
+    except Exception as e:
+        return f"Exception: {e}", 500
 
-    # --- Googleスプレッドシート登録 ---
-    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-    sheet.append_row([
-        name, kana, age, gender, phone, email, address,
-        preferred_date1, preferred_date2, preferred_date3,
-        chief_complaint, onset, pain_level,
-        shinkyu_pref, electric_pref, pressure_pref,
-        heart, pregnant, chronic, surgery, under_medical,
-        signature, agreed_date
-    ])
 
-    # ✅ thanks.html に動的メッセージを渡す
-    return redirect(url_for(
-        "thanks",
-        message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
-    ))
 
 # ===================================================
 # ✅ お問い合わせフォーム
 # ===================================================
-@app.route("/contact")
-def contact():
-    schedule = load_schedule()
-    return render_template("contact.html", schedule=schedule)
+# @app.route("/contact")
+# def contact():
+#     schedule = load_schedule()
+#     return render_template("contact.html", schedule=schedule)
 
+# @app.route("/submit_contact", methods=["POST"])
+# def submit_contact():
+#     name = request.form.get("name")
+#     phone = request.form.get("phone")
+#     email = request.form.get("email")
+#     message = request.form.get("message")
+#     timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
+
+#     msg = Message(
+#         "【KARiN.】お問い合わせフォーム（再診・既存顧客）",
+#         recipients=["karin.sports.beauty@gmail.com"],
+#         body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
+#     )
+#     mail.send(msg)
+
+#     sheet = client.open_by_key(SPREADSHEET_ID).worksheet("Contact")
+#     sheet.append_row([timestamp, name, phone, email, message])
+
+#     return redirect(url_for(
+#         "thanks",
+#         message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
+#     ))
+
+# ===================================================
+# ✅ お問い合わせフォーム送信（🟢 GAS経由に変更）
+# ===================================================
 @app.route("/submit_contact", methods=["POST"])
 def submit_contact():
-    name = request.form.get("name")
-    phone = request.form.get("phone")
-    email = request.form.get("email")
-    message = request.form.get("message")
-    timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
+    try:
+        data = {
+            "name": request.form.get("name"),
+            "phone": request.form.get("phone"),
+            "email": request.form.get("email"),
+            "message": request.form.get("message"),
+        }
 
-    msg = Message(
-        "【KARiN.】お問い合わせフォーム（再診・既存顧客）",
-        recipients=["karin.sports.beauty@gmail.com"],
-        body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
-    )
-    mail.send(msg)
+        response = requests.post(GAS_URL_CONTACT, json=data)
+        if response.status_code == 200:
+            return redirect(url_for("thanks", message="お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"))
+        else:
+            return f"送信エラー: {response.text}", 500
 
-    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("Contact")
-    sheet.append_row([timestamp, name, phone, email, message])
-
-    return redirect(url_for(
-        "thanks",
-        message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
-    ))
+    except Exception as e:
+        return f"Exception: {e}", 500
 
 # ===================================================
 # ✅ thanks.html
