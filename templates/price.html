@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>料金表・コース | KARiN. ~Sports & Beauty~</title>
+
+  <!-- ✅ SEO基本タグ -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.では、鍼灸・整体・美容鍼・トレーニングなど、目的に合わせたオーダーメイドコースをご用意しています。東京（代々木上原）・福岡（薬院）で完全予約制の施術を提供しています。">
+  <meta name="keywords" content="料金表, コース, 鍼灸, 整体, 美容鍼, トレーニング, KARiN., 代々木上原, 薬院, 施術料金, メニュー">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="料金表・コース | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="鍼灸・整体・美容鍼・トレーニングの料金一覧。東京・福岡であなたに合わせた施術プランをご提案します。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（Service + Offer） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "鍼灸・整体・美容鍼・トレーニング",
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "KARiN. ~Sports & Beauty~",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "福岡市中央区",
+        "addressRegion": "福岡県",
+        "addressCountry": "JP"
+      },
+      "telephone": "+81-90-5088-6993",
+      "areaServed": [
+        "東京（代々木上原）",
+        "福岡（薬院）"
+      ]
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "鍼灸・整体 60分コース",
+        "price": "6000",
+        "priceCurrency": "JPY",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ request.url }}"
+      },
+      {
+        "@type": "Offer",
+        "name": "鍼灸・整体 90分コース",
+        "price": "8500",
+        "priceCurrency": "JPY",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ request.url }}"
+      },
+      {
+        "@type": "Offer",
+        "name": "美容鍼コース",
+        "price": "7000",
+        "priceCurrency": "JPY",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ request.url }}"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ✅ CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/price.css') }}">
+
+  <!-- ✅ Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- ✅ AOS（ふわっとアニメ） -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
+</head>
+
+<body>
+  <main class="price-wrapper">
+
+    <section class="price-inner">
+
+      <div class="price-head" data-aos="fade-up">
+        <h1 class="price-title">料金表・コース</h1>
+        <p class="price-lead">
+          お身体のケアからパフォーマンス向上まで、内容に合わせてご提案します。<br>
+          出張専門のため、場所に応じて別途出張費を頂戴しております。
+        </p>
+      </div>
+
+      <!-- 2カラム：東京 / 福岡 -->
+      <div class="price-columns">
+
+        <!-- 東京 -->
+        <div class="price-card" data-aos="fade-up" data-aos-delay="100">
+          <h2 class="area-title">東京エリア</h2>
+
+          <div class="price-block">
+            <h3 class="block-heading">施術コース料金</h3>
+            <ul class="price-list">
+                <li><span>120分</span><span>22,000円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・複数箇所をしっかり治療したい方におすすめ<br>
+                ・美容鍼、オイルトリートメント、トレーニング等の組み合わせたい方へ
+            </div>
+
+            <ul class="price-list">
+                <li><span>90分</span><span>16,500円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・全体的にしっかりケアしたい方におすすめ<br>
+                ・不調はあるけど、全体のメンテナンスも受けたい方へ
+            </div>
+
+            <ul class="price-list">
+                <li><span>60分</span><span>11,000円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・定期的な全身メンテナンスに最適<br>
+                ・部分的に気になるところだけをしっかり治療したい方へ
+            </div>
+            <p class="note-small">※オイルトリートメントをご希望の場合は、+3,000円 / 1時間</p>
+          </div>
+
+          <div class="price-block">
+            <h3 class="block-heading">出張費（代々木上原駅から）</h3>
+            <ul class="price-list">
+              <li><span>5km圏内</span><span>1,000円</span></li>
+              <li><span>10km圏内</span><span>2,000円</span></li>
+              <li><span>15km圏内</span><span>3,000円</span></li>
+              <li><span>それ以上</span><span>要相談</span></li>
+            </ul>
+          </div>
+
+          <p class="note-foot">
+            ・レンタルスペースやスタジオをご希望の場合、<br>
+            　別途レンタル費用をご負担いただく場合があります。<br>
+            ・内容に合わせて鍼灸・整体・ストレッチ・トレーニングなどを自由に組み合わせます。
+          </p>
+        </div>
+
+        <!-- 福岡 -->
+        <div class="price-card" data-aos="fade-up" data-aos-delay="200">
+          <h2 class="area-title">福岡エリア</h2>
+
+          <div class="price-block">
+            <h3 class="block-heading">施術コース料金</h3>
+            <ul class="price-list">
+                <li><span>120分</span><span>17,600円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・複数箇所をしっかり治療したい方におすすめ<br>
+                ・美容鍼、オイルトリートメント、トレーニング等の組み合わせたい方へ
+            </div>
+
+            <ul class="price-list">
+                <li><span>90分</span><span>13,200円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・全体的にしっかりケアしたい方におすすめ<br>
+                ・不調はあるけど、全体のメンテナンスも受けたい方へ
+            </div>
+
+            <ul class="price-list">
+                <li><span>60分</span><span>8,800円</span></li>
+            </ul>
+            <div class="course-desc">
+                ・定期的な全身メンテナンスに最適<br>
+                ・部分的に気になるところだけをしっかり治療したい方へ
+            </div>
+            <p class="note-small">※オイルトリートメントをご希望の場合は、+3,000円 / 1時間</p>
+          </div>
+
+          <div class="price-block">
+            <h3 class="block-heading">出張費（薬院駅から）</h3>
+            <ul class="price-list">
+              <li><span>5km圏内</span><span>1,000円</span></li>
+              <li><span>10km圏内</span><span>2,000円</span></li>
+              <li><span>15km圏内</span><span>3,000円</span></li>
+              <li><span>それ以上</span><span>要相談</span></li>
+            </ul>
+          </div>
+
+          <p class="note-foot">
+            ・レンタルスペースやスタジオをご希望の場合、<br>
+            　別途レンタル費用をご負担いただく場合があります。<br>
+            ・内容に合わせて鍼灸・整体・ストレッチ・トレーニングなどを自由に組み合わせます。
+          </p>
+        </div>
+
+      </div><!-- /.price-columns -->
+
+
+      <!-- 帯同カード：横長1カラム -->
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="300">
+        <h2 class="trainer-title">トレーナー帯同 / コンディショニングサポート</h2>
+        <div class="trainer-price">1日 55,000円〜</div>
+
+        <div class="trainer-flex">
+          <div class="trainer-item">
+            <h3>スポーツ現場サポート</h3>
+            <p>大会・合宿・遠征などに帯同し、コンディショニング・急性ケア・リカバリー・パフォーマンス管理までサポートします。</p>
+          </div>
+          <div class="trainer-item">
+            <h3>継続的サポート</h3>
+            <p>チーム・個人と期間契約し、定期的な施術、コンディショニング調整、トレーニング指導を一貫して行います。</p>
+          </div>
+          <div class="trainer-item">
+            <h3>ボディメイク / 動作改善</h3>
+            <p>姿勢・動きのクセ・筋力バランスを整え、怪我をしにくい身体づくりやパフォーマンス向上／ボディメイクにも対応します。</p>
+          </div>
+        </div>
+
+        <p class="note-foot trainer-foot">
+          ・現場の内容や拘束時間、移動距離によって費用は変動します。<br>
+          ・東京・福岡どちらのエリアでも対応可能です。<br>
+          ・法人契約、年間サポート、スポット帯同等もご相談ください。
+        </p>
+
+        <div class="trainer-cta-wrap">
+          <a href="{{ url_for('contact') }}" class="cta-btn">お問い合わせ・ご予約はこちら</a>
+        </div>
+          <!-- ✅ ロゴ追加 -->
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN.ロゴ" class="inline-logo">
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ✅ ホームボタン（左下固定） -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+
+  <!-- AOS JS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out',
+      once: true,
+    });
+  </script>
+
+
+</body>
+</html>

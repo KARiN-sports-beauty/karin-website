@@ -1,0 +1,430 @@
+/* =========================================================
+   KARiN. price.html 料金表・コース
+   Clean Final 2025.11
+   ========================================================= */
+
+/* ========== 全体ラップ ========== */
+.price-wrapper {
+  background-color: #f5f7fa;
+  padding: 100px 5% 120px;
+  font-family: 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  color: #1E3A5F;
+}
+
+/* ========== 内側カード（白背景） ========== */
+.price-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.07);
+  padding: 60px 40px 80px;
+  box-sizing: border-box;
+}
+
+/* ========== 見出し ========== */
+.price-head {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.price-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 15px;
+}
+
+.price-lead {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #1E3A5F;
+  opacity: 0.9;
+}
+
+/* ========== 2カラム（東京/福岡） ========== */
+.price-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  margin-bottom: 60px;
+}
+
+.price-card {
+  flex: 1 1 320px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  padding: 28px 24px 32px;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.price-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.08);
+}
+
+/* 各エリアタイトル */
+.area-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* ブロック見出し */
+.price-block {
+  margin-bottom: 24px;
+}
+
+.block-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* 料金リスト */
+.price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.price-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px dotted rgba(30,58,95,0.2);
+  padding: 6px 0;
+  line-height: 1.6;
+}
+
+.note-small {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.note-foot {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  background: #fafafa;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+  padding: 16px;
+}
+
+/* コース説明文 */
+.course-desc {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  line-height: 1.7;
+  margin: 6px 0 14px 0;
+  padding-left: 0.5rem;
+}
+
+/* ========== トレーナー帯同カード ========== */
+.trainer-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  padding: 32px 24px 40px;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.trainer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.08);
+}
+
+.trainer-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.trainer-price {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+/* フレックスレイアウト */
+.trainer-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.trainer-item {
+  flex: 1 1 250px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.03);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.trainer-item h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.trainer-item p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* フッター・CTA */
+.trainer-foot { margin-bottom: 32px; }
+
+.trainer-cta-wrap { text-align: center; }
+
+.cta-btn {
+  display: inline-block;
+  background: #1E3A5F;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  transition: 0.25s ease;
+}
+
+.cta-btn:hover {
+  background: #16304A;
+  box-shadow: 0 28px 50px rgba(0,0,0,0.25);
+}
+
+/* ========== 共通ホームボタン ========== */
+.home-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 40px;
+  padding: 10px 16px;
+  color: #1E3A5F;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  z-index: 1000;
+  transition: all 0.25s ease;
+}
+
+.home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  background: #f8f9fb;
+}
+
+.home-btn img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+/* ========== ロゴ配置 ========== */
+.inline-logo {
+  display: block;
+  width: 120px;
+  height: auto;
+  margin-left: auto;
+  margin-top: 12px;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.inline-logo:hover { opacity: 1; }
+
+/* =========================================================
+   💻 1024px（タブレット横）
+   ========================================================= */
+@media (max-width: 1024px) {
+  .price-inner { padding: 60px 5%; }
+  .price-columns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-bottom: 50px;
+  }
+
+  .trainer-card { 
+    padding: 30px 22px 36px; 
+  }
+
+  .trainer-flex { 
+    flex-direction: column; gap: 20px;
+    display: block; /* ✅ flex解除で100%幅確保 */
+  }
+
+  .trainer-item {
+    width: 100%;
+    margin-bottom: 24px;
+    background: #f9fafc;
+    border: 1px solid rgba(0,0,0,0.04);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    padding: 18px 20px;
+  }
+
+  .trainer-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .home-btn { bottom: 20px; right: 20px; font-size: 0.85rem; }
+}
+
+/* =========================================================
+   📱 768px以下（スマホ・縦）
+   ========================================================= */
+@media (max-width: 768px) {
+  .price-inner { padding: 50px 20px 70px; }
+  .price-columns { grid-template-columns: 1fr; gap: 40px; }
+
+  .trainer-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+    padding: 30px 20px 38px;
+  }
+
+  /* ✅ トレーナー帯同：縦積み＆見やすく */
+  .trainer-flex {
+    display: block;
+  }
+
+  .trainer-item {
+    width: 100%;
+    margin-bottom: 20px;
+    background: #f9fafc;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+  }
+
+  .trainer-item:last-child { margin-bottom: 0; }
+
+  .trainer-item h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #1E3A5F;
+  }
+
+  .trainer-item p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .trainer-title,
+  .trainer-price {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .home-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* =========================================================
+   📱 480px以下（スマホ最終調整）
+   2025.11 KARiN.
+   ========================================================= */
+@media (max-width: 480px) {
+  .price-inner {
+    padding: 40px 16px 60px;
+  }
+
+  .price-title {
+    font-size: 1.5rem;
+  }
+
+  .price-lead {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    text-align: left;
+  }
+
+  .price-card {
+    padding: 20px 16px 26px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  }
+
+  .price-list li {
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+
+  .course-desc {
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  /* 🔹 トレーナー帯同：スマホで読みやすく */
+  .trainer-card {
+    padding: 24px 16px 30px;
+    border-radius: 12px;
+  }
+
+  .trainer-item {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+  }
+
+  .trainer-item h3 {
+    font-size: 0.95rem;
+  }
+
+  .trainer-item p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .trainer-title {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+
+  .trainer-price {
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+  }
+
+  .inline-logo {
+    width: 90px;            /* ✅ スマホでは少し小さく */
+    margin-top: 42px;       /* ✅ ボタンとの距離を広げる */
+  }
+
+  /* 🔹 HOMEボタン：中央寄せ＋タップしやすく */
+  .home-btn {
+    bottom: 12px;
+    right: 50%;
+    transform: translateX(50%);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .home-btn img {
+    width: 24px;
+    height: 24px;
+  }
+}

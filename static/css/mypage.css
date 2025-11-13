@@ -1,0 +1,134 @@
+:root{
+  --ink:#1e3a5f;
+  --ink-weak:#496285;
+  --bg:#fafafa;
+  --card:#ffffff;
+  --line:#e9edf3;
+  --accent:#c0a062;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Noto Sans JP',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+
+.mypage-header{
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  padding:18px 20px;
+  position:sticky; top:0; z-index:10;
+}
+.mypage-header h1{
+  margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:.5px;
+}
+.mypage-header .welcome{margin:0; color:var(--ink-weak); font-size:13px}
+.mypage-header .logout{float:right; margin-top:-24px; text-decoration:none; color:#fff; background:#1e3a5f; padding:8px 14px; border-radius:999px}
+.mypage-header .logout:hover{background:#16304A}
+
+.mypage-main{max-width:1040px; margin:22px auto; padding:0 16px}
+
+.acc{margin:14px 0 18px}
+.acc-btn{
+  width:100%; text-align:left; font-weight:700; letter-spacing:.2px;
+  background:#fff; color:var(--ink); border:1px solid var(--line);
+  padding:16px 18px; border-radius:16px; cursor:pointer;
+  transition:transform .08s ease, box-shadow .2s ease;
+  box-shadow:0 4px 18px rgba(0,0,0,.04);
+}
+.acc-btn[aria-expanded="true"]{box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.acc-btn:hover{transform:translateY(-1px)}
+
+.acc-panel{
+  background:transparent; padding:10px 2px 2px;
+}
+
+.card-list{
+  list-style:none; padding:0; margin:10px 0 0;
+  display:grid; gap:14px;
+  grid-template-columns:repeat(1,minmax(0,1fr));
+}
+@media (min-width:680px){
+  .card-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:980px){
+  .card-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:18px;
+  padding:16px 16px 14px; box-shadow:0 8px 28px rgba(0,0,0,.06);
+}
+.card h3{margin:0 0 6px; font-size:16px}
+.card .url a{color:var(--accent); text-decoration:none}
+.card .url a:hover{text-decoration:underline}
+.card .desc{margin:8px 0 0; color:var(--ink-weak); font-size:14px; line-height:1.8}
+.card .date{margin:10px 0 0; color:#7a8aa6; font-size:12px}
+
+.empty{color:#7a8aa6; margin:6px 4px}
+
+
+.logout-wrap {
+  text-align: center;
+  margin-top: 20px;
+  background: white;
+  padding: 15px 0;
+  border-radius: 20px;
+  width: 200px;
+  margin-inline: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mypage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* ← 高さ中央揃え */
+  background-color: #fff;
+  padding: 20px 50px;
+  border-bottom: 1px solid #eee;
+}
+
+.mypage-header h1 {
+  font-size: 1.6rem;
+  color: #1e3a5f;
+  margin: 0;
+}
+
+.mypage-header .welcome {
+  color: #1e3a5f;
+  font-size: 0.95rem;
+  margin: 3px 0 0 2px;
+}
+
+.logout {
+  display: inline-block;
+  background-color: #1e3a5f;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 28px;
+  border-radius: 28px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.logout:hover {
+  background-color: #16304A;
+  transform: translateY(-2px);
+}
+
+.header-right {
+  position: relative;
+  top: 10px; /* ← 数字を増やすとさらに下に */
+}
+
+.mypage-header {
+  padding: 24px 50px 18px; /* ← 上下の余白を微調整 */
+}
+
+html, body {
+  background-color: #fafafa !important;
+  color: #1E3A5F;
+}

@@ -1,0 +1,211 @@
+/* ===========================================================
+   KARiN. ~Sports & Beauty~
+   News Detail Style（お知らせページ）
+   Theme: Clean × Calm × Trust
+   Note: デザインは変更せず、構造と重複を整理
+   Last updated: 2025-11
+=========================================================== */
+
+/* 共通スタイル継承（blog_style.css） */
+@import url("blog_style.css");
+
+/* ------------------------------
+   🩵 ベース設定
+------------------------------ */
+body {
+  font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+  background-color: #fafafa;
+  color: #1E3A5F;
+  line-height: 1.9;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------------
+   🩵 メインラッパー
+------------------------------ */
+.news-detail {
+  max-width: 840px;
+  margin: 80px auto 100px;
+  padding: 40px 28px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.05);
+}
+
+/* ------------------------------
+   🩵 タイトル & 日付
+------------------------------ */
+.news-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #e0e7f0;
+  padding-bottom: 8px;
+}
+
+.news-date {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+/* ------------------------------
+   🩵 本文エリア
+------------------------------ */
+.news-body {
+  font-size: 1rem;
+  color: #1E3A5F;
+}
+
+.news-body p {
+  margin-bottom: 20px;
+  line-height: 1.9;
+}
+
+.news-body h2 {
+  font-size: 1.25rem;
+  color: #1E3A5F;
+  border-left: 5px solid #A7C7E7;
+  padding-left: 10px;
+  margin: 36px 0 16px;
+  font-weight: 600;
+}
+
+.news-body h3 {
+  font-size: 1.1rem;
+  color: #244670;
+  margin: 28px 0 12px;
+  font-weight: 600;
+}
+
+/* ------------------------------
+   🩵 リスト
+------------------------------ */
+.news-body ul {
+  background: #f8fafc;
+  padding: 16px 22px;
+  border-radius: 10px;
+  margin: 20px 0 28px;
+  border-left: 4px solid #c1d1e8;
+}
+
+.news-body ul li {
+  margin-bottom: 6px;
+  line-height: 1.8;
+}
+
+/* ------------------------------
+   🩵 画像
+------------------------------ */
+.news-body img {
+  display: block;
+  max-width: 100%;
+  margin: 30px auto;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+/* ------------------------------
+   🩵 CTAリンク / フッター
+------------------------------ */
+.news-footer {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.news-footer .btn {
+  display: inline-block;
+  background-color: #1E3A5F;
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 34px;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.news-footer .btn:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+/* ===========================================================
+   📱 レスポンシブデザイン
+=========================================================== */
+
+/* --- タブレット (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  .news-detail {
+    margin: 60px 5%;
+    padding: 36px 24px;
+  }
+
+  .news-title {
+    font-size: 1.6rem;
+  }
+
+  .news-body h2 {
+    font-size: 1.2rem;
+  }
+}
+
+/* --- スマホ (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .news-detail {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+
+  .news-title {
+    font-size: 1.5rem;
+  }
+
+  .news-body {
+    font-size: 0.95rem;
+  }
+
+  .news-body h2 {
+    font-size: 1.1rem;
+  }
+
+  .news-footer .btn {
+    width: 90%;
+    max-width: 300px;
+    display: block;
+    margin: 20px auto 0;
+  }
+}
+
+/* --- スマホ小 (max-width: 480px) --- */
+@media (max-width: 480px) {
+  .news-detail {
+    padding: 22px 16px;
+    border-radius: 10px;
+  }
+
+  .news-title {
+    font-size: 1.3rem;
+  }
+
+  .news-date {
+    font-size: 0.8rem;
+  }
+
+  .news-body {
+    font-size: 0.9rem;
+  }
+
+  .news-body h2 {
+    font-size: 1rem;
+    border-left-width: 4px;
+  }
+
+  .news-footer .btn {
+    font-size: 0.9rem;
+    padding: 10px 24px;
+  }
+}
+

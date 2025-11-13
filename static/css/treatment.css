@@ -1,0 +1,352 @@
+/* =========================================================
+   KARiN. Treatment Page Styling
+   - Based on style.css (Global)
+   - Optimized for: PC / 1240 / 768 / 480
+   ========================================================= */
+
+/* ---------- レイアウト ---------- */
+.treatment-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 120px 5% 160px;
+  text-align: center;
+}
+
+/* ---------- タイトル ---------- */
+.treatment-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+}
+
+.treatment-lead {
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: #1E3A5F;
+  margin-bottom: 70px;
+}
+
+/* ---------- グリッド ---------- */
+.treatment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  justify-content: center;
+}
+
+/* ---------- カード ---------- */
+.treatment-card {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 3px 6px rgba(30, 58, 95, 0.06),
+              0 8px 22px rgba(30, 58, 95, 0.08);
+  padding: 28px 24px 36px;
+  text-align: left;
+  transition: all 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.treatment-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5),
+              inset 0 -3px 6px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+}
+
+.treatment-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(30, 58, 95, 0.12),
+              0 6px 12px rgba(30, 58, 95, 0.08);
+}
+
+/* ---------- 画像 ---------- */
+.treatment-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.treatment-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.treatment-card:hover .treatment-image img {
+  transform: scale(1.04);
+  opacity: 0.95;
+}
+
+/* ---------- テキスト ---------- */
+.treatment-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1E3A5F;
+}
+
+.treatment-card p {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #1E3A5F;
+  text-align: left;
+}
+
+/* ---------- HOMEボタン ---------- */
+.home-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 40px;
+  padding: 10px 16px 10px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: #1E3A5F;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  z-index: 1000;
+}
+
+.home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  background: #f8f9fb;
+}
+
+.home-btn img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+/* ===============================
+   💻 1024px（タブレット横向き）対応：3列維持
+   =============================== */
+@media (max-width: 1024px) {
+  .treatment-wrapper {
+    padding: 80px 8% 120px; /* ← 左右余白を広げる */
+  }
+
+  /* 🔹 2列で幅いっぱい、中央寄せ */
+  .treatment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(320px, 1fr)); /* ← 各カード幅を確保 */
+    gap: 40px 48px; /* ← 横48pxで余白を強調 */
+    justify-content: center;
+    align-items: start;
+  }
+
+  /* 🔹 カードの見栄えと干渉リセット */
+  .treatment-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 32px 26px 38px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    width: 100%;
+    max-width: 480px; /* ✅ 広げすぎ防止 */
+    height: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .treatment-card img {
+    display: block !important;
+    width: 100% !important;
+    height: 220px !important;
+    object-fit: cover !important;
+    border-radius: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .treatment-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #1E3A5F;
+  }
+
+  .treatment-card p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #1E3A5F;
+    margin: 0;
+  }
+
+  /* 🔹 HOMEボタン調整 */
+  .home-btn {
+    bottom: 18px;
+    right: 18px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  .home-btn img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
+
+
+
+/* ===============================
+   📱 768px（タブレット縦 / スマホ横）対応
+   2列×余白とgap最適化バージョン
+   =============================== */
+@media (max-width: 768px) {
+  .treatment-wrapper {
+    padding: 60px 6% 100px;
+  }
+
+  /* 🔹 1列構成（中央寄せ・呼吸感あり） */
+  .treatment-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px; /* 上下の余白 */
+    justify-items: center;
+  }
+
+  /* 🔹 カードを広めに（スマホでも狭く見せない） */
+  .treatment-card {
+    width: 100%;
+    max-width: 540px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 28px 22px 36px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    margin: 0 auto;
+  }
+
+  .treatment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 🔹 画像調整 */
+  .treatment-image {
+    width: 100%;
+    height: 220px;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .treatment-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .treatment-card:hover .treatment-image img {
+    transform: scale(1.03);
+  }
+
+  /* 🔹 テキスト調整 */
+  .treatment-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .treatment-card p {
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  /* 🔹 HOMEボタン（親指で押しやすく） */
+  .home-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    border-radius: 40px;
+  }
+
+  .home-btn img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
+/* ===============================
+   💙 「整体だけ小さい」修正パッチ
+   nth-child(3)のmax-width制限を無効化
+=============================== */
+.treatment-wrapper .treatment-card:nth-child(3) {
+  max-width: 540px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+
+
+/* ===============================
+   💙 480px以下（スマホ用最終調整）
+=============================== */
+@media (max-width: 480px) {
+  .treatment-wrapper {
+    padding: 60px 4% 80px; /* 全体の余白を軽く */
+  }
+
+  .treatment-grid {
+    grid-template-columns: 1fr; /* ✅ 1列表示に */
+    gap: 28px; /* カード間に少し余白 */
+  }
+
+  .treatment-card {
+    max-width: 100%;
+    width: 100%;
+    padding: 22px 18px 28px;
+    border-radius: 14px;
+  }
+
+  .treatment-image {
+    height: 180px; /* ✅ スマホで縦横比を整える */
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+
+  .treatment-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .treatment-card p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  /* ホームボタンも中央寄せ */
+  .home-btn {
+    bottom: 12px;
+    right: 50%;
+    transform: translateX(50%);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .home-btn img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}

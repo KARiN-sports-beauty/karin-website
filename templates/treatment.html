@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>施術内容 | KARiN. ~Sports & Beauty~</title>
+
+  <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.では、鍼灸・整体・美容鍼・トレーニングなど、身体の内外から整える施術を提供しています。東京（代々木上原）・福岡（薬院）を拠点に完全予約制で対応。">
+  <meta name="keywords" content="施術内容, 鍼灸, 整体, 美容鍼, オイルトリートメント, トレーニング, コンディショニング, KARiN., 代々木上原, 薬院, 出張施術">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="施術内容 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術。心身をトータルで整えるKARiN.の施術をご紹介します。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（Service + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        "serviceType": "鍼灸・整体・美容鍼・トレーニング",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": "KARiN. ~Sports & Beauty~",
+          "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+          "telephone": "+81-90-5088-6993",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "福岡市中央区",
+            "addressRegion": "福岡県",
+            "addressCountry": "JP"
+          },
+          "areaServed": [
+            "東京（代々木上原）",
+            "福岡（薬院）"
+          ],
+          "openingHoursSpecification": [{
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+            "opens": "10:00",
+            "closes": "19:00"
+          }],
+          "url": "{{ request.url_root }}"
+        },
+        "description": "KARiN.では、国家資格を持つ鍼灸師が身体の状態を見極め、鍼灸・整体・美容鍼・トレーニングを組み合わせた施術を行います。"
+      },
+      {
+        "@type": "WebPage",
+        "name": "施術内容",
+        "url": "{{ request.url }}",
+        "about": "鍼灸・整体・美容鍼・オイルトリートメント・トレーニングなどの施術メニュー紹介ページ"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ✅ CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/treatment.css') }}">
+
+  <!-- ✅ Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- ✅ AOS（ふんわり出現） -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+</head>
+
+<body>
+
+<section class="treatment-wrapper">
+  <h1 class="treatment-title" data-aos="fade-up">施術内容</h1>
+  <p class="treatment-lead" data-aos="fade-up" data-aos-delay="100">
+    KARiN.では、鍼灸・整体・トレーニング・美容など、<br>
+    一人ひとりの身体・目的に合わせたオーダーメイドのケアを行っています。
+  </p>
+
+  <div class="treatment-grid">
+    {% for title, description, image in items %}
+    <div class="treatment-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+      <div class="treatment-image">
+        <img src="{{ url_for('static', filename='images/' ~ image) }}" alt="{{ title }}">
+      </div>
+      <h3>{{ title }}</h3>
+      <p>{{ description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+<!-- ✅ AOSスクリプト -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,
+    once: true
+  });
+</script>
+
+
+<!-- ✅ ホームボタン（左下固定） -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+
+</body>
+</html>
+

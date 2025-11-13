@@ -1,0 +1,2077 @@
+/* =========================================================
+   🌐 GLOBAL BASE
+   全ページ共通設定
+   (KARiN. 2025.11)
+========================================================= */
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  color: #1E3A5F;
+  background-color: #ffffff;
+  scroll-behavior: smooth;
+}
+
+/* テキスト共通 */
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+  padding: 0;
+}
+
+/* リンク共通 */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+/* 画像共通 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* ボックス共通（Safariはみ出し対策） */
+section, header, footer {
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+/* =========================================================
+   🔖 LOGO BASE
+   全ページ共通のロゴ表示設定
+========================================================= */
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-weight: 700;
+  font-size: 2rem;           /* ✅ 元の見た目に近づけて大きめ */
+  letter-spacing: 0.03em;
+  color: #1E3A5F;
+}
+
+
+.logo img {
+  display: block;
+  width: auto;
+  height: 45px;
+  object-fit: contain;
+}
+
+
+
+/* =====================================================
+   HEADER（KARiN.）完全版：2025-11
+===================================================== */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  z-index: 1000;
+}
+
+.logo {
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- PC用ナビ ---------- */
+.nav {
+  display: flex;
+  gap: 30px;
+}
+
+.nav a {
+  text-decoration: none;
+  font-size: 1rem;
+  color: #1E3A5F;
+  transition: color 0.3s ease;
+}
+
+.nav a:hover {
+  color: #8fa3c1;
+}
+
+/* ---------- ハンバーガー ---------- */
+.hamburger {
+  display: none;
+  position: relative;
+  width: 28px;
+  height: 22px;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+.hamburger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #1E3A5F;
+  border-radius: 2px;
+  transition: right 2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.hamburger span:nth-child(1) { top: 0; }
+.hamburger span:nth-child(2) { top: 9px; }
+.hamburger span:nth-child(3) { top: 18px; }
+
+/* ✖アニメーション */
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg);
+  top: 9px;
+}
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg);
+  top: 9px;
+}
+
+
+/* ---------- Heroセクション ---------- */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  padding-top: 70px;
+  overflow: hidden;
+  background: #fff;
+  margin: 0;
+}
+
+
+.slider {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.slide img {
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center center;
+  filter: brightness(0.8);
+  transition: transform 5s ease-in-out;
+}
+
+.slide.active img {
+  transform: scale(1.06);
+}
+
+/* ---------- テキストアニメーション ---------- */
+.text {
+  position: absolute;
+  z-index: 2;
+  font-size: 3rem;
+  line-height: 1.2;
+  font-family: 'Playfair Display', serif;
+  color: #fff;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  max-width: 40%;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.text.left {
+  left: 5%;
+  text-align: left;
+}
+
+.text.right {
+  right: 5%;
+  text-align: right;
+}
+
+.slide.active .text {
+  animation: textFadeInUp 1.6s ease-out forwards;
+}
+
+@keyframes textFadeInUp {
+  0% { opacity: 0; transform: translateY(30px); filter: blur(4px); }
+  50% { opacity: 0.6; filter: blur(2px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* ---------- 5枚目：KARiN.ロゴスライド ---------- */
+.slide.last {
+  position: relative;
+  background: #fff;
+  color: #1E3A5F;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* 初期状態（非表示＋下位置） */
+.slide.last .brand {
+  opacity: 0;
+  transform: translateY(50px);
+  text-align: center;
+  z-index: 3;
+}
+
+/* activeがついたときに発火 */
+.slide.last.active .brand {
+  animation: brandFadeInUp 6s ease-out forwards;
+  animation-delay: 2s; /* 猫ロゴfadeと完全同期 */
+}
+
+@keyframes brandFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  40% {
+    opacity: 0.4;
+    transform: translateY(20px);
+  }
+  70% {
+    opacity: 0.8;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* フォント統一 */
+.slide.last .brand h1 {
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-weight: 700;
+  font-size: 5rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+  color: #1E3A5F;
+}
+
+.slide.last .brand p {
+  font-family: "Great Vibes", cursive;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+  margin-top: 0.6rem;
+  transform: translateX(-0.25em); /* ← KARiN.との視覚バランス補正 */
+}
+
+/* 猫ロゴ（fade out） */
+.slide.last::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("/static/images/relogo.png") center center no-repeat;
+  background-size: 45%;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.slide.last.active::before {
+  animation: fadeOutLogo 6s ease-in-out forwards;
+  animation-delay: 2s;
+}
+
+@keyframes fadeOutLogo {
+  0%   { opacity: 1; }
+  40%  { opacity: 0.6; }
+  80%  { opacity: 0.2; }
+  100% { opacity: 0; }
+}
+
+
+/* ===============================
+   🩵 お知らせセクション（2025.11再整理版）
+   ※ブログデザインと完全統一トーン
+=============================== */
+.news-section {
+  background-color: #ffffff;
+  padding: 90px 5% 100px;
+  text-align: center;
+  position: relative;
+  border-top: none !important;
+}
+
+.news-section::before,
+.news-section::after {
+  content: none !important;
+  border: none !important;
+}
+
+/* タイトル＋サブタイトル */
+.news-section .section-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 12px;
+  position: relative;
+  display: inline-block;
+}
+
+.news-section .section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.news-section .section-subtitle {
+  color: #1E3A5F;
+  font-size: 1rem;
+  margin-top: 25px;
+  margin-bottom: 50px;
+  opacity: 0.9;
+}
+
+/* カードリスト */
+.news-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+/* 各カード */
+.news-card {
+  width: 100%;
+  border-bottom: 1px solid #eaeaea;
+  padding: 14px 0;
+  transition: background-color 0.3s ease;
+}
+
+.news-card:hover {
+  background-color: #f8f9fa;
+}
+
+.news-card a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: #1E3A5F;
+}
+
+.news-title {
+  text-align: left;
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+
+.news-date {
+  font-size: 0.9rem;
+  color: #7a8ba8;
+  white-space: nowrap;
+}
+
+
+
+/* ---------- 院長あいさつ ---------- */
+.greeting-section {
+  background-color: #fafafa;
+  padding: 100px 5% 50px;
+  display: flex;
+  justify-content: center;
+  animation: fadeIn 1s ease-in;
+}
+
+.intro-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  max-width: 1200px;
+  gap: 60px;
+}
+
+.intro-image img {
+  width: 350px;
+  border-radius: 20px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+  margin-top: 0;              /* ★ ここを0に → ヘッドと見出しを揃える */
+}
+
+.intro-content {
+  flex: 1;
+  color: #1E3A5F;
+}
+
+.greeting-section .section-title {
+  font-size: 2rem;
+  color: #1E3A5F;
+  margin-bottom: 10px;
+  /* ★ ゴールドライン無し（::afterつけない） */
+}
+
+.intro-name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 5px;
+  line-height: 1.6;
+}
+
+.intro-subtitle {
+  color: #1E3A5F;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.intro-message {
+  color: #1E3A5F;
+  line-height: 1.7;          /* ★ 少しだけ行間を詰める（1.8 → 1.7） */
+  font-size: 1.05rem;
+  text-align: left;
+}
+
+/* ---------- 続きを読むボタン ---------- */
+.accordion-btn {
+  display: block;
+  margin: 25px auto 0;
+  background-color: #1E3A5F;
+  color: #fff;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.6s ease-in-out;
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  position: relative;
+  left: 0;
+}
+
+.accordion-btn:hover {
+  background-color: #16304A;
+  transform: scale(1.05);
+}
+
+/* ---------- 続き本文（トーン同じ・背景も同じ系統） ---------- */
+.accordion-content {
+  overflow: hidden;
+  transform-origin: top;
+  transform: scaleY(0.9);
+  opacity: 0;
+  max-height: 0;
+  background-color: #fafafa;   /* ★ セクションと同じ色のまま */
+  border-radius: 15px;
+  margin-top: 15px;
+  line-height: 1.7;            /* 本文と合わせて少し詰める */
+  color: #1E3A5F;
+  font-size: 1.05rem;
+  transition:
+    opacity 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+    max-height 1.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.accordion-content.open {
+  transform: scaleY(1);
+  opacity: 1;
+  max-height: 1500px;
+}
+
+.accordion-content.closing {
+  transform: scaleY(0.9);
+  opacity: 0;
+  max-height: 0;
+}
+
+/* ---------- 閉じるボタン（続きを読むと同じテイスト） ---------- */
+.close-btn {
+  display: block;
+  margin: 30px auto 10px;
+  background-color: #1E3A5F;   /* ★ ネイビーで統一（ゴールドやめる） */
+  color: #fff;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+/* ✅ 閉じるボタンの表示トリガー修正 */
+.accordion-content.open .close-btn {
+  opacity: 1;
+  transform: translateY(0);
+  animation: fadeInUp 0.8s ease forwards; /* 開いた瞬間にアニメーション */
+}
+
+/* ✅ 閉じるときも自然に消えるように */
+.accordion-content.closing .close-btn {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+
+.close-btn:hover {
+  background-color: #16304A;
+}
+
+/* fadeInUp は元の定義をそのまま使う想定
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+*/
+
+
+/* ===============================
+   🩵 初診案内（initial-section）
+   2025.11 PC版 修正版
+=============================== */
+.initial-section {
+  background-color: #ffffff;
+  padding: 90px 5% 80px;
+  color: #1E3A5F;
+}
+
+/* コンテナ：左右2カラム（中央揃え） */
+.initial-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* ← 上下中央揃えに変更 */
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* 左側テキストブロック */
+.initial-text {
+  flex: 1 1 60%;
+  line-height: 1.9;
+}
+
+.initial-text h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 25px;
+}
+
+/* 見出し下ライン削除 */
+.initial-text h2::after {
+  display: none !important;
+}
+
+.initial-text p {
+  font-size: 1rem;
+  color: #1E3A5F;
+  opacity: 0.95;
+  margin-top: 25px;
+}
+
+/* 右側サイドブロック（中央配置） */
+.initial-side {
+  flex: 1 1 35%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* ← 縦中央揃え */
+  text-align: center;
+}
+
+/* ロゴ画像：ボタンと同幅 */
+.initial-logo {
+  width: 260px; /* ボタン幅と揃える目安 */
+  height: auto;
+  margin-bottom: 25px;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.initial-logo:hover {
+  opacity: 1;
+}
+
+/* CTAボタン：ロゴと同幅 */
+.cta-btn {
+  display: inline-block;
+  width: 260px; /* ロゴと同じ幅で統一 */
+  background-color: #1E3A5F;
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 30px;
+  padding: 14px 0;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.cta-btn:hover {
+  background-color: #16304A;
+  transform: translateY(-2px);
+}
+
+/* ボタン内のテキスト（改行対応） */
+.cta-btn span {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+}
+
+
+
+/* ===============================
+   🩵 施術概要（treatment-overview）
+   2025.11 トップページ用
+=============================== */
+.treatment-overview {
+  background-color: #fafafa;
+  text-align: center;
+  color: #1E3A5F;
+  padding: 90px 5% 80px;
+}
+
+/* タイトル */
+.treatment-overview h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+/* 説明文 */
+.treatment-overview p {
+  font-size: 1rem;
+  line-height: 1.9;
+  opacity: 0.9;
+  margin-bottom: 60px;
+}
+
+/* カード全体配置 */
+.treatment-preview {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto 60px;
+}
+
+/* 各カード */
+.treatment-card {
+  background-color: #ffffff;
+  flex: 1 1 30%;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  padding: 25px 25px 35px;
+  transition: all 0.3s ease;
+}
+
+.treatment-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+/* 画像 */
+.treatment-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+/* 見出し */
+.treatment-card h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 10px;
+}
+
+/* 説明テキスト */
+.treatment-card p {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #1E3A5F;
+  opacity: 0.95;
+}
+
+/* CTAボタン */
+.treatment-cta {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.treatment-cta .cta-btn {
+  display: inline-block;
+  background-color: #1E3A5F;
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 28px;
+  padding: 12px 40px;       /* ← テキスト周囲だけ、最小限に */
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+  width: auto;             /* ← 横幅を固定せず文字に合わせる */
+  min-width: auto;         /* ← 余白強制も解除 */
+  text-align: center;
+}
+
+.treatment-cta .cta-btn:hover {
+  background-color: #16304A;
+  transform: translateY(-1px);
+}
+
+
+/* ===============================
+   🩵 ブログセクション（KARiN.ブログ）
+   2025.11 トップページ用
+=============================== */
+.blog-section {
+  background-color: #ffffff;
+  padding: 90px 5% 100px;
+  text-align: center;
+  position: relative;
+  border-top: none;
+}
+
+/* タイトル（金ラインあり・中央寄せ） */
+.blog-section .section-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 12px;
+  position: relative;
+  display: inline-block;
+}
+
+.blog-section .section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;  /* ゴールドライン */
+  border-radius: 2px;
+}
+
+/* サブタイトル */
+.blog-section .section-subtitle {
+  color: #1E3A5F;
+  font-size: 1rem;
+  margin-top: 25px;
+  margin-bottom: 50px;
+  opacity: 0.9;
+}
+
+/* コンテナ */
+.blog-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+/* 各ブログカード */
+.blog-card {
+  width: 100%;
+  border-bottom: 1px solid #eaeaea;
+  padding: 14px 0;
+  transition: background-color 0.3s ease;
+}
+
+.blog-card:hover {
+  background-color: #f8f9fa;
+}
+
+/* カード内リンク */
+.blog-card a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: #1E3A5F;
+}
+
+/* ブログタイトル */
+.blog-title {
+  text-align: left;
+  font-weight: 500;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* 日付 */
+.blog-date {
+  font-size: 0.9rem;
+  color: #7a8ba8;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+/* ボタン部分 */
+.blog-cta {
+  text-align: center;
+  margin-top: 45px;
+}
+
+/* ボタン（サブCTAデザイン・スマート系） */
+.blog-cta .btn-more {
+  display: inline-block;
+  padding: 10px 25px;
+  background-color: #1E3A5F;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  transition: all 0.3s ease;
+}
+
+.blog-cta .btn-more:hover {
+  background-color: #16304A;
+  transform: translateY(-2px);
+}
+
+/* セクション間の余白を微調整 */
+body.index-page .blog-section {
+  margin-bottom: 30px;
+  padding-bottom: 80px;
+}
+
+
+/* ===============================
+   🩵 アクセス・営業時間＋直近スケジュール
+   2025.11 修正版
+=============================== */
+.access-section {
+  background-color: #fafafa;
+  padding: 100px 5% 80px;
+  text-align: center;
+  color: #1E3A5F;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- タイトル（金ライン削除） ---------- */
+.access-section .section-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 40px;
+  color: #1E3A5F;
+}
+
+/* ---------- コンテナ（左右並び） ---------- */
+.access-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start; /* ✅ カード内容を上詰め */
+  gap: 40px;
+  max-width: 1000px;
+  margin: 0 auto 60px;
+  text-align: left;
+}
+
+/* 左側：情報カード */
+.access-info {
+  flex: 1 1 45%;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  line-height: 1.8;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* ✅ 上詰め */
+}
+
+.access-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  color: #1E3A5F;
+}
+
+.access-info p {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.access-info a {
+  color: #1E3A5F;
+  text-decoration: underline;
+}
+
+.tel-link {
+  text-decoration: none;
+  font-weight: 600;
+  color: #1E3A5F;
+}
+
+/* 右側：地図（2拠点分縦並び） */
+.access-map {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.access-map iframe {
+  display: block;
+  width: 100%;
+  height: 260px;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+/* ---------- スケジュール部分 ---------- */
+.access-schedule {
+  margin-top: 50px;
+}
+
+.access-schedule h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #1E3A5F;
+}
+
+/* スケジュール表 */
+.schedule-table {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  padding: 35px 25px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.schedule-row-header,
+.schedule-row-body {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding-bottom: 8px;
+}
+
+/* 各セル */
+.schedule-cell {
+  flex: 0 0 120px;
+  min-width: 100px;
+  height: 60px;                  /* ✅ 高さ固定で中央安定 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: #f9fafc;
+  border-radius: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  color: #1E3A5F;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0 6px;
+  transition: all 0.3s ease;
+}
+
+/* ---------- 改行対応 ---------- */
+.schedule-cell span {
+  display: inline-block;
+  white-space: pre-line;
+}
+
+/* 休みの日 */
+.schedule-cell.off-day {
+  background-color: #f1f1f1 !important;
+  color: #aaa !important;
+  border-radius: 14px;
+}
+
+/* 当日 */
+.schedule-cell.today {
+  background-color: #1E3A5F !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transform: scale(1.05);
+}
+
+/* ===============================
+   🩵 ご予約・お問い合わせセクション（4ボタン横並び版）
+   2025.11 refined
+=============================== */
+.contact-section {
+  background-color: #ffffff;
+  color: #1E3A5F;
+  text-align: center;
+  padding: 90px 5% 100px;
+}
+
+.contact-heading {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 10px;
+}
+
+.contact-text {
+  font-size: 1rem;
+  color: #4a5f7a;
+  margin-bottom: 40px;
+  line-height: 1.8;
+}
+
+/* ---------- ボタン全体 ---------- */
+.contact-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+/* ---------- 各ボタン ---------- */
+.contact-btn {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 600;
+  color: #ffffff;
+  border-radius: 30px;
+  padding: 12px 26px;        /* ✅ ← 横幅をやや短く */
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  text-align: center;
+  min-width: 200px;          /* ✅ ← 最小幅を狭く設定 */
+  white-space: nowrap;
+}
+
+/* ---------- 各ボタンの色 ---------- */
+.contact-btn.line {
+  background-color: #06C755;
+}
+.contact-btn.line:hover {
+  background-color: #05b34e;
+  transform: translateY(-3px);
+}
+
+.contact-btn.first {
+  background-color: #1E3A5F;
+}
+.contact-btn.first:hover {
+  background-color: #16304A;
+  transform: translateY(-3px);
+}
+
+.contact-btn.repeat {
+  background-color: #4a5f7a;
+}
+.contact-btn.repeat:hover {
+  background-color: #3b4c67;
+  transform: translateY(-3px);
+}
+
+.contact-btn.insta {
+  background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4);
+}
+.contact-btn.insta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-3px);
+}
+
+
+/* ===============================
+   🩵 フッター（統一デザイン仕上げ）
+   2025.11 FINAL
+=============================== */
+.footer {
+  background-color: #1E3A5F;
+  color: #ffffff;
+  padding: 70px 5% 50px;
+  text-align: center;
+}
+
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---------- ロゴ ---------- */
+.footer-logo {
+  font-family: "Playfair Display", serif;
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.footer-logo span {
+  display: block;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.9rem;
+  color: #c0cbe0;
+  margin-top: 4px;
+}
+
+/* ---------- ナビリンク ---------- */
+.footer-links {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin: 28px 0 36px;
+  padding: 0;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: opacity 0.3s ease;
+}
+
+.footer-links a:hover {
+  opacity: 0.7;
+}
+
+/* ---------- SNSボタン（再利用） ---------- */
+.footer-social {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+/* 再利用クラス：contact-btn */
+.footer .contact-btn {
+  padding: 10px 26px;
+  font-size: 0.95rem;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.footer .contact-btn.line {
+  background-color: #06C755;
+}
+.footer .contact-btn.line:hover {
+  background-color: #05b34e;
+  transform: translateY(-3px);
+}
+
+.footer .contact-btn.insta {
+  background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4);
+}
+.footer .contact-btn.insta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-3px);
+}
+
+/* ---------- コピーライト ---------- */
+.footer-copy {
+  font-size: 0.85rem;
+  color: #c0cbe0;
+  margin-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 20px;
+}
+
+/* ===============================
+   スクロール位置補正（全セクション共通）
+   =============================== */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 固定ヘッダー分の余白確保（PC・タブレット・スマホ共通） */
+section[id],
+#news,
+#blog,
+#access,
+#contact-section {
+  scroll-margin-top: 72px; /* ← ヘッダー高さに応じて調整 */
+}
+
+
+/* ===============================
+   💙 共通：右下ホームに戻るボタン（全ページ統一）
+=============================== */
+.home-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 40px;
+  padding: 10px 16px 10px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: #1E3A5F;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  z-index: 1000;
+}
+
+.home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  background: #f8f9fb;
+}
+
+@media (max-width: 768px) {
+  .home-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+.home-btn img {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+
+
+/* ===============================
+   🩵 トップページ 1024px レスポンシブ調整
+   （ノートPC・タブレット横向き）
+=============================== */
+@media (max-width: 1024px) {
+
+  /* ---------- 共通セクション余白調整 ---------- */
+  section {
+    padding: 70px 5%;
+  }
+
+  /* ---------- ヘッダー ---------- */
+  .hamburger {
+    display: block !important;
+    cursor: pointer;
+  }
+
+  .nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 70%;
+    max-width: 360px;
+    height: 100vh;
+    background: #ffffff;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+    z-index: 1050;
+    opacity: 0;
+    transform: translateX(80px);
+    transition:
+      right 0.7s ease,
+      opacity 0.7s ease,
+      transform 0.7s ease;
+  }
+
+  .nav.active {
+    right: 0;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 0;
+    margin: 0;
+  }
+
+  .hero img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ---------- お知らせ ---------- */
+  .news-container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 6%;
+  }
+
+  /* ---------- 初診の方へ ---------- */
+  .initial-section {
+    padding-top: 45px;
+  }
+
+  .initial-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 50px;
+  }
+
+  /* 左側テキスト：やや広めに確保（3:2 バランス） */
+  .initial-text {
+    flex: 3;
+    text-align: left;
+    color: #1E3A5F;
+    line-height: 1.8;
+    font-size: 1rem;
+  }
+
+  /* 右側ロゴ＋ボタン：コンパクト配置 */
+  .initial-side {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  /* ロゴは大きめに */
+  .initial-logo {
+    width: 220px; /* ← 以前180px → 大きく */
+    height: auto;
+  }
+
+  /* ボタンはやや小さく */
+  .cta-btn {
+    padding: 7px 18px; /* ← 少し小さめ */
+    font-size: 0.85rem;
+    border-radius: 25px;
+  }
+
+  /* ---------- 施術内容 ---------- */
+  .treatment-overview {
+    padding-top: 50px; /* 上余白を少し狭く */
+  }
+
+  /* ---------- ブログ ---------- */
+  .blog-section {
+    padding-top: 50px;
+    padding-bottom: 25px !important; /* 下余白さらに少し詰める */
+  }
+
+  .blog-container {
+    max-width: 850px;
+    margin: 0 auto;
+  }
+
+  /* ---------- アクセス・営業時間 ---------- */
+  .access-section {
+    padding-top: 60px; /* トップの余白を詰める */
+    padding-bottom: 80px;
+  }
+
+  .access-container {
+    flex-direction: column;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .access-info,
+  .access-map {
+    width: 100%;
+    max-width: 850px;
+  }
+
+  /* ---------- 直近スケジュール（上下同期スクロール） ---------- */
+  .schedule-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .schedule-row-header,
+  .schedule-row-body {
+    display: flex;
+    justify-content: center; /* ← 中央寄せで固定 */
+    gap: 10px;
+    overflow: hidden; /* ← スクロール無しに */
+    padding-bottom: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .schedule-cell {
+    flex: 0 0 110px; /* ← 少し幅を詰めて全体を収める */
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    text-align: center;
+    padding: 8px 0; /* ← 高さも微調整して圧縮 */
+    font-size: 0.85rem;
+    color: #1E3A5F;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .schedule-cell.today {
+    background-color: #1E3A5F;
+    color: #fff;
+  }
+
+  .schedule-cell.off-day {
+    background-color: #f2f2f2;
+    color: #aaa;
+  }
+
+
+  /* ---------- ご予約・お問い合わせ ---------- */
+  .contact-section {
+    padding: 60px 5% 70px;
+  }
+
+  .contact-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .contact-btn {
+    min-width: 130px;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+  }
+
+  /* ---------- フッター ---------- */
+  .footer {
+    padding: 20px 20px; /* 上下20px */
+  }
+
+  .footer-logo {
+    font-size: 1.9rem; /* ロゴ少し大きめ */
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  .footer .contact-btn {
+    min-width: 130px;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+  }
+
+  .footer-copy {
+    font-size: 0.8rem;
+  }
+
+  html {
+  scroll-behavior: smooth;
+  }
+
+/* 固定ヘッダー分の余白確保（PC・タブレット・スマホ共通） */
+  section[id],
+  #news,
+  #blog,
+  #access,
+  #contact-section {
+    scroll-margin-top: 68px; /* ← ヘッダー高さに応じて調整 */
+  }
+}
+
+
+
+/* ===============================
+   🩵 トップページ 768px レスポンシブ調整
+   （タブレット縦向き・小型デバイス）
+   2025.11 KARiN.
+=============================== */
+@media (max-width: 768px) {
+
+  /* ▼ 固定ヘッダー分の余白補正 */
+  section[id],
+  #news,
+  #blog,
+  #access,
+  #contact-section {
+    scroll-margin-top: 68px;
+  }
+
+  /* ==========================
+     Hero（ファーストビュー）
+  ========================== */
+  .hero {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .slider,
+  .slide,
+  .slide img {
+    height: 100vh !important;
+  }
+
+  .slide .text {
+    font-size: 2.2rem;
+    max-width: 90%;
+  }
+
+
+  /* ==========================
+     院長あいさつ（Greeting）
+  ========================== */
+  .greeting-section {
+    padding: 70px 5% 60px;
+  }
+
+  .intro-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .intro-image {
+    text-align: center;
+  }
+
+  .intro-image img {
+    width: 320px;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .intro-content {
+    text-align: center;
+  }
+
+  .intro-name,
+  .intro-subtitle {
+    text-align: center;
+  }
+
+  .intro-message {
+    text-align: left;
+    font-size: 1rem;
+    margin-top: 15px;
+  }
+
+  .accordion-btn {
+    display: block;
+    margin: 25px auto 0;
+  }
+
+
+  /* ==========================
+     初診の方へ（Initial Section）
+  ========================== */
+  .initial-section {
+    padding: 70px 5%;
+  }
+
+  .initial-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 35px;
+  }
+
+  .initial-text {
+    text-align: left;
+  }
+
+  .initial-side {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .initial-logo {
+    width: 180px;
+    margin-bottom: 0;
+  }
+
+  .cta-btn {
+    width: auto;
+    padding: 12px 22px;
+  }
+
+
+  /* ==========================
+     施術内容（Treatment）
+  ========================== */
+  .treatment-overview {
+    padding: 70px 5%;
+  }
+
+  .treatment-preview {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .treatment-card {
+  flex: 0 0 45%; /* 各カードを2列配置で統一 */
+  max-width: 45%;
+  }
+
+  .treatment-card:nth-child(3) {
+    max-width: 45%;
+    margin: 0 auto;
+  }
+
+  .treatment-card img {
+    height: 200px;
+  }
+
+  .treatment-cta {
+    margin-top: 40px;
+  }
+
+
+  /* ==========================
+     アクセス・営業時間
+  ========================== */
+  .access-section {
+    padding: 70px 5%;
+  }
+
+  .access-container {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .access-info,
+  .access-map {
+    width: 100%;
+    max-width: 90%;
+    margin: 0 auto;
+  }
+
+  /* スケジュールテーブル（横スクロール1本） */
+  .schedule-table {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1E3A5F #f0f0f0; /* サイト配色ネイビー＋薄グレー */
+  }
+
+  .schedule-row-header,
+  .schedule-row-body {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 8px;
+  }
+
+  .schedule-row-body::-webkit-scrollbar {
+  height: 6px;
+  }
+
+.schedule-row-body::-webkit-scrollbar-thumb {
+  background-color: #1E3A5F;
+  border-radius: 4px;
+  }
+
+.schedule-row-body::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  }
+
+  .schedule-cell {
+    flex: 0 0 120px;
+    min-width: 120px;
+    font-size: 0.9rem;
+    height: 58px;
+  }
+
+  /* スクロールバー装飾（Webkit） */
+  .schedule-table::-webkit-scrollbar {
+    height: 6px;
+  }
+  .schedule-table::-webkit-scrollbar-track {
+    background: #f0f0f0;
+  }
+  .schedule-table::-webkit-scrollbar-thumb {
+    background-color: #1E3A5F;
+    border-radius: 4px;
+  }
+
+}
+
+
+/* ===============================
+   🩵 トップページ 480px完全版（統合済み）
+   2025.11 KARiN. Final
+=============================== */
+@media (max-width: 480px) {
+  /* 改行なし */
+  .sheet480 {
+    display: none;
+  }
+  /* ---------- 共通余白 ---------- */
+  section {
+    padding: 55px 5% !important;
+  }
+
+  /* ==========================
+     スクロール補正
+  ========================== */
+  section[id],
+  #news,
+  #blog,
+  #access,
+  #contact-section {
+    scroll-margin-top: 60px;
+  }
+
+  /* ==========================
+     ファーストビュー（Hero）
+  ========================== */
+  .hero {
+    height: 80vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .slider,
+  .slide,
+  .slide img {
+    height: 80vh !important;
+  }
+
+  .slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .slide .text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem !important;
+    line-height: 1.4;
+    max-width: 90%;
+    color: #fff;
+  }
+
+  .slide .text.left {
+    left: 5%;
+    text-align: left;
+  }
+
+  .slide .text.right {
+    right: 5%;
+    text-align: right;
+  }
+
+
+  /* ==========================
+     院長あいさつ
+  ========================== */
+  .greeting-section {
+    padding: 60px 5% 40px !important;
+  }
+
+  .section-title {
+    text-align: center;
+  }
+
+  .intro-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .intro-image img {
+    width: 90%;
+    max-width: 320px;
+  }
+
+  .intro-content {
+    text-align: left;
+  }
+
+  .intro-name,
+  .intro-subtitle {
+    text-align: center;
+  }
+
+  .intro-message {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin: 0 15px;
+  }
+
+  .accordion-btn {
+    display: block;
+    margin: 25px auto 0;
+    padding: 10px 25px;
+    font-size: 0.9rem;
+  }
+
+
+  /* ==========================
+     初診の方へ
+  ========================== */
+  .initial-container {
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .initial-text {
+    margin: 0 15px;
+    text-align: left;
+  }
+
+  .initial-side {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .initial-logo {
+    width: 130px;
+  }
+
+  .cta-btn {
+    width: auto;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+
+
+  /* ==========================
+     施術内容
+  ========================== */
+  .treatment-overview {
+    padding: 65px 5% 60px;
+  }
+
+  .treatment-overview > p {
+    text-align: left;
+  }
+
+  .treatment-preview {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px;
+  }
+
+  .treatment-card {
+    flex: 1 1 calc(100% - 50px);
+    max-width: calc(100% - 50px);
+    margin: 0 45px !important;
+    text-align: left;
+  }
+
+  .treatment-card img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  .treatment-card h3 {
+    font-size: 1.15rem;
+    text-align: left;
+  }
+
+  .treatment-card p {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    text-align: left;
+  }
+
+  .treatment-card:nth-child(3) {
+    max-width: 100%;
+  }
+
+  /* ==========================
+     ブログ
+  ========================== */
+  .blog-section {
+    padding: 70px 7% 80px;
+  }
+
+  .blog-container {
+    width: 100%;
+    max-width: 95%;
+    margin: 0 auto;
+  }
+
+
+  /* ==========================
+     アクセス・営業時間（修正版）
+  ========================== */
+  .access-section {
+    padding: 60px 5%;
+  }
+
+  .access-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .access-info,
+  .access-map {
+    max-width: 92%;
+    padding: 25px 22px;
+    margin: 0 auto;
+    line-height: 1.8;
+  }
+
+  .access-map iframe {
+    height: 220px;
+  }
+
+  /* --- 活動拠点：東京／福岡 の“／福岡”の前で改行 --- */
+  .access-info p:nth-of-type(1)::after {
+    content: "";
+    display: block;
+    height: 0.6em;
+  }
+
+  /* --- 営業時間：（その他〜）の前で改行 --- */
+  .access-info p:nth-of-type(5)::before {
+    content: "\A";
+    white-space: pre;
+  }
+
+  .schedule-table {
+    padding: 25px 15px;
+  }
+
+  .schedule-cell {
+    flex: 0 0 100px;
+    min-width: 100px;
+    height: 54px;
+    font-size: 0.85rem;
+  }
+
+
+  /* ==========================
+     ご予約・お問い合わせ
+  ========================== */
+  .contact-section {
+    padding: 65px 5% 75px;
+  }
+
+  .contact-heading {
+    text-align: center;
+    line-height: 1.4;
+    text-size-adjust: 95%;
+  }
+
+  .contact-text {
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 30px;
+  }
+
+  .contact-buttons {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .contact-btn {
+    width: 80%;
+    max-width: 260px;
+    font-size: 0.9rem;
+    padding: 11px 0;
+  }
+
+
+  /* ==========================
+     フッター
+  ========================== */
+  .footer {
+    padding: 50px 5% 40px;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .footer .contact-btn {
+    width: 80%;
+    max-width: 240px;
+  }
+
+  .footer-copy {
+    font-size: 0.75rem;
+  }
+}

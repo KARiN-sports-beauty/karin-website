@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ news.title }} | KARiN. お知らせ</title>
+
+  <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="{{ news.excerpt }}">
+  <meta name="keywords" content="お知らせ, KARiN, 鍼灸, 整体, 美容鍼, トレーニング, 福岡, 東京, 代々木上原, 薬院">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ news.title }}">
+  <meta property="og:description" content="{{ news.excerpt }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（NewsArticle + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsArticle",
+        "headline": "{{ news.title }}",
+        "datePublished": "{{ news.date }}",
+        "description": "{{ news.excerpt }}",
+        "author": {
+          "@type": "Organization",
+          "name": "KARiN. ~Sports & Beauty~"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "KARiN. ~Sports & Beauty~",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "{{ request.url }}"
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "telephone": "+81-90-5088-6993",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/news_style.css') }}">
+</head>
+<body>
+  <section class="news-detail">
+    <h1 class="news-title">{{ news.title }}</h1>
+    <p class="news-date">{{ news.date }}</p>
+
+    <!-- ✅ サムネイル画像（news.imageが存在する場合のみ表示） -->
+    {% if news.image %}
+    <div class="news-thumb">
+      <img src="{{ url_for('static', filename='images/news/' + news.image) }}" alt="{{ news.title }}">
+    </div>
+    {% endif %}
+    
+    <div class="news-body">
+      {{ news.body|safe }}
+    </div>
+
+    <div class="news-footer">
+      <a href="{{ url_for('index') }}" class="btn">🏠 ホームに戻る</a>
+    </div>
+  </section>
+</body>
+</html>

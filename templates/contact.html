@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~</title>
+
+  <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
+  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ContactPage",
+        "name": "お問い合わせ・ご予約",
+        "url": "{{ request.url }}",
+        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
+        "contactOption": {
+          "@type": "ContactPoint",
+          "telephone": "+81-90-5088-6993",
+          "contactType": "customer service",
+          "areaServed": ["JP"],
+          "availableLanguage": ["Japanese"]
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "telephone": "+81-90-5088-6993",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        },
+        "areaServed": [
+          "東京（代々木上原）",
+          "福岡（薬院）"
+        ],
+        "openingHoursSpecification": [{
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        }],
+        "url": "{{ request.url_root }}"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ✅ CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+
+  <!-- ✅ Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- ✅ AOS（ふわっとアニメ） -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
+</head>
+
+<body class="contact-page">
+
+<section class="form-wrapper">
+  <h1 class="form-title">お問い合わせ・ご予約</h1>
+  <p class="form-lead">
+    お問い合わせ・2回目以降の方のご予約はこちらからご連絡ください。<br>
+    必要事項をご記入のうえ、送信ボタンを押してください。<br>
+    LINEでも受け付けております。初診の方のご予約は"初診の方はこちら"からご入力お願い致します。
+  </p>
+
+  <!-- ✅ CTAボタン -->
+  <div class="contact-cta">
+    <a href="https://lin.ee/5vv91n2" target="_blank" class="line-btn">LINE予約はこちら</a>
+    <a href="{{ url_for('form') }}" class="cta-btn">初診の方はこちら</a>
+  </div>
+
+  <form action="{{ url_for('submit_contact') }}" method="POST" class="form-card">
+
+    <!-- 基本情報 -->
+    <div class="form-block">
+      <h2 class="block-title">基本情報</h2>
+      <label class="form-field">
+        <span>お名前（必須）</span>
+        <input type="text" name="name" required>
+      </label>
+      <label class="form-field">
+        <span>電話番号（必須）</span>
+        <input type="tel" name="phone" required>
+      </label>
+      <label class="form-field">
+        <span>メールアドレス（必須）</span>
+        <input type="email" name="email" required>
+      </label>
+    </div>
+
+    <section class="faq-section" data-aos="fade-up">
+      <h2 class="faq-title">よくあるご質問</h2>
+
+      <div class="faq-item">
+        <button class="faq-question">Q1. 初めてでも大丈夫ですか？</button>
+        <div class="faq-answer">
+          <p>もちろんです。初回はカウンセリングから丁寧に行いますので、ご安心ください。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Q2. どんな服装がいいですか？</button>
+        <div class="faq-answer">
+          <p>ストレッチや動作の確認をすることもあるので動きやすい服装をおすすめしています。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Q3. クレジットカードやpaypayは使えますか？</button>
+        <div class="faq-answer">
+          <p>はい、Squareを通じて主要なクレジットカード・paypay・タッチ決済に対応しています。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Q4. どのくらいの頻度で通えばいいですか？</button>
+        <div class="faq-answer">
+          <p>お身体の状態により異なりますが、痛みがある場合は1〜2週間に1回を目安に、その後は月1回のメンテナンスをおすすめしています。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Q5. 自宅以外の場所はありますか？</button>
+        <div class="faq-answer">
+          <p>基本的にはご自宅・会社・ホテルに呼ばれる方が多いですが、レンタルスペースのご利用も可能ですのでご相談ください。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 内容 -->
+    <div class="form-block">
+      <h2 class="block-title">お問い合わせ内容</h2>
+      <textarea name="message" rows="5" placeholder="ご予約希望日・お問い合わせ内容などをお書きください" required></textarea>
+    </div>
+
+    <!-- 今週のスケジュール -->
+    <section class="schedule-mini">
+      <h3>📅 今週のスケジュール</h3>
+      <div class="schedule-mini-row">
+        {% for s in schedule %}
+          {% set date_md = s.date[5:].replace('-', '/') %}
+          <div class="schedule-mini-cell {% if '休' in s.place %}off-day{% endif %}">
+            <strong>{{ date_md }}</strong>：{{ s.place }}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="submit-area">
+      <button class="submit-btn" type="submit">送信する</button>
+    </div>
+  </form>
+
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN.ロゴ" class="form-logo-card">
+</section>
+
+<!-- ホームへ戻る -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

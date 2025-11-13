@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>送信完了 | KARiN. ~Sports & Beauty~</title>
+
+  <!-- ✅ SEO設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="お問い合わせ・ご予約の送信が完了しました。KARiN.では東京（代々木上原）・福岡（薬院）で鍼灸・整体・美容鍼を行っております。折り返しのご連絡をお待ちください。">
+  <meta name="robots" content="noindex, follow">
+
+  <!-- ✅ 構造化データ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "name": "送信完了ページ",
+        "url": "{{ request.url }}",
+        "about": "お問い合わせ・ご予約完了のお知らせページ",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "KARiN. ~Sports & Beauty~",
+          "url": "{{ request.url_root }}"
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        },
+        "telephone": "+81-90-5088-6993"
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    /* ========== BASE ========== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      background-color: #fafafa;
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      color: #1E3A5F;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* ========== WRAPPER ========== */
+    .form-wrapper {
+      width: 90%;
+      max-width: 720px;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+      padding: 80px 60px;
+      animation: fadeIn 1.2s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== TITLE & TEXT ========== */
+    .form-title {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #1E3A5F;
+      margin-bottom: 25px;
+    }
+
+    .form-lead {
+      font-size: 1rem;
+      color: #1E3A5F;
+      line-height: 1.9;
+      margin: 0 auto 50px;
+      max-width: 520px;
+      word-break: keep-all;
+    }
+
+    /* ========== BUTTON AREA ========== */
+    .thanks-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .thanks-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 260px;
+      height: 52px;
+      border-radius: 26px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.25s ease;
+    }
+
+    .line-btn {
+      background: #06C755;
+    }
+    .line-btn:hover {
+      background: #05B24C;
+    }
+
+    .insta-btn {
+      background: linear-gradient(45deg, #FF512F, #DD2476, #8134AF);
+    }
+    .insta-btn:hover {
+      opacity: 0.9;
+    }
+
+    .submit-btn {
+      background-color: #1E3A5F;
+    }
+    .submit-btn:hover {
+      background-color: #16304A;
+      transform: translateY(-2px);
+    }
+
+    /* ========== LOGO ========== */
+    .form-logo-card {
+      width: 90px;
+      margin: 50px auto 0;
+      display: block;
+      opacity: 0.9;
+    }
+
+    .btn-link {
+      display: inline-block;
+      margin-top: 20px;
+      background-color: #1E3A5F;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.3s ease;
+    }
+    .btn-link:hover {
+      background-color: #16304A;
+      transform: translateY(-2px);
+    }
+
+    /* ========== 1024px（中型PC / タブレット横） ========== */
+    @media (max-width: 1024px) {
+      .form-wrapper {
+        padding: 70px 50px;
+        border-radius: 22px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.05);
+      }
+      .form-title {
+        font-size: 1.8rem;
+      }
+      .form-lead {
+        font-size: 0.95rem;
+        line-height: 1.8;
+        max-width: 460px;
+      }
+      .thanks-actions a {
+        width: 240px;
+        height: 50px;
+        font-size: 0.95rem;
+      }
+      .form-logo-card {
+        width: 85px;
+        margin-top: 40px;
+      }
+    }
+
+    /* ========== 768px（タブレット縦） ========== */
+    @media (max-width: 768px) {
+      .form-wrapper {
+        padding: 50px 30px;
+        margin: 60px 20px;
+      }
+      .form-title {
+        font-size: 1.6rem;
+      }
+      .form-lead {
+        font-size: 0.93rem;
+        margin-bottom: 40px;
+        max-width: 90%;
+      }
+      .thanks-actions a {
+        width: 100%;
+        max-width: 280px;
+        height: 48px;
+      }
+      .form-logo-card {
+        width: 80px;
+        margin-top: 40px;
+      }
+    }
+
+    /* ========== 480px（スマホ） ========== */
+    @media (max-width: 480px) {
+      .form-wrapper {
+        padding: 40px 20px;
+        border-radius: 16px;
+      }
+      .form-title {
+        font-size: 1.4rem;
+        margin-bottom: 18px;
+      }
+      .form-lead {
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+        line-height: 1.8;
+      }
+      .thanks-actions a {
+        font-size: 0.9rem;
+        height: 46px;
+        border-radius: 23px;
+      }
+      .form-logo-card {
+        width: 70px;
+        margin-top: 30px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="form-wrapper">
+    <h1 class="form-title">送信が完了しました</h1>
+    <p class="form-lead">
+      {{ message | safe }}
+    </p>
+    <div class="thanks-actions">
+      <a href="https://lin.ee/5vv91n2" target="_blank" class="line-btn">LINEでお問い合わせ</a>
+      <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="insta-btn">Instagramをみる</a>
+      <a href="{{ url_for('index') }}" class="submit-btn">トップページへ戻る</a>
+    </div>
+    <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN.ロゴ" class="form-logo-card">
+  </section>
+</body>
+</html>

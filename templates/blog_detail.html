@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ✅ SEO基本 -->
+  <title>{{ blog.title }} | KARiN. ブログ</title>
+  <meta name="description" content="{{ blog.description }}">
+  <link rel="canonical" href="{{ request.url }}">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ blog.title }} | KARiN. ブログ">
+  <meta property="og:description" content="{{ blog.description }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/blogs/' + blog.image) if blog.image else url_for('static', filename='images/common/ogp_default.jpg') }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "{{ blog.title }}",
+    "image": "{{ url_for('static', filename='images/blogs/' + blog.image) if blog.image else '' }}",
+    "author": {
+      "@type": "Person",
+      "name": "藤田 幸士（KARiN.代表）"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "KARiN. ~Sports & Beauty~",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ url_for('static', filename='images/logo.png') }}"
+      }
+    },
+    "datePublished": "{{ blog.date }}",
+    "description": "{{ blog.description }}"
+  }
+  </script>
+
+  <!-- ✅ CSS読込 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}">
+</head>
+
+<body>
+  <section class="blog-detail">
+    <h1 class="blog-title">{{ blog.title }}</h1>
+    <p class="blog-date">{{ blog.date }}</p>
+
+    {% if blog.image %}
+    <figure class="blog-thumb">
+      <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
+    </figure>
+    {% endif %}
+
+    <div class="blog-body">
+      {{ blog.body|safe }}
+    </div>
+
+    <!-- 💬 コメント・いいね -->
+    <div class="interaction-section">
+      <h3>💬 コメント欄</h3>
+      <div class="like-comment-container">
+        <button id="like-btn" class="action-btn" data-id="{{ blog.id }}">❤️ いいね (<span id="like-count">{{ like_count }}</span>)</button>
+        <button id="comment-toggle" class="action-btn">💬 コメントする</button>
+      </div>
+
+      <div id="comment-box" class="comment-box" style="display:none;">
+        <input id="comment-name" type="text" placeholder="お名前（任意）">
+        <textarea id="comment-input" placeholder="コメントを入力..."></textarea>
+        <button id="comment-submit" class="submit-btn">送信</button>
+      </div>
+
+      <div class="comment-list">
+        {% for c in comments %}
+        <div class="comment-item">
+          <p><strong>{{ c.name }}</strong> さん：</p>
+          <p>{{ c.text }}</p>
+          {% if c.reply %}
+          <div class="reply">↳ <strong>藤田 幸士</strong>：{{ c.reply }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 👤 著者プロフィール -->
+    <div class="author-profile">
+      <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="藤田 幸士" class="author-img">
+      <div class="author-info">
+        <h3>この記事を書いた人</h3>
+        <p><strong>藤田 幸士（KARiN.代表）</strong><br>
+          鍼灸師・スポーツトレーナーとして15年以上の経験を持ち、<br>
+          東京（代々木上原）・福岡（薬院）を中心に、出張治療やトレーナー活動を行いながら、<br>
+          セルフケア等情報も発信しています。
+        </p>
+        <div class="author-links">
+          <a href="https://lin.ee/5vv91n2" target="_blank" class="mini-btn line">LINE</a>
+          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="mini-btn insta">Instagram</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⬅️ 戻るボタン -->
+    <div class="blog-footer">
+      <a href="{{ url_for('blog') }}" class="btn">📚 一覧に戻る</a>
+      <a href="{{ url_for('index') }}" class="btn">🏠 ホームに戻る</a>
+    </div>
+  </section>
+
+  <!-- ✅ 外部JS読込 -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

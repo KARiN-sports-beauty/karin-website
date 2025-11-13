@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ページが見つかりません｜KARiN.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    body {
+      text-align: center;
+      font-family: "Noto Sans JP", sans-serif;
+      background: #ffffff;
+      color: #1e3a5f;
+      margin-top: 15%;
+      padding: 0 20px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    p {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #1e3a5f;
+    }
+    a {
+      display: inline-block;
+      margin-top: 28px;
+      color: #fff;
+      background: #1e3a5f;
+      padding: 12px 36px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+    a:hover {
+      background: #16304A;
+      transform: translateY(-2px);
+    }
+
+    /* 🔹 レスポンシブ対応 */
+    @media (max-width: 1024px) {
+      body {
+        margin-top: 20%;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        margin-top: 25%;
+        padding: 0 5%;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 0.95rem;
+      }
+      a {
+        padding: 10px 28px;
+        font-size: 0.95rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        margin-top: 35%;
+      }
+      h1 {
+        font-size: 1.3rem;
+      }
+      p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      a {
+        width: 80%;
+        max-width: 260px;
+        font-size: 0.9rem;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>お探しのページは見つかりませんでした</h1>
+  <p>URLが間違っているか、ページが削除された可能性があります。</p>
+  <a href="/">ホームに戻る</a>
+</body>
+</html>
+

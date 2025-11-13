@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>初診受付フォーム | KARiN.</title>
+  <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
+  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ContactPage",
+        "name": "お問い合わせ・ご予約",
+        "url": "{{ request.url }}",
+        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
+        "contactOption": {
+          "@type": "ContactPoint",
+          "telephone": "+81-90-5088-6993",
+          "contactType": "customer service",
+          "areaServed": ["JP"],
+          "availableLanguage": ["Japanese"]
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "telephone": "+81-90-5088-6993",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        },
+        "areaServed": [
+          "東京（代々木上原）",
+          "福岡（薬院）"
+        ],
+        "openingHoursSpecification": [{
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        }],
+        "url": "{{ request.url_root }}"
+      }
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+</head>
+<body>
+
+<section class="form-wrapper">
+  <h1 class="form-title">初診受付フォーム</h1>
+  <p class="form-lead">
+    初めての方は、こちらの内容をご記入ください。<br>
+    出張対応のため、住所やご希望内容を事前にお伺いしています。<br>
+    2回目以降の方はラインもしくはメールにてご連絡ください。
+  </p>
+
+  <form action="{{ url_for('submit_form') }}" method="POST" class="form-card">
+
+    <!-- 1. 基本情報 -->
+    <div class="form-block">
+      <h2 class="block-title">基本情報</h2>
+
+      <label class="form-field">
+        <span>お名前（必須）</span>
+        <input type="text" name="name" required>
+      </label>
+
+      <label class="form-field">
+        <span>フリガナ（必須）</span>
+        <input type="text" name="kana" required>
+      </label>
+
+      <label class="form-field">
+        <span>年齢（必須）</span>
+        <input type="number" name="age" min="0" required>
+      </label>
+
+      <label class="form-field">
+        <span>性別（必須）</span>
+        <input type="text" name="gender" required>
+      </label>
+
+      <label class="form-field">
+        <span>電話番号（必須）</span>
+        <input type="tel" name="phone" placeholder="ハイフンなしでもOK" required>
+      </label>
+
+      <label class="form-field">
+        <span>メールアドレス（必須）</span>
+        <input type="email" name="email" required>
+      </label>
+
+      <label class="form-field">
+        <span>住所（出張希望の場所）（必須）</span>
+        <input type="text" name="address" placeholder="例：福岡市◯◯区／東京都渋谷区◯◯ など" required>
+      </label>
+    </div>
+
+        <!-- 予約希望日 -->
+    <div class="form-block">
+    <h2 class="block-title">ご予約希望日</h2>
+
+    <p class="form-note">
+        ご希望の日時を第1〜第3希望までご記入ください。<br>
+        可能な限りご希望に沿って調整いたします。
+    </p>
+
+    <!-- 今週のスケジュール -->
+    <section class="schedule-mini">
+      <h3>📅 直近スケジュール</h3>
+      <div class="schedule-mini-row">
+        {% for s in schedule %}
+          {% set date_md = s.date[5:].replace('-', '/') %}
+          <div class="schedule-mini-cell {% if s.date == today %}today{% elif '休' in s.place %}off-day{% endif %}">
+            <strong>{{ date_md }}</strong>：{{ s.place }}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+
+
+    <div class="form-group">
+      <label>ご予約希望日時（第1〜第3希望）</label>
+      <div class="preferred-dates">
+        <div>
+          <label for="preferred_date1">第1希望</label>
+          <input type="datetime-local" id="preferred_date1" name="preferred_date1" required>
+        </div>
+        <div>
+          <label for="preferred_date2">第2希望</label>
+          <input type="datetime-local" id="preferred_date2" name="preferred_date2">
+        </div>
+        <div>
+          <label for="preferred_date3">第3希望</label>
+          <input type="datetime-local" id="preferred_date3" name="preferred_date3">
+        </div>
+      </div>
+    </div>
+
+
+
+</div>
+
+    <!-- 2. 現在のお悩み・目的 -->
+    <div class="form-block">
+      <h2 class="block-title">現在のお悩み・目的</h2>
+
+      <label class="form-field">
+        <span>主訴（どのような症状・目的をお持ちですか？）</span>
+        <textarea name="chief_complaint" rows="4" required></textarea>
+      </label>
+
+      <label class="form-field">
+        <span>発症時期・気になり始めたタイミング</span>
+        <input type="text" name="onset" placeholder="例：1週間前から / 半年前から など">
+      </label>
+
+      <div class="form-field">
+        <span>痛みの程度</span>
+        <div class="radio-row">
+          <label><input type="radio" name="pain_level" value="なし"> なし</label>
+          <label><input type="radio" name="pain_level" value="軽い"> 軽い</label>
+          <label><input type="radio" name="pain_level" value="中くらい"> 中くらい</label>
+          <label><input type="radio" name="pain_level" value="強い"> 強い</label>
+          <label><input type="radio" name="pain_level" value="非常に強い"> 非常に強い</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 刺激の好み -->
+    <div class="form-block">
+      <h2 class="block-title">刺激の好み・ご希望</h2>
+
+      <div class="form-field">
+        <span>鍼灸について</span>
+        <div class="radio-row">
+          <label><input type="radio" name="shinkyu_pref" value="鍼灸が好き"> 鍼灸が好き</label>
+          <label><input type="radio" name="shinkyu_pref" value="鍼灸が嫌い"> 鍼灸が嫌い</label>
+          <label><input type="radio" name="shinkyu_pref" value="鍼灸は苦手だが、治療のためなら可能"> 鍼灸は苦手だが、治療のためなら可能</label>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <span>電気刺激</span>
+        <div class="radio-row">
+          <label><input type="radio" name="electric_pref" value="好き"> 好き</label>
+          <label><input type="radio" name="electric_pref" value="苦手"> 苦手</label>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <span>好きな圧</span>
+        <div class="radio-row">
+          <label><input type="radio" name="pressure_pref" value="強"> 強</label>
+          <label><input type="radio" name="pressure_pref" value="中"> 中</label>
+          <label><input type="radio" name="pressure_pref" value="弱"> 弱</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 既往歴・注意事項 -->
+    <div class="form-block">
+      <h2 class="block-title">既往歴・注意事項</h2>
+
+      <label class="form-field">
+        <span>心臓疾患・ペースメーカーの有無</span>
+        <input type="text" name="heart" placeholder="例：なし / ペースメーカー有り など">
+      </label>
+
+      <label class="form-field">
+        <span>妊娠中または妊娠の可能性</span>
+        <input type="text" name="pregnant" placeholder="はい / いいえ / わからない">
+      </label>
+
+      <label class="form-field">
+        <span>慢性疾患・感染症・服薬などあればご記入ください</span>
+        <textarea name="chronic" rows="3"></textarea>
+      </label>
+
+      <label class="form-field">
+        <span>手術歴・大きな怪我（時期も含めて）</span>
+        <textarea name="surgery" rows="3"></textarea>
+      </label>
+
+      <label class="form-field">
+        <span>現在、医師の治療中・リハビリ中の内容があれば教えてください</span>
+        <textarea name="under_medical" rows="3"></textarea>
+      </label>
+    </div>
+
+    <!-- 5. 同意書（※元の全文） -->
+    <div class="form-block">
+      <h2 class="block-title">🧾 施術同意書（鍼灸・整体・リラクゼーション・トレーニング）</h2>
+
+      <div class="agreement-text">
+        <p><strong>【施術の目的・内容について】</strong><br>
+        国家資格を有する鍼灸師による鍼灸施術を中心に、整体・オイルトリートメント・ストレッチ・トレーニング指導などを組み合わせ、心身の調整・回復・健康維持を目的としたケアを行います。<br><br>
+        ただし、整体やオイルマッサージは医療行為ではなく、リラクゼーションやコンディショニングを目的としたものであり、診断・治療・処方を行うものではありません。</p>
+
+        <p><strong>【鍼灸施術について】</strong><br>
+        鍼灸施術は、国家資格（はり師・きゅう師）を有する施術者が行います。<br>
+        体質や刺激量、体調によっては、以下のような一時的な反応が起こる場合があります。<br>
+        ・軽い内出血（あざ）<br>
+        ・赤みやかゆみ<br>
+        ・だるさ・眠気・筋肉痛のような症状<br>
+        これらは自然な生体反応であり、数日以内におさまることを理解したうえで施術を受けます。</p>
+
+        <p><strong>【整体・オイルトリートメントについて】</strong><br>
+        整体およびオイルトリートメントは、リラクゼーション・疲労回復・ボディメンテナンスを目的としています。<br>
+        医療行為ではなく、症状の改善や治癒を保証するものではありません。</p>
+
+        <p><strong>【健康状態の申告について】</strong><br>
+        私は現在の健康状態（既往歴・持病・服薬・通院・妊娠の有無など）を正確に申告します。<br>
+        申告内容に虚偽や漏れがあった場合、施術中・施術後に発生した体調不良や事故については、当院および施術者に責任を問いません。</p>
+
+        <p><strong>【施術効果・体調変化について】</strong><br>
+        施術の効果には個人差があり、必ずしも改善を保証するものではありません。<br>
+        また、施術後に一時的な倦怠感・筋肉痛・発熱・眠気などの反応が出る場合がありますが、自然な体の変化として理解し、自己管理のもと対応します。</p>
+
+        <p><strong>【免責事項】</strong><br>
+        以下の場合、当院および施術者は一切の責任を負わないことに同意します。<br>
+        ・申告のなかった疾患・体調不良・外傷・手術歴等に起因する症状の悪化<br>
+        ・医師による治療を優先すべき状態で施術を受けた場合の影響<br>
+        ・施術後の体調変化・遅発性の反応<br>
+        ・貴重品・所持品の紛失、破損</p>
+
+        <p><strong>【禁止事項】</strong><br>
+        施術中・トレーニング中の以下の行為を禁止します。<br>
+        ・施術者への暴言・迷惑行為・セクハラ行為<br>
+        ・危険な動作・不適切な発言<br>
+        ・飲酒・発熱・感染症など体調不良時の施術希望<br>
+        これらに該当する場合、施術を中断し、今後のご利用をお断りする場合があります。</p>
+
+        <p><strong>【個人情報の取り扱い】</strong><br>
+        お預かりした個人情報は、施術管理・安全確保・緊急時の連絡以外には使用いたしません。<br>
+        法令に基づく場合を除き、第三者に提供することはありません。</p>
+
+        <p><strong>【同意欄】</strong><br>
+        上記の内容をすべて理解し、自己責任のもとで施術を受けることに同意します。</p>
+      </div>
+
+      <div class="form-field signature-row">
+        <label>
+          <span>署名</span>
+          <input type="text" name="signature" required placeholder="ご本人のお名前をご記入ください">
+        </label>
+
+        <div class="date-select-group">
+          <span>日付</span>
+          <div class="date-select-inline">
+            <select name="agree_year">
+              {% for y in years %}
+              <option value="{{ y }}">{{ y }}年</option>
+              {% endfor %}
+            </select>
+            <select name="agree_month">
+              {% for m in months %}
+              <option value="{{ m }}">{{ m }}月</option>
+              {% endfor %}
+            </select>
+            <select name="agree_day">
+              {% for d in days %}
+              <option value="{{ d }}">{{ d }}日</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 送信 -->
+    <div class="submit-area">
+      <button class="submit-btn" type="submit">送信する</button>
+    </div>
+
+  </form>
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN.ロゴ" class="form-logo-card">
+</section>
+
+<!-- ✅ ホームボタン（左下固定） -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+
+</body>
+</html>

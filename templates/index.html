@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える</title>
+  <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
+  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ContactPage",
+        "name": "お問い合わせ・ご予約",
+        "url": "{{ request.url }}",
+        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
+        "contactOption": {
+          "@type": "ContactPoint",
+          "telephone": "+81-90-5088-6993",
+          "contactType": "customer service",
+          "areaServed": ["JP"],
+          "availableLanguage": ["Japanese"]
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "telephone": "+81-90-5088-6993",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        },
+        "areaServed": [
+          "東京（代々木上原）",
+          "福岡（薬院）"
+        ],
+        "openingHoursSpecification": [{
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        }],
+        "url": "{{ request.url_root }}"
+      }
+    ]
+  }
+  </script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&family=Dancing+Script:wght@500&display=swap" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+JP:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body class="index-page">
+  <!-- ==========================
+       Header
+  =========================== -->
+  <header class="header">
+    <div class="logo">KARiN.</div>
+    <!-- ハンバーガーアイコン -->
+    <div class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('index') }}">ホーム</a>
+      <a href="#news">お知らせ</a>
+      <a href="#greeting">院長あいさつ</a>
+      <a href="#initial-section">初診案内</a>
+      <a href="{{ url_for('treatment') }}">施術内容</a>
+      <a href="{{ url_for('price') }}">料金表・コース</a>
+      <a href="{{ url_for('index') }}#blog">ブログ</a>
+      <!-- <a href="{{ url_for('login') }}">会員ログイン</a> -->
+      <a href="#access">アクセス・営業時間</a>
+      <a href="{{ url_for('contact') }}">ご予約・お問い合わせ</a>
+    </nav>
+  </header>
+
+
+  <!-- ==========================
+       Hero Slider（5枚構成）
+  =========================== -->
+  <section class="hero">
+    <div class="slider">
+      <div class="slide active">
+        <div class="text right">己と向き合い</div>
+        <img src="{{ url_for('static', filename='images/slide1.jpg') }}" alt="slide1" />
+      </div>
+      <div class="slide">
+        <div class="text left">より逞しく</div>
+        <img src="{{ url_for('static', filename='images/slide2.jpg') }}" alt="slide2" />
+      </div>
+      <div class="slide">
+        <div class="text right">より美しく</div>
+        <img src="{{ url_for('static', filename='images/slide3.jpg') }}" alt="slide3" />
+      </div>
+      <div class="slide">
+        <div class="text left">より健康に</div>
+        <img src="{{ url_for('static', filename='images/slide4.jpg') }}" alt="slide4" />
+      </div>
+      <div class="slide last">
+        <div class="brand">
+          <h1>KARiN.</h1>
+          <p>〜Sports & Beauty〜</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==========================
+       News Section
+  =========================== -->
+  <section id="news" class="news-section" data-aos="fade-up">
+    <h2 class="section-title">お知らせ</h2>
+    <p class="section-subtitle">休診情報・営業時間のお知らせなどを掲載しています</p>
+    <div class="news-container">
+      {% for item in latest_news %}
+      <div class="news-card">
+        <a href="{{ url_for('show_news', id=item.id) }}">
+          <span class="news-title">{{ item.title }}</span>
+          <span class="news-date">{{ item.date }}</span>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+
+  <!-- ==========================
+       Greeting Section
+  =========================== -->
+  <section id="greeting" class="greeting-section">
+    <div class="intro-container">
+      <div class="intro-image">
+        <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="KARiN.代表 藤田幸士" />
+      </div>
+      <div class="intro-content">
+        <h2 class="section-title">院長あいさつ</h2>
+        <h3 class="intro-name">KARiN.代表<br />藤田 幸士（ふじた こうじ）</h3>
+        <p class="intro-subtitle">鍼灸師 / アスレティックトレーナー</p>
+        <p class="intro-message">
+          はじめまして。KARiN.代表の藤田です。<br />
+          小さい頃からスポーツが好きで、プレーヤーとしてもいろんな経験をしてきました。<br />
+          その中で、「ケガをした選手を支える立場になりたい」と思ったことが、トレーナーや鍼灸師を目指すきっかけでした。<br /><br />
+          これまで、約20年プロからアマチュアまで幅広いスポーツの現場で選手をサポートしてきたほか、
+          アーティストやパフォーマー、働く大人の方々まで、たくさんの身体と向き合ってきました。<br /><br />
+          ただ施術するだけでなく、「この人に会うとちょっと前向きになれる」「また頑張れそう」って思ってもらえるような、
+          そんな存在でいたいと思っています。<br />
+          調子が悪くなる前に、ふと思い出してもらえるような、
+          そんな“かかりつけ”みたいな感覚で頼ってもらえたら嬉しいです。<br /><br />
+          現在福岡は薬院、東京は代々木上原を中心に活動しています。
+        </p>
+        <button class="accordion-btn" type="button">続きを読む</button>
+        <div class="accordion-content">
+          <p>
+            <strong>所有資格</strong><br />
+            - 鍼師・灸師<br />
+            - 日本スポーツ協会公認アスレティックトレーナー<br />
+            - 日本トレーニング指導者協会認定トレーニング指導者 等<br /><br />
+            <strong>略歴</strong><br />
+            - 関西医療大学卒<br />
+            在学中、まつうらしんきゅうで松浦英世氏に師事。治療・鍼灸の基礎を学ぶ。<br>
+            - 2010〜2017 有限会社ケアステーション<br />
+            治療院での施術の他、プロ・アマのテニス国際大会や卓球チーム、
+            エンターテイメントダンサーのトレーナー帯同を行う<br />
+            - 2018〜2024 株式会社メジャー・トレーナーズ<br />
+            野球・ゴルフ・卓球の選手サポート、アーティスト・プロダンサーへの施術・調整を担当<br />
+            - 2024〜 独立・KARiN.設立
+          </p>
+          <button class="close-btn" type="button">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==========================
+       初診案内
+  =========================== -->
+  <section id="initial-section" class="initial-section">
+    <div class="initial-container">
+      <div class="initial-text">
+        <h2>初診の方へ</h2>
+        <p>
+          「KARiN.（かりん）」という名前は、私がトレーナーとして現場に立っていた頃、
+          関係者の方々から自然に呼ばれていたあだ名が由来です。<br /><br />
+          技術を提供するだけでなく、「あの人がいると安心して動ける」「また頑張ろうと思える」そんな存在でありたいという想いを込めて、
+          この名前をそのまま屋号にしました。<br /><br />
+          KARiN.では、身体だけでなく心にも寄り添い、
+          その人が“自分らしく健やかに生きる力”を取り戻すサポートをしています。<br /><br />
+          鍼灸・整体・トレーニング・美容のアプローチを組み合わせ、
+          一人ひとりの身体の状態や生活スタイルに合わせたオーダーメイドのケアを行っています。<br /><br />
+          トレーナー帯同や出張専門での施術・トレーニングサポートを
+          福岡（薬院中心）・東京（代々木上原中心）を拠点として活動中です。<br /><br />
+          KARiN.は、施術を受ける場所であると同時に、
+          「また頑張ろう」と思えるきっかけでいれるよう走り続けます。
+        </p>
+      </div>
+      <div class="initial-side">
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. logo" class="initial-logo" />
+        <a href="{{ url_for('form') }}" class="cta-btn"><span>初診受付フォームは</span>こちら</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       施術概要
+  =========================== -->
+  <section id="treatment-overview" class="treatment-overview">
+    <h2>施術内容</h2>
+    <p>
+      KARiN.では、身体と心の両面からケアを行うため、<br />
+      鍼灸・整体・美容・トレーニングなど多様なアプローチを取り入れて、<br class="sheet480" />
+      その方に合ったオーダーメイドの施術で、根本から整えるサポートをしています。<br />
+      トレーナー帯同も行っております。
+    </p>
+    <div class="treatment-preview">
+      <div class="treatment-card">
+        <img src="{{ url_for('static', filename='images/treatment12.jpg') }}" alt="トレーナー帯同" />
+        <h3>トレーナー帯同</h3>
+        <p>現場やチームの状況に応じた帯同・サポートも可能。施術・トレーニング・コンディショニングまで一貫対応します。</p>
+      </div>
+      <div class="treatment-card">
+        <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸治療" />
+        <h3>鍼灸治療</h3>
+        <p>肩こり・腰痛・頭痛・自律神経の不調など、心身のバランスを整えます。</p>
+      </div>
+      <div class="treatment-card">
+        <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体" />
+        <h3>整体</h3>
+        <p>姿勢・可動域・体のバランスを整え、根本的な改善を目指します。</p>
+      </div>
+    </div>
+    <div class="treatment-cta">
+      <a href="{{ url_for('treatment') }}" class="cta-btn">詳しく見る</a>
+    </div>
+  </section>
+
+  <!-- ==========================
+       ブログ
+  =========================== -->
+  <section id="blog" class="blog-section" data-aos="fade-up">
+    <h2 class="section-title">KARiN. ブログ</h2>
+    <p class="section-subtitle">日々のケア・体づくりのヒントをお届けします</p>
+    <div class="blog-container">
+      {% for blog in latest_blogs %}
+      <div class="blog-card">
+        <a href="{{ url_for('show_blog', id=blog.id) }}">
+          <h3 class="blog-title">{{ blog.title }}</h3>
+          <p class="blog-date">{{ blog.date }}</p>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="blog-cta">
+      <a href="{{ url_for('blog') }}" class="btn-more">その他の記事はこちら</a>
+    </div>
+  </section>
+
+    <!-- ==========================
+      アクセス・営業時間＋直近スケジュール
+  =========================== -->
+  <section id="access" class="access-section" data-aos="fade-up">
+    <h2 class="section-title">アクセス・営業時間</h2>
+
+    <div class="access-container">
+      <div class="access-info">
+        <h3>KARiN. ~Sports & Beauty~</h3>
+        <p>📍 <strong>活動拠点：</strong> 東京（代々木上原周辺）／福岡（薬院周辺）</p>
+        <p>🏠 登録所在地：福岡県福岡市中央区</p>
+        <p>🚉 最寄駅：代々木上原駅・薬院駅（※出張対応） <br>（必要あればレンタルスペースもご相談ください）</p>
+        <p>📞 <a href="tel:09050886993" class="tel-link">090-5088-6993</a></p>
+        <p>🕒 営業時間：12:00〜26:00（東京）<br>　　　　　　10:00〜19:00（福岡）<br>（その他のお時間はご相談ください）<br>　※基本的に前日までのご予約をお勧めしております。</p>
+        <p>❌ 定休日：不定休 <br>（下記の直近スケジュールでご確認いただくか、または直接ご連絡ください）</p>
+      </div>
+
+      <div class="access-map">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3241.323374196838!2d139.679!3d35.6696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6018f3d13f4e3a91%3A0xa1d949af0bcae153!2z44CSMTUxLTAwNjQg5p2x5Lqs6YO95p2x5Lqs5Yy65a-M5bGx5Yy65bCP6YeO77yT5LiB55uu77yR77yW4oiS77yR77yS!5e0!3m2!1sja!2sjp!4v1735669000001"
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.880906977994!2d130.402!3d33.582456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x354191a8796c6b7d%3A0xf9c473e0cf7d6aef!2z6YeO5Yy65bGx5Y2X6Zmi5bGx5Y2X!5e0!3m2!1sja!2sjp!4v1735669000002" width="100%" height="260" style="border:0;"
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+</iframe>
+
+      </div>
+    </div>
+
+    <!-- 🩵 スケジュールを同セクション内に -->
+    <div class="access-schedule">
+      <h3>📅 直近スケジュール</h3>
+
+      <div class="schedule-table">
+        <!-- 上段：日付 -->
+        <div class="schedule-row-header">
+          {% for s in schedule %}
+            <div class="schedule-cell {% if s.date == today %}today{% endif %}">
+              {{ s.date[5:7] }}/{{ s.date[8:10] }}
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- 下段：場所 -->
+        <div class="schedule-row-body">
+          {% for s in schedule %}
+            <div class="schedule-cell {% if '休' in s.place %}off-day{% endif %}">
+              <span>{{ s.place }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- ==========================
+       お問い合わせ・ご予約
+  =========================== -->
+  <section id="contact-section" class="contact-section">
+    <h2 class="contact-heading">ご予約・お問い合わせはこちら</h2>
+    <p class="contact-text">ご希望の内容に合わせて、下記よりお選びください。</p>
+
+    <div class="contact-buttons">
+      <a href="https://lin.ee/5vv91n2" target="_blank" class="contact-btn line">
+        LINEで予約する
+      </a>
+      <a href="{{ url_for('form') }}" class="contact-btn first">
+        初診の方はこちら
+      </a>
+      <a href="{{ url_for('contact') }}" class="contact-btn repeat">
+        2回目以降の方はこちら
+      </a>
+      <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="contact-btn insta">
+        Instagramをみる
+      </a>
+    </div>
+  </section>
+
+
+  <!-- ==========================
+       Footer
+  =========================== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">
+        KARiN. <span>~Sports & Beauty~</span>
+      </div>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('index') }}">ホーム</a></li>
+        <li><a href="#treatment-overview">施術内容</a></li>
+        <li><a href="{{ url_for('price') }}">料金表・コース</a></li>
+        <li><a href="#blog">ブログ</a></li>
+        <li><a href="#access">アクセス</a></li>
+        <li><a href="#contact-section">お問い合わせ</a></li>
+      </ul>
+      <div class="footer-social">
+        <a href="https://lin.ee/5vv91n2" target="_blank" class="contact-btn line">LINE</a>
+        <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="contact-btn insta">Instagram</a>
+      </div>
+      <p class="footer-copy">© 2025 KARiN. All rights reserved.</p>
+    </div>
+  </footer>
+  <script src="{{ url_for('static', filename='js/accordion.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブログ | KARiN. ~Sports & Beauty~</title>
+
+    <!-- ✅ SEO基本設定 -->
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="KARiN.のブログ一覧ページ。健康・美容・トレーニング・セルフケアなどの最新情報を発信中。">
+  <meta name="keywords" content="KARiN, ブログ, 鍼灸, 整体, 美容鍼, トレーニング, 健康, セルフケア, 福岡, 東京">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ✅ OGP設定 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="KARiN. ブログ一覧 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.では、身体づくり・健康維持・美容ケアなどに関する記事を発信しています。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ 構造化データ（Blog + LocalBusiness） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Blog",
+        "name": "KARiN. ブログ一覧",
+        "description": "KARiN. ~Sports & Beauty~ の公式ブログ。健康・美容・セルフケアの情報をお届け。",
+        "publisher": {
+          "@type": "Organization",
+          "name": "KARiN. ~Sports & Beauty~",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+          }
+        },
+        "url": "{{ request.url }}"
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~",
+        "telephone": "+81-90-5088-6993",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "福岡市中央区",
+          "addressRegion": "福岡県",
+          "addressCountry": "JP"
+        }
+      }
+    ]
+  }
+  </script>
+
+
+  <!-- ✅ CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_list.css') }}">
+</head>
+
+
+<body>
+    <!-- 検索フォームをつける -->
+  <form action="{{ url_for('blog') }}" method="get" class="blog-search">
+    <input type="text" name="q" placeholder="キーワードで検索" value="{{ query or '' }}">
+    <button type="submit">検索</button>
+  </form>
+
+
+  <section class="blog-wrapper" data-aos="fade-up">
+    <h1 class="blog-heading">KARiN. ブログ</h1>
+      <!-- ✅ カテゴリフィルターボタン -->
+    <div class="blog-filter">
+      <a href="{{ url_for('blog') }}" class="filter-btn {% if not current_category %}active{% endif %}">すべて</a>
+      {% for c in categories %}
+        <a href="{{ url_for('blog', category=c) }}" class="filter-btn {% if current_category == c %}active{% endif %}">{{ c }}</a>
+      {% endfor %}
+    </div>
+    <div class="blog-list">
+      {% if blogs %}
+        {% for blog in blogs %}
+        <div class="blog-item">
+          <a href="{{ url_for('show_blog', id=blog.id) }}">
+            <!-- タイトル＋日付＋カテゴリ＋サムネ：上段 -->
+            <div class="blog-top">
+              <div class="blog-header">
+                <h2 class="blog-title">{{ blog.title }}</h2>
+                <div class="blog-meta">
+                  {{ blog.date }}
+                  {% if blog.category %}
+                    | <span class="blog-category">{{ blog.category }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% if blog.image %}
+              <div class="blog-thumb">
+                <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- 抜粋：下段で横いっぱい -->
+            <p class="blog-excerpt">{{ blog.excerpt }}</p>
+          </a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-results">該当する記事はありませんでした。</p>
+        <div class="blog-cta">
+          <a href="{{ url_for('blog') }}" class="btn">📚 一覧に戻る</a>
+        </div>
+      {% endif %}
+    </div>
+
+  </section>
+    <!-- ホームへ戻る -->
+  <a href="{{ url_for('index') }}" class="home-btn">
+    <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+    <span>ホームに戻る</span>
+  </a>
+
+</body>
+</html>

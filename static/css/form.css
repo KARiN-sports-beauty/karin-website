@@ -1,0 +1,1413 @@
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  background-color: #f5f7fa;
+  color: #1E3A5F;
+  line-height: 1.6;
+}
+
+/* ---------- 全体ラッパ ---------- */
+.form-wrapper {
+  max-width: 900px;
+  margin: 30px auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.07);
+  padding: 30px 30px 40px;
+
+  /* ✅ 右端の余白はみ出し防止 */
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  /* form,thanksのロゴ */
+  position: relative;
+}
+
+/* ---------- 見出し ---------- */
+.form-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.form-lead {
+  text-align: center;
+  color: #1E3A5F;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+/* ---------- カード全体 ---------- */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+
+  /* ✅ はみ出し対策 */
+  padding-right: 2px;
+  box-sizing: border-box;
+}
+
+/* 各ブロック（基本情報 / 現在のお悩み / ...） */
+.form-block {
+  background-color: #fafafa;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.03);
+
+  /* ✅ 右端調整 */
+  box-sizing: border-box;
+}
+
+/* ---------- セクションタイトル ---------- */
+.block-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 20px;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- 各入力フィールド ---------- */
+.form-field {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.form-field span {
+  display: block;
+  font-size: 0.9rem;
+  color: #1E3A5F;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-field input[type="text"],
+.form-field input[type="number"],
+.form-field input[type="tel"],
+.form-field input[type="email"],
+.form-field textarea,
+.form-field select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: #1E3A5F;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03) inset;
+  box-sizing: border-box; /* ✅ はみ出し対策 */
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+/* 初診予約 */
+.form-note {
+  font-size: 0.85rem;
+  color: #1E3A5F;
+  margin-bottom: 15px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+
+/* ---------- ラジオ・チェック系 ---------- */
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  font-size: 0.9rem;
+  color: #1E3A5F;
+}
+
+.radio-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #1E3A5F;
+}
+
+.check-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #1E3A5F;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* ---------- 同意書 ---------- */
+.agreement-text p {
+  font-size: 0.9rem;
+  color: #1E3A5F;
+  line-height: 1.7;
+  margin-bottom: 1.2rem;
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-sizing: border-box;
+}
+
+.signature-row {
+  display: grid;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.signature-row label span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1E3A5F;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.signature-row input[type="text"] {
+  width: 100%;
+}
+
+.date-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-select-group > span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1E3A5F;
+}
+
+.date-select-inline {
+  display: flex;
+  gap: 10px;
+}
+
+.date-select-inline select {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #1E3A5F;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03) inset;
+  box-sizing: border-box;
+}
+
+/* ---------- 送信ボタン ---------- */
+.submit-area {
+  text-align: center;
+}
+
+.submit-btn {
+  background-color: #1E3A5F;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  transition: all 0.25s ease;
+}
+
+.submit-btn:hover {
+  background-color: #16304A;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* form,thanksロゴ右下固定 */
+.form-logo-card {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 120px;
+  opacity: 1;      /* 常時表示 */
+  pointer-events: none; /* フォーム入力の邪魔をしない */
+}
+
+/* 初診案内 */
+.initial-section {
+  background-color: #ffffff;
+  padding: 100px 5%;
+}
+
+.initial-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 60px;
+}
+
+.initial-text {
+  flex: 1.4;
+  max-width: 660px;
+  color: #1E3A5F;
+  text-align: left;
+}
+
+.initial-text h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 20px;
+}
+
+.initial-text p {
+  line-height: 1.6;
+  font-size: 1.05rem;
+  color: #1E3A5F;
+}
+
+.initial-side {
+  flex: 0.9;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.initial-logo {
+  width: 85%;
+  max-width: 340px;
+  height: auto;
+  margin-bottom: 40px;
+  opacity: 1;
+}
+
+.cta-btn {
+  display: inline-block;
+  background-color: #1E3A5F;
+  color: #fff;
+  padding: 14px 40px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.3s;
+}
+.cta-btn:hover {
+  background-color: #16304A;
+}
+
+/* ---------- thanksページ ---------- */
+.thanks-actions {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.line-btn,
+.insta-btn {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 30px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: 0.3s;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* LINEボタン */
+.line-btn {
+  background-color: #06C755;
+  color: #fff;
+}
+.line-btn:hover {
+  background-color: #05b04b;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+/* Instagramボタン */
+.insta-btn {
+  background: linear-gradient(45deg, #F58529, #DD2A7B, #8134AF, #515BD4);
+  color: #fff;
+}
+.insta-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* 右下ホームに戻るボタン */
+.home-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px; /* ✅ 左→右へ変更 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 40px;
+  padding: 10px 16px 10px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: #1E3A5F;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  z-index: 1000;
+}
+
+.home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  background: #f8f9fb;
+}
+
+/* ✅ スマホ用の微調整 */
+@media (max-width: 768px) {
+  .home-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+.home-btn img {
+  width: 28px !important;  /* ← 強制的に固定 */
+  height: 28px !important;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0; /* 画像の引き伸ばし防止 */
+}
+
+/* お問い合わせ */
+/* CTA（LINE・初診）ボタン上部配置用） */
+.contact-cta {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 30px 0 50px;
+  flex-wrap: wrap;
+}
+.contact-cta .line-btn {
+  padding: 12px 30px;
+  font-size: 0.95rem;
+}
+
+/* textareaの幅を他と同じに揃える */
+.form-field textarea,
+.form-block textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: #1E3A5F;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03) inset;
+  resize: vertical; /* ← 縦方向だけ伸縮OK */
+}
+
+/* ===============================
+   今週のスケジュール（フォーム用）
+=============================== */
+.schedule-mini {
+  margin: 40px 0 20px;
+  text-align: center;
+  background: #f9fafc;
+  padding: 25px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.schedule-mini h3 {
+  color: #1e3a5f;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.schedule-mini-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.schedule-mini-cell {
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-size: 0.9rem;
+  color: #1e3a5f;
+  transition: 0.3s ease;
+}
+
+.schedule-mini-cell strong {
+  font-weight: 600;
+}
+
+/* 🩶 休診日のグレー表示 */
+.schedule-mini-cell.off-day {
+  color: #999;
+  background: #f1f1f1;
+  box-shadow: none;
+}
+
+/* =====================================
+   ご予約希望日時（第1〜第3希望） 横並び＋余白あり
+===================================== */
+.preferred-dates {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px; /* ← 枠と枠の間のスペースを広くする（20→30） */
+  flex-wrap: wrap;
+  margin-top: 10px; /* ← 上にも少し余白 */
+  margin-bottom: 25px; /* ← 下にも余白 */
+}
+
+.preferred-dates > div {
+  flex: 1;
+  min-width: 230px;
+}
+
+.preferred-dates label {
+  display: block;
+  font-weight: 500;
+  color: #1E3A5F;
+  margin-bottom: 8px; /* ← ラベルと入力枠の距離 */
+}
+
+.preferred-dates input {
+  width: 100%;
+  padding: 12px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px; /* ← 角を少し丸く */
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+/* フォーカス時の枠の色変更（上品なネイビー） */
+.preferred-dates input:focus {
+  outline: none;
+  border-color: #1E3A5F;
+  box-shadow: 0 0 6px rgba(30, 58, 95, 0.25);
+}
+
+
+/* ==========================
+   FAQセクション（Contact用）
+========================== */
+.faq-section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  padding: 25px 20px;
+  margin: 30px auto;
+  max-width: 900px;
+}
+
+.faq-title {
+  font-size: 1.6rem;
+  color: #1E3A5F;
+  margin-bottom: 25px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.faq-item {
+  border-bottom: 1px solid #e0e4ea;
+  padding: 16px 0;
+}
+
+.faq-question {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.faq-question::after {
+  content: "＋";
+  font-size: 1.3rem;
+  transition: transform 0.3s ease;
+}
+
+.faq-question.open::after {
+  content: "−";
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.faq-answer p {
+  margin-top: 12px;
+  line-height: 1.8;
+  font-size: 1rem;
+  color: #4A5F7A;
+}
+
+
+/* ===============================
+   ✅ 全体の余白を約半分に調整
+=============================== */
+
+/* セクションブロック間の余白 */
+.form-card {
+  gap: 20px; /* 40px → 20px */
+}
+
+
+/* スケジュール枠 */
+.schedule-mini {
+  margin-top: 20px; /* 40px → 20px */
+  padding: 15px 15px; /* 25px 20px → コンパクトに */
+}
+
+/* thanksページ・CTA類 */
+.thanks-actions {
+  margin-top: 20px; /* 40px → 20px */
+  gap: 10px; /* 15px → 10px */
+}
+
+/* 初診案内（背景白） */
+.initial-section {
+  padding: 50px 5%; /* 100px → 50px */
+  gap: 30px;
+}
+
+/* 第1〜第3希望日 */
+.preferred-dates {
+  gap: 20px; /* 30px → 20px */
+  margin-top: 8px;
+  margin-bottom: 20px;
+}
+
+/* ===============================
+   ✅ 特定セクション間の余白をさらに半分に調整
+=============================== */
+
+/* 基本情報とよくあるご質問の間 */
+.form-block + .faq-section {
+  margin-top: 15px !important;  /* ← 30px → 15px に半減 */
+}
+
+/* お問い合わせ内容と今週のスケジュールの間 */
+.form-block + .schedule-mini {
+  margin-top: 15px !important;  /* ← 30px → 15px に半減 */
+}
+
+/* よくあるご質問〜送信ボタンの間 */
+.faq-section + .submit-area {
+  margin-top: 20px !important;  /* ← 少し詰める */
+}
+
+
+/* ===============================
+   ご予約希望日時（入力枠の隙間調整・強制版）
+=============================== */
+.preferred-dates input {
+  margin-right: 12px !important; /* ← 強制的に反映 */
+  width: calc(100% - 12px);      /* ← 微調整して右はみ出し防止 */
+}
+
+.preferred-dates > div:last-child input {
+  margin-right: 0 !important;
+  width: 100% !important;
+}
+
+/* 右下戻るボタン */
+@media (max-width: 600px) {
+  .home-btn {
+    bottom: 10px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
+
+/* ===============================
+   🩵 Contact Page Responsive (2025.11)
+   全デバイス最適化：フォーム・FAQ・ボタン
+=============================== */
+
+/* --- タブレット (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  .form-wrapper {
+    max-width: 90%;
+    padding: 24px 24px 36px;
+    margin: 40px auto;
+  }
+
+  .form-title {
+    font-size: 1.6rem;
+  }
+
+  .contact-cta {
+    flex-direction: column;
+    gap: 14px;
+    margin: 20px 0 40px;
+  }
+
+  .form-block {
+    padding: 22px 18px;
+  }
+
+  .faq-section {
+    padding: 20px 18px;
+    margin: 30px auto;
+  }
+
+  .faq-question {
+    font-size: 1rem;
+  }
+
+  .faq-answer p {
+    font-size: 0.95rem;
+  }
+
+  .schedule-mini {
+    padding: 20px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* --- スマホ全般 (max-width: 768px) --- */
+@media (max-width: 768px) {
+  body {
+    background-color: #ffffff;
+  }
+
+  .form-wrapper {
+    width: 95%;
+    padding: 20px 18px 30px;
+    margin: 20px auto 40px;
+    border-radius: 14px;
+  }
+
+  .form-title {
+    font-size: 1.4rem;
+    line-height: 1.5;
+  }
+
+  .form-lead {
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+  }
+
+  .contact-cta {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 15px 0 35px;
+  }
+
+  .contact-cta a {
+    width: 100%;
+    max-width: 280px;
+    text-align: center;
+    padding: 12px 0;
+  }
+
+  .form-card {
+    gap: 16px;
+  }
+
+  .form-block {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .form-field input,
+  .form-field textarea {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+
+  .faq-section {
+    margin: 25px auto;
+    padding: 18px 16px;
+  }
+
+  .faq-title {
+    font-size: 1.3rem;
+  }
+
+  .faq-question {
+    font-size: 0.95rem;
+  }
+
+  .schedule-mini {
+    padding: 18px 14px;
+  }
+
+  .schedule-mini h3 {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+  }
+
+  .schedule-mini-cell {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  /* ✅ フッターロゴ調整 */
+  .form-logo-card {
+    width: 90px;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  /* ✅ ホームに戻るボタン（中央寄せ） */
+  .home-btn {
+    bottom: 15px;
+    right: 50%;
+    transform: translateX(50%);
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .home-btn img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
+/* --- 小型スマホ (max-width: 480px) --- */
+@media (max-width: 480px) {
+  .form-wrapper {
+    width: 94%;
+    padding: 16px 14px 26px;
+    margin: 15px auto 35px;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+
+  .form-lead {
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  .contact-cta a {
+    max-width: 250px;
+    font-size: 0.9rem;
+  }
+
+  .form-block {
+    padding: 14px;
+  }
+
+  .faq-section {
+    padding: 15px 12px;
+  }
+
+  .faq-title {
+    font-size: 1.2rem;
+  }
+
+  .faq-question {
+    font-size: 0.9rem;
+  }
+
+  .faq-answer p {
+    font-size: 0.85rem;
+  }
+
+  .schedule-mini h3 {
+    font-size: 1rem;
+  }
+
+  .schedule-mini-cell {
+    font-size: 0.8rem;
+    padding: 5px 8px;
+  }
+
+  .home-btn {
+    bottom: 10px;
+    right: 50%;
+    transform: translateX(50%);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .home-btn img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+
+/* ===============================
+   💙 form.html Responsive Design
+   2025.11 KARiN. 初診受付フォーム用
+=============================== */
+
+/* --- タブレット (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  .form-wrapper {
+    max-width: 92%;
+    padding: 30px 24px 50px;
+    margin: 40px auto;
+  }
+
+  .form-title {
+    font-size: 1.7rem;
+  }
+
+  .form-block {
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+
+  .agreement-text p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 14px;
+  }
+
+  .date-select-inline select {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .preferred-dates {
+    flex-direction: row;
+    gap: 20px;
+  }
+}
+
+/* --- スマホ全般 (max-width: 768px) --- */
+@media (max-width: 768px) {
+  body {
+    background: #ffffff;
+  }
+
+  .form-wrapper {
+    width: 95%;
+    padding: 20px 18px 40px;
+    margin: 25px auto;
+    border-radius: 14px;
+  }
+
+  .form-title {
+    font-size: 1.45rem;
+    line-height: 1.5;
+  }
+
+  .form-lead {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 30px;
+  }
+
+  .form-block {
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
+  .form-field span {
+    font-size: 0.9rem;
+  }
+
+  .form-field input,
+  .form-field textarea,
+  .form-field select {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+
+  .radio-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .preferred-dates {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .preferred-dates label {
+    font-size: 0.9rem;
+  }
+
+  .preferred-dates input {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  .agreement-text p {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    padding: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .signature-row {
+    gap: 14px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    max-width: 260px;
+    font-size: 0.95rem;
+    padding: 12px 0;
+  }
+
+  .form-logo-card {
+    width: 90px;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .home-btn {
+    bottom: 15px;
+    right: 50%;
+    transform: translateX(50%);
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .home-btn img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
+/* --- 小型スマホ (max-width: 480px) --- */
+@media (max-width: 480px) {
+  .form-wrapper {
+    width: 94%;
+    padding: 16px 14px 30px;
+    margin: 20px auto 30px;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+
+  .form-lead {
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  .form-block {
+    padding: 14px 12px;
+  }
+
+  .form-field span {
+    font-size: 0.85rem;
+  }
+
+  .form-field input,
+  .form-field textarea {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .agreement-text p {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    padding: 10px;
+  }
+
+  .date-select-inline select {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+
+  .submit-btn {
+    font-size: 0.85rem;
+    padding: 10px 0;
+  }
+
+  .home-btn {
+    bottom: 10px;
+    right: 50%;
+    transform: translateX(50%);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .home-btn img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+
+/* ===============================
+   🩵 Contactページ専用修正：ホームボタン右寄せ維持
+=============================== */
+@media (max-width: 768px) {
+  body.contact-page .home-btn {
+    right: 15px !important;
+    bottom: 15px !important;
+    transform: none !important;
+  }
+}
+
+
+/* ===============================
+   🩵 Contactページ 1024px対応
+   CTAボタン（LINE予約・初診）幅崩れ修正
+=============================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body.contact-page .contact-cta {
+    flex-direction: row !important;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+  }
+
+  body.contact-page .contact-cta a {
+    width: auto !important;        /* ✅ 横幅を自然に */
+    max-width: none !important;    /* ✅ 固定解除 */
+    padding: 12px 30px !important; /* ✅ 見た目整える */
+    text-align: center;
+  }
+}
+
+/* ===============================
+   💚 Contactページ スマホ時CTAボタン統一（上品ver）
+=============================== */
+@media (max-width: 768px) {
+  body.contact-page .contact-cta {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  body.contact-page .contact-cta a {
+    display: inline-block;
+    width: 80% !important;          /* ✅ スッキリした幅 */
+    max-width: 300px !important;    /* ✅ 上限を軽めに調整 */
+    text-align: center;
+    padding: 13px 0 !important;     /* ✅ 少し軽い印象に */
+    font-size: 0.95rem;
+    border-radius: 28px;
+  }
+
+  body.contact-page .contact-cta .line-btn {
+    background-color: #06C755;
+  }
+
+  body.contact-page .contact-cta .cta-btn {
+    background-color: #1E3A5F;
+  }
+}
+
+
+/* ===============================
+   🩵 Contact・Formページ ホームボタン右寄せ固定
+=============================== */
+body.contact-page .home-btn,
+body.form-page .home-btn {
+  right: 15px !important;
+  bottom: 15px !important;
+  transform: none !important;
+}
+
+
+/* ===============================
+   🩵 Contactページ 最終レスポンシブ補正 (2025.11)
+=============================== */
+
+/* --- タブレット (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  body.contact-page .form-wrapper {
+    max-width: 88%;
+    padding: 30px 28px 48px;
+  }
+
+  body.contact-page .faq-section {
+    margin: 25px auto 35px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.5rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 1rem;
+  }
+
+  body.contact-page .schedule-mini {
+    margin-top: 25px;
+    padding: 22px 18px;
+  }
+
+  /* ✅ CTA横並びを維持 */
+  body.contact-page .contact-cta {
+    flex-direction: row !important;
+    justify-content: center;
+    align-items: center;
+    gap: 20px !important;
+  }
+
+  body.contact-page .contact-cta a {
+    width: auto !important;
+    padding: 12px 34px !important;
+    font-size: 1rem;
+  }
+}
+
+/* --- スマホ全般 (max-width: 768px) --- */
+@media (max-width: 768px) {
+  body.contact-page .form-wrapper {
+    width: 95%;
+    padding: 22px 18px 36px;
+  }
+
+  body.contact-page .faq-section {
+    margin: 28px auto 25px;
+    padding: 20px 16px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.25rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 0.95rem;
+  }
+
+  body.contact-page .schedule-mini {
+    margin-top: 25px;
+  }
+
+  /* ✅ CTA縦並び・中央寄せ */
+  body.contact-page .contact-cta {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  body.contact-page .contact-cta a {
+    width: 85% !important;
+    max-width: 300px !important;
+    padding: 13px 0 !important;
+    border-radius: 30px;
+    font-size: 0.95rem;
+  }
+}
+
+/* --- 小型スマホ (max-width: 480px) --- */
+@media (max-width: 480px) {
+  body.contact-page .form-wrapper {
+    width: 94%;
+    padding: 18px 14px 28px;
+  }
+
+  body.contact-page .faq-section {
+    padding: 15px 12px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.15rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 0.9rem;
+  }
+
+  body.contact-page .faq-answer p {
+    font-size: 0.85rem;
+  }
+
+  body.contact-page .schedule-mini h3 {
+    font-size: 1rem;
+  }
+
+  /* ✅ CTAボタン調整 */
+  body.contact-page .contact-cta a {
+    max-width: 260px !important;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===============================
+   🩵 Contactページ 最終レスポンシブ補正 (2025.11)
+=============================== */
+
+/* --- タブレット (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  body.contact-page .form-wrapper {
+    max-width: 88%;
+    padding: 30px 28px 48px;
+  }
+
+  body.contact-page .faq-section {
+    margin: 25px auto 35px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.5rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 1rem;
+  }
+
+  body.contact-page .schedule-mini {
+    margin-top: 25px;
+    padding: 22px 18px;
+  }
+
+  /* ✅ CTA横並びを維持 */
+  body.contact-page .contact-cta {
+    flex-direction: row !important;
+    justify-content: center;
+    align-items: center;
+    gap: 20px !important;
+  }
+
+  body.contact-page .contact-cta a {
+    width: auto !important;
+    padding: 12px 34px !important;
+    font-size: 1rem;
+  }
+}
+
+/* --- スマホ全般 (max-width: 768px) --- */
+@media (max-width: 768px) {
+  body.contact-page .form-wrapper {
+    width: 95%;
+    padding: 22px 18px 36px;
+  }
+
+  body.contact-page .faq-section {
+    margin: 28px auto 25px;
+    padding: 20px 16px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.25rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 0.95rem;
+  }
+
+  body.contact-page .schedule-mini {
+    margin-top: 25px;
+  }
+
+  /* ✅ CTA縦並び・中央寄せ */
+  body.contact-page .contact-cta {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  body.contact-page .contact-cta a {
+    width: 85% !important;
+    max-width: 300px !important;
+    padding: 13px 0 !important;
+    border-radius: 30px;
+    font-size: 0.95rem;
+  }
+}
+
+/* --- 小型スマホ (max-width: 480px) --- */
+@media (max-width: 480px) {
+  body.contact-page .form-wrapper {
+    width: 94%;
+    padding: 18px 14px 28px;
+  }
+
+  body.contact-page .faq-section {
+    padding: 15px 12px;
+  }
+
+  body.contact-page .faq-title {
+    font-size: 1.15rem;
+  }
+
+  body.contact-page .faq-question {
+    font-size: 0.9rem;
+  }
+
+  body.contact-page .faq-answer p {
+    font-size: 0.85rem;
+  }
+
+  body.contact-page .schedule-mini h3 {
+    font-size: 1rem;
+  }
+
+  /* ✅ CTAボタン調整 */
+  body.contact-page .contact-cta a {
+    max-width: 260px !important;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===============================
+   🩵 Contactページ 最終調整
+   ・お問い合わせ内容とスケジュール間の余白を縮める
+   ・480px以下でロゴ非表示
+=============================== */
+
+/* お問い合わせ内容とスケジュールの余白を調整 */
+body.contact-page .form-block + .schedule-mini {
+  margin-top: 8px !important; /* ← 今までの15pxよりさらに詰める */
+}
+
+/* --- 小型スマホ (max-width: 480px) --- */
+@media (max-width: 480px) {
+  /* ✅ フォームロゴ非表示 */
+  body.contact-page .form-logo-card {
+    display: none !important;
+  }
+
+  /* ✅ 余白をさらにコンパクトに */
+  body.contact-page .form-block + .schedule-mini {
+    margin-top: 6px !important;
+  }
+}
+
+/* ===============================
+   🩵 フォームロゴ表示制御（thanksのみ表示）
+=============================== */
+
+/* 基本：全ページ非表示 */
+.form-logo-card {
+  display: none !important;
+}
+
+/* ✅ thanks.html のみ再表示 */
+body.thanks-page .form-logo-card {
+  display: block !important;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 120px;
+  opacity: 1;
+  pointer-events: none;
+}
