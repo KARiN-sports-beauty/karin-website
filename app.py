@@ -32,7 +32,14 @@ mail = Mail(app)
 # ▼ Google Sheets API設定
 # =====================================
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
+
+# Render とローカルの両方に対応
+if os.getenv("GOOGLE_CREDENTIALS"):
+    creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+else:
+    creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+
 client = gspread.authorize(creds)
 SPREADSHEET_ID = "1bFmUphFbci_H2N2HF2Vf-ZvK-4iYhovHSsIa_K_PJuI"
 
