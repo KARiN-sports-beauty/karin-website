@@ -256,14 +256,14 @@ def submit_form():
         }
 
         # 🟢 GASへ送信
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxZOv1BGbtumY61Pyr85qzjOpEp2hnvbS5zs0jCU10D0bydQvjOANCWhSB54zsuxKokfw/exec"
+
         response = requests.post(GAS_URL_FORM, json=data)
         if response.status_code == 200:
             return redirect(url_for("thanks", message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"))
         else:
             return f"送信エラー: {response.text}", 500
 
-    except Exception as e:
-        return f"Exception: {e}", 500
 
 
 
