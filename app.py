@@ -255,7 +255,7 @@ def submit_form():
         }
 
         # --- GAS送信 ---
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbzbY4q20u874XS6PR6KvSeFMguXPAn7UEPOiv76nhqe8bSZOWx4bN-MR_JEjHrj34v5Cg/exec"
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbylxtNlcZ-rEqKG2_1L_jZwi_3phZKvn--eE8wWVzJx5SRzp6EhKmHxPcH3Ff2p9Shrxw/exec"
         response = requests.post(GAS_URL_FORM, json=data, timeout=10)
 
         print("🛰️ GASレスポンス:", response.status_code, response.text)
