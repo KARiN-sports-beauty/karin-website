@@ -309,26 +309,43 @@ def contact():
 
 
 # ===================================================
-# ✅ お問い合わせフォーム送信（🟢 GAS経由に変更）
+# ✅ お問い合わせフォーム送信
 # ===================================================
 @app.route("/submit_contact", methods=["POST"])
 def submit_contact():
-    try:
-        data = {
-            "name": request.form.get("name"),
-            "phone": request.form.get("phone"),
-            "email": request.form.get("email"),
-            "message": request.form.get("message"),
-        }
+    name = request.form.get("name")
+    phone = request.form.get("phone")
+    email = request.form.get("email")
+    message = request.form.get("message")
+    timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
 
-        response = requests.post(GAS_URL_CONTACT, json=data)
-        if response.status_code == 200:
-            return redirect(url_for("thanks", message="お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"))
-        else:
-            return f"送信エラー: {response.text}", 500
+    # --- メール送信 ---
+    msg = Message(
+        "【KARiN.】お問い合わせフォーム（再診・既存顧客）",
+        recipients=["karin.sports.beauty@gmail.com"],
+        body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
+    )
+    mail.send(msg)
 
-    except Exception as e:
-        return f"Exception: {e}", 500
+    # --- GASへ送信 ---
+    GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbx8z7h-4EUDnqQZQEnWO5ThSCym8OwWo9bf8u2pz4Y-ktlycS2tXe0z_zwtER9qZnOB/exec"
+    data = {
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "message": message,
+        "timestamp": timestamp
+    }
+    response = requests.post(GAS_URL_CONTACT, json=data)
+
+    if response.status_code == 200:
+        return redirect(url_for(
+            "thanks",
+            message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
+        ))
+    else:
+        return f"スプレッドシート送信エラー: {response.text}", 500
+
 
 # ===================================================
 # ✅ thanks.html
