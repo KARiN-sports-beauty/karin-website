@@ -225,9 +225,6 @@ def form():
 # ===================================================
 # ✅ 初診フォーム送信（🟢 GAS経由に変更）
 # ===================================================
-# ===================================================
-# ✅ 初診フォーム送信（🟢 GAS経由に変更）
-# ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
     try:
@@ -258,7 +255,7 @@ def submit_form():
         }
 
         # --- GAS送信 ---
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxZOv1BGbtumY61Pyr85qzjOpEp2hnvbS5zs0jCU10D0bydQvjOANCWhSB54zsuxKokfw/exec"
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbzbY4q20u874XS6PR6KvSeFMguXPAn7UEPOiv76nhqe8bSZOWx4bN-MR_JEjHrj34v5Cg/exec"
         response = requests.post(GAS_URL_FORM, json=data, timeout=10)
 
         print("🛰️ GASレスポンス:", response.status_code, response.text)
