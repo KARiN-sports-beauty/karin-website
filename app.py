@@ -238,7 +238,7 @@ def submit_form():
             "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxc9HTACOdjR1ULpVY1-zuQZB2UzTGuoAkJV1ty5X6lZTyz36v6vOIwS6UR0u5w6MK02A/exec"
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbzlTVGyfmlu4z5cIKDreSopk-7EnJd-d7lPJdGiBm5NibdDZKel9k-0lusLkEoQC1ElbQ/exec"
 
         response = requests.post(GAS_URL_FORM, json=data)
 
@@ -309,7 +309,7 @@ def submit_contact():
         timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
 
         # --- GAS 送信 ---
-        GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbzkWHWf12x4PqPGn6UKDsEISg-N7QhGrIsGgk-iVP3anJ9kb7-1zSYRWaATCHgeRdqz/exec"
+        GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbxiSIZo3k3I89KrD8PEMeyqd51tfsOlzdSYdAIx4NgK75OGhJb-pLh52ezg7QBaq84F/exec"
 
         data = {
             "name": name,
