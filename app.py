@@ -221,9 +221,8 @@ def form():
 #         message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
 #     ))
 
-
 # ===================================================
-# ✅ 初診フォーム送信（GASに完全対応版）
+# 初診フォーム送信（GAS対応版）
 # ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
@@ -237,7 +236,6 @@ def submit_form():
             "email": request.form.get("email"),
             "address": request.form.get("address"),
 
-            # GAS側のキー名に合わせる
             "preferred_date1": format_datetime(request.form.get("preferred_date1")),
             "preferred_date2": format_datetime(request.form.get("preferred_date2")),
             "preferred_date3": format_datetime(request.form.get("preferred_date3")),
@@ -260,20 +258,23 @@ def submit_form():
             "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbylxtNlcZ-rEqKG2_1L_jZwi_3phZKvn--eE8wWVzJx5SRzp6EhKmHxPcH3Ff2p9Shrxw/exec"
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxc9HTACOdjR1ULpVY1-zuQZB2UzTGuoAkJV1ty5X6lZTyz36v6vOIwS6UR0u5w6MK02A/exec"
+
         response = requests.post(GAS_URL_FORM, json=data, timeout=10)
 
         print("🛰️ GASレスポンス:", response.status_code, response.text)
 
         if response.status_code == 200:
-            return redirect(url_for("thanks", message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"))
+            return redirect(url_for(
+                "thanks",
+                message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
+            ))
         else:
             return f"GASエラー: {response.status_code}<br>{response.text}", 500
 
     except Exception as e:
         print("❌ 例外エラー:", e)
         return f"サーバーエラー: {str(e)}", 500
-
 
 
 
@@ -341,7 +342,7 @@ def submit_contact():
     mail.send(msg)
 
     # --- GASへ送信 ---
-    GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbx8z7h-4EUDnqQZQEnWO5ThSCym8OwWo9bf8u2pz4Y-ktlycS2tXe0z_zwtER9qZnOB/exec"
+    GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbzkWHWf12x4PqPGn6UKDsEISg-N7QhGrIsGgk-iVP3anJ9kb7-1zSYRWaATCHgeRdqz/exec"
     data = {
         "name": name,
         "phone": phone,
