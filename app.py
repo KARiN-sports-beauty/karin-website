@@ -12,26 +12,41 @@ import requests  # 🟢 GASにPOSTするために追加
 # LINE通知（Messaging API）
 # ===============================
 
-def send_line_notify(message: str):
-    line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-    user_id = os.getenv("LINE_USER_ID")
+def send_line_message(text: str):
+    """
+    LINE Messaging API の pushメッセージ送信用（正しい版）
+    """
+    try:
+        line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+        user_id = os.getenv("LINE_USER_ID")
 
-    if not line_token or not user_id:
-        print("❌ LINE_TOKEN または USER_ID が設定されていません")
-        return
+        if not line_token:
+            print("❌ LINE_CHANNEL_ACCESS_TOKEN が設定されていません")
+            return
 
-    url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {line_token}"
-    }
-    body = {
-        "to": user_id,
-        "messages": [{"type": "text", "text": message}]
-    }
+        if not user_id:
+            print("❌ LINE_USER_ID が設定されていません")
+            return
 
-    response = requests.post(url, headers=headers, json=body)
-    print("📩 LINE送信結果:", response.status_code, response.text)
+        url = "https://api.line.me/v2/bot/message/push"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {line_token}"
+        }
+
+        payload = {
+            "to": user_id,
+            "messages": [
+                {"type": "text", "text": text}
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        print("📩 LINE送信結果:", response.status_code, response.text)
+
+    except Exception as e:
+        print("❌ LINE通知エラー:", e)
+
 
 
 
@@ -284,7 +299,7 @@ def submit_form():
 第1希望：{data['preferred_date1']}
 主訴：{data['chief_complaint']}
 """
-        send_line_notify(line_message)
+        send_line_message(line_message)
 
 
         return redirect(url_for(
@@ -377,7 +392,7 @@ def submit_contact():
 内容：
 {message}
 """
-        send_line_notify(line_message)
+        send_line_message(line_message)
 
         return redirect(url_for(
             "thanks",
