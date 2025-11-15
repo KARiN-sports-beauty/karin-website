@@ -30,21 +30,6 @@ app.config['MAIL_DEFAULT_SENDER'] = ("KARiN. 初診受付フォーム", app.conf
 mail = Mail(app)
 
 # =====================================
-# ▼ Google Sheets API設定 （※Renderで未使用）
-# =====================================
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
-# Render とローカルの両方に対応
-if os.getenv("GOOGLE_CREDENTIALS"):
-    creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
-else:
-    creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
-
-client = gspread.authorize(creds)
-SPREADSHEET_ID = "1bFmUphFbci_H2N2HF2Vf-ZvK-4iYhovHSsIa_K_PJuI"
-
-# =====================================
 # ▼ GAS Webhook URL（🟢 新追加）
 # =====================================
 GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxwY-01BQjrneGxlxDaYAxfS7PAZNzVWvDzc5UUEppDGvzle961tynQctdtQYHn1Wah3w/exec"
@@ -323,15 +308,7 @@ def submit_contact():
         message = request.form.get("message")
         timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
 
-        # メール送信（Gmail）
-        msg = Message(
-            "【KARiN.】お問い合わせフォーム",
-            recipients=["karin.sports.beauty@gmail.com"],
-            body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
-        )
-        mail.send(msg)
-
-        # GAS 送信
+        # --- GAS 送信 ---
         GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbzkWHWf12x4PqPGn6UKDsEISg-N7QhGrIsGgk-iVP3anJ9kb7-1zSYRWaATCHgeRdqz/exec"
 
         data = {
@@ -342,7 +319,7 @@ def submit_contact():
             "timestamp": timestamp
         }
 
-        response = requests.post(GAS_URL_CONTACT, json=data)
+        response = requests.post(GAS_URL_CONTACT, json=data, timeout=10)
 
         print("🛰️ CONTACT GASレスポンス:", response.status_code, response.text)
 
@@ -354,6 +331,7 @@ def submit_contact():
     except Exception as e:
         print("❌ お問い合わせエラー:", e)
         return f"サーバーエラー: {str(e)}", 500
+
 
 
 
