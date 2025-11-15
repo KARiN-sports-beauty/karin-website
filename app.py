@@ -223,38 +223,43 @@ def form():
 
 
 # ===================================================
-# ✅ 初診フォーム送信（🟢 GAS経由に変更）
+# ✅ 初診フォーム送信（GASに完全対応版）
 # ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
     try:
         data = {
             "name": request.form.get("name"),
-            "furigana": request.form.get("kana"),
+            "kana": request.form.get("kana"),
             "age": request.form.get("age"),
             "gender": request.form.get("gender"),
             "phone": request.form.get("phone"),
             "email": request.form.get("email"),
             "address": request.form.get("address"),
-            "first_preference": format_datetime(request.form.get("preferred_date1")),
-            "second_preference": format_datetime(request.form.get("preferred_date2")),
-            "third_preference": format_datetime(request.form.get("preferred_date3")),
-            "symptom": request.form.get("chief_complaint"),
+
+            # GAS側のキー名に合わせる
+            "preferred_date1": format_datetime(request.form.get("preferred_date1")),
+            "preferred_date2": format_datetime(request.form.get("preferred_date2")),
+            "preferred_date3": format_datetime(request.form.get("preferred_date3")),
+
+            "chief_complaint": request.form.get("chief_complaint"),
             "onset": request.form.get("onset"),
             "pain_level": request.form.get("pain_level"),
-            "acupuncture": request.form.get("shinkyu_pref"),
-            "electric_stim": request.form.get("electric_pref"),
-            "pressure": request.form.get("pressure_pref"),
-            "history": request.form.get("heart"),
+
+            "shinkyu_pref": request.form.get("shinkyu_pref"),
+            "electric_pref": request.form.get("electric_pref"),
+            "pressure_pref": request.form.get("pressure_pref"),
+
+            "heart": request.form.get("heart"),
             "pregnant": request.form.get("pregnant"),
             "chronic": request.form.get("chronic"),
             "surgery": request.form.get("surgery"),
-            "under_treatment": request.form.get("under_medical"),
+            "under_medical": request.form.get("under_medical"),
+
             "signature": request.form.get("signature"),
-            "date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
+            "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
-        # --- GAS送信 ---
         GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbylxtNlcZ-rEqKG2_1L_jZwi_3phZKvn--eE8wWVzJx5SRzp6EhKmHxPcH3Ff2p9Shrxw/exec"
         response = requests.post(GAS_URL_FORM, json=data, timeout=10)
 
@@ -268,6 +273,7 @@ def submit_form():
     except Exception as e:
         print("❌ 例外エラー:", e)
         return f"サーバーエラー: {str(e)}", 500
+
 
 
 
