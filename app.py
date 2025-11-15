@@ -235,49 +235,38 @@ def submit_form():
             "phone": request.form.get("phone"),
             "email": request.form.get("email"),
             "address": request.form.get("address"),
-
             "preferred_date1": format_datetime(request.form.get("preferred_date1")),
             "preferred_date2": format_datetime(request.form.get("preferred_date2")),
             "preferred_date3": format_datetime(request.form.get("preferred_date3")),
-
             "chief_complaint": request.form.get("chief_complaint"),
             "onset": request.form.get("onset"),
             "pain_level": request.form.get("pain_level"),
-
             "shinkyu_pref": request.form.get("shinkyu_pref"),
             "electric_pref": request.form.get("electric_pref"),
             "pressure_pref": request.form.get("pressure_pref"),
-
             "heart": request.form.get("heart"),
             "pregnant": request.form.get("pregnant"),
             "chronic": request.form.get("chronic"),
             "surgery": request.form.get("surgery"),
             "under_medical": request.form.get("under_medical"),
-
             "signature": request.form.get("signature"),
             "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
         GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxc9HTACOdjR1ULpVY1-zuQZB2UzTGuoAkJV1ty5X6lZTyz36v6vOIwS6UR0u5w6MK02A/exec"
 
-        response = requests.post(GAS_URL_FORM, json=data, timeout=10)
+        response = requests.post(GAS_URL_FORM, json=data)
 
-        print("🛰️ GASレスポンス:", response.status_code, response.text)
+        print("🛰️ FORM GASレスポンス:", response.status_code, response.text)
 
-        if response.status_code == 200:
-            return redirect(url_for(
-                "thanks",
-                message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
-            ))
-        else:
-            return f"GASエラー: {response.status_code}<br>{response.text}", 500
+        return redirect(url_for(
+            "thanks",
+            message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
+        ))
 
     except Exception as e:
-        print("❌ 例外エラー:", e)
+        print("❌ 初診フォーム送信エラー:", e)
         return f"サーバーエラー: {str(e)}", 500
-
-
-
 
 
 
@@ -327,38 +316,45 @@ def contact():
 # ===================================================
 @app.route("/submit_contact", methods=["POST"])
 def submit_contact():
-    name = request.form.get("name")
-    phone = request.form.get("phone")
-    email = request.form.get("email")
-    message = request.form.get("message")
-    timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
+    try:
+        name = request.form.get("name")
+        phone = request.form.get("phone")
+        email = request.form.get("email")
+        message = request.form.get("message")
+        timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
 
-    # --- メール送信 ---
-    msg = Message(
-        "【KARiN.】お問い合わせフォーム（再診・既存顧客）",
-        recipients=["karin.sports.beauty@gmail.com"],
-        body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
-    )
-    mail.send(msg)
+        # メール送信（Gmail）
+        msg = Message(
+            "【KARiN.】お問い合わせフォーム",
+            recipients=["karin.sports.beauty@gmail.com"],
+            body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
+        )
+        mail.send(msg)
 
-    # --- GASへ送信 ---
-    GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbzkWHWf12x4PqPGn6UKDsEISg-N7QhGrIsGgk-iVP3anJ9kb7-1zSYRWaATCHgeRdqz/exec"
-    data = {
-        "name": name,
-        "phone": phone,
-        "email": email,
-        "message": message,
-        "timestamp": timestamp
-    }
-    response = requests.post(GAS_URL_CONTACT, json=data)
+        # GAS 送信
+        GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbzkWHWf12x4PqPGn6UKDsEISg-N7QhGrIsGgk-iVP3anJ9kb7-1zSYRWaATCHgeRdqz/exec"
 
-    if response.status_code == 200:
+        data = {
+            "name": name,
+            "phone": phone,
+            "email": email,
+            "message": message,
+            "timestamp": timestamp
+        }
+
+        response = requests.post(GAS_URL_CONTACT, json=data)
+
+        print("🛰️ CONTACT GASレスポンス:", response.status_code, response.text)
+
         return redirect(url_for(
             "thanks",
             message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
         ))
-    else:
-        return f"スプレッドシート送信エラー: {response.text}", 500
+
+    except Exception as e:
+        print("❌ お問い合わせエラー:", e)
+        return f"サーバーエラー: {str(e)}", 500
+
 
 
 # ===================================================
