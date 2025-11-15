@@ -281,7 +281,7 @@ def submit_form():
             "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbzlTVGyfmlu4z5cIKDreSopk-7EnJd-d7lPJdGiBm5NibdDZKel9k-0lusLkEoQC1ElbQ/exec"
+        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbyUAS--yGnXqF4dS9VQTUfMf7BmSXt1rVbAWTyDxYpg13t0A2B9S0y9dYdMOMFziFST1w/exec"
 
         print("📨 送信されるJSON:")
         print(json.dumps(data, ensure_ascii=False, indent=2))
