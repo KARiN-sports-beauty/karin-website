@@ -7,6 +7,34 @@ import json, os
 from dotenv import load_dotenv
 import requests  # 🟢 GASにPOSTするために追加
 
+
+# ===============================
+# LINE通知（Messaging API）
+# ===============================
+
+def send_line_notify(message: str):
+    line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+    user_id = os.getenv("LINE_USER_ID")
+
+    if not line_token or not user_id:
+        print("❌ LINE_TOKEN または USER_ID が設定されていません")
+        return
+
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {line_token}"
+    }
+    body = {
+        "to": user_id,
+        "messages": [{"type": "text", "text": message}]
+    }
+
+    response = requests.post(url, headers=headers, json=body)
+    print("📩 LINE送信結果:", response.status_code, response.text)
+
+
+
 # =====================================
 # ▼ .envを読み込む
 # =====================================
@@ -244,6 +272,21 @@ def submit_form():
 
         print("🛰️ FORM GASレスポンス:", response.status_code, response.text)
 
+        # 🟢 LINE通知
+        line_message = f"""
+【初診フォーム】
+お名前：{data['name']}
+ふりがな：{data['kana']}
+年齢：{data['age']}
+性別：{data['gender']}
+電話番号：{data['phone']}
+メール：{data['email']}
+第1希望：{data['preferred_date1']}
+主訴：{data['chief_complaint']}
+"""
+        send_line_notify(line_message)
+
+
         return redirect(url_for(
             "thanks",
             message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
@@ -252,6 +295,8 @@ def submit_form():
     except Exception as e:
         print("❌ 初診フォーム送信エラー:", e)
         return f"サーバーエラー: {str(e)}", 500
+    
+
 
 
 
@@ -323,6 +368,17 @@ def submit_contact():
 
         print("🛰️ CONTACT GASレスポンス:", response.status_code, response.text)
 
+        # 🟢 LINE通知
+        line_message = f"""
+【お問い合わせ】
+お名前：{name}
+電話番号：{phone}
+メール：{email}
+内容：
+{message}
+"""
+        send_line_notify(line_message)
+
         return redirect(url_for(
             "thanks",
             message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
@@ -331,7 +387,6 @@ def submit_contact():
     except Exception as e:
         print("❌ お問い合わせエラー:", e)
         return f"サーバーエラー: {str(e)}", 500
-
 
 
 
