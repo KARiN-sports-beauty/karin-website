@@ -283,6 +283,9 @@ def submit_form():
 
         GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbzlTVGyfmlu4z5cIKDreSopk-7EnJd-d7lPJdGiBm5NibdDZKel9k-0lusLkEoQC1ElbQ/exec"
 
+        print("📨 送信されるJSON:")
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+
         response = requests.post(GAS_URL_FORM, json=data)
 
         print("🛰️ FORM GASレスポンス:", response.status_code, response.text)
