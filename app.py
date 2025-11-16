@@ -611,6 +611,20 @@ def sitemap():
         print("❌ sitemap 生成エラー:", e)
         return "Sitemap generation error", 500
 
+@app.route("/robots.txt")
+def robots_txt():
+    lines = [
+        "User-agent: *",
+        "Disallow: /mypage",
+        "Disallow: /login",
+        "Disallow: /register",
+        "",
+        "Allow: /",
+        "",
+        "Sitemap: https://karin-website.onrender.com/sitemap.xml"
+    ]
+    return "\n".join(lines), 200, {"Content-Type": "text/plain"}
+
 
 
 @app.errorhandler(404)
