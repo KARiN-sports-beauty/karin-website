@@ -186,68 +186,6 @@ def form():
     today = datetime.now().strftime("%Y-%m-%d")
     return render_template("form.html", years=years, months=months, days=days, schedule=schedule, today=today)
 
-# ===================================================
-# ✅ 初診フォーム送信
-# ===================================================
-# @app.route("/submit_form", methods=["POST"])
-# def submit_form():
-#     name = request.form.get("name")
-#     kana = request.form.get("kana")
-#     age = request.form.get("age")
-#     gender = request.form.get("gender")
-#     phone = request.form.get("phone")
-#     email = request.form.get("email")
-#     address = request.form.get("address")
-#     preferred_date1 = format_datetime(request.form.get("preferred_date1"))
-#     preferred_date2 = format_datetime(request.form.get("preferred_date2"))
-#     preferred_date3 = format_datetime(request.form.get("preferred_date3"))
-#     chief_complaint = request.form.get("chief_complaint")
-#     onset = request.form.get("onset")
-#     pain_level = request.form.get("pain_level")
-#     shinkyu_pref = request.form.get("shinkyu_pref")
-#     electric_pref = request.form.get("electric_pref")
-#     pressure_pref = request.form.get("pressure_pref")
-#     heart = request.form.get("heart")
-#     pregnant = request.form.get("pregnant")
-#     chronic = request.form.get("chronic")
-#     surgery = request.form.get("surgery")
-#     under_medical = request.form.get("under_medical")
-#     signature = request.form.get("signature")
-#     year_sel = request.form.get("agree_year")
-#     month_sel = request.form.get("agree_month")
-#     day_sel = request.form.get("agree_day")
-#     agreed_date = f"{year_sel}年{month_sel}月{day_sel}日"
-
-#     # --- メール送信 ---
-#     body_lines = [
-#         f"お名前: {name}", f"フリガナ: {kana}", f"年齢: {age}", f"性別: {gender}",
-#         f"電話番号: {phone}", f"メール: {email}", f"住所: {address}", "",
-#         f"第1希望: {preferred_date1}", f"第2希望: {preferred_date2}", f"第3希望: {preferred_date3}", "",
-#         f"主訴: {chief_complaint}", f"発症時期: {onset}", f"痛み: {pain_level}", "",
-#         f"鍼灸: {shinkyu_pref}", f"電気: {electric_pref}", f"圧: {pressure_pref}", "",
-#         f"心疾患: {heart}", f"妊娠: {pregnant}", f"慢性: {chronic}", f"手術: {surgery}", f"医師治療: {under_medical}", "",
-#         f"署名: {signature}", f"日付: {agreed_date}"
-#     ]
-
-#     msg = Message("【KARiN.】初診受付フォーム送信", recipients=["karin.sports.beauty@gmail.com"], body="\n".join(body_lines))
-#     mail.send(msg)
-
-#     # --- Googleスプレッドシート登録 ---
-#     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-#     sheet.append_row([
-#         name, kana, age, gender, phone, email, address,
-#         preferred_date1, preferred_date2, preferred_date3,
-#         chief_complaint, onset, pain_level,
-#         shinkyu_pref, electric_pref, pressure_pref,
-#         heart, pregnant, chronic, surgery, under_medical,
-#         signature, agreed_date
-#     ])
-
-#     # ✅ thanks.html に動的メッセージを渡す
-#     return redirect(url_for(
-#         "thanks",
-#         message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
-#     ))
 
 # ===================================================
 # 初診フォーム送信（GAS対応版）
@@ -314,40 +252,6 @@ def submit_form():
         print("❌ 初診フォーム送信エラー:", e)
         return f"サーバーエラー: {str(e)}", 500
     
-
-
-
-
-# ===================================================
-# ✅ お問い合わせフォーム
-# ===================================================
-# @app.route("/contact")
-# def contact():
-#     schedule = load_schedule()
-#     return render_template("contact.html", schedule=schedule)
-
-# @app.route("/submit_contact", methods=["POST"])
-# def submit_contact():
-#     name = request.form.get("name")
-#     phone = request.form.get("phone")
-#     email = request.form.get("email")
-#     message = request.form.get("message")
-#     timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
-
-#     msg = Message(
-#         "【KARiN.】お問い合わせフォーム（再診・既存顧客）",
-#         recipients=["karin.sports.beauty@gmail.com"],
-#         body=f"お名前: {name}\n電話番号: {phone}\nメール: {email}\n\n{message}\n\n送信日時: {timestamp}"
-#     )
-#     mail.send(msg)
-
-#     sheet = client.open_by_key(SPREADSHEET_ID).worksheet("Contact")
-#     sheet.append_row([timestamp, name, phone, email, message])
-
-#     return redirect(url_for(
-#         "thanks",
-#         message="ご予約・お問い合わせありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。"
-#     ))
 
 
 # ===================================================
@@ -578,6 +482,69 @@ def index():
     upcoming = [s for s in schedule if s["date"] >= today][:7]
 
     return render_template("index.html", latest_blogs=latest_blogs, latest_news=latest_news, schedule=upcoming, today=today)
+
+# ===================================================
+# ✅ 動的 Sitemap.xml
+# ===================================================
+@app.route("/sitemap.xml")
+def sitemap():
+    # --- 固定ページ ---
+    static_urls = [
+        {"loc": "https://karin-website.onrender.com/", "changefreq": "daily"},
+        {"loc": "https://karin-website.onrender.com/treatment"},
+        {"loc": "https://karin-website.onrender.com/price"},
+        {"loc": "https://karin-website.onrender.com/contact"},
+        {"loc": "https://karin-website.onrender.com/form"},
+        {"loc": "https://karin-website.onrender.com/login"},
+        {"loc": "https://karin-website.onrender.com/register"},
+        {"loc": "https://karin-website.onrender.com/blog"},
+        {"loc": "https://karin-website.onrender.com/news"},
+    ]
+
+    pages = []
+
+    # 固定ページの登録
+    for url in static_urls:
+        pages.append(f"""
+        <url>
+            <loc>{url['loc']}</loc>
+            <changefreq>{url.get('changefreq', 'weekly')}</changefreq>
+        </url>
+        """)
+
+    # --- 動的：ブログ ---
+    if os.path.exists("static/data/blogs.json"):
+        with open("static/data/blogs.json", encoding="utf-8") as f:
+            blogs = json.load(f)
+        for b in blogs:
+            pages.append(f"""
+            <url>
+                <loc>https://karin-website.onrender.com/blog/{b['id']}</loc>
+                <changefreq>weekly</changefreq>
+            </url>
+            """)
+
+    # --- 動的：ニュース ---
+    if os.path.exists("static/data/news.json"):
+        with open("static/data/news.json", encoding="utf-8") as f:
+            news = json.load(f)
+        for n in news:
+            pages.append(f"""
+            <url>
+                <loc>https://karin-website.onrender.com/news/{n['id']}</loc>
+                <changefreq>weekly</changefreq>
+            </url>
+            """)
+
+    # XML生成
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {''.join(pages)}
+    </urlset>
+    """
+
+    return Response(xml, mimetype='application/xml')
+
 
 # =====================================
 # ▼ コメント＆いいねAPI（ブログ用）
