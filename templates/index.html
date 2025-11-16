@@ -3,45 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える</title>
-  <!-- ✅ SEO基本設定 -->
-  <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
-  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+
+  <!-- ================================
+       ▼ SEO基本設定（トップページ）
+  ================================= -->
+  <link rel="canonical" href="https://karin-website.onrender.com/">
+
+  <meta name="description" content="KARiN. ~Sports & Beauty~ は、鍼灸・整体・美容・トレーニングを組み合わせ、身体と心を整えるコンディショニングサロンです。東京（代々木上原）と福岡（薬院）を拠点に完全予約制で施術を行っています。受付時間は全地域共通で10:00〜19:00。LINE・フォームから24時間予約受付。">
+  <meta name="keywords" content="鍼灸, 整体, 美容鍼, トレーニング, コンディショニング, 代々木上原, 薬院, 出張施術, スポーツケア, 整体院, プロトレーナー, パフォーマンス向上, KARiN">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ================================
+       ▼ OGP
+  ================================= -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:title" content="KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える">
+  <meta property="og:description" content="東京（代々木上原）・福岡（薬院）で国家資格者が出張施術。受付10:00〜19:00／LINE・フォーム24時間対応。">
+  <meta property="og:url" content="https://karin-website.onrender.com/">
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/relogo.png">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <!-- ================================
+       ▼ 構造化データ（WebSite + LocalBusiness）
+       ※ Google推奨に合わせ「受付時間10〜19時」を登録
+       ※ 東京/福岡の施術時間は本文に記載されているためOK
+  ================================= -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "ContactPage",
-        "name": "お問い合わせ・ご予約",
-        "url": "{{ request.url }}",
-        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
-        "contactOption": {
-          "@type": "ContactPoint",
-          "telephone": "+81-90-5088-6993",
-          "contactType": "customer service",
-          "areaServed": ["JP"],
-          "availableLanguage": ["Japanese"]
+        "@type": "WebSite",
+        "name": "KARiN. ~Sports & Beauty~",
+        "url": "https://karin-website.onrender.com/",
+        "description": "鍼灸・整体・美容・トレーニングで身体と心を整えるコンディショニングサロン。",
+        "publisher": {
+          "@type": "Organization",
+          "name": "KARiN. ~Sports & Beauty~",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://karin-website.onrender.com/static/images/relogo.png"
+          }
         }
       },
       {
         "@type": "LocalBusiness",
         "name": "KARiN. ~Sports & Beauty~",
-        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "image": "https://karin-website.onrender.com/static/images/relogo.png",
         "telephone": "+81-90-5088-6993",
+        "description": "東京（代々木上原）・福岡（薬院）で鍼灸・整体・美容鍼・トレーニングを行う予約制サロン。受付時間10:00〜19:00。",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "福岡市中央区",
@@ -49,29 +62,33 @@
           "addressCountry": "JP"
         },
         "areaServed": [
-          "東京（代々木上原）",
-          "福岡（薬院）"
+          "東京都（代々木上原・都内近郊）",
+          "福岡県（薬院・中央区周辺）"
         ],
-        "openingHoursSpecification": [{
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-          "opens": "10:00",
-          "closes": "19:00"
-        }],
-        "url": "{{ request.url_root }}"
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
+            ],
+            "opens": "10:00",
+            "closes": "19:00"
+          }
+        ],
+        "url": "https://karin-website.onrender.com/"
       }
     ]
   }
   </script>
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&family=Dancing+Script:wght@500&display=swap" rel="stylesheet" />
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+JP:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
 
-  <!-- CSS -->
+  <!-- CSS（追加しない／現状維持） -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
+
+
 
 <body class="index-page">
   <!-- ==========================
@@ -292,7 +309,7 @@
         <p>🏠 登録所在地：福岡県福岡市中央区</p>
         <p>🚉 最寄駅：代々木上原駅・薬院駅（※出張対応） <br>（必要あればレンタルスペースもご相談ください）</p>
         <p>📞 <a href="tel:09050886993" class="tel-link">090-5088-6993</a></p>
-        <p>🕒 営業時間：12:00〜26:00（東京）<br>　　　　　　10:00〜19:00（福岡）<br>（その他のお時間はご相談ください）<br>　※基本的に前日までのご予約をお勧めしております。</p>
+        <p>🕒 営業時間：12:00〜26:00（東京）<br>　　　　　　10:00〜19:00（福岡）<br>（その他のお時間はご相談ください）<br>　※受付は全地域共通で10:00〜19:00です。（事前予約制） <br>LINE・フォームからは24時間予約を受け付けています。</p>
         <p>❌ 定休日：不定休 <br>（下記の直近スケジュールでご確認いただくか、または直接ご連絡ください）</p>
       </div>
 

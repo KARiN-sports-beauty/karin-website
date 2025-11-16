@@ -5,39 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>送信完了 | KARiN. ~Sports & Beauty~</title>
 
-  <!-- ✅ SEO設定 -->
+  <!-- 🔹SEO（送信完了ページなので簡易でOK） -->
   <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="お問い合わせ・ご予約の送信が完了しました。KARiN.では東京（代々木上原）・福岡（薬院）で鍼灸・整体・美容鍼を行っております。折り返しのご連絡をお待ちください。">
+  <meta name="description" content="お問い合わせ・ご予約の送信が完了しました。折り返しご連絡いたします。">
   <meta name="robots" content="noindex, follow">
 
-  <!-- ✅ 構造化データ -->
+  <!-- 🔹構造化データ（WebPage のみ） -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "name": "送信完了ページ",
-        "url": "{{ request.url }}",
-        "about": "お問い合わせ・ご予約完了のお知らせページ",
-        "isPartOf": {
-          "@type": "WebSite",
-          "name": "KARiN. ~Sports & Beauty~",
-          "url": "{{ request.url_root }}"
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "KARiN. ~Sports & Beauty~",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "福岡市中央区",
-          "addressRegion": "福岡県",
-          "addressCountry": "JP"
-        },
-        "telephone": "+81-90-5088-6993"
-      }
-    ]
+    "@type": "WebPage",
+    "name": "送信完了ページ",
+    "url": "{{ request.url }}",
+    "description": "お問い合わせ・ご予約の送信が完了した旨をお知らせするページです。"
   }
   </script>
 

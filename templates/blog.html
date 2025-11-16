@@ -3,63 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ブログ | KARiN. ~Sports & Beauty~</title>
 
-    <!-- ✅ SEO基本設定 -->
-  <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="KARiN.のブログ一覧ページ。健康・美容・トレーニング・セルフケアなどの最新情報を発信中。">
+  <!-- ===========================
+       SEO基本設定
+  ============================ -->
+  <title>ブログ一覧 | KARiN. ~Sports & Beauty~</title>
+  <meta name="description" content="KARiN.のブログ一覧ページ。健康・美容・トレーニング・セルフケアの最新情報を発信中。">
   <meta name="keywords" content="KARiN, ブログ, 鍼灸, 整体, 美容鍼, トレーニング, 健康, セルフケア, 福岡, 東京">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- canonical（固定URL推奨） -->
+  <link rel="canonical" href="https://karin-website.onrender.com/blog">
+
+  <!-- ===========================
+       OGP設定
+  ============================ -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="KARiN. ブログ一覧 | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN.では、身体づくり・健康維持・美容ケアなどに関する記事を発信しています。">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:description" content="身体づくり・健康維持・美容ケアに関する記事を発信しています。">
+  <meta property="og:url" content="https://karin-website.onrender.com/blog">
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/relogo.png">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（Blog + LocalBusiness） -->
+  <!-- ===========================
+       JSON-LD（Blog + CollectionPage）
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Blog",
+        "@type": "CollectionPage",
         "name": "KARiN. ブログ一覧",
-        "description": "KARiN. ~Sports & Beauty~ の公式ブログ。健康・美容・セルフケアの情報をお届け。",
+        "url": "https://karin-website.onrender.com/blog",
+        "description": "KARiN. ~Sports & Beauty~ の公式ブログ一覧ページ。",
+        "isPartOf": {
+          "@type": "WebSite",
+          "url": "https://karin-website.onrender.com/"
+        }
+      },
+      {
+        "@type": "Blog",
+        "name": "KARiN. ブログ",
+        "url": "https://karin-website.onrender.com/blog",
+        "description": "健康・美容・セルフケアなどの記事を掲載しています。",
         "publisher": {
           "@type": "Organization",
           "name": "KARiN. ~Sports & Beauty~",
           "logo": {
             "@type": "ImageObject",
-            "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+            "url": "https://karin-website.onrender.com/static/images/relogo.png"
           }
-        },
-        "url": "{{ request.url }}"
+        }
       },
       {
         "@type": "LocalBusiness",
         "name": "KARiN. ~Sports & Beauty~",
+        "image": "https://karin-website.onrender.com/static/images/relogo.png",
         "telephone": "+81-90-5088-6993",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "福岡市中央区",
           "addressRegion": "福岡県",
           "addressCountry": "JP"
-        }
+        },
+        "url": "https://karin-website.onrender.com/"
       }
     ]
   }
   </script>
 
-
-  <!-- ✅ CSS -->
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_list.css') }}">
 </head>
+
 
 
 <body>

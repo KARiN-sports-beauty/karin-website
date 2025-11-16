@@ -3,24 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~</title>
 
-  <!-- ✅ SEO基本設定 -->
-  <link rel="canonical" href="{{ request.url }}">
+  <!-- ===========================
+       SEO基本設定
+  ============================ -->
+  <link rel="canonical" href="https://karin-website.onrender.com/contact">
   <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
   <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ===========================
+       OGP設定
+  ============================ -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
   <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:url" content="https://karin-website.onrender.com/contact">
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/relogo.png">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <!-- ===========================
+       JSON-LD（ContactPage + LocalBusiness）
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -28,7 +36,7 @@
       {
         "@type": "ContactPage",
         "name": "お問い合わせ・ご予約",
-        "url": "{{ request.url }}",
+        "url": "https://karin-website.onrender.com/contact",
         "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
         "contactOption": {
           "@type": "ContactPoint",
@@ -41,7 +49,7 @@
       {
         "@type": "LocalBusiness",
         "name": "KARiN. ~Sports & Beauty~",
-        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "image": "https://karin-website.onrender.com/static/images/relogo.png",
         "telephone": "+81-90-5088-6993",
         "address": {
           "@type": "PostalAddress",
@@ -59,22 +67,23 @@
           "opens": "10:00",
           "closes": "19:00"
         }],
-        "url": "{{ request.url_root }}"
+        "url": "https://karin-website.onrender.com/"
       }
     ]
   }
   </script>
 
-  <!-- ✅ CSS -->
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
 
-  <!-- ✅ Google Fonts -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- ✅ AOS（ふわっとアニメ） -->
+  <!-- AOS -->
   <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
 </head>
+
 
 <body class="contact-page">
 

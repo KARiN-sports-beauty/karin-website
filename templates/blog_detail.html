@@ -4,27 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ✅ SEO基本 -->
+  <!-- ===========================
+       SEO基本
+  ============================ -->
   <title>{{ blog.title }} | KARiN. ブログ</title>
   <meta name="description" content="{{ blog.description }}">
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="https://karin-website.onrender.com/blog/{{ blog.id }}">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ===========================
+       OGP
+  ============================ -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ blog.title }} | KARiN. ブログ">
   <meta property="og:description" content="{{ blog.description }}">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/blogs/' + blog.image) if blog.image else url_for('static', filename='images/common/ogp_default.jpg') }}">
+  <meta property="og:url" content="https://karin-website.onrender.com/blog/{{ blog.id }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+
+  <!-- OGP画像（絶対URLに統一） -->
+  {% if blog.image %}
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}">
+  {% else %}
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/common/ogp_default.jpg">
+  {% endif %}
+
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ -->
+  <!-- ===========================
+       JSON-LD（BlogPosting）
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": "{{ blog.title }}",
-    "image": "{{ url_for('static', filename='images/blogs/' + blog.image) if blog.image else '' }}",
+    "headline": {{ blog.title | tojson }},
+    {% if blog.image %}
+    "image": "https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}",
+    {% endif %}
     "author": {
       "@type": "Person",
       "name": "藤田 幸士（KARiN.代表）"
@@ -34,18 +49,23 @@
       "name": "KARiN. ~Sports & Beauty~",
       "logo": {
         "@type": "ImageObject",
-        "url": "{{ url_for('static', filename='images/logo.png') }}"
+        "url": "https://karin-website.onrender.com/static/images/relogo.png"
       }
     },
     "datePublished": "{{ blog.date }}",
-    "description": "{{ blog.description }}"
+    "description": {{ blog.description | tojson }},
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://karin-website.onrender.com/blog/{{ blog.id }}"
+    }
   }
   </script>
 
-  <!-- ✅ CSS読込 -->
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}">
 </head>
+
 
 <body>
   <section class="blog-detail">

@@ -3,24 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>施術内容 | KARiN. ~Sports & Beauty~</title>
 
-  <!-- ✅ SEO基本設定 -->
+  <!-- ============================
+       🔥 SEO最適化（完全版）
+  ============================ -->
+  <title>施術内容（鍼灸・整体・美容鍼・トレーニング） | KARiN. ~Sports & Beauty~</title>
+
   <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="KARiN.では、鍼灸・整体・美容鍼・トレーニングなど、身体の内外から整える施術を提供しています。東京（代々木上原）・福岡（薬院）を拠点に完全予約制で対応。">
-  <meta name="keywords" content="施術内容, 鍼灸, 整体, 美容鍼, オイルトリートメント, トレーニング, コンディショニング, KARiN., 代々木上原, 薬院, 出張施術">
+  <meta name="description" content="KARiN.では国家資格保有の鍼灸師による鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術をご提供。東京（代々木上原）・福岡（薬院）にて出張専門で対応しています。">
+  <meta name="keywords" content="施術内容, 鍼灸, 整体, 美容鍼, トレーニング, オイルトリートメント, コンディショニング, 出張施術, 代々木上原, 薬院, KARiN">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ============================
+       🔥 OGP（SNS最適化）
+  ============================ -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="施術内容 | KARiN. ~Sports & Beauty~">
+  <meta property="og:title" content="施術内容（鍼灸・整体・美容鍼・トレーニング） | KARiN.">
   <meta property="og:description" content="鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術。心身をトータルで整えるKARiN.の施術をご紹介します。">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（Service + LocalBusiness） -->
+  <!-- ============================
+       🔥 構造化データ（Service + LocalBusiness）
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -45,13 +53,13 @@
           ],
           "openingHoursSpecification": [{
             "@type": "OpeningHoursSpecification",
-            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
             "opens": "10:00",
             "closes": "19:00"
           }],
           "url": "{{ request.url_root }}"
         },
-        "description": "KARiN.では、国家資格を持つ鍼灸師が身体の状態を見極め、鍼灸・整体・美容鍼・トレーニングを組み合わせた施術を行います。"
+        "description": "KARiN.では国家資格を持つ鍼灸師が、鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術を行います。"
       },
       {
         "@type": "WebPage",
@@ -63,16 +71,15 @@
   }
   </script>
 
-  <!-- ✅ CSS -->
+  <!-- ============================
+       🔥 CSS & フォント & AOS
+  ============================ -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/treatment.css') }}">
-
-  <!-- ✅ Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
-
-  <!-- ✅ AOS（ふんわり出現） -->
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 </head>
+
 
 <body>
 

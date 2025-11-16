@@ -20,57 +20,42 @@
   <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（NewsArticle + LocalBusiness） -->
+  <!-- ✅ 構造化データ（NewsArticle） -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "NewsArticle",
-        "headline": "{{ news.title }}",
-        "datePublished": "{{ news.date }}",
-        "description": "{{ news.excerpt }}",
-        "author": {
-          "@type": "Organization",
-          "name": "KARiN. ~Sports & Beauty~"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "name": "KARiN. ~Sports & Beauty~",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
-          }
-        },
-        "mainEntityOfPage": {
-          "@type": "WebPage",
-          "@id": "{{ request.url }}"
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "KARiN. ~Sports & Beauty~",
-        "telephone": "+81-90-5088-6993",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "福岡市中央区",
-          "addressRegion": "福岡県",
-          "addressCountry": "JP"
-        }
+    "@type": "NewsArticle",
+    "headline": "{{ news.title }}",
+    "datePublished": "{{ news.date }}",
+    "description": "{{ news.excerpt }}",
+    "author": {
+      "@type": "Organization",
+      "name": "KARiN. ~Sports & Beauty~"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "KARiN. ~Sports & Beauty~",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
       }
-    ]
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ request.url }}"
+    }
   }
   </script>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/news_style.css') }}">
 </head>
+
 <body>
   <section class="news-detail">
     <h1 class="news-title">{{ news.title }}</h1>
     <p class="news-date">{{ news.date }}</p>
 
-    <!-- ✅ サムネイル画像（news.imageが存在する場合のみ表示） -->
     {% if news.image %}
     <div class="news-thumb">
       <img src="{{ url_for('static', filename='images/news/' + news.image) }}" alt="{{ news.title }}">

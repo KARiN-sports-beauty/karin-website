@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>初診受付フォーム | KARiN.</title>
-  <!-- ✅ SEO基本設定 -->
-  <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
-  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>初診受付フォーム | KARiN. ~Sports & Beauty~</title>
+
+  <!-- ===========================
+       SEO基本設定
+  ============================ -->
+  <link rel="canonical" href="https://karin-website.onrender.com/form">
+  <meta name="description" content="KARiN.の初診受付フォームです。東京（代々木上原）・福岡（薬院）にて鍼灸・整体・美容鍼・トレーニングを提供。出張対応のため、ご住所や希望日時を事前にお伺いしています。">
+  <meta name="keywords" content="初診, 予約, KARiN, 鍼灸, 整体, 美容鍼, トレーニング, 出張施術, 代々木上原, 薬院">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ===========================
+       OGP設定
+  ============================ -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:title" content="初診受付フォーム | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.の初診受付フォーム。出張施術のため、事前にご住所やご希望日時をお伺いします。">
+  <meta property="og:url" content="https://karin-website.onrender.com/form">
+  <meta property="og:image" content="https://karin-website.onrender.com/static/images/relogo.png">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（ContactPage + LocalBusiness） -->
+  <!-- ===========================
+       JSON-LD（ContactPage + LocalBusiness）
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "ContactPage",
-        "name": "お問い合わせ・ご予約",
-        "url": "{{ request.url }}",
-        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
+        "name": "初診受付フォーム",
+        "url": "https://karin-website.onrender.com/form",
+        "about": "初診の方向けの鍼灸・整体・美容鍼・トレーニングの予約フォーム",
         "contactOption": {
           "@type": "ContactPoint",
           "telephone": "+81-90-5088-6993",
@@ -39,7 +49,7 @@
       {
         "@type": "LocalBusiness",
         "name": "KARiN. ~Sports & Beauty~",
-        "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+        "image": "https://karin-website.onrender.com/static/images/relogo.png",
         "telephone": "+81-90-5088-6993",
         "address": {
           "@type": "PostalAddress",
@@ -57,14 +67,17 @@
           "opens": "10:00",
           "closes": "19:00"
         }],
-        "url": "{{ request.url_root }}"
+        "url": "https://karin-website.onrender.com/"
       }
     ]
   }
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
 </head>
+
 <body>
 
 <section class="form-wrapper">
