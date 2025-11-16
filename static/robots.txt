@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://karin-website.onrender.com/sitemap.xml

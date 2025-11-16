@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- トップページ -->
+  <url>
+    <loc>https://karin-website.onrender.com/</loc>
+    <priority>1.0</priority>
+    <changefreq>daily</changefreq>
+  </url>
+
+  <!-- 固定ページ -->
+  <url><loc>https://karin-website.onrender.com/treatment</loc></url>
+  <url><loc>https://karin-website.onrender.com/price</loc></url>
+  <url><loc>https://karin-website.onrender.com/contact</loc></url>
+  <url><loc>https://karin-website.onrender.com/form</loc></url>
+  <url><loc>https://karin-website.onrender.com/login</loc></url>
+  <url><loc>https://karin-website.onrender.com/register</loc></url>
+  <url><loc>https://karin-website.onrender.com/blog</loc></url>
+  <url><loc>https://karin-website.onrender.com/news</loc></url>
+
+  <!-- 動的ページ（ブログ・お知らせ） -->
+  {% for b in blogs %}
+  <url>
+    <loc>https://karin-website.onrender.com/blog/{{ b.id }}</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  {% endfor %}
+
+  {% for n in news %}
+  <url>
+    <loc>https://karin-website.onrender.com/news/{{ n.id }}</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  {% endfor %}
+
+  <!-- サンクスページ（noindexだけどURLとして登録OK） -->
+  <url><loc>https://karin-website.onrender.com/thanks</loc></url>
+
+</urlset>
