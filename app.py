@@ -567,65 +567,50 @@ def sitemap():
     try:
         pages = []
 
-        # --- 固定ページ ---
-        static_urls = [
-            "/",
-            "/treatment",
-            "/price",
-            "/contact",
-            "/form",
-            "/login",
-            "/register",
-            "/blog",
-            "/news"
-        ]
         base_url = "https://karin-website.onrender.com"
 
+        # --- 固定ページ ---
+        static_urls = [
+            "/", "/treatment", "/price", "/contact",
+            "/form", "/login", "/register", "/blog", "/news"
+        ]
         for url in static_urls:
-            pages.append(f"""
-                <url>
-                    <loc>{base_url}{url}</loc>
-                    <changefreq>weekly</changefreq>
-                </url>
-            """)
+            pages.append(
+                f"<url><loc>{base_url}{url}</loc><changefreq>weekly</changefreq></url>"
+            )
 
-        # --- ブログページ ---
+        # --- ブログ ---
         if os.path.exists("static/data/blogs.json"):
             with open("static/data/blogs.json", encoding="utf-8") as f:
                 blogs = json.load(f)
             for b in blogs:
-                pages.append(f"""
-                    <url>
-                        <loc>{base_url}/blog/{b['id']}</loc>
-                        <changefreq>weekly</changefreq>
-                    </url>
-                """)
+                pages.append(
+                    f"<url><loc>{base_url}/blog/{b['id']}</loc><changefreq>weekly</changefreq></url>"
+                )
 
-        # --- お知らせページ ---
+        # --- お知らせ ---
         if os.path.exists("static/data/news.json"):
             with open("static/data/news.json", encoding="utf-8") as f:
                 news = json.load(f)
             for n in news:
-                pages.append(f"""
-                    <url>
-                        <loc>{base_url}/news/{n['id']}</loc>
-                        <changefreq>weekly</changefreq>
-                    </url>
-                """)
+                pages.append(
+                    f"<url><loc>{base_url}/news/{n['id']}</loc><changefreq>weekly</changefreq></url>"
+                )
 
-        # --- XML 全体 ---
-        xml = f"""
-        <?xml version="1.0" encoding="UTF-8"?>
-        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-            {''.join(pages)}
-        </urlset>
-        """
+        # --- XML 全体（⚠️ 最初の改行なし） ---
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            + "".join(pages) +
+            "</urlset>"
+        )
 
-        return app.response_class(xml, mimetype='application/xml')
+        return app.response_class(xml, mimetype="application/xml")
 
     except Exception as e:
         print("❌ sitemap 生成エラー:", e)
         return "Sitemap generation error", 500
+
 
 
 @app.errorhandler(404)
