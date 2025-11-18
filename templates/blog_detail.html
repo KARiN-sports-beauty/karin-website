@@ -53,7 +53,7 @@
       }
     },
     "datePublished": "{{ blog.date }}",
-    "description": {{ blog.description | tojson }},
+    "description": {{ (blog.excerpt or '') | tojson }},
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": "https://karin-website.onrender.com/blog/{{ blog.id }}"
