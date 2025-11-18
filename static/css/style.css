@@ -34,7 +34,6 @@ img {
   max-width: 100%;
   height: auto;
   display: block;
-  object-fit: contain;
 }
 
 /* ボックス共通（Safariはみ出し対策） */
@@ -1834,6 +1833,17 @@ section[id],
     text-align: right;
   }
 
+    /* ロゴスライドの筆記体文字 */
+  .slide.last .brand p {
+    font-size: 1.8rem !important;  /* ← 2.4rem は大きすぎるので修正 */
+    white-space: nowrap !important; /* ← 強制1行 */
+    letter-spacing: 0.03em;
+  }
+
+  /* KARiN. のロゴ（大文字）も調整してバランス取る */
+  .slide.last .brand h1 {
+    font-size: 3.6rem !important;
+  }
 
   /* ==========================
      院長あいさつ
@@ -1983,14 +1993,22 @@ section[id],
     flex-direction: column;
     align-items: center;
     gap: 40px;
+    padding: 0 10px; /* ← これだけ追加！ */
   }
 
-  .access-info,
   .access-map {
     max-width: 92%;
     padding: 25px 22px;
     margin: 0 auto;
     line-height: 1.8;
+  }
+
+  .access-info {
+    padding: 25px 25px !important;   /* ← 左右の余白を均等に増やす */
+    margin: 0 auto !important;
+    width: 100%;
+    max-width: 95% !important;       /* ← カード自体を少し細くする */
+    border-radius: 16px;
   }
 
   .access-map iframe {
