@@ -1058,6 +1058,36 @@ body.index-page .blog-section {
   transform: scale(1.05);
 }
 
+.map-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    justify-content: flex-start;
+  }
+
+  .map-tab {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1.5px solid #1E3A5F;
+    background: #ffffff;
+    color: #1E3A5F;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .map-tab:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+  }
+
+  .map-tab.active {
+    background: #1E3A5F !important;
+    color: #ffffff !important;
+    border-color: #1E3A5F !important;
+  }
+
+
 /* ===============================
    🩵 ご予約・お問い合わせセクション（4ボタン横並び版）
    2025.11 refined
@@ -1436,7 +1466,6 @@ section[id],
   }
 
   .access-container {
-    flex-direction: column;
     gap: 40px;
     align-items: center;
   }
@@ -1546,9 +1575,74 @@ section[id],
   #contact-section {
     scroll-margin-top: 68px; /* ← ヘッダー高さに応じて調整 */
   }
+
+  .slider,
+  .slide,
+  .slide img {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+
+  .hero {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+  }
+
+  /* 1024px：ヒーロー画像の縦横比を正しくして横いっぱい＋高さ調整 */
+  .hero,
+  .slider,
+  .slide {
+    height: 70vh !important;   /* ← PCより少し低めに */
+    max-height: 750px !important;
+  }
+
+  .slide img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  /* テキスト位置微調整 */
+  .slide .text {
+    font-size: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* アクセス：横並び強制（wrap禁止） */
+  .access-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 30px !important;
+
+    max-width: 1000px;
+    margin: 0 auto !important;
+    padding: 0 !important;          /* ← 余白の元凶 */
+  }
+
+  /* 左のカード */
+  .access-info {
+    width: 48% !important;
+    max-width: 48% !important;
+    padding: 30px !important;
+  }
+
+  /* 右の地図ブロック */
+  .access-map {
+    width: 48% !important;
+    max-width: 48% !important;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 300px !important;
+  }
 }
-
-
 
 /* ===============================
    🩵 トップページ 768px レスポンシブ調整
@@ -1764,6 +1858,50 @@ section[id],
     border-radius: 4px;
   }
 
+  /* ---------------------------------------
+     ① 院長あいさつ（所有資格以降を左寄せ）
+  --------------------------------------- */
+  .initial-text {
+    text-align: left !important;
+  }
+
+  .initial-text h3,
+  .initial-text p,
+  .initial-text ul,
+  .initial-text li {
+    text-align: left !important;
+  }
+
+  /* ---------------------------------------
+     ② 施術内容のカードの下余白を狭める
+  --------------------------------------- */
+  .treatment-card {
+    margin-bottom: 28px !important; /* ← 少し詰める */
+  }
+
+  .treatment-overview {
+    padding-bottom: 50px !important;
+  }
+
+  /* ---------------------------------------
+     ③ アクセス・営業時間（カードと地図は縦並び）
+  --------------------------------------- */
+  .access-container {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 30px !important;
+  }
+
+  .access-info,
+  .access-map {
+    width: 100% !important;
+    max-width: 700px !important;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 300px !important;
+  }
 }
 
 
@@ -1801,10 +1939,11 @@ section[id],
     margin: 0 !important;
   }
 
+  .hero,
   .slider,
   .slide,
   .slide img {
-    height: 80vh !important;
+    height: 68vh !important;
   }
 
   .slide {
@@ -2093,3 +2232,720 @@ section[id],
     font-size: 0.75rem;
   }
 }
+
+
+/* =========================================================
+   📱 414px（iPhone 11 / XR / Pro Max）
+   index.html 完全安定版（競合すべて統合）
+========================================================= */
+@media (max-width: 414px) {
+
+  /* ==========================
+      全体余白
+  ========================== */
+  section {
+    padding: 60px 5% !important;
+  }
+
+  /* ==========================
+      Hero（ファーストビュー）
+  ========================== */
+
+  .slide .text {
+    font-size: 1.8rem;
+    max-width: 90%;
+    line-height: 1.45;
+  }
+
+  .slide.last .brand p {
+    font-size: 2rem;
+    white-space: nowrap;
+  }
+
+  .slide.last .brand h1 {
+    font-size: 4.2rem;
+  }
+
+
+  /* ==========================
+      院長あいさつ
+  ========================== */
+  .greeting-section {
+    padding: 60px 5% 40px !important;
+  }
+
+  .intro-image img {
+    width: 88%;
+    max-width: 330px;
+  }
+
+  .intro-message {
+    font-size: 1rem;
+    line-height: 1.75;
+    padding: 0 10px;
+  }
+
+  .accordion-content,
+  .accordion-content p {
+    font-size: 0.95rem !important;
+    line-height: 1.75 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+
+  /* ==========================
+      初診案内
+  ========================== */
+  .initial-container {
+    gap: 30px;
+  }
+
+  .initial-logo {
+    width: 150px;
+  }
+
+  .cta-btn {
+    padding: 11px 22px;
+    font-size: 0.95rem;
+  }
+
+
+  /* ==========================
+      施術内容
+  ========================== */
+  .treatment-overview {
+    padding: 65px 5%;
+  }
+
+  .treatment-card {
+    margin: 0 35px !important;
+    padding-bottom: 20px;
+  }
+
+  .treatment-card img {
+    height: 200px;
+  }
+
+  .treatment-card p {
+    margin-bottom: 0;
+  }
+
+
+  /* ==========================
+      ブログ
+  ========================== */
+  .blog-section {
+    padding: 65px 6% 80px;
+  }
+
+
+  /* ==========================
+      アクセス・営業時間（←今回の本丸）
+  ========================== */
+
+  /* 親セクションの余白 */
+  .access-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 60px !important;
+    padding-bottom: 60px !important;
+  }
+
+  /* コンテナ：中央寄せの箱に固定（勝ち確） */
+  .access-container {
+    width: 100%;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 10px !important;
+    display: block;          /* flex 無効化 */
+    gap: 36px !important;
+  }
+
+  /* カード側 */
+  .access-info {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto 20px !important;
+    padding: 26px 22px !important;
+    line-height: 1.75;
+  }
+
+  /* 地図側 */
+  .access-map {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto !important;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 240px !important;
+    border-radius: 14px !important;
+    display: block;
+  }
+
+  /* ==========================
+      ご予約・お問い合わせ
+  ========================== */
+  .contact-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .contact-btn {
+    width: 82%;
+    max-width: 260px;
+    padding: 12px 0;
+  }
+
+  .contact-heading {
+    display: block !important;
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    font-size: 1.5rem !important;
+  }
+
+  .contact-text {
+    font-size: 0.88rem !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    margin-top: 4px !important;
+    margin-bottom: 28px !important;
+  }
+
+
+  /* ==========================
+      フッター
+  ========================== */
+  .footer {
+    padding: 55px 5% 40px;
+  }
+
+  .footer-links {
+    gap: 14px;
+  }
+
+  .footer .contact-btn {
+    width: 80%;
+    max-width: 240px;
+  }
+
+  /* セクション本体 */
+  .access-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* ☆ 全てのズレの原因をリセットして中央寄せに */
+  .access-container {
+    width: 100% !important;
+    max-width: 360px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 0 10px !important;
+    display: block !important;
+  }
+
+  /* ⭐ ここが本丸（margin -26px を上書き） */
+  .access-info {
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto 20px !important;   /* ← 最強で上書き */
+    padding: 26px 22px !important;
+  }
+
+  /* 地図 */
+  .access-map {
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 240px !important;
+    border-radius: 14px !important;
+  }
+
+  .location-switch {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .loc-btn {
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  .loc-btn.active {
+    background: #1E3A5F;
+    color: #fff;
+  }
+
+  .access-info,
+  .access-map {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* access セクションの左右余白に依存しない絶対中央寄せ */
+  #access .access-container {
+    width: 100% !important;
+    max-width: 380px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  /* 真犯人の margin を強制的にゼロにして消し飛ばす */
+  #access .access-info {
+    margin: 0 auto 20px auto !important;
+    width: 100% !important;
+    max-width: 380px !important;
+    padding: 26px 22px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 地図も中央揃え */
+  #access .access-map {
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 380px !important;
+  }
+
+  #access .access-map iframe {
+    width: 100% !important;
+    height: 240px !important;
+    border-radius: 14px !important;
+    display: block !important;
+  }
+
+  /* 地図のタブ（東京／福岡） */
+  #access .map-tabs {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  #access .map-tab {
+    padding: 6px 14px !important;
+    font-size: 0.9rem !important;
+    border-radius: 6px !important;
+    border: 1px solid #1E3A5F !important;
+    background: #fff !important;
+    color: #1E3A5F !important;
+  }
+
+  #access .map-tab.active {
+    background: #1E3A5F !important;
+    color: #fff !important;
+  }
+
+  /* 地図ブロックをカードと同じ幅で中央に */
+  #access .access-map {
+    width: 100% !important;
+    max-width: 380px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  #access .access-map iframe {
+    width: 100% !important;
+    height: 230px !important;
+    border-radius: 14px !important;
+    display: block !important;
+  }
+
+  /* 直近スケジュールにも左右の余白をつける */
+  #access .access-schedule {
+    margin-top: 40px !important;
+  }
+
+  #access .schedule-table {
+    max-width: 380px !important;
+    margin: 0 auto !important;
+    padding: 24px 12px !important;  /* ← 左右に少し余白 */
+    box-sizing: border-box !important;
+  }
+
+  #access .schedule-row-header,
+  #access .schedule-row-body {
+    padding-bottom: 6px !important;
+  }
+
+  /* ① 括弧内（※出張対応）などを小さく */
+  .access-info small,
+  .access-info .sub-text {
+    font-size: 0.85rem !important;
+    line-height: 1.45 !important;
+    opacity: 0.9;
+  }
+
+  /* 括弧部分だけ small タグで管理（後述のHTML調整と連動） */
+  .access-info p small {
+    font-size: 0.85rem !important;
+  }
+
+  /* ② 電話番号とメールの余白をなくす */
+  .access-info p {
+    margin-bottom: 6px !important;   /* 全体を詰める */
+  }
+
+  .access-info p.tel-row {
+    margin-bottom: 0 !important;     /* 電話番号行ピタッ */
+  }
+
+  .access-info p.mail-row {
+    margin-top: 2px !important;      /* メールを電話に寄せる */
+    margin-bottom: 12px !important;  /* 次の段との余白だけ確保 */
+  }
+
+}
+
+
+/* =========================================================
+   📱 390px（iPhone 12/13/14 など）
+   index.html 最適化専用
+========================================================= */
+@media (max-width: 390px) {
+
+  /* セクション全体のパディング */
+  section {
+    padding: 55px 5% !important;
+  }
+
+  /* ==========================
+       Hero（ファーストビュー）
+  ========================== */
+  .hero,
+  .slider,
+  .slide,
+  .slide img {
+    height: 78vh !important;
+  }
+
+  .slide .text {
+    font-size: 1.6rem;
+    line-height: 1.45;
+    max-width: 92%;
+  }
+
+  .slide.last .brand h1 {
+    font-size: 3.8rem;
+  }
+
+  .slide.last .brand p {
+    font-size: 1.8rem;
+    white-space: nowrap;
+  }
+
+  /* ==========================
+       院長あいさつ
+  ========================== */
+  .intro-image img {
+    width: 85%;
+    max-width: 300px;
+  }
+
+  .intro-message {
+    font-size: 0.95rem;
+    padding: 0 6px;
+    line-height: 1.7;
+  }
+
+  .accordion-content p {
+    font-size: 0.9rem !important;
+    padding: 0 6px !important;
+  }
+
+  /* ==========================
+       初診案内
+  ========================== */
+  .initial-logo {
+    width: 140px;
+  }
+
+  .cta-btn {
+    font-size: 0.9rem;
+    padding: 10px 20px;
+  }
+
+  /* ==========================
+       施術内容
+  ========================== */
+  .treatment-card {
+    margin: 0 24px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .treatment-card img {
+    height: 180px;
+  }
+
+  .treatment-card p {
+    margin-bottom: 0 !important;
+  }
+
+  /* ==========================
+        ブログ
+  ========================== */
+  .blog-section {
+    padding: 55px 5% 70px;
+  }
+
+  /* ==========================
+        アクセス・営業時間（最重要）
+  ========================== */
+
+  /* 親 */
+  .access-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .access-container {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+    padding: 0 10px;
+    display: block;
+  }
+
+  /* カード */
+  .access-info {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto 18px;
+    padding: 20px 16px !important;
+  }
+
+  /* 括弧内とサブ情報 */
+  .access-info p small {
+    font-size: 0.8rem !important;
+    opacity: 0.9;
+  }
+
+  .access-info p {
+    margin-bottom: 6px !important;
+    line-height: 1.65;
+  }
+
+  .access-info p.tel-row {
+    margin-bottom: 0 !important;
+  }
+
+  .access-info p.mail-row {
+    margin-top: 2px !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* 地図タブ */
+  .map-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .map-tab {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+  }
+
+  .map-tab.active {
+    padding: 6px 16px;
+  }
+
+  /* 地図 */
+  .access-map {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 210px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ==========================
+       直近スケジュール
+  ========================== */
+  .access-schedule {
+    padding: 0 10px;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+
+  .schedule-table {
+    padding: 0 4px;
+  }
+
+  .schedule-row-header .schedule-cell,
+  .schedule-row-body .schedule-cell {
+    font-size: 0.82rem;
+  }
+
+  /* ==========================
+       お問い合わせ
+  ========================== */
+  .contact-buttons {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .contact-btn {
+    width: 80%;
+    max-width: 240px;
+    padding: 10px 0;
+  }
+
+  /* スライダー全体を中央に */
+  .hero,
+  .slider {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    overflow: hidden !important;
+  }
+
+  /* 各スライドを中央揃えにする */
+  .slide {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  /* 画像を強制的に中央揃え */
+  .slide img {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover !important;
+    object-position: center center !important; /* ← 左寄り禁止 */
+  }
+
+  /* 全体を 80vh に統制 */
+  .hero,
+  .slider,
+  .slide,
+  .slide img {
+    height: 80vh !important;       /* ← これで上下余白が消える */
+    max-height: 80vh !important;
+    width: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+  }
+
+  /* スライドの配置 */
+  .slide {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* テキスト（左右はそのまま、中央揃えにしない） */
+  .slide .text {
+    font-size: 1.6rem !important;
+    max-width: 90% !important;
+    transform: none !important;   /* ← これでズレ防止 */
+    top: auto !important;
+  }
+
+  /* 画像を縦長にしない → 高さを短く固定 */
+  .hero,
+  .slider,
+  .slide,
+  .slide img {
+    height: 68vh !important; /* ← ← ここで短くする（70〜75vhでもOK） */
+    min-height: 420px !important; /* ← 安定化のため */
+    max-height: 540px !important;
+    object-fit: cover !important;
+  }
+
+  /* スライド内テキスト位置調整（上すぎるのを直す） */
+  .slide .text {
+    top: 52% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  /* 上の余白（header分）を完全に削る */
+  .hero {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* ============================================
+   📱 390px（iPhone 12 mini / SE / Pixel）
+   アクセス・営業時間専用修正（最優先）
+============================================ */
+@media (max-width: 390px) {
+
+  /* 親セクションは絶対触らない */
+  .access-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* access-container を中央の箱に固定 */
+  .access-container {
+    width: 100%;
+    max-width: 360px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 0 16px !important; /* ← 左右の余白ここで作る */
+    display: block !important;
+  }
+
+  /* カード（access-info） */
+  .access-info {
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 22px !important;
+    padding: 22px 18px !important;
+    box-sizing: border-box;
+  }
+
+  /* 地図（access-map） */
+  .access-map {
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+
+  .access-map iframe {
+    width: 100% !important;
+    height: 220px !important;
+    border-radius: 14px !important;
+    display: block;
+  }
+
+  /* アクセスセクションの下余白を最小に */
+  .access-section {
+    padding-bottom: 20px !important;
+  }
+
+  /* 地図とスケジュールの感覚を詰める */
+  .access-map {
+    margin-bottom: 10px !important;
+  }
+
+  /* スケジュールの横揃え＋左右余白 */
+  .access-schedule {
+    padding: 0 16px !important;
+    margin-top: 10px !important;
+  }
+}
+

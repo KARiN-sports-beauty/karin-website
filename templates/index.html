@@ -90,6 +90,10 @@
 
   <!-- CSS（追加しない／現状維持） -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- AOS CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+
 </head>
 
 
@@ -122,7 +126,7 @@
   <!-- ==========================
        Hero Slider（5枚構成）
   =========================== -->
-  <section class="hero">
+  <section class="hero" data-aos="fade">
     <div class="slider">
       <div class="slide active">
         <div class="text right">己と向き合い</div>
@@ -172,8 +176,8 @@
   <!-- ==========================
        Greeting Section
   =========================== -->
-  <section id="greeting" class="greeting-section">
-    <div class="intro-container">
+  <section id="greeting" class="greeting-section" data-aos="fade-up">
+    <div class="intro-container" data-aos="fade-up" data-aos-delay="150">
       <div class="intro-image">
         <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="KARiN.代表 藤田幸士" />
       </div>
@@ -220,7 +224,7 @@
   <!-- ==========================
        初診案内
   =========================== -->
-  <section id="initial-section" class="initial-section">
+  <section id="initial-section" class="initial-section" data-aos="fade-up">
     <div class="initial-container">
       <div class="initial-text">
         <h2>初診の方へ</h2>
@@ -258,17 +262,17 @@
       トレーナー帯同も行っております。
     </p>
     <div class="treatment-preview">
-      <div class="treatment-card">
+      <div class="treatment-card" data-aos="fade-up" data-aos-delay="100">
         <img src="{{ url_for('static', filename='images/treatment12.jpg') }}" alt="トレーナー帯同" />
         <h3>トレーナー帯同</h3>
         <p>現場やチームの状況に応じた帯同・サポートも可能。施術・トレーニング・コンディショニングまで一貫対応します。</p>
       </div>
-      <div class="treatment-card">
+      <div class="treatment-card" data-aos="fade-up" data-aos-delay="200">
         <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸治療" />
         <h3>鍼灸治療</h3>
         <p>肩こり・腰痛・頭痛・自律神経の不調など、心身のバランスを整えます。</p>
       </div>
-      <div class="treatment-card">
+      <div class="treatment-card" data-aos="fade-up" data-aos-delay="300">
         <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体" />
         <h3>整体</h3>
         <p>姿勢・可動域・体のバランスを整え、根本的な改善を目指します。</p>
@@ -311,24 +315,30 @@
         <h3>KARiN. ~Sports & Beauty~</h3>
         <p>📍 <strong>活動拠点：</strong> 東京（代々木上原周辺）／福岡（薬院周辺）</p>
         <p>🏠 登録所在地：福岡県福岡市中央区</p>
-        <p>🚉 最寄駅：代々木上原駅・薬院駅（※出張対応） <br>（必要あればレンタルスペースもご相談ください）</p>
-        <p>📞 <a href="tel:09050886993" class="tel-link">090-5088-6993</a></p>
+        <p>🚉 最寄駅：代々木上原駅・薬院駅 <small>（※出張対応）</small><br> <small>（必要あればレンタルスペースもご相談ください）</small></p>
+        <p class="tel-row">📞 <a href="tel:09050886993" class="tel-link">090-5088-6993</a></p>
+        <p class="mail-row">✉️ <a href="mailto:karin.sports.beauty@gmail.com" class="tel-link">karin.sports.beauty@gmail.com</a></p>
         <p>🕒 営業時間：12:00〜26:00（東京）<br>　　　　　　10:00〜19:00（福岡）<br>（その他のお時間はご相談ください）<br>　※受付は全地域共通で10:00〜19:00です。（事前予約制） <br>LINE・フォームからは24時間予約を受け付けています。</p>
         <p>❌ 定休日：不定休 <br>（下記の直近スケジュールでご確認いただくか、または直接ご連絡ください）</p>
       </div>
 
-      <div class="access-map">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3241.323374196838!2d139.679!3d35.6696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6018f3d13f4e3a91%3A0xa1d949af0bcae153!2z44CSMTUxLTAwNjQg5p2x5Lqs6YO95p2x5Lqs5Yy65a-M5bGx5Yy65bCP6YeO77yT5LiB55uu77yR77yW4oiS77yR77yS!5e0!3m2!1sja!2sjp!4v1735669000001"
-          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.880906977994!2d130.402!3d33.582456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x354191a8796c6b7d%3A0xf9c473e0cf7d6aef!2z6YeO5Yy65bGx5Y2X6Zmi5bGx5Y2X!5e0!3m2!1sja!2sjp!4v1735669000002" width="100%" height="260" style="border:0;"
-          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-</iframe>
+      <div class="access-map" data-aos="fade-up" data-aos-delay="150">
+        <!-- タブ -->
+        <div class="map-tabs">
+          <button class="map-tab active" data-map="tokyo">東京</button>
+          <button class="map-tab" data-map="fukuoka">福岡</button>
+        </div>
 
+        <!-- 地図（iframe は1つ） -->
+        <iframe id="mapFrame"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3241.323374196838!2d139.679!3d35.6696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6018f3d13f4e3a91%3A0xa1d949af0bcae153!2z44CSMTUxLTAwNjQg5p2x5Lqs6YO95p2x5Lqs5Yy65a-M5bGx5Yy65bCP6YeO77yT5LiB55uu77yR77yW4oiS77yR77yS!5e0!3m2!1sja!2sjp!4v1735669000001"
+          allowfullscreen loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
 
     <!-- 🩵 スケジュールを同セクション内に -->
-    <div class="access-schedule">
+    <div class="access-schedule" data-aos="fade-up" data-aos-delay="200">
       <h3>📅 直近スケジュール</h3>
 
       <div class="schedule-table">
@@ -359,7 +369,7 @@
   <!-- ==========================
        お問い合わせ・ご予約
   =========================== -->
-  <section id="contact-section" class="contact-section">
+  <section id="contact-section" class="contact-section" data-aos="fade-up">
     <h2 class="contact-heading">ご予約・お問い合わせはこちら</h2>
     <p class="contact-text">ご希望の内容に合わせて、下記よりお選びください。</p>
 
@@ -383,7 +393,7 @@
   <!-- ==========================
        Footer
   =========================== -->
-  <footer class="footer">
+  <footer class="footer" data-aos="fade">
     <div class="footer-inner">
       <div class="footer-logo">
         KARiN. <span>~Sports & Beauty~</span>
@@ -405,6 +415,16 @@
   </footer>
   <script src="{{ url_for('static', filename='js/accordion.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- AOS JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
 
+  <script>
+    AOS.init({
+      duration: 800,       // ← ふわっと感の時間（ms）
+      easing: 'ease-out',  // ← 動きの滑らかさ
+      once: true,          // ← スクロールバック時は発火しない（品が良い）
+      offset: 120          // ← 手前で始まる距離
+    });
+  </script>
 </body>
 </html>

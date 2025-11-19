@@ -191,3 +191,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+
+// ------------------------------
+// 地図タブ切り替え
+// ------------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+  const mapFrame = document.getElementById("mapFrame");
+  const tabs = document.querySelectorAll(".map-tab");
+
+  const MAP_URL = {
+    tokyo:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3241.323374196838!2d139.679!3d35.6696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6018f3d13f4e3a91%3A0xa1d949af0bcae153!2z44CSMTUxLTAwNjQg5p2x5Lqs6YO95p2x5Lqs5Yy65a-M5bGx5Yy65bCP6YeO77yT5LiB55uu77yR77yW4oiS77yR77yS!5e0!3m2!1sja!2sjp!4v1735669000001",
+
+    fukuoka:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.880906977994!2d130.402!3d33.582456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x354191a8796c6b7d%3A0xf9c473e0cf7d6aef!2z6YeO5Yy65bGx5Y2X6Zmi5bGx5Y2X!5e0!3m2!1sja!2sjp!4v1735669000002",
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      // タブの見た目切り替え
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      // 地図URL切り替え
+      const map = tab.dataset.map;
+      mapFrame.src = MAP_URL[map];
+    });
+  });
+});
