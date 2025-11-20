@@ -20,6 +20,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 import uuid
 import webbrowser  # 🔵 投稿/編集後にブラウザを開く
+import time
 
 # =========================
 # 外観・基本ウィンドウ
@@ -316,6 +317,9 @@ def open_edit(kind, id):
         messagebox.showinfo("保存", "更新しました。")
         print("編集保存完了")
 
+        # 3秒待機
+        time.sleep(3)
+
         # 🔵 投稿/編集後は本番URLでプレビュー
         try:
             if kind == "blog":
@@ -335,17 +339,11 @@ def open_edit(kind, id):
 # =====================================================
 def delete_article(kind, id):
     data_file = BLOG_JSON if kind == "blog" else NEWS_JSON
-    folder    = BLOG_DIR if kind == "blog" else NEWS_DIR
-    filename  = f"{kind}_{id}.html"
-    path      = os.path.join(folder, filename)
 
     lst = load_json(data_file)
     lst = [x for x in lst if x["id"] != id]
     save_json(data_file, lst)
 
-    backup_file(path, kind, id)
-    if os.path.exists(path):
-        os.remove(path)
 
 def open_list(mode="public"):
     """ブログ/ニュース 一覧。右端に編集/削除を揃えて表示。"""
@@ -569,7 +567,7 @@ def new_post(kind="blog"):
             "title": title,
             "excerpt": ent_excerpt.get().strip(),
             "date": today(),
-            "file": f"{kind}s/{kind}_{nid}.html",  # 互換用（実際の表示は blog_detail/news_detail を使用）
+            "file": "",  # 互換用（実際の表示は blog_detail/news_detail を使用）
             "keywords": [],
             "image": "" if thumb.get() == "（なし）" else thumb.get(),
             "draft": bool(draft.get()),
@@ -581,6 +579,9 @@ def new_post(kind="blog"):
         save_json(data_file, data)
 
         messagebox.showinfo("保存", "投稿を保存しました。")
+
+        # 3秒待機
+        time.sleep(3)
 
         # 🔵 投稿完了後、本番URLでプレビュー
         try:

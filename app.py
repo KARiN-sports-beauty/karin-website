@@ -346,64 +346,92 @@ def blog():
 
     return render_template("blog.html", blogs=blogs, query=query, categories=categories, current_category=category)
 
-@app.route("/blog/<int:id>")
-def show_blog(id):
-    # --- すべてのブログデータを読み込み ---
-    with open("static/data/blogs.json", encoding="utf-8") as f:
-        blogs = json.load(f)
-    blog = next((b for b in blogs if b["id"] == id), None)
 
+@app.route("/blog/<int:id>")
+def blog_detail(id):
+    # --- JSONからブログ一覧を読み込み ---
+    try:
+        with open("static/data/blogs.json", "r", encoding="utf-8") as f:
+            blogs = json.load(f)
+    except Exception:
+        return render_template("404.html"), 404
+
+    # --- 指定IDの記事を探す ---
+    blog = next((b for b in blogs if b["id"] == id), None)
     if not blog:
         return render_template("404.html"), 404
 
-    # --- 本文データの扱い ---
-    if blog.get("body"):
-        content = blog["body"]
-    else:
-        file_path = blog.get("file")
-        if file_path and os.path.exists(f"templates/{file_path}"):
-            with open(f"templates/{file_path}", encoding="utf-8") as f:
-                content = f.read()
-        else:
-            content = "<p>この記事の内容は準備中です。</p>"
-        blog["body"] = content
+    # --- 本文（body）必須 ---
+    content = blog.get("body", "")
+    if not content:
+        content = "<p>この記事の内容は準備中です。</p>"
 
-    # --- コメント・いいねデータ読み込み ---
-    comments_data = load_comments()
-    comments = comments_data.get(str(id), [])
+    blog["body"] = content
 
-    likes_data = load_likes()
-    like_count = likes_data.get(str(id), 0)
+    # --- コメント ---
+    comments = []
+    try:
+        with open("static/data/blog_comments.json", "r", encoding="utf-8") as f:
+            cdata = json.load(f)
+        comments = cdata.get(str(id), [])
+    except:
+        comments = []
 
-    # --- 関連ブログ抽出（タグ → カテゴリ の優先順） ---
-    related_blogs = []
-    if "tags" in blog and blog["tags"]:
-        related_blogs = [
-            b for b in blogs
-            if b["id"] != id and any(tag in b.get("tags", []) for tag in blog["tags"])
+    # --- いいね ---
+    like_count = 0
+    try:
+        with open("static/data/blog_likes.json", "r", encoding="utf-8") as f:
+            ldata = json.load(f)
+        like_count = ldata.get(str(id), 0)
+    except:
+        like_count = 0
+
+    # --- 関連記事（タグ or カテゴリ） ---
+    related = []
+    if blog.get("tags"):
+        related = [
+            b for b in blogs if b["id"] != id and any(t in b.get("tags", []) for t in blog["tags"])
         ][:5]
-    elif "category" in blog:
-        related_blogs = [
-            b for b in blogs
-            if b["id"] != id and b.get("category") == blog["category"]
+    elif blog.get("category"):
+        related = [
+            b for b in blogs if b["id"] != id and b.get("category") == blog["category"]
         ][:5]
 
-    # --- レンダリング ---
     return render_template(
         "blog_detail.html",
         blog=blog,
         comments=comments,
         like_count=like_count,
-        related_blogs=related_blogs
+        related_blogs=related
     )
 
 
+
 @app.route("/news/<int:id>")
-def show_news(id):
-    path = f"templates/news/news_{id}.html"
-    if not os.path.exists(path):
+def news_detail(id):
+    # --- JSONから読み込み ---
+    try:
+        with open("static/data/news.json", "r", encoding="utf-8") as f:
+            news_list = json.load(f)
+    except:
         return render_template("404.html"), 404
-    return send_from_directory("templates/news", f"news_{id}.html")
+
+    news = next((n for n in news_list if n["id"] == id), None)
+    if not news:
+        return render_template("404.html"), 404
+
+    # 本文
+    body = news.get("body", "")
+    if not body:
+        body = "<p>この記事の内容は準備中です。</p>"
+
+    news["body"] = body
+
+    return render_template(
+        "news_detail.html",
+        news=news
+    )
+
 
 # ===================================================
 # ✅ トップ・404
