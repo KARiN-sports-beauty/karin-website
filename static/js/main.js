@@ -182,8 +182,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="comment-item">
           <p><strong>${c.name}</strong> さん：</p>
           <p>${c.text}</p>
+          ${c.reply ? `<div class="reply">↳ <strong>藤田 幸士</strong>：${c.reply}</div>` : ""}
         </div>
       `).join("");
+
       textInput.value = "";
       nameInput.value = "";
     } else {

@@ -5,16 +5,24 @@
   <title>ページが見つかりません｜KARiN.</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <style>
     body {
       text-align: center;
       font-family: "Noto Sans JP", sans-serif;
       background: #ffffff;
       color: #1e3a5f;
-      margin-top: 15%;
-      padding: 0 20px;
+      margin: 0; /* ← bodyのmargin-topは削除！ */
     }
+
+    /* 404専用の中央ラッパー */
+    .error-wrapper {
+      max-width: 600px;
+      margin: 18% auto 0; /* ← 中央位置はこっちで管理 */
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    /* --- 基本テキスト --- */
     h1 {
       font-size: 2rem;
       margin-bottom: 16px;
@@ -23,7 +31,6 @@
     p {
       font-size: 1rem;
       line-height: 1.8;
-      color: #1e3a5f;
     }
     a {
       display: inline-block;
@@ -42,40 +49,32 @@
       transform: translateY(-2px);
     }
 
-    /* 🔹 レスポンシブ対応 */
+    /* 🔹 1024px */
     @media (max-width: 1024px) {
-      body {
-        margin-top: 20%;
+      .error-wrapper {
+        margin-top: 20%;  /* ← bodyではなく wrapper の位置を調整 */
       }
-      h1 {
-        font-size: 1.8rem;
-      }
+      h1 { font-size: 1.8rem; }
     }
 
+    /* 🔹 768px */
     @media (max-width: 768px) {
-      body {
-        margin-top: 25%;
-        padding: 0 5%;
+      .error-wrapper {
+        max-width: 520px;
+        margin-top: 25%; /* ← ここだけで位置管理 */
+        padding: 0 24px;
       }
-      h1 {
-        font-size: 1.5rem;
-      }
-      p {
-        font-size: 0.95rem;
-      }
-      a {
-        padding: 10px 28px;
-        font-size: 0.95rem;
-      }
+      h1 { font-size: 1.5rem; }
+      p { font-size: 0.95rem; }
+      a { font-size: 0.95rem; }
     }
 
+    /* 🔹 480px */
     @media (max-width: 480px) {
-      body {
+      .error-wrapper {
         margin-top: 35%;
       }
-      h1 {
-        font-size: 1.3rem;
-      }
+      h1 { font-size: 1.3rem; }
       p {
         font-size: 0.9rem;
         line-height: 1.6;
@@ -87,12 +86,44 @@
         padding: 10px 20px;
       }
     }
+    @media (max-width: 414px) {
+      .error-wrapper {
+        margin-top: 32%;
+        padding: 0 22px;
+      }
+      h1 {
+        font-size: 1.25rem;
+      }
+    @media (max-width: 390px) {
+      .error-wrapper {
+        margin-top: 30%;
+        padding: 0 20px;
+      }
+      h1 {
+        font-size: 1.22rem;
+      }
+    }
+    @media (max-width: 375px) {
+      .error-wrapper {
+        margin-top: 28%;
+        padding: 0 18px;
+      }
+      h1 {
+        font-size: 1.18rem;
+      }
+    }
+
+}
+
+
   </style>
 </head>
 <body>
-  <h1>お探しのページは見つかりませんでした</h1>
-  <p>URLが間違っているか、ページが削除された可能性があります。</p>
-  <a href="/">ホームに戻る</a>
+  <div class="error-wrapper">
+    <h1>お探しのページは見つかりませんでした</h1>
+    <p>URLが間違っているか、ページが削除された可能性があります。</p>
+    <a href="/">ホームに戻る</a>
+  </div>
 </body>
 </html>
 

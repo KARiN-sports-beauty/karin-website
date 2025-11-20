@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify
 from datetime import datetime, timedelta
 from flask_mail import Mail, Message
 import gspread
@@ -107,10 +107,6 @@ def load_blogs():
     blogs.sort(key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d"), reverse=True)
     return blogs
 
-# コメント・いいね保存用ファイル
-COMMENTS_FILE = "static/data/blog_comments.json"
-LIKES_FILE = "static/data/blog_likes.json"
-
 
 def load_json_safely(path, default):
     """JSONを安全に読み込む（エラー時は default を返す）"""
@@ -131,25 +127,6 @@ def save_json_safely(path, data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"❌ JSON書き込みエラー: {path}", e)
-
-
-def load_comments():
-    """ブログコメント全体を読み込み（{blog_id: [comments...]}）"""
-    return load_json_safely(COMMENTS_FILE, {})
-
-
-def save_comments(data):
-    save_json_safely(COMMENTS_FILE, data)
-
-
-def load_likes():
-    """ブログいいね数を読み込み（{blog_id: count}）"""
-    return load_json_safely(LIKES_FILE, {})
-
-
-def save_likes(data):
-    save_json_safely(LIKES_FILE, data)
-
 
 # =====================================
 # ▼ 各ページルート定義
@@ -421,38 +398,6 @@ def show_blog(id):
     )
 
 
-@app.route("/blog/<int:id>/comment", methods=["POST"])
-def add_comment(id):
-    name = request.form.get("name", "").strip() or "ゲスト"
-    body = request.form.get("body", "").strip()
-
-    # 空コメントは無視して戻る
-    if not body:
-        return redirect(url_for("show_blog", id=id))
-
-    comments_data = load_comments()
-    comments = comments_data.get(str(id), [])
-
-    # シンプルな連番ID
-    if comments:
-        max_id = max(c.get("id", 0) for c in comments)
-        next_id = max_id + 1
-    else:
-        next_id = 1
-
-    comments.append({
-        "id": next_id,
-        "name": name,
-        "body": body,
-        "created_at": datetime.now().strftime("%Y/%m/%d %H:%M"),
-    })
-
-    comments_data[str(id)] = comments
-    save_comments(comments_data)
-
-    return redirect(url_for("show_blog", id=id))
-
-
 @app.route("/news/<int:id>")
 def show_news(id):
     path = f"templates/news/news_{id}.html"
@@ -484,82 +429,81 @@ def index():
     return render_template("index.html", latest_blogs=latest_blogs, latest_news=latest_news, schedule=upcoming, today=today)
 
 
-
-# =====================================
-# ▼ コメント＆いいねAPI（ブログ用）
-# =====================================
+# ===================================================
+# ❤️ コメント・いいね API（統一版 / 2025.11）
+# ===================================================
 
 COMMENTS_PATH = "static/data/blog_comments.json"
 LIKES_PATH = "static/data/blog_likes.json"
 
-# --- コメントデータ読み込み ---
+
+# ---------- 共通読み書き ----------
 def load_comments():
     if os.path.exists(COMMENTS_PATH):
         with open(COMMENTS_PATH, encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-# --- コメント保存 ---
 def save_comments(data):
     with open(COMMENTS_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# --- いいねデータ読み込み ---
 def load_likes():
     if os.path.exists(LIKES_PATH):
         with open(LIKES_PATH, encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-# --- いいね保存 ---
 def save_likes(data):
     with open(LIKES_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-# --- コメント送信 ---
+# ---------- コメント API ----------
 @app.route("/api/comment/<int:blog_id>", methods=["POST"])
 def api_comment(blog_id):
     name = request.form.get("name", "匿名")
     text = request.form.get("text", "").strip()
+
     if not text:
         return {"error": "コメントが空です"}, 400
 
     comments = load_comments()
-    if str(blog_id) not in comments:
-        comments[str(blog_id)] = []
+    comments.setdefault(str(blog_id), [])
 
-    comments[str(blog_id)].append({"name": name, "text": text})
-    # 最新5件のみ保持
+    comments[str(blog_id)].append({
+        "name": name,
+        "text": text,
+        "created_at": datetime.now().strftime("%Y/%m/%d %H:%M")
+    })
+
+    # 最新5件だけ保持（任意）
     comments[str(blog_id)] = comments[str(blog_id)][-5:]
-    save_comments(comments)
 
+    save_comments(comments)
     return {"success": True, "comments": comments[str(blog_id)]}
 
 
-# --- いいね処理 ---
+# ---------- いいね API ----------
 @app.route("/api/like/<int:blog_id>", methods=["POST"])
 def api_like(blog_id):
-    data = load_likes()
-    blog_key = str(blog_id)
-
-    # 現在のいいね数を取得
-    current_count = data.get(blog_key, 0)
-
-    # リクエストからトグル状態を受け取る
     liked = request.form.get("liked", "false") == "true"
 
-    # 増減処理（最小値0）
-    if liked:
-        current_count += 1
-    else:
-        current_count = max(0, current_count - 1)
+    data = load_likes()
+    key = str(blog_id)
 
-    # 保存
-    data[blog_key] = current_count
+    count = data.get(key, 0)
+
+    if liked:
+        count += 1
+    else:
+        count = max(0, count - 1)
+
+    data[key] = count
     save_likes(data)
 
-    return {"success": True, "like_count": current_count}
+    return {"success": True, "like_count": count}
+
 
 
 @app.route("/sitemap.xml")
