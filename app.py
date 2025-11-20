@@ -348,7 +348,7 @@ def blog():
 
 
 @app.route("/blog/<int:id>")
-def show_blog(id):
+def blog_detail(id):
     # --- JSONからブログ一覧を読み込み ---
     try:
         with open("static/data/blogs.json", "r", encoding="utf-8") as f:
