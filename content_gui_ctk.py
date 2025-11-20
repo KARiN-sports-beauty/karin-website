@@ -567,8 +567,6 @@ def new_post(kind="blog"):
             "title": title,
             "excerpt": ent_excerpt.get().strip(),
             "date": today(),
-            "file": "",  # 互換用（実際の表示は blog_detail/news_detail を使用）
-            "keywords": [],
             "image": "" if thumb.get() == "（なし）" else thumb.get(),
             "draft": bool(draft.get()),
             "category": ent_category.get().strip(),
