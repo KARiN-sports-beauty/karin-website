@@ -8,23 +8,31 @@
        SEO基本
   ============================ -->
   <title>{{ blog.title }} | KARiN. ブログ</title>
-  <meta name="description" content="{{ blog.description }}">
-  <link rel="canonical" href="https://karin-website.onrender.com/blog/{{ blog.id }}">
+
+  <!-- ❗ blog.description → blog.excerpt に修正 -->
+  <meta name="description" content="{{ blog.excerpt }}">
+
+  <!-- ❗ canonical を request.url で動的生成 -->
+  <link rel="canonical" href="{{ request.url }}">
 
   <!-- ===========================
-       OGP
+       OGP（完全動的）
   ============================ -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ blog.title }} | KARiN. ブログ">
-  <meta property="og:description" content="{{ blog.description }}">
-  <meta property="og:url" content="https://karin-website.onrender.com/blog/{{ blog.id }}">
+
+  <!-- ❗ blog.description → blog.excerpt に修正 -->
+  <meta property="og:description" content="{{ blog.excerpt }}">
+
+  <!-- ❗ og:url も request.url が正解 -->
+  <meta property="og:url" content="{{ request.url }}">
+
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
-  <!-- OGP画像（絶対URLに統一） -->
   {% if blog.image %}
-  <meta property="og:image" content="https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}">
+    <meta property="og:image" content="https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}">
   {% else %}
-  <meta property="og:image" content="https://karin-website.onrender.com/static/images/common/ogp_default.jpg">
+    <meta property="og:image" content="https://karin-website.onrender.com/static/images/common/ogp_default.jpg">
   {% endif %}
 
   <meta name="twitter:card" content="summary_large_image">
@@ -38,7 +46,7 @@
     "@type": "BlogPosting",
     "headline": {{ blog.title | tojson }},
     {% if blog.image %}
-    "image": "https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}",
+      "image": "https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}",
     {% endif %}
     "author": {
       "@type": "Person",
@@ -53,10 +61,14 @@
       }
     },
     "datePublished": "{{ blog.date }}",
+
+    <!-- ❗ description → excerpt に変更 -->
     "description": {{ (blog.excerpt or '') | tojson }},
+
+    <!-- ❗ mainEntityOfPage も request.url の方が正確 -->
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://karin-website.onrender.com/blog/{{ blog.id }}"
+      "@id": "{{ request.url }}"
     }
   }
   </script>

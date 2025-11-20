@@ -348,7 +348,7 @@ def blog():
 
 
 @app.route("/blog/<int:id>")
-def blog_detail(id):
+def show_blog(id):
     # --- JSONからブログ一覧を読み込み ---
     try:
         with open("static/data/blogs.json", "r", encoding="utf-8") as f:
@@ -408,7 +408,7 @@ def blog_detail(id):
 
 
 @app.route("/news/<int:id>")
-def news_detail(id):
+def show_news(id):
     # --- JSONから読み込み ---
     try:
         with open("static/data/news.json", "r", encoding="utf-8") as f:
