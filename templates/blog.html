@@ -90,41 +90,47 @@
     <button type="submit">検索</button>
   </form>
 
-
   <section class="blog-wrapper" data-aos="fade-up">
     <h1 class="blog-heading">KARiN. ブログ</h1>
-      <!-- ✅ カテゴリフィルターボタン -->
+
+    <!-- カテゴリフィルタ -->
     <div class="blog-filter">
       <a href="{{ url_for('blog') }}" class="filter-btn {% if not current_category %}active{% endif %}">すべて</a>
       {% for c in categories %}
         <a href="{{ url_for('blog', category=c) }}" class="filter-btn {% if current_category == c %}active{% endif %}">{{ c }}</a>
       {% endfor %}
     </div>
+
     <div class="blog-list">
       {% if blogs %}
         {% for blog in blogs %}
         <div class="blog-item">
           <a href="{{ url_for('show_blog', id=blog.id) }}">
-            <!-- タイトル＋日付＋カテゴリ＋サムネ：上段 -->
-            <div class="blog-top">
-              <div class="blog-header">
-                <h2 class="blog-title">{{ blog.title }}</h2>
-                <div class="blog-meta">
-                  {{ blog.date }}
-                  {% if blog.category %}
-                    | <span class="blog-category">{{ blog.category }}</span>
-                  {% endif %}
-                </div>
+
+            <!-- サムネ：横長フル幅 -->
+            {% if blog.image %}
+            <div class="blog-thumb-wide">
+              <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
+            </div>
+            {% else %}
+            <div class="blog-thumb-wide no-image"></div>
+            {% endif %}
+
+            <!-- タイトル・カテゴリ・日付 -->
+            <div class="blog-content">
+              <h2 class="blog-title">{{ blog.title }}</h2>
+
+              <div class="blog-meta">
+                {{ blog.date }}
+                {% if blog.category %}
+                  | <span class="blog-category">{{ blog.category }}</span>
+                {% endif %}
               </div>
-              {% if blog.image %}
-              <div class="blog-thumb">
-                <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
-              </div>
-              {% endif %}
+
+              <!-- 抜粋 -->
+              <p class="blog-excerpt">{{ blog.excerpt }}</p>
             </div>
 
-            <!-- 抜粋：下段で横いっぱい -->
-            <p class="blog-excerpt">{{ blog.excerpt }}</p>
           </a>
         </div>
         {% endfor %}
@@ -135,13 +141,13 @@
         </div>
       {% endif %}
     </div>
-
   </section>
-    <!-- ホームへ戻る -->
+
+  <!-- ホームボタン -->
   <a href="{{ url_for('index') }}" class="home-btn">
     <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
     <span>ホームに戻る</span>
   </a>
-
+  
 </body>
 </html>
