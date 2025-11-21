@@ -3,31 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ news.title }} | KARiN. お知らせ</title>
 
-  <!-- ✅ SEO基本設定 -->
+  <!-- ===========================
+       🔍 SEO基本設定
+  ============================ -->
+  <title>{{ news.title }} | KARiN. お知らせ</title>
   <link rel="canonical" href="{{ request.url }}">
+
   <meta name="description" content="{{ news.excerpt }}">
-  <meta name="keywords" content="お知らせ, KARiN, 鍼灸, 整体, 美容鍼, トレーニング, 福岡, 東京, 代々木上原, 薬院">
+  <meta name="keywords" content="KARiN, お知らせ, 鍼灸, 整体, 美容鍼, トレーニング, 福岡, 東京, 代々木上原, 薬院">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ✅ OGP設定 -->
+  <!-- ===========================
+       🌐 OGP / SNS
+  ============================ -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ news.title }}">
   <meta property="og:description" content="{{ news.excerpt }}">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ✅ 構造化データ（NewsArticle） -->
+  <!-- ===========================
+       🧩 JSON-LD（構造化データ）
+       NewsArticle完全版
+  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     "headline": "{{ news.title }}",
     "datePublished": "{{ news.date }}",
+    "dateModified": "{{ news.date }}",
     "description": "{{ news.excerpt }}",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ request.url }}"
+    },
+    "image": [
+      {% if news.image %}
+      "{{ url_for('static', filename='images/news/' + news.image, _external=True) }}"
+      {% else %}
+      "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+      {% endif %}
+    ],
     "author": {
       "@type": "Organization",
       "name": "KARiN. ~Sports & Beauty~"
@@ -39,21 +60,25 @@
         "@type": "ImageObject",
         "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
       }
-    },
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": "{{ request.url }}"
     }
   }
   </script>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/news_style.css') }}">
 </head>
 
+
 <body>
+
   <section class="news-detail">
+
+    <!-- ===========================
+         📝 記事タイトル（唯一のh1）
+    ============================ -->
     <h1 class="news-title">{{ news.title }}</h1>
+
     <p class="news-date">{{ news.date }}</p>
 
     {% if news.image %}
@@ -61,14 +86,26 @@
       <img src="{{ url_for('static', filename='images/news/' + news.image) }}" alt="{{ news.title }}">
     </div>
     {% endif %}
-    
+
+    <!-- ===========================
+         📝 本文（h1は禁止 → h2,h3に統一）
+    ============================ -->
     <div class="news-body">
       {{ news.body|safe }}
     </div>
 
+    <!-- ===========================
+         🏠 フッター（ホームへ戻る）
+    ============================ -->
     <div class="news-footer">
-      <a href="{{ url_for('index') }}" class="btn">🏠 ホームに戻る</a>
+      <a href="{{ url_for('index') }}" class="btn home-return-btn">
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="">
+        ホームに戻る
+      </a>
     </div>
+
   </section>
+
 </body>
 </html>
+
