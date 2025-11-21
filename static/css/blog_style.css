@@ -40,6 +40,7 @@ body {
 .blog-body, .news-body {
   font-size: 1.05rem;
   color: #333;
+  padding: 0 24px;     /* ← PCでもスマホでも左右バランス良く */
 }
 
 .blog-body p, .news-body p {
@@ -114,16 +115,19 @@ body {
   object-fit: cover;      /* ← トリミングして見栄え優先 */
 }
 
-/* 冒頭のサムネイル（.blog-thumb 内）だけ一回り小さく */
 .blog-detail .blog-thumb img {
   width: 100%;
-  max-width: 320px;
-  max-height: 280px;
-  height: auto;
-  object-fit: cover;
-  border-radius: 16px;
-  margin: 0 auto 20px;
+  height: auto;           /* ← 縦横比保持 */
+  max-width: 720px;       /* ← PC時の最大幅 */
+  max-height: none;       /* ← 高さ制限なし */
+  object-fit: contain;    /* ← 切れずに全体表示 */
+  object-position: center;
+  display: block;
+  margin: 0 auto 32px;
+  border-radius: 14px;
+  box-shadow: none;
 }
+
 
 /* 📱 タブレット */
 @media (max-width: 768px) {
@@ -179,7 +183,7 @@ body {
 }
 
 /* === フッター === */
-.blog-footer, .news-footer {
+.ooter, .news-footer {
   margin-top: 60px;
   text-align: center;
 }
@@ -338,58 +342,12 @@ body {
    🪷 ブログ・ニュース詳細：サムネイル最優先（強制上書き版）
 ============================ */
 
+
 /* 背景は白で統一 */
 body,
 .blog-detail,
 .news-detail {
   background-color: #ffffff !important;
-}
-
-/* サムネイル中央寄せ */
-.blog-thumb img,
-.news-thumb img {
-  width: auto !important;
-  max-width: 300px !important;
-  max-height: 200px !important; /* ← 高さ制限ここ！ */
-  height: auto !important;
-  object-fit: cover !important; /* ← 縦横比を保ちながらトリミング */
-  border-radius: 16px !important;
-  display: block !important;
-  margin: 0 auto 24px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-}
-
-
-/* 📸 記事サムネイル（確実に最優先で反映） */
-.blog-detail > .blog-thumb img,
-.news-detail > .news-thumb img {
-  width: auto !important;        /* ← 100%上書き対策 */
-  max-width: 300px !important;   /* ← 画像幅固定 */
-  height: auto !important;
-  border-radius: 16px !important;
-  display: block !important;
-  margin: 0 auto 24px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-}
-
-/* 📱 タブレット */
-@media (max-width: 768px) {
-  .blog-detail > .blog-thumb img,
-  .news-detail > .news-thumb img {
-    max-width: 260px !important;
-  }
-}
-
-/* 📱 スマホ */
-@media (max-width: 480px) {
-  .blog-detail > .blog-thumb img,
-  .news-detail > .news-thumb img {
-    max-width: 220px !important;
-  }
-  /* 記事によって縦画像多ければ */
-  .blog-body img {
-    max-height: 300px;
-  }
 }
 
 /* ===============================
@@ -710,13 +668,6 @@ body,
   text-align: center;
 }
 
-.like-comment-container {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
 .action-btn {
   background-color: #f0f3f8;
   color: #1E3A5F;
@@ -891,7 +842,7 @@ body,
 .like-comment-container {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 60px;
   margin-bottom: 16px;
 }
 
@@ -1015,7 +966,7 @@ body,
   margin: 40px 0 60px;
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 60px;
 }
 .blog-footer .btn {
   background: #ffffff;
@@ -1033,3 +984,211 @@ body,
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(0,0,0,0.1);
 }
+
+/* =========================================================
+   🎨 KARiN. PC版 ブログ詳細デザインリファイン
+   blog_detail.html 専用デザイン
+   2025.11
+======================================================== */
+
+/* ------------------------------
+   H2デザイン（優しいゴールドライン）
+------------------------------ */
+.blog-detail .blog-body h2 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin: 2.6em 0 1.6em;
+  padding: 14px 18px 14px 20px;
+  border-left: 4px solid #c0a062;   /* ゴールド */
+  background: #f7f8fa;   /* ← これが薄い背景 */
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+/* ------------------------------
+   H3デザイン（ネイビーバー）
+------------------------------ */
+.blog-detail .blog-body h3 {
+  font-size: 1.20rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin: 2.2em 0 1.2em;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e1e6f0;   /* ← 控えめな下線 */
+  letter-spacing: 0.01em;
+}
+
+/* ◆マーク削除 */
+.blog-detail .blog-body h3::before {
+  content: none;
+}
+
+/* ------------------------------
+   本文全体の読みやすさ調整
+------------------------------ */
+.blog-detail .blog-body {
+  font-size: 1.05rem;
+  color: #333;
+  line-height: 1.85;
+  margin: 0 auto;
+  max-width: 820px;
+  padding: 0 6px;
+}
+
+.blog-detail .blog-body p {
+  margin-bottom: 1.7em;
+}
+
+
+@media (max-width: 768px) {
+  /* ============================
+       H1 / H2 / H3 のサイズ修正
+  ============================ */
+
+  /* H1：記事タイトル */
+  .blog-title {
+    font-size: 1.72rem;
+    line-height: 1.35;
+    margin-top: 24px;       /* ← タイトルの上に余白追加 */
+    margin-bottom: 14px;
+  }
+
+
+  /* H2：セクション見出し */
+  .blog-detail .blog-body h2 {
+    font-size: 1.22rem;
+    line-height: 1.45;
+    padding: 8px 14px;    /* ← これで一気にスッキリ見える */
+    margin-top: 1.8em;    /* ← ここは少しだけ減らして整える */
+    margin-bottom: 1.1em;
+  }
+
+  /* H3：小見出し */
+  .blog-body h3 {
+    font-size: 1.10rem;     /* ← 控えめなサイズに調整 */
+    line-height: 1.45;
+  }
+
+  /* ページ全体の左右余白 */
+  .blog-detail {
+    padding: 0 36px;    /* ← 24 → 32 に増やす（抜群に読みやすい） */
+  }
+
+  /* タイトル・日付 */
+  .blog-title,
+  .blog-date {
+    padding: 0 6px;     /* ← ここは少しだけでOK（バランス良い） */
+  }
+
+  /* 本文の余白を広げる */
+  .blog-body p,
+  .blog-body h2,
+  .blog-body h3 {
+    padding: 0 6px;     /* ← 本文は中央寄りに見せたいので控えめ */
+  }
+
+  /* サムネイル */
+  .blog-thumb img {
+    margin-bottom: 20px;
+  }
+
+  /* プロフィール／コメント欄もそろえる */
+  .author-profile,
+  .interaction-section {
+    padding: 0 6px;
+  }
+
+  .like-comment-container {
+    gap: 28px;   /* ← PC60 → SP28 に縮める */
+  }
+
+  /* フッターボタン全体（一覧 / ホーム） */
+  .blog-footer {
+    max-width: 360px;      /* ← 横幅を制限して、離れすぎ防止 */
+    margin: 40px auto 30px;
+    gap: 28px;
+  }
+
+  /* ボタン自体を少しだけコンパクトに */
+  .blog-footer .btn {
+    padding: 10px 18px;    /* ← PCより少し小さめに */
+    font-size: 0.92rem;
+  }
+}
+
+
+@media (max-width: 480px) {
+
+  /* ページ全体の左右余白を増やす */
+  .blog-detail {
+    padding: 0 32px;     /* ← 24 → 32px に増やす（大幅に解決） */
+  }
+
+  /* タイトル & 日付 */
+  .blog-title,
+  .blog-date {
+    padding: 0 6px;      /* ← 4 → 6px 微増でバランス調整 */
+  }
+
+  /* 本文（p） */
+  .blog-body p {
+    padding: 0 6px;      /* ← 左端ラインが綺麗に揃う */
+  }
+
+  /* H2 / H3 */
+  .blog-body h2,
+  .blog-body h3 {
+    padding: 0 6px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* コメント欄＆プロフィール */
+  .author-profile {
+    padding: 0 6px;
+  }
+
+  /* サムネイル（余白最適化） */
+  .blog-thumb img {
+    margin-bottom: 18px;
+  }
+
+  /* 一覧に戻る / ホームに戻る */
+  .blog-footer {
+    max-width: 280px;
+    gap: 16px;
+    margin: 36px auto 28px;
+  }
+
+  .blog-footer .btn {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  /* コメントボックスのはみ出し防止 */
+  .comment-box {
+    padding: 12px 0;  /* ← 横paddingを消して中央揃えに */
+  }
+
+  .comment-box input,
+  .comment-box textarea {
+    width: 100%;
+    box-sizing: border-box;   /* ← これが決定打 */
+    margin: 0;
+  }
+
+  /* 名前欄・コメント欄の左右余白を整える */
+  .comment-box input,
+  .comment-box textarea {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* コメント欄全体の左右余白 */
+  .interaction-section {
+    padding: 0 4px;   /* ← 全体とのラインが揃う */
+  }
+}
+
+

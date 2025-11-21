@@ -340,25 +340,18 @@
     <!-- 🩵 スケジュールを同セクション内に -->
     <div class="access-schedule" data-aos="fade-up" data-aos-delay="200">
       <h3>📅 直近スケジュール</h3>
-
       <div class="schedule-table">
-        <!-- 上段：日付 -->
-        <div class="schedule-row-header">
-          {% for s in schedule %}
+        {% for s in schedule %}
+          <div class="schedule-card">
             <div class="schedule-cell {% if s.date == today %}today{% endif %}">
               {{ s.date[5:7] }}/{{ s.date[8:10] }}
             </div>
-          {% endfor %}
-        </div>
 
-        <!-- 下段：場所 -->
-        <div class="schedule-row-body">
-          {% for s in schedule %}
             <div class="schedule-cell {% if '休' in s.place %}off-day{% endif %}">
               <span>{{ s.place }}</span>
             </div>
-          {% endfor %}
-        </div>
+          </div>
+        {% endfor %}
       </div>
     </div>
   </section>

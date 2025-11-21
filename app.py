@@ -95,8 +95,8 @@ def load_schedule():
         with open("static/data/schedule.json", encoding="utf-8") as f:
             all_schedule = json.load(f)
         today = datetime.today()
-        seven_days = today + timedelta(days=7)
-        return [s for s in all_schedule if today <= datetime.strptime(s["date"], "%Y-%m-%d") <= seven_days]
+        ten_days = today + timedelta(days=10)
+        return [s for s in all_schedule if today <= datetime.strptime(s["date"], "%Y-%m-%d") <= ten_days]
     except Exception as e:
         print("❌ schedule.json 読み込みエラー:", e)
         return []
@@ -452,7 +452,7 @@ def index():
     with open("static/data/schedule.json", encoding="utf-8") as f:
         schedule = json.load(f)
     today = datetime.now().strftime("%Y-%m-%d")
-    upcoming = [s for s in schedule if s["date"] >= today][:7]
+    upcoming = [s for s in schedule if s["date"] >= today][:10]
 
     return render_template("index.html", latest_blogs=latest_blogs, latest_news=latest_news, schedule=upcoming, today=today)
 

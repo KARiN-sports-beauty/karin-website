@@ -994,7 +994,9 @@ body.index-page .blog-section {
   color: #1E3A5F;
 }
 
-/* スケジュール表 */
+/* =========================================
+   🟦 スケジュール全体の外枠
+========================================= */
 .schedule-table {
   background: #ffffff;
   border-radius: 16px;
@@ -1002,61 +1004,108 @@ body.index-page .blog-section {
   padding: 35px 25px;
   max-width: 1000px;
   margin: 0 auto;
-}
 
-.schedule-row-header,
-.schedule-row-body {
   display: flex;
-  justify-content: center;
-  gap: 8px;
   overflow-x: auto;
+  flex-wrap: nowrap; 
+  gap: 16px;
+  /* scroll-snap-type: x mandatory; ←これ削除 */
   -webkit-overflow-scrolling: touch;
+  position: relative;
   scroll-behavior: smooth;
-  padding-bottom: 8px;
 }
 
-/* 各セル */
-.schedule-cell {
+
+/* =========================================
+   🟦 スクロールバー（上品で薄いタイプ）
+========================================= */
+.schedule-table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.schedule-table::-webkit-scrollbar-track {
+  background: #f1f3f6;   /* 縁がわかる・上品な薄グレー */
+  border-radius: 10px;
+}
+
+.schedule-table::-webkit-scrollbar-thumb {
+  background: #cdd4dd;   /* ほんのり色付き */
+  border-radius: 10px;
+}
+
+/* =========================================
+   🟦 枠の中に納めるためのフェード（右端）
+========================================= */
+.schedule-table::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 22px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;  /* ← これでカードの上に乗りすぎない */
+
+  /* 🔥 “白い線が出ない”ための滑らかなフェード */
+  background: linear-gradient(
+    to right,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.6) 40%,
+    rgba(255,255,255,0.9) 80%,
+    rgba(255,255,255,1) 100%
+  );
+  content: none;
+  display: none;
+}
+
+/* =========================================
+   🟦 1カード = 日付 + 場所
+========================================= */
+.schedule-card {
   flex: 0 0 120px;
-  min-width: 100px;
-  height: 60px;                  /* ✅ 高さ固定で中央安定 */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-snap-align: start;
+}
+
+/* カード内各セル */
+.schedule-cell {
+  height: 60px;
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
   background: #f9fafc;
   border-radius: 14px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   color: #1E3A5F;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   font-size: 0.9rem;
   font-weight: 600;
-  line-height: 1.4;
   padding: 0 6px;
-  transition: all 0.3s ease;
 }
 
-/* ---------- 改行対応 ---------- */
+/* 休み */
+.schedule-cell.off-day {
+  background: #f3f3f3;
+  color: #aaa;
+}
+
+/* 今日 */
+.schedule-cell.today {
+  background-color: #1E3A5F;
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
 .schedule-cell span {
   display: inline-block;
-  white-space: pre-line;
+  white-space: normal;   /* ← これが重要！2行に自動改行可能 */
+  word-break: break-all; /* ← 長い括弧入り地名でも折り返しOK */
+  line-height: 1.4;
 }
 
-/* 休みの日 */
-.schedule-cell.off-day {
-  background-color: #f1f1f1 !important;
-  color: #aaa !important;
-  border-radius: 14px;
-}
 
-/* 当日 */
-.schedule-cell.today {
-  background-color: #1E3A5F !important;
-  color: #ffffff !important;
-  font-weight: 600;
-  border-radius: 14px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  transform: scale(1.05);
-}
 
 .map-tabs {
     display: flex;
@@ -1479,44 +1528,16 @@ section[id],
   /* ---------- 直近スケジュール（上下同期スクロール） ---------- */
   .schedule-table {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    overflow: hidden;
-  }
-
-  .schedule-row-header,
-  .schedule-row-body {
-    display: flex;
-    justify-content: center; /* ← 中央寄せで固定 */
-    gap: 10px;
-    overflow: hidden; /* ← スクロール無しに */
-    padding-bottom: 6px;
+    flex-direction: row;     /* ← これで縦並び禁止 */
+    overflow-x: auto;
+    overflow-y: hidden;
     flex-wrap: nowrap;
+    gap: 16px;
   }
 
-  .schedule-cell {
-    flex: 0 0 110px; /* ← 少し幅を詰めて全体を収める */
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    text-align: center;
-    padding: 8px 0; /* ← 高さも微調整して圧縮 */
-    font-size: 0.85rem;
-    color: #1E3A5F;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .schedule-cell.today {
-    background-color: #1E3A5F;
-    color: #fff;
-  }
-
-  .schedule-cell.off-day {
-    background-color: #f2f2f2;
-    color: #aaa;
+  /* 各カードの幅指定（必要なら調整可） */
+  .schedule-card {
+    flex: 0 0 120px;
   }
 
 
