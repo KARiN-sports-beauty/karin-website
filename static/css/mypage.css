@@ -24,8 +24,17 @@ body{
 .mypage-header h1{
   margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:.5px;
 }
+
+.logout{
+  text-decoration:none;
+  color:#fff;
+  background:#1e3a5f;
+  padding:8px 14px;
+  border-radius:999px;
+}
+
+
 .mypage-header .welcome{margin:0; color:var(--ink-weak); font-size:13px}
-.mypage-header .logout{float:right; margin-top:-24px; text-decoration:none; color:#fff; background:#1e3a5f; padding:8px 14px; border-radius:999px}
 .mypage-header .logout:hover{background:#16304A}
 
 .mypage-main{max-width:1040px; margin:22px auto; padding:0 16px}
@@ -108,27 +117,45 @@ body{
   color: #fff;
   text-decoration: none;
   font-weight: 600;
-  padding: 10px 28px;
-  border-radius: 28px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 6px 18px;      /* ← 10px 28px から変更 */
+  font-size: 0.85rem;     /* ← 小さく */
+  border-radius: 22px;    /* ← 若干小さく */
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);  /* ← 影も少し軽く */
   transition: all 0.3s ease;
 }
+
 
 .logout:hover {
   background-color: #16304A;
   transform: translateY(-2px);
 }
 
-.header-right {
-  position: relative;
-  top: 10px; /* ← 数字を増やすとさらに下に */
-}
-
 .mypage-header {
-  padding: 24px 50px 18px; /* ← 上下の余白を微調整 */
+  padding: 18px 20px;
 }
 
 html, body {
   background-color: #fafafa !important;
   color: #1E3A5F;
+}
+
+/* ===== 768px以下 レスポンシブ調整 ===== */
+@media (max-width: 768px) {
+
+  .mypage-header {
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+
+  .header-right {
+    position: static;
+    top: auto;
+  }
+
+  .logout {
+    padding: 8px 20px;
+    font-size: 0.5rem;
+  }
 }

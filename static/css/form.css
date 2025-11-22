@@ -401,8 +401,10 @@ body {
   flex-wrap: wrap;
 }
 .contact-cta .line-btn {
-  padding: 12px 30px;
+  padding: 15px 30px 9px;
   font-size: 0.95rem;
+  align-items: center;
+  justify-content: center;
 }
 
 /* textareaの幅を他と同じに揃える */
@@ -631,22 +633,12 @@ body {
    ご予約希望日時（入力枠の隙間調整・強制版）
 =============================== */
 .preferred-dates input {
-  margin-right: 12px !important; /* ← 強制的に反映 */
+  margin-right: 12px; /* ← 強制的に反映 */
   width: calc(100% - 12px);      /* ← 微調整して右はみ出し防止 */
 }
 
 .preferred-dates > div:last-child input {
-  margin-right: 0 !important;
-  width: 100% !important;
-}
-
-/* 右下戻るボタン */
-@media (max-width: 600px) {
-  .home-btn {
-    bottom: 10px;
-    right: 50%;
-    transform: translateX(50%);
-  }
+  margin-right: 0 ;
 }
 
 
@@ -694,6 +686,7 @@ body {
     padding: 20px 16px;
     font-size: 0.9rem;
   }
+  
 }
 
 /* --- スマホ全般 (max-width: 768px) --- */
@@ -781,20 +774,6 @@ body {
     right: 10px;
     bottom: 10px;
   }
-
-  /* ✅ ホームに戻るボタン（中央寄せ） */
-  .home-btn {
-    bottom: 15px;
-    right: 50%;
-    transform: translateX(50%);
-    padding: 8px 14px;
-    font-size: 0.85rem;
-  }
-
-  .home-btn img {
-    width: 26px !important;
-    height: 26px !important;
-  }
 }
 
 /* --- 小型スマホ (max-width: 480px) --- */
@@ -846,19 +825,6 @@ body {
   .schedule-mini-cell {
     font-size: 0.8rem;
     padding: 5px 8px;
-  }
-
-  .home-btn {
-    bottom: 10px;
-    right: 50%;
-    transform: translateX(50%);
-    font-size: 0.8rem;
-    padding: 6px 12px;
-  }
-
-  .home-btn img {
-    width: 24px !important;
-    height: 24px !important;
   }
 }
 
@@ -985,14 +951,6 @@ body {
     right: 10px;
   }
 
-  .home-btn {
-    bottom: 15px;
-    right: 50%;
-    transform: translateX(50%);
-    padding: 8px 14px;
-    font-size: 0.85rem;
-  }
-
   .home-btn img {
     width: 26px !important;
     height: 26px !important;
@@ -1044,19 +1002,6 @@ body {
   .submit-btn {
     font-size: 0.85rem;
     padding: 10px 0;
-  }
-
-  .home-btn {
-    bottom: 10px;
-    right: 50%;
-    transform: translateX(50%);
-    font-size: 0.8rem;
-    padding: 6px 12px;
-  }
-
-  .home-btn img {
-    width: 24px !important;
-    height: 24px !important;
   }
 }
 

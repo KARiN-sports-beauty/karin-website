@@ -196,6 +196,7 @@
   text-decoration: none;
   box-shadow: 0 20px 40px rgba(0,0,0,0.2);
   transition: 0.25s ease;
+  margin-top: 40px;
 }
 
 .cta-btn:hover {
@@ -241,7 +242,6 @@
   width: 120px;
   height: auto;
   margin-left: auto;
-  margin-top: 12px;
   opacity: 0.9;
   transition: opacity 0.3s ease;
 }
@@ -412,15 +412,6 @@
   .inline-logo {
     width: 90px;            /* ✅ スマホでは少し小さく */
     margin-top: 42px;       /* ✅ ボタンとの距離を広げる */
-  }
-
-  /* 🔹 HOMEボタン：中央寄せ＋タップしやすく */
-  .home-btn {
-    bottom: 12px;
-    right: 50%;
-    transform: translateX(50%);
-    padding: 8px 14px;
-    font-size: 0.8rem;
   }
 
   .home-btn img {

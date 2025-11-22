@@ -147,8 +147,9 @@ body {
 /* --- タブレット (max-width: 1024px) --- */
 @media (max-width: 1024px) {
   .news-detail {
-    margin: 60px 5%;
+    margin: 60px auto;   /* ←左右はautoのまま中央に */
     padding: 36px 24px;
+    max-width: 90%;      /* ←横幅は縮める */
   }
 
   .news-title {
