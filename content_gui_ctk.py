@@ -263,7 +263,7 @@ def open_edit(kind, id):
         text="本文（HTML可 / 改行は自動で<br>に変換）",
         text_color="#1e3a5f"
     ).grid(row=12, column=0, sticky="w", padx=16, pady=(12,4))
-    txt_body = ctk.CTkTextbox(frm, height=380, corner_radius=14)
+    txt_body = ctk.CTkTextbox(frm, height=360, corner_radius=14)
 
     body_text = a.get("body", "").strip()
     if not body_text:
@@ -329,9 +329,8 @@ def open_edit(kind, id):
         except Exception as e:
             print("ブラウザオープン失敗:", e)
 
-    footer = ctk.CTkFrame(win, fg_color="#fafafa")
-    footer.pack(fill="x", padx=20, pady=(8, 16))
-    add_main_button(footer, "💾 投稿 / 保存", do_save)
+    add_main_button(frm, "💾 投稿 / 保存", do_save)
+
 
 
 # =====================================================
@@ -521,7 +520,7 @@ def new_post(kind="blog"):
         text="本文（HTML可 / 改行は自動で<br>に変換）",
         text_color="#1e3a5f"
     ).grid(row=12, column=0, sticky="w", padx=16, pady=(12,4))
-    txt_body = ctk.CTkTextbox(body, height=420, corner_radius=14)
+    txt_body = ctk.CTkTextbox(body, height=360, corner_radius=14)
     placeholder_text = "ここに本文を入力してください。"
     txt_body.insert("1.0", placeholder_text)
     txt_body.configure(text_color="#888")
@@ -590,9 +589,8 @@ def new_post(kind="blog"):
         except Exception as e:
             print("ブラウザオープン失敗:", e)
 
-    footer = ctk.CTkFrame(win, fg_color="#fafafa")
-    footer.pack(fill="x", padx=20, pady=(8, 16))
-    add_main_button(footer, "💾 投稿 / 保存", do_save)
+    add_main_button(body, "💾 投稿 / 保存", do_save)
+
 
 
 
