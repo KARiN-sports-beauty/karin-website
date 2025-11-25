@@ -357,16 +357,6 @@ body,
 /* ===============================
    💬 コメント & いいね
 =============================== */
-.blog-interaction {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid #e3e7f0;
-}
-
-.like-area {
-  text-align: center;
-  margin-bottom: 24px;
-}
 
 .like-btn {
   background-color: #fff7f7;
@@ -388,26 +378,11 @@ body,
   transform: translateY(-1px);
 }
 
-.comment-area {
-  margin-top: 12px;
-}
-
 .comment-title {
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 12px;
   color: #1E3A5F;
-}
-
-/* コメントリスト（最大5件分くらいの高さでスクロール） */
-.comment-list-wrapper {
-  max-height: 260px;       /* ← ここで「5件分」くらいの高さに制限 */
-  overflow-y: auto;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #f7f9fc;
-  border: 1px solid #e1e6f0;
-  margin-bottom: 18px;
 }
 
 .comment-list {
@@ -425,14 +400,6 @@ body,
   border-bottom: none;
 }
 
-.comment-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: #7a8499;
-  margin-bottom: 4px;
-}
-
 .comment-name {
   font-weight: 600;
   color: #1E3A5F;
@@ -442,37 +409,6 @@ body,
   font-size: 0.9rem;
   color: #444;
   line-height: 1.7;
-}
-
-.comment-empty {
-  font-size: 0.9rem;
-  color: #7a8499;
-}
-
-.comment-form {
-  margin-top: 10px;
-}
-
-.comment-field {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.comment-field span {
-  display: block;
-  font-size: 0.85rem;
-  color: #1E3A5F;
-  margin-bottom: 4px;
-}
-
-.comment-field input,
-.comment-field textarea {
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid #ccd3e3;
-  padding: 8px 10px;
-  font-size: 0.9rem;
-  box-sizing: border-box;
 }
 
 .comment-submit {
@@ -524,105 +460,11 @@ body,
   margin-bottom: 10px;
 }
 
-.author-links a {
-  font-size: 0.9rem;
-  color: #1E3A5F;
-  text-decoration: none;
-  margin-right: 8px;
-}
-
-.author-links a:hover {
-  text-decoration: underline;
-}
-
-/* ===============================
-   🔗 関連ブログ 横スクロール
-=============================== */
-.related-blogs {
-  margin-top: 48px;
-}
-
-.related-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 14px;
-  color: #1E3A5F;
-}
-
-.related-scroll {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-}
-
-.related-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-.related-scroll::-webkit-scrollbar-thumb {
-  background: #c5cedf;
-  border-radius: 999px;
-}
-
-.related-card {
-  flex: 0 0 auto;
-  min-width: 220px;
-  max-width: 260px;
-  background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e2e6f0;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-  overflow: hidden;
-}
-
-.related-card a {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  padding: 10px 12px 14px;
-}
-
-.related-thumb {
-  width: 100%;
-  height: 120px;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.related-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.related-card-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #1E3A5F;
-}
-
-.related-card-excerpt {
-  font-size: 0.85rem;
-  color: #555;
-  line-height: 1.6;
-}
 
 /* 📱 スマホ */
 @media (max-width: 768px) {
-  .comment-list-wrapper {
-    max-height: 220px;
-  }
-
   .author-box {
     padding: 20px 16px;
-  }
-
-  .related-card {
-    min-width: 200px;
-    max-width: 220px;
   }
 }
 
@@ -667,11 +509,6 @@ body,
 /* ===============================
    💬 コメント & いいね & プロフィール
 ================================ */
-.interaction-section {
-  margin-top: 50px;
-  text-align: center;
-}
-
 .action-btn {
   background-color: #f0f3f8;
   color: #1E3A5F;
@@ -689,21 +526,6 @@ body,
 
 .action-btn.liked, .action-btn:has(.liked) {
   background-color: #d0e2ff;
-}
-
-.comment-box {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-#comment-input {
-  width: 100%;
-  min-height: 100px;
-  border-radius: 10px;
-  border: 1px solid #ccd3e0;
-  padding: 12px;
-  resize: vertical;
-  margin-bottom: 10px;
 }
 
 .submit-btn {
@@ -734,122 +556,10 @@ body,
   margin-bottom: 10px;
 }
 
-.reply {
-  margin-left: 20px;
-  font-size: 0.9rem;
-  color: #444;
-  border-left: 3px solid #a7b9d4;
-  padding-left: 10px;
-}
-
-/* 👤 プロフィール */
-.author-profile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin: 60px auto 40px;
-  transform: scale(0.7);
-}
-
-.author-img {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.author-info h3 {
-  font-size: 1.1rem;
-  color: #1E3A5F;
-  margin-bottom: 6px;
-}
-
-.author-info p {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 8px;
-}
-
-.author-links {
-  display: flex;
-  gap: 8px;
-}
-
-.mini-btn {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  color: #fff;
-  font-size: 0.8rem;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.mini-btn.line { background-color: #06C755; }
-.mini-btn.insta { background-color: #E4405F; }
-
-/* 📰 関連ブログ */
-.related-section {
-  margin-top: 60px;
-}
-
-.related-scroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-.related-card {
-  flex: 0 0 auto;
-  width: 180px;
-  background: #fff;
-  border-radius: 14px;
-  text-decoration: none;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-  transition: 0.3s;
-}
-
-.related-card:hover {
-  transform: translateY(-3px);
-}
-
-.related-card img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
-}
-
-.related-card .info {
-  padding: 10px;
-  color: #1E3A5F;
-  font-size: 0.85rem;
-}
-
 /* ===============================
    💬 コメント & いいね & プロフィール
    2025.11 完全版（外部JS対応）
 =============================== */
-
-.interaction-section {
-  margin-top: 60px;
-  text-align: center;
-  background: #f9fafc;
-  padding: 30px 20px;
-  border-radius: 14px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-}
-
-.like-comment-container {
-  display: flex;
-  justify-content: center;
-  gap: 60px;
-  margin-bottom: 16px;
-}
-
 .action-btn {
   background-color: #e8eef7;
   color: #1E3A5F;
@@ -859,24 +569,10 @@ body,
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s ease;
+  margin-top: 30px;
 }
 .action-btn:hover { background-color: #d7e3f2; }
 .action-btn.liked { background-color: #c4d8f3; }
-
-.comment-box {
-  max-width: 480px;
-  margin: 0 auto;
-  text-align: left;
-}
-#comment-name, #comment-input {
-  width: 100%;
-  border-radius: 8px;
-  border: 1px solid #ccd3e0;
-  padding: 8px 10px;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-}
-#comment-input { min-height: 60px; resize: vertical; }
 
 .submit-btn {
   background-color: #e1e7f0;
@@ -903,67 +599,6 @@ body,
   margin-bottom: 8px;
   border: 1px solid #e2e6ed;
 }
-
-/* 👤 著者プロフィール（コメント欄と同幅） */
-* 👤 著者プロフィール（コメント欄と同幅に拡張） */
-.author-profile {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 18px;
-  margin: 40px auto 30px;
-  background: #e7eff7; /* KARiN.トーンの青み */
-  border-radius: 14px;
-  padding: 22px 28px;
-  max-width: 600px; /* ← コメント欄と統一（以前の480pxより広げ） */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.author-img {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center 35%;
-  flex-shrink: 0;
-}
-
-.author-info h3 {
-  font-size: 1rem;
-  color: #1E3A5F;
-  margin-bottom: 6px;
-}
-
-.author-info p {
-  font-size: 0.85rem;
-  color: #333;
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-
-.author-links {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.author-links a {
-  color: #fff;
-}
-
-.mini-btn {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  color: #fff;
-  font-size: 0.8rem;
-  text-decoration: none;
-  font-weight: 600;
-  transition: opacity 0.3s ease;
-}
-.mini-btn.line { background-color: #06C755; }
-.mini-btn.insta { background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4); }
-.mini-btn:hover { opacity: 0.85; }
 
 /* 📚 戻るボタン（白背景＋影付き） */
 .blog-footer {
@@ -1097,16 +732,6 @@ body,
     margin-bottom: 20px;
   }
 
-  /* プロフィール／コメント欄もそろえる */
-  .author-profile,
-  .interaction-section {
-    padding: 0 6px;
-  }
-
-  .like-comment-container {
-    gap: 28px;   /* ← PC60 → SP28 に縮める */
-  }
-
   /* フッターボタン全体（一覧 / ホーム） */
   .blog-footer {
     max-width: 360px;      /* ← 横幅を制限して、離れすぎ防止 */
@@ -1148,11 +773,6 @@ body,
     margin-right: 0;
   }
 
-  /* コメント欄＆プロフィール */
-  .author-profile {
-    padding: 0 6px;
-  }
-
   /* サムネイル（余白最適化） */
   .blog-thumb img {
     margin-bottom: 18px;
@@ -1169,28 +789,312 @@ body,
     padding: 10px 14px;
     font-size: 0.88rem;
   }
-
-  /* コメントボックスのはみ出し防止 */
-  .comment-box {
-    padding: 12px 0;  /* ← 横paddingを消して中央揃えに */
-  }
-
-  .comment-box input,
-  .comment-box textarea {
-    width: 100%;
-    box-sizing: border-box;   /* ← これが決定打 */
-    margin: 0;
-  }
-
-  /* 名前欄・コメント欄の左右余白を整える */
-  .comment-box input,
-  .comment-box textarea {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /* コメント欄全体の左右余白 */
-  .interaction-section {
-    padding: 0 4px;   /* ← 全体とのラインが揃う */
-  }
 }
+
+/* ===============================
+   💬 コメント欄（デザインB）
+================================ */
+.comment-section {
+  margin-top: 60px;
+  padding: 30px;
+  border-radius: 15px;
+  background: #fafafa;
+  box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.comment-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #1E3A5F;
+  border-left: 6px solid #1E3A5F;
+  padding-left: 12px;
+}
+
+.comment-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.comment-input-area input,
+.comment-input-area textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 15px;
+  outline: none;
+}
+
+.comment-input-area textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.submit-btn {
+  align-self: flex-end;
+  background: #1E3A5F;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.submit-btn:hover {
+  opacity: 0.8;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.comment-item {
+  padding: 15px 18px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+.comment-author {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #1E3A5F;
+}
+
+.comment-text {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.comment-date {
+  font-size: 12px;
+  color: #777;
+  margin-top: 6px;
+  text-align: right;
+}
+
+.liked {
+  color: red;
+  font-weight: bold;
+}
+
+#like-btn.liked {
+  background-color: #ffeded;
+  color: #e60033;
+  border-color: #e60033;
+}
+
+/* ===== コメント返信UI ===== */
+.comment-date {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.comment-reply {
+  margin-top: 1rem;
+  padding: 0.9rem 1.2rem;
+  border-radius: 14px;
+  background-color: #f3f4f6;
+  border-left: 4px solid #1E3A5F;
+}
+
+.reply-header {
+  margin-bottom: 0.3rem;
+}
+
+.reply-author {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1E3A5F;
+}
+
+.reply-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #111827;
+}
+
+.bubble-header, .reply-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+.reply-author {
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+.comment-text, .reply-text {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.reply-text {
+  margin-top: 4px;
+}
+
+.comment-reply {
+  margin-top: 10px;
+  margin-left: 20px;
+  padding: 12px 14px;
+  background: #f7f9fb;
+  border-left: 4px solid #1E3A5F;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  color: #1E3A5F;
+}
+.reply-author {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.comment-reply {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 12px;
+  background-color: #f5f8ff;
+  border-left: 6px solid #1E3A5F;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.reply-author {
+  font-weight: bold;
+  color: #1E3A5F;
+}
+
+.reply-date {
+  font-size: 14px;
+  color: #99A3B3;
+}
+
+.reply-text {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ========================================
+   💬 コメント入力欄
+========================================= */
+.comment-input-area input,
+.comment-input-area textarea {
+  padding-left: 12px;  /* ← 左側余白追加（要望対応） */
+}
+
+/* ========================================
+   💬 コメント吹き出しデザイン
+========================================= */
+.comment-bubble {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+
+.bubble-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* ========================================
+   💙 コメント返信デザイン
+========================================= */
+.comment-reply {
+  margin-top: 8px;
+  margin-left: 24px;
+  padding: 14px 18px;
+  background-color: #f5f8ff;
+  border-left: 5px solid #1E3A5F;
+  border-radius: 12px;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.reply-author {
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+.reply-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #111827;
+}
+
+.reply-date {
+  font-size: 0.8rem;
+  color: #9CA3AF;
+}
+
+
+/* ========================================
+   👤 著者プロフィール
+========================================= */
+.author-profile {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: #f8f9fc;
+  margin-top: 50px;
+}
+
+.author-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.author-info h3 {
+  margin-bottom: 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.author-links {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+}
+
+.mini-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.line { background: #00c300; color: white; }
+.insta { background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4); color: white; }

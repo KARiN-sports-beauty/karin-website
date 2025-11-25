@@ -21,6 +21,13 @@ from tkinter import filedialog
 import uuid
 import webbrowser  # 🔵 投稿/編集後にブラウザを開く
 import time
+from supabase import create_client, Client
+
+SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 # =========================
 # 外観・基本ウィンドウ
@@ -329,7 +336,10 @@ def open_edit(kind, id):
         except Exception as e:
             print("ブラウザオープン失敗:", e)
 
-    add_main_button(frm, "💾 投稿 / 保存", do_save)
+    footer = ctk.CTkFrame(win, fg_color="#fafafa")
+    footer.pack(fill="x", padx=20, pady=(8, 16))
+    add_main_button(footer, "💾 投稿 / 保存", do_save)
+
 
 
 
@@ -546,11 +556,8 @@ def new_post(kind="blog"):
             messagebox.showwarning("未入力", "タイトルを入力してください。")
             return
 
-        data = load_json(data_file)
-        nid = new_id(data)
         body_raw = txt_body.get("1.0", "end-1c").strip()
 
-        # h1混入自動除去
         if body_raw.startswith("<h1"):
             end = body_raw.find("</h1>")
             if end != -1:
@@ -561,35 +568,31 @@ def new_post(kind="blog"):
         else:
             body_html = body_raw.replace("\n", "<br>")
 
-        a = {
-            "id": nid,
+        # Supabase INSERT --------------------------
+        res = supabase.table("blogs").insert({
             "title": title,
             "excerpt": ent_excerpt.get().strip(),
             "date": today(),
             "image": "" if thumb.get() == "（なし）" else thumb.get(),
-            "draft": bool(draft.get()),
             "category": ent_category.get().strip(),
             "tags": [t.strip() for t in ent_tags.get().split(",") if t.strip()],
-            "body": body_raw
-        }
-        data.append(a)
-        save_json(data_file, data)
+            "body": body_html,
+            "draft": bool(draft.get())
+        }).execute()
 
-        messagebox.showinfo("保存", "投稿を保存しました。")
+        messagebox.showinfo("保存完了", "投稿を保存しました。")
 
-        # 3秒待機
-        time.sleep(3)
+        # 追加されたレコードの ID を取得
+        nid = res.data[0]["id"]
 
-        # 🔵 投稿完了後、本番URLでプレビュー
-        try:
-            if kind == "blog":
-                webbrowser.open(f"{BASE_URL}/blog/{nid}")
-            else:
-                webbrowser.open(f"{BASE_URL}/news/{nid}")
-        except Exception as e:
-            print("ブラウザオープン失敗:", e)
+        # プレビューを開く
+        time.sleep(2)
+        webbrowser.open(f"https://karin-website.onrender.com/blog/{nid}")
 
-    add_main_button(body, "💾 投稿 / 保存", do_save)
+    footer = ctk.CTkFrame(win, fg_color="#fafafa")
+    footer.pack(fill="x", padx=20, pady=(8, 16))
+    add_main_button(footer, "💾 投稿 / 保存", do_save)
+
 
 
 

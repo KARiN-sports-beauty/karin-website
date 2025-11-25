@@ -1,11 +1,27 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+JST = timezone(timedelta(hours=9))
 from flask_mail import Mail, Message
 import gspread
 from google.oauth2.service_account import Credentials
 import json, os
 from dotenv import load_dotenv
-import requests  # 🟢 GASにPOSTするために追加
+import requests
+from supabase import create_client, Client
+import uuid
+
+
+
+
+# ===============================
+# Supabase 接続設定
+# ===============================
+SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
 
 
 # ===============================
@@ -332,78 +348,84 @@ def mypage():
 # ===================================================
 # ✅ ブログ・ニュース
 # ===================================================
+@app.route("/test_supabase")
+def test_supabase():
+    try:
+        response = supabase.table("blogs").select("*").execute()
+        return {"status": "ok", "data": response.data}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @app.route("/blog")
 def blog():
-    query = request.args.get("q", "").strip()
-    category = request.args.get("category", "").strip()
-    blogs = load_blogs()
+    query = request.args.get("q")
+    category = request.args.get("category")
+
+    sb = supabase.table("blogs").select("*")
 
     if category:
-        blogs = [b for b in blogs if b.get("category") == category]
+        sb = sb.eq("category", category)
+
     if query:
-        blogs = [b for b in blogs if query.lower() in b["title"].lower() or query.lower() in b["excerpt"].lower()]
-    categories = sorted(list(set(b.get("category") for b in load_blogs() if b.get("category"))))
+        sb = sb.ilike("title", f"%{query}%")
 
-    return render_template("blog.html", blogs=blogs, query=query, categories=categories, current_category=category)
+    res = sb.order("created_at", desc=True).execute()
+    blogs = res.data
+
+    # ★ ここでブログの中身をログに出す（確認用）
+    print("BLOGS_FROM_DB:", blogs)
+
+    return render_template("blog.html", blogs=blogs, current_category=category, query=query)
 
 
+
+# ===========================
+# ブログ詳細
+# ===========================
 @app.route("/blog/<int:id>")
 def show_blog(id):
-    # --- JSONからブログ一覧を読み込み ---
-    try:
-        with open("static/data/blogs.json", "r", encoding="utf-8") as f:
-            blogs = json.load(f)
-    except Exception:
+    # 対象ブログ取得
+    res = supabase.table("blogs").select("*").eq("id", id).execute()
+    data = res.data
+
+    if not data:
         return render_template("404.html"), 404
 
-    # --- 指定IDの記事を探す ---
-    blog = next((b for b in blogs if b["id"] == id), None)
-    if not blog:
-        return render_template("404.html"), 404
+    blog = data[0]
 
-    # --- 本文（body）必須 ---
-    content = blog.get("body", "")
-    if not content:
-        content = "<p>この記事の内容は準備中です。</p>"
+    # コメント取得（新しい順）
+    comments_res = (
+        supabase
+        .table("comments")
+        .select("*")
+        .eq("blog_id", id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    comments = comments_res.data or []
 
-    blog["body"] = content
-
-    # --- コメント ---
-    comments = []
-    try:
-        with open("static/data/blog_comments.json", "r", encoding="utf-8") as f:
-            cdata = json.load(f)
-        comments = cdata.get(str(id), [])
-    except:
-        comments = []
-
-    # --- いいね ---
-    like_count = 0
-    try:
-        with open("static/data/blog_likes.json", "r", encoding="utf-8") as f:
-            ldata = json.load(f)
-        like_count = ldata.get(str(id), 0)
-    except:
-        like_count = 0
-
-    # --- 関連記事（タグ or カテゴリ） ---
-    related = []
-    if blog.get("tags"):
-        related = [
-            b for b in blogs if b["id"] != id and any(t in b.get("tags", []) for t in blog["tags"])
-        ][:5]
-    elif blog.get("category"):
-        related = [
-            b for b in blogs if b["id"] != id and b.get("category") == blog["category"]
-        ][:5]
+    # いいね数取得
+    like_res = (
+        supabase
+        .table("likes")
+        .select("liked", count="exact")
+        .eq("blog_id", id)
+        .eq("liked", True)
+        .execute()
+    )
+    like_count = like_res.count or 0
 
     return render_template(
         "blog_detail.html",
         blog=blog,
         comments=comments,
-        like_count=like_count,
-        related_blogs=related
+        like_count=like_count
     )
+
+
+
+
 
 
 
@@ -457,80 +479,81 @@ def index():
     return render_template("index.html", latest_blogs=latest_blogs, latest_news=latest_news, schedule=upcoming, today=today)
 
 
-# ===================================================
-# ❤️ コメント・いいね API（統一版 / 2025.11）
-# ===================================================
-
-COMMENTS_PATH = "static/data/blog_comments.json"
-LIKES_PATH = "static/data/blog_likes.json"
-
-
-# ---------- 共通読み書き ----------
-def load_comments():
-    if os.path.exists(COMMENTS_PATH):
-        with open(COMMENTS_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-def save_comments(data):
-    with open(COMMENTS_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-def load_likes():
-    if os.path.exists(LIKES_PATH):
-        with open(LIKES_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-def save_likes(data):
-    with open(LIKES_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-# ---------- コメント API ----------
-@app.route("/api/comment/<int:blog_id>", methods=["POST"])
-def api_comment(blog_id):
-    name = request.form.get("name", "匿名")
-    text = request.form.get("text", "").strip()
-
-    if not text:
-        return {"error": "コメントが空です"}, 400
-
-    comments = load_comments()
-    comments.setdefault(str(blog_id), [])
-
-    comments[str(blog_id)].append({
-        "name": name,
-        "text": text,
-        "created_at": datetime.now().strftime("%Y/%m/%d %H:%M")
-    })
-
-    # 最新5件だけ保持（任意）
-    comments[str(blog_id)] = comments[str(blog_id)][-5:]
-
-    save_comments(comments)
-    return {"success": True, "comments": comments[str(blog_id)]}
-
-
-# ---------- いいね API ----------
+# =====================================
+# いいね API（Supabase版・トグル式）
+# =====================================
 @app.route("/api/like/<int:blog_id>", methods=["POST"])
 def api_like(blog_id):
-    liked = request.form.get("liked", "false") == "true"
+    try:
+        user_token = request.cookies.get("user_token")
+        if not user_token:
+            user_token = str(uuid.uuid4())
 
-    data = load_likes()
-    key = str(blog_id)
+        # 既に like しているか判定
+        res = supabase.table("likes").select("*").eq("blog_id", blog_id).eq("user_token", user_token).execute()
+        rows = res.data
 
-    count = data.get(key, 0)
+        if rows:
+            row = rows[0]
+            new_state = not row["liked"]   # トグル切り替え
+            supabase.table("likes").update({"liked": new_state}).eq("id", row["id"]).execute()
+        else:
+            new_state = True
+            supabase.table("likes").insert({
+                "blog_id": blog_id,
+                "user_token": user_token,
+                "liked": True
+            }).execute()
 
-    if liked:
-        count += 1
-    else:
-        count = max(0, count - 1)
+        # 総いいね数 (liked=Trueのみ)
+        count_res = supabase.table("likes").select("liked", count="exact").eq("blog_id", blog_id).eq("liked", True).execute()
+        like_count = count_res.count
 
-    data[key] = count
-    save_likes(data)
+        resp = jsonify({"status": "ok", "count": like_count, "liked": new_state})
+        resp.set_cookie("user_token", user_token, max_age=3600*24*365)
+        return resp
 
-    return {"success": True, "like_count": count}
+    except Exception as e:
+        print("LIKE ERROR:", e)
+        return {"status": "error", "message": str(e)}, 500
+
+
+
+
+
+# ===================================================
+# 💬 Supabase コメント API
+# ===================================================
+@app.route("/api/comment/<int:blog_id>", methods=["POST"])
+def api_comment(blog_id):
+    name = request.form.get("name", "匿名").strip()
+    body = request.form.get("body", "").strip()   # ← body に統一（最重要）
+
+    if not body:
+        return {"error": "コメントが空です"}, 400
+
+    res = supabase.table("comments").insert({
+        "id": str(uuid.uuid4()),
+        "blog_id": blog_id,
+        "name": name,
+        "text": body,   # ← DB の 'text' に保存（OK）
+        "created_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M")
+    }).execute()
+
+    # ✉️ Gmail通知
+    try:
+        msg = Message(
+            subject=f"【KARiN.】新しいコメントが届きました（Blog ID: {blog_id}）",
+            sender="karin.sports.beauty@gmail.com",
+            recipients=["karin.sports.beauty@gmail.com"],
+            body=f"ブログID: {blog_id}\n名前: {name}\nコメント:\n{body}"
+        )
+        mail.send(msg)
+    except Exception as e:
+        print("MAIL ERROR:", e)
+
+    return {"success": True}
+
 
 
 

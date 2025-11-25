@@ -4,29 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ===========================
-       SEO基本
-  ============================ -->
   <title>{{ blog.title }} | KARiN. ブログ</title>
 
-  <!-- ❗ blog.description → blog.excerpt に修正 -->
   <meta name="description" content="{{ blog.excerpt }}">
-
-  <!-- ❗ canonical を request.url で動的生成 -->
   <link rel="canonical" href="{{ request.url }}">
 
-  <!-- ===========================
-       OGP（完全動的）
-  ============================ -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ blog.title }} | KARiN. ブログ">
-
-  <!-- ❗ blog.description → blog.excerpt に修正 -->
   <meta property="og:description" content="{{ blog.excerpt }}">
-
-  <!-- ❗ og:url も request.url が正解 -->
   <meta property="og:url" content="{{ request.url }}">
-
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
   {% if blog.image %}
@@ -37,9 +23,6 @@
 
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ===========================
-       JSON-LD（BlogPosting）
-  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -61,11 +44,7 @@
       }
     },
     "datePublished": "{{ blog.date }}",
-
-    <!-- ❗ description → excerpt に変更 -->
     "description": {{ (blog.excerpt or '') | tojson }},
-
-    <!-- ❗ mainEntityOfPage も request.url の方が正確 -->
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": "{{ request.url }}"
@@ -73,11 +52,9 @@
   }
   </script>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}">
 </head>
-
 
 <body>
   <section class="blog-detail">
@@ -94,42 +71,58 @@
       {{ blog.body|safe }}
     </div>
 
-    <!-- 💬 コメント・いいね -->
-    <div class="interaction-section">
-      <h3>💬 コメント欄</h3>
-      <div class="like-comment-container">
-        <button id="like-btn" class="action-btn" data-id="{{ blog.id }}">❤️ いいね (<span id="like-count">{{ like_count }}</span>)</button>
-        <button id="comment-toggle" class="action-btn">💬 コメントする</button>
-      </div>
+    <!-- ❤️ いいね -->
+    <div class="like-section">
+      <button id="like-btn" data-id="{{ blog.id }}" class="action-btn {% if liked %}liked{% endif %}">
+        ❤️ いいね (<span id="like-count">{{ like_count }}</span>)
+      </button>
+    </div>
 
-      <div id="comment-box" class="comment-box" style="display:none;">
+    <!-- 💬 コメント -->
+    <div class="comment-section">
+      <h3 class="comment-title">💬 コメント（{{ comments|length }}）</h3>
+
+      <div class="comment-input-area">
         <input id="comment-name" type="text" placeholder="お名前（任意）">
-        <textarea id="comment-input" placeholder="コメントを入力..."></textarea>
+        <textarea id="comment-body" placeholder="コメントを入力..."></textarea>
         <button id="comment-submit" class="submit-btn">送信</button>
       </div>
 
+      <!-- 一覧（吹き出し表示） -->
       <div class="comment-list">
         {% for c in comments %}
         <div class="comment-item">
-          <p><strong>{{ c.name }}</strong> さん：</p>
-          <p>{{ c.text }}</p>
+          <div class="comment-bubble">
+            <div class="bubble-header">
+              <span class="comment-author">{{ c.name }}</span>
+              <span class="comment-date">{{ c.created_at }}</span>
+            </div>
+            <p class="comment-text">{{ c.body }}</p>
+          </div>
+
           {% if c.reply %}
-          <div class="reply">↳ <strong>藤田 幸士</strong>：{{ c.reply }}</div>
+          <div class="comment-reply">
+            <div class="reply-header">
+              <span class="reply-author">藤田 幸士（KARiN.）からの返信</span>
+              <span class="reply-date">{{ c.reply_date }}</span>
+            </div>
+            <p class="reply-text">{{ c.reply }}</p>
+          </div>
           {% endif %}
+
+
         </div>
         {% endfor %}
       </div>
     </div>
-
-    <!-- 👤 著者プロフィール -->
+        <!-- 👤 著者プロフィール -->
     <div class="author-profile">
       <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="藤田 幸士" class="author-img">
       <div class="author-info">
         <h3>この記事を書いた人</h3>
         <p><strong>藤田 幸士（KARiN.代表）</strong><br>
           鍼灸師・スポーツトレーナーとして15年以上の経験を持ち、<br>
-          東京（代々木上原）・福岡（薬院）を中心に、出張治療やトレーナー活動を行いながら、<br>
-          セルフケア等情報も発信しています。
+          東京（代々木上原）・福岡（薬院）を中心に活動しています。
         </p>
         <div class="author-links">
           <a href="https://lin.ee/5vv91n2" target="_blank" class="mini-btn line">LINE</a>
@@ -138,14 +131,76 @@
       </div>
     </div>
 
-    <!-- ⬅️ 戻るボタン -->
     <div class="blog-footer">
       <a href="{{ url_for('blog') }}" class="btn">📚 一覧に戻る</a>
       <a href="{{ url_for('index') }}" class="btn">🏠 ホームに戻る</a>
     </div>
   </section>
 
-  <!-- ✅ 外部JS読込 -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <!-- Like -->
+  <script>
+    const likeBtn = document.getElementById("like-btn");
+    const countEl = document.getElementById("like-count");
+    const blogId = "{{ blog.id }}";
+    let processing = false;
+
+    likeBtn.addEventListener("click", async () => {
+      if (processing) return;
+      processing = true;
+
+      const res = await fetch(`/api/like/${blogId}`, { method: "POST" });
+      const data = await res.json();
+
+      if (data.status === "ok") {
+        countEl.textContent = data.count;
+        likeBtn.classList.toggle("liked", data.liked);
+      }
+
+      processing = false;
+    });
+  </script>
+
+  <!-- コメント送信 -->
+  <script>
+    const submitBtn = document.getElementById("comment-submit");
+    const nameInput = document.getElementById("comment-name");
+    const bodyInput = document.getElementById("comment-body");
+
+    submitBtn.addEventListener("click", async () => {
+      const name = nameInput.value;
+      const body = bodyInput.value.trim();
+
+      if (!body) {
+        alert("コメントを入力してください。");
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/comment/${blogId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `name=${encodeURIComponent(name)}&body=${encodeURIComponent(body)}`
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          nameInput.value = "";
+          bodyInput.value = "";
+          location.reload();
+        }
+      } catch (e) {
+        alert("送信エラーが発生しました。");
+        console.error(e);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+
 </body>
 </html>
