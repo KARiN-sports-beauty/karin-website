@@ -110,7 +110,7 @@
             <!-- サムネ：横長フル幅 -->
             {% if blog.image %}
             <div class="blog-thumb-wide">
-              <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
+              <img src="{{ blog.image }}" alt="{{ blog.title }}">
             </div>
             {% else %}
             <div class="blog-thumb-wide no-image"></div>

@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
   {% if blog.image %}
-    <meta property="og:image" content="https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}">
+    <meta property="og:image" content="{{ blog.image }}">
   {% else %}
     <meta property="og:image" content="https://karin-website.onrender.com/static/images/common/ogp_default.jpg">
   {% endif %}
@@ -29,7 +29,7 @@
     "@type": "BlogPosting",
     "headline": {{ blog.title | tojson }},
     {% if blog.image %}
-      "image": "https://karin-website.onrender.com/static/images/blogs/{{ blog.image }}",
+      "image": "{{ blog.image }}",
     {% endif %}
     "author": {
       "@type": "Person",
@@ -63,7 +63,7 @@
 
     {% if blog.image %}
     <figure class="blog-thumb">
-      <img src="{{ url_for('static', filename='images/blogs/' + blog.image) }}" alt="{{ blog.title }}">
+      <img src="{{ blog.image }}" alt="{{ blog.title }}">
     </figure>
     {% endif %}
 

@@ -15,13 +15,15 @@
 
 import customtkinter as ctk
 import json, os, shutil
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from tkinter import messagebox
 from tkinter import filedialog
 import uuid
 import webbrowser  # 🔵 投稿/編集後にブラウザを開く
 import time
 from supabase import create_client, Client
+import mimetypes
+JST = timezone(timedelta(hours=9))
 
 SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
@@ -303,6 +305,7 @@ def open_edit(kind, id):
     def do_save():
         print("編集保存スタート")
 
+        # 🔹 GUI側の dict 更新
         a["title"]    = ent_title.get().strip()
         a["excerpt"]  = ent_excerpt.get().strip()
         a["category"] = ent_category.get().strip()
@@ -319,7 +322,28 @@ def open_edit(kind, id):
         else:
             body_html = raw_body.replace("\n", "<br>")
 
+        # 🔵 JSONファイル更新
         save_json(data_file, lst)
+        print("ローカルJSON更新完了")
+
+        # 🔵 Supabase UPDATE（blogs テーブル）
+        try:
+            supabase.table("blogs").update({
+                "title": a["title"],
+                "excerpt": a["excerpt"],
+                "category": a["category"],
+                "tags": a["tags"],
+                "image": a["image"],
+                "body": body_html,  # ← <br> 変換済みで保存
+                "draft": a["draft"],
+                "date": datetime.now(JST).strftime("%Y-%m-%d %H:%M")
+            }).eq("id", id).execute()
+            print("Supabase UPDATE 完了")
+
+        except Exception as e:
+            print("Supabase UPDATE ERROR:", e)
+            messagebox.showerror("エラー", f"Supabase更新エラー:\n{e}")
+            return
 
         messagebox.showinfo("保存", "更新しました。")
         print("編集保存完了")
@@ -339,6 +363,7 @@ def open_edit(kind, id):
     footer = ctk.CTkFrame(win, fg_color="#fafafa")
     footer.pack(fill="x", padx=20, pady=(8, 16))
     add_main_button(footer, "💾 投稿 / 保存", do_save)
+
 
 
 
@@ -558,6 +583,7 @@ def new_post(kind="blog"):
 
         body_raw = txt_body.get("1.0", "end-1c").strip()
 
+        # 冒頭に <h1> が入っているパターンの除去
         if body_raw.startswith("<h1"):
             end = body_raw.find("</h1>")
             if end != -1:
@@ -594,6 +620,28 @@ def new_post(kind="blog"):
     add_main_button(footer, "💾 投稿 / 保存", do_save)
 
 
+def upload_image_to_supabase(file_path, folder="blog-images"):
+    # ファイル名決定（重複回避）
+    file_name = os.path.basename(file_path)
+    mime_type, _ = mimetypes.guess_type(file_path)
+
+    # Storage パス
+    storage_path = f"{folder}/{file_name}"
+
+    # 画像ファイル読み込み
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+
+    # アップロード
+    res = supabase.storage.from_(folder).upload(
+        path=storage_path,
+        file=file_data,
+        file_options={"content-type": mime_type}
+    )
+
+    # アップロード済みなので public URL を返す
+    public_url = supabase.storage.from_(folder).get_public_url(storage_path)
+    return public_url
 
 
 
