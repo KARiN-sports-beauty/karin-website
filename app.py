@@ -381,25 +381,26 @@ def blog():
 
 
 # ===========================
-# ブログ詳細
+# ブログ詳細（slug 版）
 # ===========================
-@app.route("/blog/<int:id>")
-def show_blog(id):
-    # 対象ブログ取得
-    res = supabase.table("blogs").select("*").eq("id", id).execute()
+@app.route("/blog/<slug>")
+def show_blog(slug):
+    # 対象ブログ取得（slug で検索）
+    res = supabase.table("blogs").select("*").eq("slug", slug).execute()
     data = res.data
 
     if not data:
         return render_template("404.html"), 404
 
     blog = data[0]
+    blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
     # コメント取得（新しい順）
     comments_res = (
         supabase
         .table("comments")
         .select("*")
-        .eq("blog_id", id)
+        .eq("blog_id", blog_id)
         .order("created_at", desc=True)
         .execute()
     )
@@ -410,7 +411,7 @@ def show_blog(id):
         supabase
         .table("likes")
         .select("liked", count="exact")
-        .eq("blog_id", id)
+        .eq("blog_id", blog_id)
         .eq("liked", True)
         .execute()
     )
@@ -426,57 +427,82 @@ def show_blog(id):
 
 
 
-
-
-
-@app.route("/news/<int:id>")
-def show_news(id):
-    # --- JSONから読み込み ---
-    try:
-        with open("static/data/news.json", "r", encoding="utf-8") as f:
-            news_list = json.load(f)
-    except:
+# ===========================
+# NEWS 詳細（slug 版）
+# ===========================
+@app.route("/news/<slug>")
+def show_news(slug):
+    res = supabase.table("news").select("*").eq("slug", slug).execute()
+    if not res.data:
         return render_template("404.html"), 404
 
-    news = next((n for n in news_list if n["id"] == id), None)
-    if not news:
-        return render_template("404.html"), 404
+    news = res.data[0]
 
-    # 本文
-    body = news.get("body", "")
-    if not body:
-        body = "<p>この記事の内容は準備中です。</p>"
+    if not news.get("body"):
+        news["body"] = "<p>この記事の内容は準備中です。</p>"
 
-    news["body"] = body
+    return render_template("news_detail.html", news=news)
 
-    return render_template(
-        "news_detail.html",
-        news=news
-    )
+
+
+@app.route("/news")
+def news_list():
+    # Supabase から取得（下書き以外）
+    res = supabase.table("news").select("*").order("created_at", desc=True).execute()
+    items = res.data or []
+
+    # 日付整形（blogs と合わせる）
+    for n in items:
+        n["date"] = (n.get("created_at") or "")[:10]
+
+    return render_template("news.html", news_list=items)
+
+
 
 
 # ===================================================
-# ✅ トップ・404
+# ✅ トップ
 # ===================================================
 @app.route("/")
 def index():
-    with open("static/data/blogs.json", encoding="utf-8") as f:
-        blogs = json.load(f)
-    latest_blogs = sorted(blogs, key=lambda x: x["id"], reverse=True)[:3]
 
-    if os.path.exists("static/data/news.json"):
-        with open("static/data/news.json", encoding="utf-8") as f:
-            news_list = json.load(f)
-        latest_news = sorted(news_list, key=lambda x: x["id"], reverse=True)[:3]
-    else:
-        latest_news = []
+    # 最新ブログ 3件
+    latest_blogs_res = (
+        supabase
+        .table("blogs")
+        .select("*")
+        .order("created_at", desc=True)
+        .limit(3)
+        .execute()
+    )
+    latest_blogs = latest_blogs_res.data or []
 
+    # 最新ニュース 3件
+    latest_news_res = (
+        supabase
+        .table("news")
+        .select("*")
+        .order("created_at", desc=True)
+        .limit(3)
+        .execute()
+    )
+    latest_news = latest_news_res.data or []
+
+    # スケジュールだけは JSON のまま
     with open("static/data/schedule.json", encoding="utf-8") as f:
         schedule = json.load(f)
+
     today = datetime.now().strftime("%Y-%m-%d")
     upcoming = [s for s in schedule if s["date"] >= today][:10]
 
-    return render_template("index.html", latest_blogs=latest_blogs, latest_news=latest_news, schedule=upcoming, today=today)
+    return render_template(
+        "index.html",
+        latest_blogs=latest_blogs,
+        latest_news=latest_news,
+        schedule=upcoming,
+        today=today
+    )
+
 
 
 # =====================================

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ===========================
+       🔍 SEO 基本設定
+  ============================ -->
+  <title>お知らせ一覧 | KARiN. ~Sports & Beauty~</title>
+  <link rel="canonical" href="{{ request.url }}">
+
+  <meta name="description" content="KARiN.のお知らせ一覧ページです。営業時間・休業日・最新情報などを掲載しています。">
+  <meta name="keywords" content="KARiN, お知らせ, 新着情報, 鍼灸院, 整体, 美容鍼, 福岡, 東京, 代々木上原, 薬院">
+  <meta name="robots" content="index, follow">
+
+  <!-- ===========================
+       🌐 OGP
+  ============================ -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="お知らせ一覧 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN.のお知らせ一覧ページです。最新情報をいち早くお届けします。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ===========================
+       🧩 JSON-LD（構造化データ）
+       ItemList（一覧ページ用）
+  ============================ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "お知らせ一覧",
+    "itemListElement": [
+      {% for item in news_list %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "url": "{{ url_for('news_detail', id=item.id, _external=True) }}",
+        "name": "{{ item.title }}",
+        "datePublished": "{{ item.date }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  </script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/news_style.css') }}">
+</head>
+
+<body>
+
+  <section class="news-list">
+
+    <h1 class="news-list-title">お知らせ一覧</h1>
+
+    <ul class="news-list-ul">
+
+      {% for item in news_list %}
+      <li class="news-item">
+        <a href="{{ url_for('show_news', slug=item.slug) }}" class="news-link">
+          <span class="news-date">{{ item.date }}</span>
+          <span class="news-title">{{ item.title }}</span>
+        </a>
+      </li>
+      {% endfor %}
+
+    </ul>
+
+    <div class="news-footer-btn">
+      <a href="{{ url_for('index') }}" class="btn home-return-btn">
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="">
+        ホームに戻る
+      </a>
+    </div>
+
+    <div class="news-list-footer">
+        <a href="{{ url_for('index') }}" class="btn news-home-btn">🏠 ホームに戻る</a>
+    </div>
+
+  </section>
+
+</body>
+</html>

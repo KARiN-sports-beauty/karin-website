@@ -574,9 +574,9 @@ def open_edit(kind, id):
         try:
             if kind == "blog":
                 # TODO: Flask 側のルートを /blog/<slug> に変更したらここも差し替える
-                webbrowser.open(f"{BASE_URL}/blog/{id}")
+                webbrowser.open(f"{BASE_URL}/blog/{slug}")
             else:
-                webbrowser.open(f"{BASE_URL}/news/{id}")
+                webbrowser.open(f"{BASE_URL}/news/{slug}")
         except Exception as e:
             print("ブラウザオープン失敗:", e)
 
@@ -915,9 +915,9 @@ def new_post(kind="blog"):
         time.sleep(2)
         try:
             if kind == "blog":
-                webbrowser.open(f"{BASE_URL}/blog/{nid}")
+                webbrowser.open(f"{BASE_URL}/blog/{slug}")
             else:
-                webbrowser.open(f"{BASE_URL}/news/{nid}")
+                webbrowser.open(f"{BASE_URL}/news/{slug}")
         except Exception as e:
             print("ブラウザオープン失敗:", e)
 

@@ -105,7 +105,7 @@
       {% if blogs %}
         {% for blog in blogs %}
         <div class="blog-item">
-          <a href="{{ url_for('show_blog', id=blog.id) }}">
+          <a href="{{ url_for('show_blog', slug=blog.slug) }}">
 
             <!-- サムネ：横長フル幅 -->
             {% if blog.image %}

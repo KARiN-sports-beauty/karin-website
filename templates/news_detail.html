@@ -16,19 +16,18 @@
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
   <!-- ===========================
-       🌐 OGP / SNS
+       🌐 OGP / SNS（← Supabase 画像URL対応）
   ============================ -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ news.title }}">
   <meta property="og:description" content="{{ news.excerpt }}">
   <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:image" content="{{ news.image or url_for('static', filename='images/relogo.png', _external=True) }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- ===========================
-       🧩 JSON-LD（構造化データ）
-       NewsArticle完全版
+       🧩 JSON-LD（Supabase URL 対応 完全版）
   ============================ -->
   <script type="application/ld+json">
   {
@@ -44,7 +43,7 @@
     },
     "image": [
       {% if news.image %}
-      "{{ url_for('static', filename='images/news/' + news.image, _external=True) }}"
+      "{{ news.image }}"
       {% else %}
       "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
       {% endif %}
@@ -83,7 +82,7 @@
 
     {% if news.image %}
     <div class="news-thumb">
-      <img src="{{ url_for('static', filename='images/news/' + news.image) }}" alt="{{ news.title }}">
+      <img src="{{ news.image }}" alt="{{ news.title }}">
     </div>
     {% endif %}
 
@@ -95,17 +94,14 @@
     </div>
 
     <!-- ===========================
-         🏠 フッター（ホームへ戻る）
+         🏠 フッター（ホームへ / お知らせ一覧へ）
     ============================ -->
-    <div class="news-footer">
-      <a href="{{ url_for('index') }}" class="btn home-return-btn">
-        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="">
-        ホームに戻る
-      </a>
+   <div class="news-detail-buttons">
+      <a href="{{ url_for('news_list') }}" class="btn back-list-btn">📚 一覧に戻る</a>
+      <a href="{{ url_for('index') }}" class="btn home-return-btn">🏠 ホームに戻る</a>
     </div>
-
+    
   </section>
-
 </body>
 </html>
 

@@ -163,7 +163,7 @@
     <div class="news-container">
       {% for item in latest_news %}
       <div class="news-card">
-        <a href="{{ url_for('show_news', id=item.id) }}">
+        <a href="{{ url_for('show_news', slug=item.slug) }}">
           <span class="news-title">{{ item.title }}</span>
           <span class="news-date">{{ item.date }}</span>
         </a>
@@ -292,7 +292,7 @@
     <div class="blog-container">
       {% for blog in latest_blogs %}
       <div class="blog-card">
-        <a href="{{ url_for('show_blog', id=blog.id) }}">
+        <a href="{{ url_for('show_blog', slug=blog.slug) }}">
           <h3 class="blog-title">{{ blog.title }}</h3>
           <p class="blog-date">{{ blog.date }}</p>
         </a>
