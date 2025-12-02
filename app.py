@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 import uuid
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 # ===============================
@@ -73,6 +75,7 @@ load_dotenv()
 # ▼ Flaskアプリ初期化
 # =====================================
 app = Flask(__name__, template_folder="templates")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
 
 # =====================================
