@@ -64,8 +64,6 @@ def send_line_message(text: str):
         print("❌ LINE通知エラー:", e)
 
 
-
-
 # =====================================
 # ▼ .envを読み込む
 # =====================================
@@ -75,6 +73,24 @@ load_dotenv()
 # ▼ Flaskアプリ初期化
 # =====================================
 app = Flask(__name__, template_folder="templates")
+
+
+# =====================================
+# ▼ SendGrid用のFlask-Mail設定
+# =====================================
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'apikey'
+app.config['MAIL_PASSWORD'] = os.getenv("SENDGRID_API_KEY")
+
+app.config['MAIL_DEFAULT_SENDER'] = (
+    os.getenv("MAIL_FROM_NAME"),
+    os.getenv("MAIL_DEFAULT_SENDER")
+)
+
+mail = Mail(app)
+
 
 # =====================================
 # ▼ Gmail送信用設定（安全版）
@@ -559,14 +575,14 @@ def api_comment():
     if not slug or not body:
         return {"error": "コメントが空です"}, 400
 
-    # blog_id 取得
+    # --- 対象ブログを slug → blog_id へ ---
     res = supabase.table("blogs").select("id").eq("slug", slug).execute()
     if not res.data:
         return {"error": "記事が見つかりません"}, 404
 
     blog_id = res.data[0]["id"]
 
-    # コメント保存
+    # --- コメント保存（Supabase） ---
     supabase.table("comments").insert({
         "id": str(uuid.uuid4()),
         "blog_id": blog_id,
@@ -575,23 +591,20 @@ def api_comment():
         "created_at": now_iso()
     }).execute()
 
-    # --- Gmail通知（Render では基本 NG → 今は無効化） ---
-    """
+    # ======================================================
+    # ✉ SendGrid通知（Render で安定動作）
+    # ======================================================
     try:
         msg = Message(
-            subject=f"【KARiN.】新しいコメントが届きました（Blog: {slug}）",
-            sender="karin.sports.beauty@gmail.com",
-            recipients=["karin.sports.beauty@gmail.com"],
-            body=f"スラッグ: {slug}\n名前: {name}\nコメント:\n{body}"
+            subject=f"【KARiN.】新しいコメントが届きました（{slug}）",
+            recipients=["karin.sports.beauty@gmail.com"],  # 通知先
+            body=f"【記事】{slug}\n【名前】{name}\n【コメント】\n{body}"
         )
         mail.send(msg)
     except Exception as e:
-        print("MAIL ERROR:", e)
-    """
+        print("SENDGRID MAIL ERROR:", e)
 
     return {"success": True}
-
-
 
 
 
