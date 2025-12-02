@@ -575,37 +575,36 @@ def api_comment():
     if not slug or not body:
         return {"error": "コメントが空です"}, 400
 
-    # --- 対象ブログを slug → blog_id へ ---
+    # blog_id 取得
     res = supabase.table("blogs").select("id").eq("slug", slug).execute()
     if not res.data:
         return {"error": "記事が見つかりません"}, 404
 
     blog_id = res.data[0]["id"]
 
-    # --- コメント保存（Supabase） ---
+    # コメント保存（body カラムに保存）
     supabase.table("comments").insert({
         "id": str(uuid.uuid4()),
         "blog_id": blog_id,
         "name": name,
-        "text": body,
+        "body": body,  # ← ここが最重要！ body に戻す！
         "created_at": now_iso()
     }).execute()
 
-    # ======================================================
-    # ✉ SendGrid通知（Render で安定動作）
-    # ======================================================
+    # SendGrid（Render動作用）
     try:
-        msg = Message(
-            subject=f"【KARiN.】新しいコメントが届きました（{slug}）",
-            recipients=["karin.sports.beauty@gmail.com"],  # 通知先
-            body=f"【記事】{slug}\n【名前】{name}\n【コメント】\n{body}"
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        message = Mail(
+            from_email="karin.sports.beauty@gmail.com",
+            to_emails="karin.sports.beauty@gmail.com",
+            subject=f"【KARiN.】新しいコメント（{slug}）",
+            plain_text_content=f"名前: {name}\nブログ: {slug}\n\nコメント:\n{body}",
         )
-        mail.send(msg)
+        sg.send(message)
     except Exception as e:
-        print("SENDGRID MAIL ERROR:", e)
+        print("SENDGRID ERROR:", e)
 
     return {"success": True}
-
 
 
 
