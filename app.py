@@ -11,8 +11,6 @@ from supabase import create_client, Client
 import uuid
 
 
-
-
 # ===============================
 # Supabase 接続設定
 # ===============================
@@ -22,7 +20,9 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-
+def now_iso():
+    """JST の ISO8601 文字列を返す"""
+    return datetime.now(JST).isoformat()
 
 # ===============================
 # LINE通知（Messaging API）
