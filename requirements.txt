@@ -31,3 +31,5 @@ postgrest
 gotrue
 realtime
 storage3
+sendgrid
+python-http-client
