@@ -85,6 +85,7 @@
       <div class="comment-input-area">
         <input id="comment-name" type="text" placeholder="お名前（任意）">
         <textarea id="comment-body" placeholder="コメントを入力..."></textarea>
+        <input type="hidden" id="comment-slug" value="{{ blog.slug }}">
         <button id="comment-submit" class="submit-btn">送信</button>
       </div>
 
@@ -168,9 +169,10 @@
     const submitBtn = document.getElementById("comment-submit");
     const nameInput = document.getElementById("comment-name");
     const bodyInput = document.getElementById("comment-body");
+    const slug = document.getElementById("comment-slug").value;
 
     submitBtn.addEventListener("click", async () => {
-      const name = nameInput.value;
+      const name = nameInput.value.trim();
       const body = bodyInput.value.trim();
 
       if (!body) {
@@ -181,10 +183,10 @@
       submitBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/comment/${blogId}`, {
+        const res = await fetch(`/api/comment`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `name=${encodeURIComponent(name)}&body=${encodeURIComponent(body)}`
+          body: `name=${encodeURIComponent(name)}&body=${encodeURIComponent(body)}&slug=${encodeURIComponent(slug)}`
         });
 
         const data = await res.json();
@@ -196,12 +198,13 @@
         }
       } catch (e) {
         alert("送信エラーが発生しました。");
-        console.error(e);
+        console.error("COMMENT ERROR:", e);
       } finally {
         submitBtn.disabled = false;
       }
     });
   </script>
+
 
 </body>
 </html>

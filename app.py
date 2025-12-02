@@ -550,35 +550,48 @@ def api_like(blog_id):
 # ===================================================
 # 💬 Supabase コメント API
 # ===================================================
-@app.route("/api/comment/<int:blog_id>", methods=["POST"])
-def api_comment(blog_id):
+@app.route("/api/comment", methods=["POST"])
+def api_comment():
     name = request.form.get("name", "匿名").strip()
-    body = request.form.get("body", "").strip()   # ← body に統一（最重要）
+    body = request.form.get("body", "").strip()
+    slug = request.form.get("slug", "").strip()
 
     if not body:
         return {"error": "コメントが空です"}, 400
 
+    if not slug:
+        return {"error": "slug がありません"}, 400
+
+    # slug → blog.id を取得
+    blog_res = supabase.table("blogs").select("id").eq("slug", slug).execute()
+    if not blog_res.data:
+        return {"error": "ブログが見つかりません"}, 404
+
+    blog_id = blog_res.data[0]["id"]
+
+    # コメント保存
     res = supabase.table("comments").insert({
         "id": str(uuid.uuid4()),
         "blog_id": blog_id,
         "name": name,
-        "text": body,   # ← DB の 'text' に保存（OK）
+        "body": body,
         "created_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M")
     }).execute()
 
     # ✉️ Gmail通知
     try:
         msg = Message(
-            subject=f"【KARiN.】新しいコメントが届きました（Blog ID: {blog_id}）",
+            subject=f"【KARiN.】新しいコメントが届きました（Blog: {slug}）",
             sender="karin.sports.beauty@gmail.com",
             recipients=["karin.sports.beauty@gmail.com"],
-            body=f"ブログID: {blog_id}\n名前: {name}\nコメント:\n{body}"
+            body=f"ブログ Slug: {slug}\n名前: {name}\nコメント:\n{body}"
         )
         mail.send(msg)
     except Exception as e:
         print("MAIL ERROR:", e)
 
     return {"success": True}
+
 
 
 
