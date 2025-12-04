@@ -1,12 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify
 from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9))
-from flask_mail import Mail, Message
 import json, os
 from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 import uuid
+import sendgrid
+from sendgrid.helpers.mail import Mail as SGMail
+sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
+
 
 
 # ===============================
@@ -74,23 +77,36 @@ app = Flask(__name__, template_folder="templates")
 
 
 # =====================================
-# Gmail (Google Workspace) のSMTP設定
+# SendGrid 設定（Render からのメール送信）
 # =====================================
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
+# Render の環境変数に SENDGRID_API_KEY を設定済み想定
+sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
 
-# メイン送信アドレス
-app.config['MAIL_USERNAME'] = "info@karin-sb.jp"
+FROM_ADDRESS = "info@karin-sb.jp"  # 送信元は共通で info@ に統一
 
-# 今生成したアプリパスワード
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_APP_PASSWORD")
 
-# デフォルト送信者
-app.config['MAIL_DEFAULT_SENDER'] = ("KARiN. ~Sports & Beauty~", "info@karin-sb.jp")
+def send_email(from_addr, to_addr, subject, content, reply_to=None):
+    """
+    SendGrid 経由でプレーンテキストメールを送信するユーティリティ
+    """
+    try:
+        email = SGMail(
+            from_email=from_addr,
+            to_emails=to_addr,
+            subject=subject,
+            plain_text_content=content
+        )
+        if reply_to:
+            email.reply_to = reply_to
 
-mail = Mail(app)
+        response = sg.send(email)
+        print("✅ SendGrid response:", response.status_code)
+        return response.status_code
+    except Exception as e:
+        print("❌ SendGrid メール送信エラー:", e)
+        return None
+
 
 
 
@@ -232,13 +248,13 @@ def submit_form():
 """
         send_line_message(line_message)
 
-        msg = Message(
+                # 📨 メール通知（SendGrid）
+        send_email(
+            from_addr=FROM_ADDRESS,
+            to_addr="form@karin-sb.jp",
             subject="【KARiN.】初診フォーム送信",
-            recipients=["form@karin-sb.jp"],
-            body=json.dumps(data, ensure_ascii=False, indent=2)
+            content=json.dumps(data, ensure_ascii=False, indent=2)
         )
-        mail.send(msg)
-
 
         return redirect(url_for(
             "thanks",
@@ -292,12 +308,21 @@ def submit_contact():
 """
         send_line_message(line_message)
 
-        msg = Message(
-            subject="【KARiN.】お問い合わせ",
-            recipients=["contact@karin-sb.jp"],
-            body=f"名前: {name}\n電話: {phone}\nメール: {email}\n内容:\n{message}"
+                # 📨 メール通知（SendGrid）
+        body_text = (
+            f"名前: {name}\n"
+            f"電話: {phone}\n"
+            f"メール: {email}\n"
+            f"日時: {timestamp}\n"
+            f"内容:\n{message}"
         )
-        mail.send(msg)
+
+        send_email(
+            from_addr=FROM_ADDRESS,
+            to_addr="contact@karin-sb.jp",
+            subject="【KARiN.】お問い合わせ",
+            content=body_text
+        )
 
 
         return redirect(url_for(
@@ -582,16 +607,23 @@ def api_comment():
         "created_at": created_at
     }).execute()
 
-    msg = Message(
-        subject=f"【KARiN.】新しいコメント（{slug}）",
-        recipients=["comment@karin-sb.jp"],   # ← 通知先！
-        reply_to="info@karin-sb.jp",  # ← 安全な運用的には固定でOK
-        body=f"ブログ: {slug}\n名前: {name}\n時間: {created_at}\nコメント:\n{body}"
+        # 📨 コメント通知メール（SendGrid）
+    body_text = (
+        f"ブログ: {slug}\n"
+        f"名前: {name}\n"
+        f"時間: {created_at}\n"
+        f"コメント:\n{body}"
     )
-    mail.send(msg)
 
+    send_email(
+        from_addr=FROM_ADDRESS,
+        to_addr="comment@karin-sb.jp",
+        subject=f"【KARiN.】新しいコメント（{slug}）",
+        content=body_text,
+        reply_to=FROM_ADDRESS
+    )
 
-
+    return {"status": "ok"}
 
 
 
