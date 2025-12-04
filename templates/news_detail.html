@@ -8,6 +8,8 @@
        🔍 SEO基本設定
   ============================ -->
   <title>{{ news.title }} | KARiN. お知らせ</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="canonical" href="{{ request.url }}">
 
   <meta name="description" content="{{ news.excerpt }}">
@@ -100,7 +102,7 @@
       <a href="{{ url_for('news_list') }}" class="btn back-list-btn">📚 一覧に戻る</a>
       <a href="{{ url_for('index') }}" class="btn home-return-btn">🏠 ホームに戻る</a>
     </div>
-    
+
   </section>
 </body>
 </html>
