@@ -2,15 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9))
 from flask_mail import Mail, Message
-import gspread
-from google.oauth2.service_account import Credentials
 import json, os
 from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 import uuid
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 
 # ===============================
@@ -75,43 +71,29 @@ load_dotenv()
 # ▼ Flaskアプリ初期化
 # =====================================
 app = Flask(__name__, template_folder="templates")
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
 
 # =====================================
-# ▼ SendGrid用のFlask-Mail設定
+# Gmail (Google Workspace) のSMTP設定
 # =====================================
-app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'apikey'
-app.config['MAIL_PASSWORD'] = os.getenv("SENDGRID_API_KEY")
 
-app.config['MAIL_DEFAULT_SENDER'] = (
-    os.getenv("MAIL_FROM_NAME"),
-    os.getenv("MAIL_DEFAULT_SENDER")
-)
+# メイン送信アドレス
+app.config['MAIL_USERNAME'] = "info@karin-sb.jp"
 
-mail = Mail(app)
+# 今生成したアプリパスワード
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_APP_PASSWORD")
 
-
-# =====================================
-# ▼ Gmail送信用設定（安全版）
-# =====================================
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'karin.sports.beauty@gmail.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = ("KARiN. 初診受付フォーム", app.config['MAIL_USERNAME'])
+# デフォルト送信者
+app.config['MAIL_DEFAULT_SENDER'] = ("KARiN. ~Sports & Beauty~", "info@karin-sb.jp")
 
 mail = Mail(app)
 
-# =====================================
-# ▼ GAS Webhook URL（🟢 新追加）
-# =====================================
-GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbxwY-01BQjrneGxlxDaYAxfS7PAZNzVWvDzc5UUEppDGvzle961tynQctdtQYHn1Wah3w/exec"
-GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbxic_oSKyB_HC_IFmSXlbwer43n1AxqqCVqt1TasEA6nB4pkezOc72s1mRmwDF6jaxt/exec"
+
+
 
 # =====================================
 # ▼ ユーティリティ関数
@@ -200,7 +182,7 @@ def form():
 
 
 # ===================================================
-# 初診フォーム送信（GAS対応版）
+# 初診フォーム送信
 # ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
@@ -231,14 +213,10 @@ def submit_form():
             "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
         }
 
-        GAS_URL_FORM = "https://script.google.com/macros/s/AKfycbyUAS--yGnXqF4dS9VQTUfMf7BmSXt1rVbAWTyDxYpg13t0A2B9S0y9dYdMOMFziFST1w/exec"
 
         print("📨 送信されるJSON:")
         print(json.dumps(data, ensure_ascii=False, indent=2))
 
-        response = requests.post(GAS_URL_FORM, json=data)
-
-        print("🛰️ FORM GASレスポンス:", response.status_code, response.text)
 
         # 🟢 LINE通知
         line_message = f"""
@@ -253,6 +231,13 @@ def submit_form():
 主訴：{data['chief_complaint']}
 """
         send_line_message(line_message)
+
+        msg = Message(
+            subject="【KARiN.】初診フォーム送信",
+            recipients=["form@karin-sb.jp"],
+            body=json.dumps(data, ensure_ascii=False, indent=2)
+        )
+        mail.send(msg)
 
 
         return redirect(url_for(
@@ -287,9 +272,6 @@ def submit_contact():
         message = request.form.get("message")
         timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
 
-        # --- GAS 送信 ---
-        GAS_URL_CONTACT = "https://script.google.com/macros/s/AKfycbxiSIZo3k3I89KrD8PEMeyqd51tfsOlzdSYdAIx4NgK75OGhJb-pLh52ezg7QBaq84F/exec"
-
         data = {
             "name": name,
             "phone": phone,
@@ -298,9 +280,6 @@ def submit_contact():
             "timestamp": timestamp
         }
 
-        response = requests.post(GAS_URL_CONTACT, json=data, timeout=10)
-
-        print("🛰️ CONTACT GASレスポンス:", response.status_code, response.text)
 
         # 🟢 LINE通知
         line_message = f"""
@@ -312,6 +291,14 @@ def submit_contact():
 {message}
 """
         send_line_message(line_message)
+
+        msg = Message(
+            subject="【KARiN.】お問い合わせ",
+            recipients=["contact@karin-sb.jp"],
+            body=f"名前: {name}\n電話: {phone}\nメール: {email}\n内容:\n{message}"
+        )
+        mail.send(msg)
+
 
         return redirect(url_for(
             "thanks",
@@ -595,30 +582,14 @@ def api_comment():
         "created_at": created_at
     }).execute()
 
-    # ================================
-    # 📩 SendGrid でメール送信
-    # ================================
-    try:
-        if SENDGRID_API_KEY:
-            message = Mail(
-                from_email="karin.sports.beauty@gmail.com",
-                to_emails="karin.sports.beauty@gmail.com",
-                subject=f"【KARiN.】新しいコメント（{slug}）",
-                plain_text_content=(
-                    f"ブログ: {slug}\n"
-                    f"名前: {name}\n"
-                    f"時間: {created_at}\n"
-                    f"コメント:\n{body}"
-                )
-            )
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            sg.send(message)
-        else:
-            print("SENDGRID_API_KEY が設定されていません")
-    except Exception as e:
-        print("SENDGRID SEND ERROR:", e)
+    msg = Message(
+        subject=f"【KARiN.】新しいコメント（{slug}）",
+        recipients=["comment@karin-sb.jp"],   # ← 通知先！
+        body=f"ブログ: {slug}\n名前: {name}\n時間: {created_at}\nコメント:\n{body}"
+    )
+    mail.send(msg)
 
-    return {"success": True}
+
 
 
 
@@ -628,7 +599,7 @@ def sitemap():
     try:
         pages = []
 
-        base_url = "https://karin-website.onrender.com"
+        base_url = "https://karin-sb.jp"
 
         # --- 固定ページ ---
         static_urls = [
@@ -682,7 +653,7 @@ def robots_txt():
         "",
         "Allow: /",
         "",
-        "Sitemap: https://karin-website.onrender.com/sitemap.xml"
+        "Sitemap: https://karin-sb.jp/sitemap.xml"
     ]
     return "\n".join(lines), 200, {"Content-Type": "text/plain"}
 

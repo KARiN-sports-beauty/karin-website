@@ -58,7 +58,7 @@ MYPAGE_ARTICLES = "static/data/mypage_articles.json"
 MYPAGE_NEWS     = "static/data/mypage_news.json"
 
 # 🔵 本番URL（プレビューで開く先）
-BASE_URL = "https://karin-website.onrender.com"
+BASE_URL = "https://karin-sb.jp"
 
 for path in [NEWS_DIR, BLOG_DIR, IMG_DIR, BACKUP_DIR,
              os.path.dirname(NEWS_JSON), os.path.dirname(BLOG_JSON),
@@ -613,7 +613,7 @@ def new_post(kind="blog"):
 
         # プレビューを開く
         time.sleep(2)
-        webbrowser.open(f"https://karin-website.onrender.com/blog/{nid}")
+        webbrowser.open(f"https://karin-sb.jp/blog/{nid}")
 
     footer = ctk.CTkFrame(win, fg_color="#fafafa")
     footer.pack(fill="x", padx=20, pady=(8, 16))

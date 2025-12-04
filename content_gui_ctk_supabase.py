@@ -97,7 +97,7 @@ for path in [
         os.makedirs(path, exist_ok=True)
 
 # 🔵 本番URL（プレビューで開く先）
-BASE_URL = "https://karin-website.onrender.com"
+BASE_URL = "https://karin-sb.jp"
 
 # =========================
 # 共通ユーティリティ
