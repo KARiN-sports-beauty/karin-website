@@ -585,6 +585,7 @@ def api_comment():
     msg = Message(
         subject=f"【KARiN.】新しいコメント（{slug}）",
         recipients=["comment@karin-sb.jp"],   # ← 通知先！
+        reply_to="info@karin-sb.jp",  # ← 安全な運用的には固定でOK
         body=f"ブログ: {slug}\n名前: {name}\n時間: {created_at}\nコメント:\n{body}"
     )
     mail.send(msg)
