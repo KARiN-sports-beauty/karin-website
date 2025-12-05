@@ -42,7 +42,7 @@
       {
         "@type": "ListItem",
         "position": {{ loop.index }},
-        "url": "{{ url_for('news_detail', id=item.id, _external=True) }}",
+        "url": "{{ url_for('show_news', slug=item.slug) }}",
         "name": "{{ item.title }}",
         "datePublished": "{{ item.date }}"
       }{% if not loop.last %},{% endif %}
