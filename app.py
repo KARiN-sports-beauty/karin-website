@@ -497,42 +497,60 @@ def news_list():
 @app.route("/")
 def index():
 
+    # ----------------------------------------
     # 最新ブログ 3件
-    latest_blogs_res = (
-        supabase
-        .table("blogs")
-        .select("*")
-        .order("created_at", desc=True)
-        .limit(3)
-        .execute()
-    )
-    latest_blogs = latest_blogs_res.data or []
+    # ----------------------------------------
+    latest_blogs = []
+    try:
+        latest_blogs_res = (
+            supabase
+            .table("blogs")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(3)
+            .execute()
+        )
+        latest_blogs = latest_blogs_res.data or []
+    except Exception as e:
+        print("❌ latest_blogs 取得エラー:", e)
 
-    # ★ created_at → date に変換
-    for n in latest_news:
-        if "created_at" in n and n["created_at"]:
-            n["date"] = n["created_at"][:10]
-        else:
-            n["date"] = ""
 
+
+    # ----------------------------------------
     # 最新ニュース 3件
-    latest_news_res = (
-        supabase
-        .table("news")
-        .select("*")
-        .order("created_at", desc=True)
-        .limit(3)
-        .execute()
-    )
-    latest_news = latest_news_res.data or []
+    # ----------------------------------------
+    latest_news = []
+    try:
+        latest_news_res = (
+            supabase
+            .table("news")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(3)
+            .execute()
+        )
+        latest_news = latest_news_res.data or []
 
-    # スケジュールだけは JSON のまま
+        # ★ created_at → date に変換
+        for n in latest_news:
+            if n.get("created_at"):
+                n["date"] = n["created_at"][:10]
+            else:
+                n["date"] = ""
+    except Exception as e:
+        print("❌ latest_news 取得エラー:", e)
+
+
+
+    # ----------------------------------------
+    # スケジュール読み込み（今日を左端に）
+    # ----------------------------------------
     with open("static/data/schedule.json", encoding="utf-8") as f:
         schedule = json.load(f)
 
     today = datetime.now().date()
-
     upcoming = []
+
     for s in schedule:
         d = datetime.strptime(s["date"], "%Y-%m-%d").date()
         if d >= today:
@@ -541,6 +559,10 @@ def index():
     upcoming = upcoming[:10]
 
 
+
+    # ----------------------------------------
+    # レンダリング
+    # ----------------------------------------
     return render_template(
         "index.html",
         latest_blogs=latest_blogs,
@@ -548,6 +570,7 @@ def index():
         schedule=upcoming,
         today=today
     )
+
 
 
 
