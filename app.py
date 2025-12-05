@@ -508,6 +508,13 @@ def index():
     )
     latest_blogs = latest_blogs_res.data or []
 
+    # ★ created_at → date に変換
+    for n in latest_news:
+        if "created_at" in n and n["created_at"]:
+            n["date"] = n["created_at"][:10]
+        else:
+            n["date"] = ""
+
     # 最新ニュース 3件
     latest_news_res = (
         supabase
@@ -523,8 +530,16 @@ def index():
     with open("static/data/schedule.json", encoding="utf-8") as f:
         schedule = json.load(f)
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    upcoming = [s for s in schedule if s["date"] >= today][:10]
+    today = datetime.now().date()
+
+    upcoming = []
+    for s in schedule:
+        d = datetime.strptime(s["date"], "%Y-%m-%d").date()
+        if d >= today:
+            upcoming.append(s)
+
+    upcoming = upcoming[:10]
+
 
     return render_template(
         "index.html",
@@ -583,9 +598,15 @@ def api_like(blog_id):
 # ===================================================
 @app.route("/api/comment", methods=["POST"])
 def api_comment():
-    slug = request.form.get("slug", "").strip()
-    name = request.form.get("name", "匿名").strip()
-    body = request.form.get("body", "").strip()
+    # JSON かフォームデータかを自動判定
+    if request.is_json:
+        req = request.get_json()
+    else:
+        req = request.form
+
+    slug = req.get("slug", "").strip()
+    name = req.get("name", "匿名").strip()
+    body = req.get("body", "").strip()
 
     if not slug or not body:
         return {"error": "コメントが空です"}, 400
