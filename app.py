@@ -651,7 +651,7 @@ def api_comment():
         "created_at": created_at
     }).execute()
 
-        # 📨 コメント通知メール（SendGrid）
+    # 📨 コメント通知メール（SendGrid）
     body_text = (
         f"ブログ: {slug}\n"
         f"名前: {name}\n"
@@ -667,7 +667,9 @@ def api_comment():
         reply_to=FROM_ADDRESS
     )
 
-    return {"status": "ok"}
+    # 🔥 ここがポイント：記事ページに戻す（即最新コメント反映！）
+    return redirect(url_for("show_blog", slug=slug))
+
 
 
 

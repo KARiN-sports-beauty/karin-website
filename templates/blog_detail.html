@@ -175,7 +175,7 @@
     const slug = document.getElementById("comment-slug").value;
 
     submitBtn.addEventListener("click", async () => {
-      const name = nameInput.value.trim();
+      const name = nameInput.value.trim() || "匿名";
       const body = bodyInput.value.trim();
 
       if (!body) {
@@ -186,19 +186,25 @@
       submitBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/comment`, {
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("body", body);
+        formData.append("slug", slug);
+
+        const res = await fetch("/api/comment", {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `name=${encodeURIComponent(name)}&body=${encodeURIComponent(body)}&slug=${encodeURIComponent(slug)}`
+          body: formData
         });
 
-        const data = await res.json();
-
-        if (data.success) {
-          nameInput.value = "";
-          bodyInput.value = "";
-          location.reload();
+        // 🔥 Flask が redirect を返した場合はこちら
+        if (res.redirected) {
+          window.location.href = res.url;
+          return;
         }
+
+        // 念のため fallback
+        location.reload();
+
       } catch (e) {
         alert("送信エラーが発生しました。");
         console.error("COMMENT ERROR:", e);
@@ -207,6 +213,7 @@
       }
     });
   </script>
+
 
 
 </body>
