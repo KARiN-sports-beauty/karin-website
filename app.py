@@ -671,6 +671,50 @@ def api_comment():
     return redirect(url_for("show_blog", slug=slug))
 
 
+@app.route("/admin/reply/<int:comment_id>")
+def admin_reply(comment_id):
+    # コメント取得
+    res = supabase.table("comments").select("*").eq("id", comment_id).execute()
+
+    if not res.data:
+        return "コメントが見つかりません", 404
+
+    comment = res.data[0]
+    return render_template("comment_reply.html", comment=comment)
+
+@app.route("/admin/reply/<int:comment_id>", methods=["POST"])
+def submit_reply(comment_id):
+    reply_text = request.form.get("reply")
+
+    if not reply_text:
+        return "返信内容が空です", 400
+
+    reply_date = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
+
+    # 更新
+    supabase.table("comments").update({
+        "reply": reply_text,
+        "reply_date": reply_date
+    }).eq("id", comment_id).execute()
+
+    # メール通知
+    body_text = (
+        f"コメントに返信が投稿されました。\n"
+        f"コメントID: {comment_id}\n"
+        f"返信内容:\n{reply_text}\n"
+    )
+
+    send_email(
+        from_addr=FROM_ADDRESS,
+        to_addr="comment@karin-sb.jp",
+        subject="【KARiN.】コメント返信通知",
+        content=body_text,
+        reply_to=FROM_ADDRESS
+    )
+
+    # リダイレクト（元のブログ記事に戻る）
+    return redirect(url_for("show_blog", slug=request.args.get("slug")))
+
 
 
 @app.route("/sitemap.xml")
