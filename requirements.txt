@@ -32,3 +32,5 @@ gotrue
 realtime
 storage3
 python-http-client
+sendgrid==6.11.0
+
