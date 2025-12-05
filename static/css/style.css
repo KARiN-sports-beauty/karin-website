@@ -866,13 +866,19 @@ section, header, footer {
 }
 
 /* ボタン部分 */
-.blog-cta .news-cta {
+.blog-cta {
   text-align: center;
   margin-top: 45px;
 }
 
+.news-cta {
+  text-align: center;
+  margin-top: 45px;
+}
+
+
 /* ボタン（サブCTAデザイン・スマート系） */
-.blog-cta .news-cta .btn-more {
+.blog-cta .btn-more {
   display: inline-block;
   padding: 10px 25px;
   background-color: #1E3A5F;
@@ -885,7 +891,25 @@ section, header, footer {
   transition: all 0.3s ease;
 }
 
-.blog-cta .news-cta .btn-more:hover {
+.blog-cta .btn-more:hover {
+  background-color: #16304A;
+  transform: translateY(-2px);
+}
+
+.news-cta .btn-more {
+  display: inline-block;
+  padding: 10px 25px;
+  background-color: #1E3A5F;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  transition: all 0.3s ease;
+}
+
+.news-cta .btn-more:hover {
   background-color: #16304A;
   transform: translateY(-2px);
 }
