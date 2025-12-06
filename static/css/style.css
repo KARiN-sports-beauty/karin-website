@@ -2995,3 +2995,13 @@ section[id],
 }
 
 /* 375pxOK */
+
+.footer-secret-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: default; /* 一般ユーザーに「リンクっぽさ」を出さない */
+}
+
+.footer-secret-link:hover {
+  opacity: 1; /* 見た目は何も変えない */
+}

@@ -1,0 +1,139 @@
+<!-- templates/admin_dashboard.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>KARiN. スタッフダッシュボード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 既存のCSSを読み込んでいるならここで読み込み -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+<body class="admin-page">
+
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-logo">KARiN. 管理ダッシュボード</div>
+      <div class="admin-user">
+        <!-- ここは必要に応じてログインユーザー名に差し替え -->
+        <span class="admin-user-name">{{ staff_name if staff_name else "スタッフ" }} さん</span>
+        <a href="{{ url_for('logout') }}" class="admin-logout-link">ログアウト</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <h1 class="admin-title">スタッフ用ダッシュボード</h1>
+    <p class="admin-subtitle">
+      本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」と「未返信お問い合わせ」を確認してください。
+    </p>
+
+    <div class="dashboard-grid">
+
+      <!-- 🔵 上段：重要通知 -->
+        <a href="/admin/comments" class="dash-card dash-card-top">
+        <div class="dash-card-header">
+            <span class="dash-card-label">未返信コメント</span>
+            <span class="dash-card-badge">
+            {{ unreplied_comments if unreplied_comments is not none else 0 }}件
+            </span>
+        </div>
+        <p class="dash-card-text">
+            ブログ記事についたコメントのうち、まだ返信していないものの件数です。
+        </p>
+        </a>
+
+        <a href="/admin/contacts" class="dash-card dash-card-top">
+        <div class="dash-card-header">
+            <span class="dash-card-label">未返信お問い合わせ</span>
+            <span class="dash-card-badge dash-card-badge-warning">
+            {{ unprocessed_contacts if unprocessed_contacts is not none else 0 }}件
+            </span>
+        </div>
+        <p class="dash-card-text">
+            フォームから届いたお問い合わせのうち、未処理の件数です。
+        </p>
+        </a>
+
+
+        <!-- 🔵 上段を2列で揃えるためのダミー（必要なければ削除） -->
+        <div class="dash-card-placeholder"></div>
+
+        <!-- 🔶 中段：コンテンツ管理 -->
+        <a href="/admin/blogs" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">ブログ管理</span>
+            </div>
+            <p class="dash-card-text">
+            ブログ記事の新規投稿・編集・削除を行います。
+            </p>
+        </a>
+
+        <a href="/admin/videos" class="dash-card disabled">
+            <div class="dash-card-header">
+            <span class="dash-card-label">セルフケア動画（準備中）</span>
+            </div>
+            <p class="dash-card-text">
+            今後、セルフケア動画のアップロード・管理を行う予定のページです。
+            </p>
+        </a>
+
+        <a href="/admin/news" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">ニュース管理</span>
+            </div>
+            <p class="dash-card-text">
+            お知らせ（ニュース）の投稿・編集・公開状態の管理を行います。
+            </p>
+        </a>
+
+        <!-- 🟩 下段：業務管理 -->
+        <a href="/admin/reservations" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">予約一覧</span>
+            </div>
+            <p class="dash-card-text">
+            予約状況の確認・変更を行います。（Supabase / Sheets 連携予定）
+            </p>
+        </a>
+
+        <a href="/admin/daily_reports" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">日報一覧</span>
+            </div>
+            <p class="dash-card-text">
+            スタッフが記録した日報の一覧と詳細を確認します。
+            </p>
+        </a>
+
+        <a href="/admin/reports" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">報告書一覧</span>
+            </div>
+            <p class="dash-card-text">
+            施術レポート・トレーニングレポートなどの報告書を管理します。
+            </p>
+        </a>
+
+        <a href="/admin/karte" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">カルテ管理</span>
+            </div>
+            <p class="dash-card-text">
+            初診フォームの内容と、継続施術ログを一元管理します。
+            </p>
+        </a>
+
+        <a href="/admin/staff" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">スタッフ一覧</span>
+            </div>
+            <p class="dash-card-text">
+            スタッフ情報、シフト、勤務報告などを管理するためのページです。（順次拡張予定）
+            </p>
+        </a>
+
+    </div><!-- /.dashboard-grid -->
+
+  </main>
+</body>
+</html>

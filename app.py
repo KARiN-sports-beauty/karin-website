@@ -75,6 +75,22 @@ load_dotenv()
 # =====================================
 app = Flask(__name__, template_folder="templates")
 
+# session の暗号化キー
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
+
+# =====================================
+# スタッフログインが必要なページ制御
+# =====================================
+def staff_required(f):
+    from functools import wraps
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "staff" not in session:
+            return redirect("/staff/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+
 
 # =====================================
 # SendGrid 設定（Render からのメール送信）
@@ -324,6 +340,17 @@ def submit_contact():
             content=body_text
         )
 
+        # ▼ Supabase に保存
+        supabase.table("contacts").insert({
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "message": message,
+            "created_at": timestamp,
+            "processed": False
+        }).execute()
+
 
         return redirect(url_for(
             "thanks",
@@ -335,6 +362,50 @@ def submit_contact():
         return f"サーバーエラー: {str(e)}", 500
 
 
+# ===================================================
+# ✅ お問い合わせスタッフページ（未返信一覧、返信済み一覧、お問い合わせ詳細、返信済みにするボタン）
+# ===================================================
+@app.route("/admin/contacts")
+@staff_required
+def admin_contacts():
+    res = supabase.table("contacts") \
+        .select("*") \
+        .eq("processed", False) \
+        .order("created_at", desc=True) \
+        .execute()
+
+    return render_template("admin_contacts.html", items=res.data or [])
+
+
+@app.route("/admin/contacts/replied")
+@staff_required
+def admin_contacts_replied():
+    res = supabase.table("contacts") \
+        .select("*") \
+        .eq("processed", True) \
+        .order("created_at", desc=True) \
+        .execute()
+
+    return render_template("admin_contacts_replied.html", items=res.data or [])
+
+
+@app.route("/admin/contact/<contact_id>")
+@staff_required
+def admin_contact_detail(contact_id):
+    res = supabase.table("contacts").select("*").eq("id", contact_id).execute()
+    if not res.data:
+        return "お問い合わせが見つかりません", 404
+    contact = res.data[0]
+    return render_template("admin_contact_detail.html", contact=contact)
+
+
+@app.route("/admin/contact/<contact_id>/done", methods=["POST"])
+@staff_required
+def admin_contact_done(contact_id):
+    supabase.table("contacts").update({"processed": True}).eq("id", contact_id).execute()
+    return redirect("/admin/contacts")
+
+
 
 # ===================================================
 # ✅ thanks.html
@@ -343,6 +414,117 @@ def submit_contact():
 def thanks():
     message = request.args.get("message", "送信ありがとうございました。内容を確認のうえ、24時間以内にご連絡いたします。")
     return render_template("thanks.html", message=message)
+
+
+# ===================================================
+# ✅ スタッフログイン
+# ===================================================
+@app.route("/staff/login", methods=["GET"])
+def staff_login_page():
+    return render_template("stafflogin.html")
+
+
+# スタッフログイン処理
+@app.route("/staff/login", methods=["POST"])
+def staff_login():
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    try:
+        data = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+    except Exception as e:
+        print("STAFF LOGIN ERROR:", e)
+        return render_template("stafflogin.html", error="ログインに失敗しました")
+
+    # ログイン失敗チェック
+    if not getattr(data, "user", None):
+        return render_template("stafflogin.html", error="メールまたはパスワードが違います")
+
+    # 🔹 Supabase Auth の user_metadata から名前を取得（あれば）
+    user = data.user
+    metadata = getattr(user, "user_metadata", {}) or {}
+
+    full_name = (
+        metadata.get("name")
+        or metadata.get("full_name")
+        or email  # どちらも無ければメールアドレスを表示名に
+    )
+
+    # スタッフ用 session（フルネーム込み）
+    session["staff"] = {
+        "id": user.id,
+        "email": user.email,
+        "name": full_name,
+    }
+
+    return redirect("/admin/dashboard")
+
+
+
+
+@app.route("/staff/logout")
+def staff_logout():
+    session.pop("staff", None)
+    return redirect("/staff/login")
+
+
+
+@app.route("/admin/dashboard")
+@staff_required
+def admin_dashboard():
+    """
+    スタッフログイン後に表示する管理ダッシュボード。
+    - 未返信コメント数（comments.reply IS NULL）
+    - 未処理お問い合わせ数（contacts.processed = False）
+    を Supabase から取得してテンプレートに渡す。
+    """
+
+    # ---------- 未返信コメント数 ----------
+    try:
+        res_unreplied = (
+            supabase
+            .table("comments")
+            .select("id", count="exact")
+            .is_("reply", None)
+            .execute()
+        )
+        unreplied_comments = res_unreplied.count or 0
+    except Exception as e:
+        print("❌ 未返信コメント数取得エラー:", e)
+        unreplied_comments = 0
+
+    # ---------- 未処理お問い合わせ数（contacts） ----------
+    try:
+        res_unprocessed = (
+            supabase
+            .table("contacts")  # ★ contacts テーブルを使用
+            .select("id", count="exact")
+            .eq("processed", False)
+            .execute()
+        )
+        unprocessed_contacts = res_unprocessed.count or 0
+    except Exception as e:
+        print("❌ 未処理お問い合わせ数取得エラー:", e)
+        unprocessed_contacts = 0
+
+    # ---------- スタッフ名（フルネーム） ----------
+    staff = session.get("staff", {})
+    staff_name = staff.get("name") or staff.get("email") or "スタッフ"
+
+    # ---------- テンプレートへ ----------
+    return render_template(
+        "admin_dashboard.html",
+        unreplied_comments=unreplied_comments,
+        unprocessed_contacts=unprocessed_contacts,
+        staff_name=staff_name,
+    )
+
+
+
+
 
 # ===================================================
 # ✅ ログイン・登録・マイページ
@@ -436,6 +618,8 @@ def show_blog(slug):
         .execute()
     )
     comments = comments_res.data or []
+
+    print("💬 COMMENTS_DEBUG:", comments)  # ← これ追加
 
     # いいね数取得
     like_res = (
@@ -671,49 +855,93 @@ def api_comment():
     return redirect(url_for("show_blog", slug=slug))
 
 
-@app.route("/admin/reply/<int:comment_id>")
+
+
+@app.route("/admin/reply/<comment_id>", methods=["GET", "POST"])
+@staff_required
 def admin_reply(comment_id):
-    # コメント取得
-    res = supabase.table("comments").select("*").eq("id", comment_id).execute()
 
-    if not res.data:
-        return "コメントが見つかりません", 404
+    if request.method == "GET":
+        # コメント取得
+        res = supabase.table("comments").select("*").eq("id", str(comment_id)).execute()
+        if not res.data:
+            return "コメントが見つかりません", 404
 
-    comment = res.data[0]
-    return render_template("comment_reply.html", comment=comment)
+        comment = res.data[0]
+        return render_template("comment_reply.html", comment=comment)
 
-@app.route("/admin/reply/<int:comment_id>", methods=["POST"])
-def submit_reply(comment_id):
+    # --- POST：返信の保存 ---
     reply_text = request.form.get("reply")
-
     if not reply_text:
         return "返信内容が空です", 400
 
     reply_date = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
 
-    # 更新
-    supabase.table("comments").update({
+    # コメントから blog_id を取得
+    c_res = supabase.table("comments").select("blog_id").eq("id", str(comment_id)).execute()
+    if not c_res.data:
+        return "コメントが見つかりません", 404
+
+    blog_id = c_res.data[0]["blog_id"]
+
+    # ブログの slug 取得
+    b_res = supabase.table("blogs").select("slug").eq("id", blog_id).execute()
+    slug = b_res.data[0]["slug"]
+
+    # =============================
+    # ★ A：返信者名を保存（今は固定）
+    # =============================
+    reply_author = "藤田 幸士（KARiN.）"
+
+    # コメント更新（返信内容 + 日付 + 返信者）
+    update_res = supabase.table("comments").update({
         "reply": reply_text,
-        "reply_date": reply_date
-    }).eq("id", comment_id).execute()
+        "reply_date": reply_date,
+        "reply_author": reply_author
+    }).eq("id", str(comment_id)).execute()
+
+    print("UPDATE_RES:", update_res)
 
     # メール通知
-    body_text = (
-        f"コメントに返信が投稿されました。\n"
-        f"コメントID: {comment_id}\n"
-        f"返信内容:\n{reply_text}\n"
-    )
-
     send_email(
         from_addr=FROM_ADDRESS,
         to_addr="comment@karin-sb.jp",
         subject="【KARiN.】コメント返信通知",
-        content=body_text,
+        content=f"コメントID {comment_id} に返信:\n{reply_text}",
         reply_to=FROM_ADDRESS
     )
 
-    # リダイレクト（元のブログ記事に戻る）
-    return redirect(url_for("show_blog", slug=request.args.get("slug")))
+    # 返信後は元のブログに戻る
+    return redirect(url_for("show_blog", slug=slug))
+
+
+
+@app.route("/admin/comments")
+@staff_required
+def admin_comments():
+    # 未返信コメント
+    res_unreplied = (
+        supabase.table("comments")
+        .select("*")
+        .is_("reply", None)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    # 返信済みコメント
+    res_replied = (
+        supabase.table("comments")
+        .select("*")
+        .not_("reply", "is", None)
+        .order("reply_date", desc=True)
+        .execute()
+    )
+
+    return render_template(
+        "admin_comments.html",
+        unreplied=res_unreplied.data or [],
+        replied=res_replied.data or []
+    )
 
 
 

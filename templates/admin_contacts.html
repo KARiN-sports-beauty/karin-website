@@ -1,0 +1,21 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2>📩 お問い合わせ（未返信）</h2>
+
+{% if items %}
+<ul class="admin-list">
+  {% for c in items %}
+    <li>
+      <a href="/admin/contact/{{ c.id }}">
+        <strong>{{ c.name }}</strong> （{{ c.created_at }}）
+        <div>{{ c.message[:30] }}...</div>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>未返信のお問い合わせはありません。</p>
+{% endif %}
+
+<a href="/admin/contacts/replied" class="admin-link">返信済み一覧を見る →</a>
+{% endblock %}

@@ -102,12 +102,15 @@
               <span class="comment-date">{{ c.created_at }}</span>
             </div>
             <p class="comment-text">{{ c.body }}</p>
+            <div class="admin-reply-btn">
+              <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 管理者返信</a>
+            </div>
           </div>
 
           {% if c.reply %}
           <div class="comment-reply">
             <div class="reply-header">
-              <span class="reply-author">藤田 幸士（KARiN.）からの返信</span>
+              <span class="reply-author">{{ c.reply_author }} からの返信</span>
               <span class="reply-date">{{ c.reply_date }}</span>
             </div>
             <p class="reply-text">{{ c.reply }}</p>

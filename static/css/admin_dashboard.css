@@ -1,0 +1,205 @@
+/* ==========================================
+   KARiN. 管理ダッシュボード用 CSS
+   ファイル: static/css/admin_dashboard.css
+   ========================================== */
+
+/* ベース（必要に応じて調整） */
+.admin-page {
+  margin: 0;
+  padding: 0;
+  font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
+  color: #1E3A5F;
+  background-color: #f5f7fb;
+}
+
+/* ヘッダー */
+.admin-header {
+  background: #1E3A5F;
+  color: #ffffff;
+  padding: 14px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+
+.admin-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-logo {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+
+.admin-logout-link {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.admin-logout-link:hover {
+  background: #ffffff;
+  color: #1E3A5F;
+}
+
+/* メイン */
+.admin-main {
+  max-width: 1100px;
+  margin: 24px auto 40px;
+  padding: 0 16px 40px;
+}
+
+.admin-title {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.admin-subtitle {
+  font-size: 0.95rem;
+  color: #4a628a;
+  margin-bottom: 26px;
+}
+
+/* グリッドレイアウト */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+/* カード */
+.dash-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px 24px;
+  border-left: 6px solid #1E3A5F;
+  text-decoration: none;
+  color: #1E3A5F;
+  font-weight: 500;
+  font-size: 1rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 110px;
+}
+
+.dash-card-top {
+  border-left-color: #bf8b30; /* 上段：少しだけゴールド寄りのアクセント */
+}
+
+.dash-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  background: #F8FAFF;
+}
+
+/* 準備中カード */
+.dash-card.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* カード内構造 */
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dash-card-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.dash-card-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #4a628a;
+}
+
+/* 件数バッジ */
+.dash-card-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #1E3A5F;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dash-card-badge-warning {
+  background: #c65a3a;
+}
+
+/* レイアウト調整用プレースホルダ（上段2列揃え用）*/
+.dash-card-placeholder {
+  visibility: hidden;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .admin-main {
+    margin-top: 18px;
+  }
+
+  .admin-title {
+    font-size: 1.3rem;
+  }
+
+  .admin-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .dash-card {
+    padding: 18px 18px;
+    border-radius: 16px;
+  }
+
+  .dash-card-label {
+    font-size: 1rem;
+  }
+
+  .dash-card-badge {
+    min-width: 56px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .admin-user {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard-grid {
+    gap: 16px;
+  }
+}

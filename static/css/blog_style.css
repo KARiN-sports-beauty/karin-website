@@ -1101,3 +1101,18 @@ body,
 
 .line { background: #00c300; color: white; }
 .insta { background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4); color: white; }
+
+
+.admin-reply-btn {
+  margin-top: 6px;
+}
+
+.reply-btn {
+  font-size: 13px;
+  color: #1E3A5F;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.reply-btn:hover {
+  opacity: 0.7;
+}

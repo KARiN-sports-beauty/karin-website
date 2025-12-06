@@ -1,0 +1,18 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2>📩 お問い合わせ詳細</h2>
+
+<p><strong>名前：</strong>{{ contact.name }}</p>
+<p><strong>メール：</strong>{{ contact.email }}</p>
+<p><strong>電話番号：</strong>{{ contact.phone }}</p>
+<p><strong>日時：</strong>{{ contact.created_at }}</p>
+
+<h3>内容</h3>
+<p>{{ contact.message | nl2br }}</p>
+
+<form action="/admin/contact/{{ contact.id }}/done" method="POST" style="margin-top:20px;">
+  <button class="admin-btn">返信済みにする</button>
+</form>
+
+<a href="/admin/contacts" class="admin-link">← 未返信一覧へ戻る</a>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>未返信コメント一覧</h2>
+
+<div class="comment-list-admin">
+  {% for c in unreplied %}
+  <div class="admin-comment-item">
+    <p><strong>{{ c.name }}</strong>（{{ c.created_at }}）</p>
+    <p>{{ c.body }}</p>
+    <a href="{{ url_for('admin_reply', comment_id=c.id, slug=c.slug) }}">返信する →</a>
+  </div>
+  {% endfor %}
+</div>
+
+<hr>
+
+<h2>返信済みコメント</h2>
+
+<div class="comment-list-admin">
+  {% for c in replied %}
+  <div class="admin-comment-item replied">
+    <p><strong>{{ c.name }}</strong>（{{ c.created_at }}）</p>
+    <p>{{ c.body }}</p>
+    <p class="reply-info">
+      → {{ c.reply_author }}（{{ c.reply_date }}）  
+    </p>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
