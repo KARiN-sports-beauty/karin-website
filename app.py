@@ -505,6 +505,34 @@ def staff_register():
     return render_template("staff_register.html")
 
 
+# ===================================================
+# パスワードリセット（メール送信）
+# ===================================================
+@app.route("/staff/forgot-password", methods=["GET", "POST"])
+def staff_forgot_password():
+    if request.method == "GET":
+        return render_template("forgot_password.html")
+
+    email = request.form.get("email")
+
+    try:
+        # Supabase のパスワードリセットメール送信
+        supabase.auth.reset_password_email(email)
+
+        return render_template(
+            "forgot_password.html",
+            message="パスワード再設定メールを送信しました。メールをご確認ください。"
+        )
+
+    except Exception as e:
+        print("RESET PASS ERROR:", e)
+        return render_template(
+            "forgot_password.html",
+            error="メール送信に失敗しました。メールアドレスをご確認ください。"
+        )
+
+
+
 # ============================
 # スタッフ一覧（承認/停止管理）
 # ============================
