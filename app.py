@@ -1197,7 +1197,7 @@ def admin_reply(comment_id):
 def admin_comments():
 
     try:
-        # ✅ 未返信コメント（reply が NULL のもの）
+        # ✅ 未返信コメント（reply が NULL）
         res_unreplied = (
             supabase
             .table("comments")
@@ -1207,12 +1207,12 @@ def admin_comments():
             .execute()
         )
 
-        # ✅ 返信済みコメント（reply が NOT NULL のもの）
+        # ✅ 返信済みコメント（reply が NULL 以外）
         res_replied = (
             supabase
             .table("comments")
             .select("*")
-            .is_not("reply", None)   # ← 🔥 ここが正しい書き方
+            .neq("reply", None)   # ← ✅ これが全SDK共通で使える
             .order("reply_date", desc=True)
             .execute()
         )
@@ -1226,6 +1226,7 @@ def admin_comments():
     except Exception as e:
         print("❌ ADMIN COMMENTS ERROR:", e)
         return "コメント取得エラー", 500
+
 
 
 
