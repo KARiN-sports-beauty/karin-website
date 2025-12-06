@@ -1193,31 +1193,40 @@ def admin_reply(comment_id):
 
 
 @app.route("/admin/comments")
-@staff_required
+@admin_required
 def admin_comments():
-    # 未返信コメント
-    res_unreplied = (
-        supabase.table("comments")
-        .select("*")
-        .is_("reply", None)
-        .order("created_at", desc=True)
-        .execute()
-    )
 
-    # 返信済みコメント
-    res_replied = (
-        supabase.table("comments")
-        .select("*")
-        .not_("reply", "is", None)
-        .order("reply_date", desc=True)
-        .execute()
-    )
+    try:
+        # ✅ 未返信コメント（reply が NULL のもの）
+        res_unreplied = (
+            supabase
+            .table("comments")
+            .select("*")
+            .is_("reply", None)
+            .order("created_at", desc=True)
+            .execute()
+        )
 
-    return render_template(
-        "admin_comments.html",
-        unreplied=res_unreplied.data or [],
-        replied=res_replied.data or []
-    )
+        # ✅ 返信済みコメント（reply が NOT NULL のもの）
+        res_replied = (
+            supabase
+            .table("comments")
+            .select("*")
+            .is_not("reply", None)   # ← 🔥 ここが正しい書き方
+            .order("reply_date", desc=True)
+            .execute()
+        )
+
+        return render_template(
+            "admin_comments.html",
+            unreplied=res_unreplied.data or [],
+            replied=res_replied.data or []
+        )
+
+    except Exception as e:
+        print("❌ ADMIN COMMENTS ERROR:", e)
+        return "コメント取得エラー", 500
+
 
 
 
