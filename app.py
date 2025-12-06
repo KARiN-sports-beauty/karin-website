@@ -532,6 +532,11 @@ def staff_forgot_password():
         )
 
 
+@app.route("/auth")
+def auth_handler():
+    return render_template("auth.html")
+
+
 
 # ============================
 # スタッフ一覧（承認/停止管理）

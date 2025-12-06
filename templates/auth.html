@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>パスワード再設定 | KARiN.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    // Supabase が URL ハッシュに入れてくる access_token を保持したまま
+    // /staff/login に遷移させるための中継ページ
+    window.onload = function () {
+      // そのままログイン画面へ戻す
+      window.location.href = "/staff/login" + window.location.hash;
+    };
+  </script>
+</head>
+<body>
+  <p style="text-align:center;margin-top:80px;">
+    認証処理中です。自動的にログイン画面へ移動します…
+  </p>
+</body>
+</html>
