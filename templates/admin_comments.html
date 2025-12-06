@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+
+{% block title %}コメント管理 | KARiN.{% endblock %}
+
 {% block content %}
 
 <h2>未返信コメント一覧</h2>
@@ -6,10 +9,19 @@
 <div class="comment-list-admin">
   {% for c in unreplied %}
   <div class="admin-comment-item">
-    <p><strong>{{ c.name }}</strong>（{{ c.created_at }}）</p>
+    <p>
+      <strong>{{ c.name }}</strong>
+      （{{ c.created_at }}）
+    </p>
+
     <p>{{ c.body }}</p>
-    <a href="{{ url_for('admin_reply', comment_id=c.id, slug=c.slug) }}">返信する →</a>
+
+    <a href="{{ url_for('admin_reply', comment_id=c.id) }}">
+      返信する →
+    </a>
   </div>
+  {% else %}
+    <p>未返信コメントはありません。</p>
   {% endfor %}
 </div>
 
@@ -20,13 +32,25 @@
 <div class="comment-list-admin">
   {% for c in replied %}
   <div class="admin-comment-item replied">
-    <p><strong>{{ c.name }}</strong>（{{ c.created_at }}）</p>
+    <p>
+      <strong>{{ c.name }}</strong>
+      （{{ c.created_at }}）
+    </p>
+
     <p>{{ c.body }}</p>
+
     <p class="reply-info">
-      → {{ c.reply_author }}（{{ c.reply_date }}）  
+      → {{ c.reply_author }}（{{ c.reply_date }}）
     </p>
   </div>
+  {% else %}
+    <p>返信済みコメントはありません。</p>
   {% endfor %}
 </div>
 
+<div style="margin-top:40px;">
+  <a href="/admin/dashboard">← ダッシュボードへ戻る</a>
+</div>
+
 {% endblock %}
+

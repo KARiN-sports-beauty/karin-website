@@ -1,4 +1,6 @@
-{% extends "admin_base.html" %}
+{% extends "base.html" %}
+{% block title %}お問い合わせ詳細 | KARiN.{% endblock %}
+
 {% block content %}
 <h2>📩 お問い合わせ詳細</h2>
 
@@ -8,11 +10,17 @@
 <p><strong>日時：</strong>{{ contact.created_at }}</p>
 
 <h3>内容</h3>
-<p>{{ contact.message | nl2br }}</p>
+<p style="white-space: pre-line;">{{ contact.message }}</p>
 
 <form action="/admin/contact/{{ contact.id }}/done" method="POST" style="margin-top:20px;">
   <button class="admin-btn">返信済みにする</button>
 </form>
 
-<a href="/admin/contacts" class="admin-link">← 未返信一覧へ戻る</a>
+<div style="margin-top:30px;">
+  <a href="/admin/contacts" class="admin-link">← 未返信一覧へ戻る</a>
+</div>
+
+<div style="margin-top:10px;">
+  <a href="/admin/dashboard" class="admin-link">← ダッシュボードへ戻る</a>
+</div>
 {% endblock %}

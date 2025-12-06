@@ -1,4 +1,6 @@
-{% extends "admin_base.html" %}
+{% extends "base.html" %}
+{% block title %}返信済みお問い合わせ | KARiN.{% endblock %}
+
 {% block content %}
 <h2>✔ お問い合わせ（返信済み）</h2>
 
@@ -17,5 +19,11 @@
 <p>返信済みのお問い合わせはありません。</p>
 {% endif %}
 
-<a href="/admin/contacts" class="admin-link">未返信一覧へ戻る →</a>
+<div style="margin-top:30px;">
+  <a href="/admin/contacts" class="admin-link">← 未返信一覧へ戻る</a>
+</div>
+
+<div style="margin-top:20px;">
+  <a href="/admin/dashboard" class="admin-link">← ダッシュボードへ戻る</a>
+</div>
 {% endblock %}

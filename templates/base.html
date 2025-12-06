@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}管理画面 | KARiN.{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 共通CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+<body>
+
+  <!-- ✅ 管理画面ヘッダー -->
+  <header class="admin-header">
+    <div class="admin-header-left">
+      <a href="/admin/dashboard" class="admin-logo">
+        KARiN. <span class="sub">~Sports & Beauty~</span>
+      </a>
+    </div>
+
+    <div class="admin-header-right">
+      <span class="admin-user-name">
+        {{ session.staff.name if session.staff else "STAFF" }}
+      </span>
+      <a href="/staff/logout" class="logout-btn">ログアウト</a>
+    </div>
+  </header>
+
+  <!-- ✅ メインコンテンツ -->
+  <main class="admin-main">
+    {% block content %}
+    {% endblock %}
+  </main>
+
+</body>
+</html>
