@@ -14,9 +14,10 @@
     <div class="admin-header-inner">
       <div class="admin-logo">KARiN. 管理ダッシュボード</div>
       <div class="admin-user">
-        <!-- ここは必要に応じてログインユーザー名に差し替え -->
-        <span class="admin-user-name">{{ staff_name if staff_name else "スタッフ" }} さん</span>
-        <a href="{{ url_for('logout') }}" class="admin-logout-link">ログアウト</a>
+        <a href="/staff/profile" class="admin-user-name">
+            {{ staff_name }} さん
+        </a>
+        <a href="{{ url_for('staff_logout') }}" class="admin-logout-link">ログアウト</a>
       </div>
     </div>
   </header>

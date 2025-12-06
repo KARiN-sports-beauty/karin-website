@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタッフ管理 | KARiN.</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+<style>
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.staff-table th, .staff-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+.staff-table th {
+  background: #f5f7fb;
+  color: #1E3A5F;
+}
+.action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #1E3A5F;
+  color: white;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+.action-btn.disable {
+  background: #c65a3a;
+}
+.action-btn.delete {
+  background: #888;
+}
+</style>
+</head>
+<body>
+
+<div class="admin-main">
+  <h1 class="admin-title">スタッフ管理</h1>
+
+  <table class="staff-table">
+    <tr>
+      <th>名前</th>
+      <th>メール</th>
+      <th>電話番号</th>
+      <th>登録日</th>
+      <th>状態</th>
+      <th>操作</th>
+    </tr>
+
+    {% for s in staff %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.email }}</td>
+      <td>{{ s.phone }}</td>
+      <td>{{ s.created_at }}</td>
+      <td>
+        {% if s.approved %}
+          <span style="color:green;">承認済み</span>
+        {% else %}
+          <span style="color:red;">承認待ち</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if not s.approved %}
+        <form action="/admin/staff/approve/{{ s.id }}" method="POST" style="display:inline;">
+          <button class="action-btn">承認</button>
+        </form>
+        {% else %}
+        <form action="/admin/staff/disable/{{ s.id }}" method="POST" style="display:inline;">
+          <button class="action-btn disable">停止</button>
+        </form>
+        {% endif %}
+
+        <form action="/admin/staff/delete/{{ s.id }}" method="POST" style="display:inline;">
+        <button class="action-btn delete" onclick="return confirm('削除してもよろしいですか？');">削除</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+</div>
+
+</body>
+</html>

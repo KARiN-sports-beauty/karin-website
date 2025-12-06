@@ -6,6 +6,7 @@
 <title>スタッフログイン | KARiN.</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <style>
+/* ▼ ログインフォーム中央寄せ（幅調整） */
 .login-wrapper {
   max-width: 420px;
   margin: 80px auto;
@@ -14,6 +15,11 @@
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   text-align: center;
+}
+/* 入力欄を中央寄せし、幅を少し狭めて見やすく */
+.login-wrapper form {
+  max-width: 320px;
+  margin: 0 auto;
 }
 .login-title {
   font-size: 22px;
@@ -26,12 +32,14 @@
   text-align: left;
 }
 .form-group label { font-size: 14px; color: #1E3A5F; }
+/* 入力欄 */
 .input {
   width: 100%;
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 16px;
+  box-sizing: border-box;
 }
 .login-btn {
   width: 100%;
@@ -71,6 +79,13 @@
     </div>
 
     <button type="submit" class="login-btn">ログイン</button>
+
+    <p style="margin-top: 20px;">
+        <a href="/staff/register" style="color:#1E3A5F; font-size:14px;">
+            ▶ 新規スタッフ登録はこちら
+        </a>
+    </p>
+
   </form>
 </div>
 

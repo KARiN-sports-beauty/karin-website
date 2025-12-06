@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9))
 import json, os
@@ -8,8 +8,13 @@ from supabase import create_client, Client
 import uuid
 import sendgrid
 from sendgrid.helpers.mail import Mail as SGMail
-sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
 
+
+
+# =====================================
+# ▼ .envを読み込む
+# =====================================
+load_dotenv()
 
 
 # ===============================
@@ -17,8 +22,11 @@ sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
 # ===============================
 SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
 
 
 def now_iso():
@@ -65,10 +73,7 @@ def send_line_message(text: str):
         print("❌ LINE通知エラー:", e)
 
 
-# =====================================
-# ▼ .envを読み込む
-# =====================================
-load_dotenv()
+
 
 # =====================================
 # ▼ Flaskアプリ初期化
@@ -77,6 +82,7 @@ app = Flask(__name__, template_folder="templates")
 
 # session の暗号化キー
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
+
 
 # =====================================
 # スタッフログインが必要なページ制御
@@ -91,11 +97,24 @@ def staff_required(f):
     return wrapper
 
 
+# =====================================
+# 管理者が必要なページ制御
+# =====================================
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        staff = session.get("staff")
+        if not staff or staff.get("is_admin") != True:
+            return "権限がありません", 403
+        return f(*args, **kwargs)
+    return wrapper
+
+
 
 # =====================================
 # SendGrid 設定（Render からのメール送信）
 # =====================================
-
 # Render の環境変数に SENDGRID_API_KEY を設定済み想定
 sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
 
@@ -122,6 +141,33 @@ def send_email(from_addr, to_addr, subject, content, reply_to=None):
     except Exception as e:
         print("❌ SendGrid メール送信エラー:", e)
         return None
+
+
+
+# スタッフ承認メール送信用
+def send_staff_approved_email(to_addr, name):
+    body = f"""
+{name} 様
+
+スタッフアカウントが承認されました。
+
+以下よりログインしてご利用いただけます。
+
+https://www.karin-sb.jp/staff/login
+
+KARiN. ~ Sports & Beauty ~
+"""
+
+    try:
+        send_email(
+            from_addr="info@karin-sb.jp",
+            to_addr=to_addr,
+            subject="【KARiN.】スタッフアカウント承認のお知らせ",
+            content=body
+        )
+        print("📨 承認メール送信完了:", to_addr)
+    except Exception as e:
+        print("❌ 承認メール送信エラー:", e)
 
 
 
@@ -366,6 +412,7 @@ def submit_contact():
 # ✅ お問い合わせスタッフページ（未返信一覧、返信済み一覧、お問い合わせ詳細、返信済みにするボタン）
 # ===================================================
 @app.route("/admin/contacts")
+@admin_required
 @staff_required
 def admin_contacts():
     res = supabase.table("contacts") \
@@ -378,6 +425,7 @@ def admin_contacts():
 
 
 @app.route("/admin/contacts/replied")
+@admin_required
 @staff_required
 def admin_contacts_replied():
     res = supabase.table("contacts") \
@@ -390,6 +438,7 @@ def admin_contacts_replied():
 
 
 @app.route("/admin/contact/<contact_id>")
+@admin_required
 @staff_required
 def admin_contact_detail(contact_id):
     res = supabase.table("contacts").select("*").eq("id", contact_id).execute()
@@ -400,6 +449,7 @@ def admin_contact_detail(contact_id):
 
 
 @app.route("/admin/contact/<contact_id>/done", methods=["POST"])
+@admin_required
 @staff_required
 def admin_contact_done(contact_id):
     supabase.table("contacts").update({"processed": True}).eq("id", contact_id).execute()
@@ -419,6 +469,193 @@ def thanks():
 # ===================================================
 # ✅ スタッフログイン
 # ===================================================
+@app.route("/staff/register", methods=["GET", "POST"])
+def staff_register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not name or not phone or not email or not password:
+            return render_template("staff_register.html", error="全ての項目を入力してください。")
+
+        # Supabase Auth にユーザー作成（未承認）
+        try:
+            user = supabase.auth.sign_up({
+                "email": email,
+                "password": password,
+                "options": {
+                    "data": {
+                        "name": name,
+                        "phone": phone,
+                        "approved": False
+                    }
+                }
+            })
+
+        except Exception as e:
+            print("STAFF REGISTER ERROR:", e)
+            return render_template("staff_register.html", error="登録に失敗しました。")
+
+        # 成功画面
+        return render_template("staff_register.html", success=True)
+
+    # GETメソッド → 登録画面表示
+    return render_template("staff_register.html")
+
+
+# ============================
+# スタッフ一覧（承認/停止管理）
+# ============================
+@app.route("/admin/staff")
+@admin_required
+def admin_staff():
+    try:
+        # SDK によっては list_users() が「リスト」を返す
+        users = supabase_admin.auth.admin.list_users()
+        print("USERS RAW:", users)  # ← デバッグ用
+    except Exception as e:
+        print("❌ STAFF LIST ERROR:", e)
+        users = []
+
+    staff_list = []
+
+    # ここが重要！ users は「そのままリストなので」 users.users ではない
+    for u in users:
+        meta = u.user_metadata or {}
+
+        staff_list.append({
+            "id": u.id,
+            "email": u.email,
+            "name": meta.get("name", "未設定"),
+            "phone": meta.get("phone", "未登録"),
+            "approved": meta.get("approved", False),
+            "created_at": str(u.created_at)[:10],
+        })
+
+    return render_template("admin_staff.html", staff=staff_list)
+
+
+
+
+# 承認
+@app.route("/admin/staff/approve/<user_id>", methods=["POST"])
+@admin_required
+def admin_staff_approve(user_id):
+
+    try:
+        # ユーザー情報の取得
+        users = supabase_admin.auth.admin.list_users()
+        user = next((u for u in users if u.id == user_id), None)
+
+        if not user:
+            flash("ユーザーが見つかりません", "error")
+            return redirect("/admin/staff")
+
+        meta = user.user_metadata or {}
+
+        # 承認処理
+        supabase_admin.auth.admin.update_user_by_id(
+            user_id,
+            {"user_metadata": {"approved": True}}
+        )
+
+        # 承認メール送信
+        send_staff_approved_email(user.email, meta.get("name", ""))
+
+        flash("スタッフを承認しました（メール送信済み）", "success")
+
+    except Exception as e:
+        print("❌ APPROVE ERROR:", e)
+        flash("承認処理に失敗しました。", "error")
+
+    return redirect("/admin/staff")
+
+
+
+
+# 承認解除（停止）
+@app.route("/admin/staff/disable/<user_id>", methods=["POST"])
+@admin_required
+def admin_staff_disable(user_id):
+    try:
+        supabase_admin.auth.admin.update_user_by_id(
+            user_id,
+            {
+                "user_metadata": { "approved": False }
+            }
+        )
+
+        flash("スタッフを停止しました。", "success")
+    except Exception as e:
+        print("❌ DISABLE ERROR:", e)
+        flash("停止処理に失敗しました。", "error")
+    return redirect("/admin/staff")
+
+
+# スタッフ削除
+@app.route("/admin/staff/delete/<user_id>", methods=["POST"])
+@admin_required
+def admin_staff_delete(user_id):
+    try:
+        supabase_admin.auth.admin.delete_user(user_id)
+        print("🗑️ STAFF DELETED:", user_id)
+    except Exception as e:
+        print("❌ DELETE STAFF ERROR:", e)
+
+    return redirect("/admin/staff")
+
+
+
+@app.route("/staff/profile", methods=["GET"])
+@staff_required
+def staff_profile():
+    staff = session.get("staff")
+
+    return render_template(
+        "staff_profile.html",
+        staff=staff,
+        message=request.args.get("message")
+    )
+
+
+@app.route("/staff/profile", methods=["POST"])
+@staff_required
+def staff_profile_update():
+    try:
+        staff = session.get("staff")
+        user_id = staff["id"]
+
+        new_name = request.form.get("name")
+        new_phone = request.form.get("phone", "")
+
+        # Supabase Auth メタデータ更新
+        result = supabase_admin.auth.admin.update_user_by_id(
+            uid=user_id,
+            attributes={
+                "user_metadata": {
+                    "name": new_name,
+                    "phone": new_phone
+                }
+            }
+        )
+
+        # セッション情報を更新（ここ重要）
+        session["staff"]["name"] = new_name
+        session["staff"]["phone"] = new_phone
+
+        return redirect(url_for(
+            "staff_profile",
+            message="プロフィールを更新しました"
+        ))
+
+    except Exception as e:
+        print("PROFILE UPDATE ERROR:", e)
+        return f"エラーが発生しました: {e}", 500
+
+
+
 @app.route("/staff/login", methods=["GET"])
 def staff_login_page():
     return render_template("stafflogin.html")
@@ -443,25 +680,31 @@ def staff_login():
     if not getattr(data, "user", None):
         return render_template("stafflogin.html", error="メールまたはパスワードが違います")
 
-    # 🔹 Supabase Auth の user_metadata から名前を取得（あれば）
     user = data.user
     metadata = getattr(user, "user_metadata", {}) or {}
 
+    # 🔥 承認チェック（ここが正しい位置）
+    if not metadata.get("approved", False):
+        return render_template("stafflogin.html", error="まだ管理者の承認が必要です")
+
+    # 🔹 表示名を決定
     full_name = (
         metadata.get("name")
         or metadata.get("full_name")
-        or email  # どちらも無ければメールアドレスを表示名に
+        or email
     )
 
-    # スタッフ用 session（フルネーム込み）
+    is_admin = metadata.get("is_admin", False)
+
+    # 🔹 セッション保存（承認後）
     session["staff"] = {
         "id": user.id,
         "email": user.email,
         "name": full_name,
+        "is_admin": is_admin
     }
 
     return redirect("/admin/dashboard")
-
 
 
 

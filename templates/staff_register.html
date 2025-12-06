@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタッフ登録 | KARiN.</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.register-wrapper {
+  max-width: 430px; /* 480 → 430 に変更して中央寄せに最適化 */
+  width: 90%;       /* 画面幅小のとき余白が出るように */
+  margin: 60px auto;
+  padding: 32px 28px; /* 左右に余白追加で窮屈さ解消 */
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  font-family: "Noto Sans JP";
+  box-sizing: border-box; /* ← これが重要。幅オーバーを防ぎ中央に収まる */
+}
+
+.register-title {
+  text-align: center;
+  color: #1E3A5F;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  font-size: 14px;
+  color: #1E3A5F;
+}
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  box-sizing: border-box; /* ← これも重要 */
+}
+
+.register-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1E3A5F;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.alert-success { color: green; margin-bottom: 12px; text-align: center; }
+.alert-error { color: red; margin-bottom: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="register-wrapper">
+  <h1 class="register-title">スタッフ新規登録</h1>
+
+  {% if success %}
+  <p class="alert-success">登録完了しました。<br>管理者の承認後にログインできます。</p>
+  {% endif %}
+
+  {% if error %}
+  <p class="alert-error">{{ error }}</p>
+  {% endif %}
+
+  <form action="/staff/register" method="POST">
+    
+    <div class="form-group">
+      <label>スタッフ名（フルネーム）</label>
+      <input type="text" name="name" class="input" required>
+    </div>
+
+    <div class="form-group">
+      <label>電話番号</label>
+      <input type="tel" name="phone" class="input" required>
+    </div>
+
+    <div class="form-group">
+      <label>メールアドレス（Gmailなど任意）</label>
+      <input type="email" name="email" class="input" required>
+    </div>
+
+    <div class="form-group">
+      <label>パスワード</label>
+      <input type="password" name="password" class="input" required>
+    </div>
+
+    <button class="register-btn" type="submit">登録する</button>
+  </form>
+</div>
+
+</body>
+</html>
