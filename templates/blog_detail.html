@@ -103,9 +103,9 @@
             </div>
             <p class="comment-text">{{ c.body }}</p>
             {% if session.staff %}
-              <div class="admin-reply-btn">
-                <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 管理者返信</a>
-              </div>
+            <div class="admin-reply-btn">
+              <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 管理者返信</a>
+            </div>
             {% endif %}
           </div>
 
@@ -147,7 +147,7 @@
     </div>
   </section>
   {% if session.staff %}
-    <div style="margin-top:40px; text-align:center;">
+    <div class="blog-admin-back" style="margin-top:40px; text-align:center;">
       <a href="/admin/comments" class="admin-back-btn">
         ← 管理画面（コメント一覧）へ戻る
       </a>

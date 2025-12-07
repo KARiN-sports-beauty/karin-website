@@ -3005,19 +3005,3 @@ section[id],
 .footer-secret-link:hover {
   opacity: 1; /* 見た目は何も変えない */
 }
-
-.reply-box-wrap {
-  max-width: 700px;
-  margin: 0 auto;   /* ✅ 中央寄せ */
-}
-
-.reply-textarea {
-  width: 100%;
-  min-height: 160px;
-  padding: 14px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  line-height: 1.6;
-  resize: vertical;
-}
