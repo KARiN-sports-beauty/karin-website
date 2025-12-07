@@ -44,7 +44,9 @@
 
     <form action="{{ url_for('admin_reply', comment_id=comment.id) }}" method="POST">
       <label>返信内容</label>
-      <textarea name="reply" required placeholder="返信内容を入力してください"></textarea>
+      <div class="reply-box-wrap">
+        <textarea name="reply" class="reply-textarea" required placeholder="返信内容を入力してください"></textarea>
+      </div>
       <button type="submit" class="btn">返信を送信</button>
     </form>
   </div>

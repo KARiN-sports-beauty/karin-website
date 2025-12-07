@@ -164,9 +164,13 @@
 }
 
 .home-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
   align-items: center;
   gap: 10px;
-  background: #fff;
+  background: #ffffff;
   border: 1px solid rgba(0,0,0,0.1);
   border-radius: 40px;
   padding: 10px 16px 10px 12px;
@@ -175,16 +179,21 @@
   color: #1E3A5F;
   font-weight: 600;
   font-size: 0.9rem;
-  transition: 0.25s;
+  transition: all 0.25s ease;
+  z-index: 1000;
 }
+
 .home-btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  background: #f8f9fb;
 }
+
 .home-btn img {
   width: 28px;
   height: 28px;
   border-radius: 50%;
+  object-fit: contain;
 }
 
 /* レスポンシブ */
