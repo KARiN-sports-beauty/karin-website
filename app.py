@@ -1229,7 +1229,7 @@ def admin_comments():
             supabase
             .table("comments")
             .select("*")
-            .not_("reply", "is", None) 
+            .not_.is_("reply", None) 
             .order("reply_date", desc=True)
             .limit(6)
             .execute()
