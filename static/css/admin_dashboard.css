@@ -264,7 +264,8 @@
 .admin-comment-card {
   background: #fff;
   border-radius: 18px;
-  padding: 18px;
+  padding: 14px;
+  min-height: 130px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 }
 
@@ -283,14 +284,20 @@
 .comment-head {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  opacity: 0.7;
 }
 
 /* 本文 */
 .comment-body {
-  font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 12px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
 /* 返信ボタン */
@@ -333,4 +340,25 @@
 
 .comment-blog-title a:hover {
   text-decoration: underline;
+}
+
+.admin-header-right {
+  margin-left: auto;
+  margin-right: 22px;   /* ✅ 右に少し余白 */
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-user-name {
+  color: #fff;
+  font-weight: 600;
+}
+
+.logout-btn {
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.6);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
 }
