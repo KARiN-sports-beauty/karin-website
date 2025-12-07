@@ -1206,36 +1206,50 @@ def admin_comments():
         res_unreplied = (
             supabase
             .table("comments")
-            .select("*, blogs(title, slug)")
+            .select("*")
             .is_("reply", None)
             .order("created_at", desc=True)
             .execute()
         )
 
+        unreplied = res_unreplied.data or []
+
+        # ✅ blog_id からブログ情報を後から付与
+        for c in unreplied:
+            blog_id = c.get("blog_id")
+            if blog_id:
+                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                if b.data:
+                    c["blog"] = b.data[0]
+                else:
+                    c["blog"] = None
+
+
         res_replied = (
             supabase
             .table("comments")
-            .select("*, blogs(title, slug)")
+            .select("*")
             .not_.is_("reply", None)
             .order("reply_date", desc=True)
             .execute()
         )
 
+        replied = res_replied.data or []
 
-        # ✅ 返信済みコメント（reply が NULL 以外）
-        res_replied = (
-            supabase
-            .table("comments")
-            .select("*")
-            .neq("reply", None)   # ← ✅ これが全SDK共通で使える
-            .order("reply_date", desc=True)
-            .execute()
-        )
+        for c in replied:
+            blog_id = c.get("blog_id")
+            if blog_id:
+                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                if b.data:
+                    c["blog"] = b.data[0]
+                else:
+                    c["blog"] = None
+
 
         return render_template(
             "admin_comments.html",
-            unreplied=res_unreplied.data or [],
-            replied=res_replied.data or []
+            unreplied=unreplied,
+            replied=replied
         )
 
     except Exception as e:
