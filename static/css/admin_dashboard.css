@@ -242,3 +242,78 @@
     gap: 16px;
   }
 }
+
+.admin-title {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.admin-subtitle {
+  font-size: 18px;
+  margin: 30px 0 14px;
+}
+
+/* グリッドレイアウト */
+.admin-comment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* 共通カード */
+.admin-comment-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+/* 未返信 */
+.admin-comment-card.unread {
+  border-left: 6px solid #C97A3D;
+}
+
+/* 返信済み */
+.admin-comment-card.replied {
+  opacity: 0.7;
+  border-left: 6px solid #aaa;
+}
+
+/* ヘッダー */
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* 本文 */
+.comment-body {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* 返信ボタン */
+.reply-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+/* 返信情報 */
+.reply-info {
+  font-size: 13px;
+  color: #555;
+  margin-top: 10px;
+}
+
+/* 区切り線 */
+.admin-line {
+  margin: 40px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
