@@ -1206,11 +1206,21 @@ def admin_comments():
         res_unreplied = (
             supabase
             .table("comments")
-            .select("*")
+            .select("*, blogs(title, slug)")
             .is_("reply", None)
             .order("created_at", desc=True)
             .execute()
         )
+
+        res_replied = (
+            supabase
+            .table("comments")
+            .select("*, blogs(title, slug)")
+            .not_.is_("reply", None)
+            .order("reply_date", desc=True)
+            .execute()
+        )
+
 
         # ✅ 返信済みコメント（reply が NULL 以外）
         res_replied = (

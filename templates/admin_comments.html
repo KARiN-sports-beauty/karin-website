@@ -9,16 +9,27 @@
 <div class="admin-comment-grid">
   {% for c in unreplied %}
   <div class="admin-comment-card unread">
+
+    <!-- ✅ どの記事かを表示（追加） -->
+    <p class="comment-blog-title">
+      記事：
+      <a href="/blog/{{ c.blogs.slug }}" target="_blank">
+        {{ c.blogs.title }}
+      </a>
+    </p>
+
     <div class="comment-head">
       <strong>{{ c.name }}</strong>
       <span class="comment-date">{{ c.created_at }}</span>
     </div>
+
     <p class="comment-body">{{ c.body }}</p>
 
     <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 返信する</a>
   </div>
   {% endfor %}
 </div>
+
 
 <hr class="admin-line">
 
