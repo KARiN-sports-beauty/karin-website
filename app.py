@@ -1137,48 +1137,52 @@ def api_comment():
 @staff_required
 def admin_reply(comment_id):
 
+    # =========================
+    # ✅ GET：返信画面の表示
+    # =========================
     if request.method == "GET":
-        # コメント取得
-        res = supabase.table("comments").select("*").eq("id", str(comment_id)).execute()
+        res = (
+            supabase
+            .table("comments")
+            .select("*")
+            .eq("id", str(comment_id))
+            .execute()
+        )
+
         if not res.data:
             return "コメントが見つかりません", 404
 
         comment = res.data[0]
         return render_template("comment_reply.html", comment=comment)
 
-    # --- POST：返信の保存 ---
+    # =========================
+    # ✅ POST：返信の保存
+    # =========================
     reply_text = request.form.get("reply")
     if not reply_text:
         return "返信内容が空です", 400
 
     reply_date = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
 
-    # コメントから blog_id を取得
-    c_res = supabase.table("comments").select("blog_id").eq("id", str(comment_id)).execute()
-    if not c_res.data:
-        return "コメントが見つかりません", 404
+    # ✅ ログイン中スタッフ名をそのまま使用
+    reply_author = session["staff"]["name"]
 
-    blog_id = c_res.data[0]["blog_id"]
-
-    # ブログの slug 取得
-    b_res = supabase.table("blogs").select("slug").eq("id", blog_id).execute()
-    slug = b_res.data[0]["slug"]
-
-    # =============================
-    # ★ A：返信者名を保存（今は固定）
-    # =============================
-    reply_author = "藤田 幸士（KARiN.）"
-
-    # コメント更新（返信内容 + 日付 + 返信者）
-    update_res = supabase.table("comments").update({
-        "reply": reply_text,
-        "reply_date": reply_date,
-        "reply_author": reply_author
-    }).eq("id", str(comment_id)).execute()
+    # ✅ コメント更新（返信内容 + 日付 + 返信者）
+    update_res = (
+        supabase
+        .table("comments")
+        .update({
+            "reply": reply_text,
+            "reply_date": reply_date,
+            "reply_author": reply_author
+        })
+        .eq("id", str(comment_id))
+        .execute()
+    )
 
     print("UPDATE_RES:", update_res)
 
-    # メール通知
+    # ✅ メール通知（今まで通り）
     send_email(
         from_addr=FROM_ADDRESS,
         to_addr="comment@karin-sb.jp",
@@ -1187,13 +1191,14 @@ def admin_reply(comment_id):
         reply_to=FROM_ADDRESS
     )
 
-    # 返信後は元のブログに戻る
-    return redirect(url_for("show_blog", slug=slug))
+    # ✅ 返信後は「元のブログ」ではなく「管理画面の一覧」に戻す
+    return redirect("/admin/comments")
+
 
 
 
 @app.route("/admin/comments")
-@admin_required
+@staff_required
 def admin_comments():
 
     try:
