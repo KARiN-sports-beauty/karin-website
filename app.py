@@ -792,7 +792,7 @@ def admin_dashboard():
     # ---------- 未処理お問い合わせ数（contacts） ----------
     try:
         res_unprocessed = (
-            supabase
+            supabase_admin
             .table("contacts")  # ★ contacts テーブルを使用
             .select("id", count="exact")
             .eq("processed", False)
