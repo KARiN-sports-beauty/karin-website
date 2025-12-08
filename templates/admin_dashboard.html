@@ -35,10 +35,10 @@
     <div class="dashboard-grid">
 
       <!-- 🔵 上段：重要通知 -->
-        <a href="/admin/comments" class="dash-card dash-card-top{% if unreplied_comments and unreplied_comments > 0 %} dash-card-has-items{% endif %}">
+        <a href="/admin/comments" class="dash-card dash-card-top">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信コメント</span>
-            <span class="dash-card-badge">
+            <span class="dash-card-badge{% if unreplied_comments and unreplied_comments > 0 %} dash-card-badge-alert{% endif %}">
             {{ unreplied_comments if unreplied_comments is not none else 0 }}件
             </span>
         </div>
@@ -47,10 +47,10 @@
         </p>
         </a>
 
-        <a href="/admin/contacts" class="dash-card dash-card-top{% if unprocessed_contacts and unprocessed_contacts > 0 %} dash-card-has-items{% endif %}">
+        <a href="/admin/contacts" class="dash-card dash-card-top">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信お問い合わせ</span>
-            <span class="dash-card-badge dash-card-badge-warning">
+            <span class="dash-card-badge{% if unprocessed_contacts and unprocessed_contacts > 0 %} dash-card-badge-alert{% else %} dash-card-badge-warning{% endif %}">
             {{ unprocessed_contacts if unprocessed_contacts is not none else 0 }}件
             </span>
         </div>
