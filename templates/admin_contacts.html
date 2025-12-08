@@ -1,29 +1,32 @@
 {% extends "base.html" %}
-{% block title %}未返信お問い合わせ | KARiN.{% endblock %}
-
 {% block content %}
-<h2>📩 お問い合わせ（未返信）</h2>
+
+<h2>📩 未返信お問い合わせ</h2>
 
 {% if items %}
-<ul class="admin-list">
+<div class="admin-contact-grid">
   {% for c in items %}
-    <li>
-      <a href="/admin/contact/{{ c.id }}">
-        <strong>{{ c.name }}</strong> （{{ to_jst(c.created_at) }}）
-        <div>{{ c.message[:30] }}...</div>
-      </a>
-    </li>
+  <a href="/admin/contact/{{ c.id }}" class="admin-contact-card unread">
+
+    <div class="contact-head">
+      <strong>{{ c.name }}</strong>
+      <span class="contact-date">{{ to_jst(c.created_at) }}</span>
+    </div>
+
+    <p class="contact-body">
+      {{ c.message[:60] }}{% if c.message|length > 60 %}...{% endif %}
+    </p>
+
+    <span class="contact-badge">未対応</span>
+
+  </a>
   {% endfor %}
-</ul>
+</div>
 {% else %}
 <p>未返信のお問い合わせはありません。</p>
 {% endif %}
 
-<div style="margin-top:30px;">
-  <a href="/admin/contacts/replied" class="admin-link">返信済み一覧を見る →</a>
-</div>
+<a href="/admin/contacts/replied" class="admin-link">返信済み一覧を見る →</a>
 
-<div style="margin-top:20px;">
-  <a href="/admin/dashboard" class="admin-link">← ダッシュボードへ戻る</a>
-</div>
 {% endblock %}
+
