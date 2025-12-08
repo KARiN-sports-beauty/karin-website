@@ -2,7 +2,7 @@
 {% block title %}お問い合わせ詳細 | KARiN.{% endblock %}
 
 {% block content %}
-<h2>📩 お問い合わせ詳細</h2>
+<h2 class="admin-title">📩 お問い合わせ詳細</h2>
 
 <p><strong>名前：</strong>{{ contact.name }}</p>
 <p><strong>メール：</strong>{{ contact.email }}</p>
@@ -13,14 +13,10 @@
 <p style="white-space: pre-line;">{{ contact.message }}</p>
 
 <form action="/admin/contact/{{ contact.id }}/done" method="POST" style="margin-top:20px;">
-  <button class="admin-btn">返信済みにする</button>
+  <button type="submit" class="admin-contact-btn-white">返信済みにする</button>
 </form>
 
 <div style="margin-top:30px;">
-  <a href="/admin/contacts" class="admin-link">← 未返信一覧へ戻る</a>
-</div>
-
-<div style="margin-top:10px;">
-  <a href="/admin/dashboard" class="admin-link">← ダッシュボードへ戻る</a>
+  <a href="/admin/contacts" class="admin-contact-btn">← 未返信一覧へ戻る</a>
 </div>
 {% endblock %}

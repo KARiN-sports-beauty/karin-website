@@ -493,3 +493,25 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
 }
+
+/* 白背景のお問い合わせ用ボタン */
+.admin-contact-btn-white {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-contact-btn-white:hover {
+  background: #f5f7fb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
