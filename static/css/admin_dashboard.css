@@ -425,7 +425,6 @@
   transition: 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   min-height: 130px;
 }
 
@@ -472,4 +471,25 @@
 .admin-contact-card.replied {
   opacity: 0.7;
   border-left-color: #aaa;
+}
+
+/* お問い合わせ用ボタン */
+.admin-contact-btn {
+  display: inline-block;
+  margin-top: 30px;
+  padding: 10px 20px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+}
+
+.admin-contact-btn:hover {
+  background: #2a4a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
 }
