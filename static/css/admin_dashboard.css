@@ -16,10 +16,13 @@
 /* ヘッダー */
 .admin-header {
   background: #1E3A5F;
+  height: 64px;
+  display: flex;
   color: #ffffff;
   align-items: center;
   justify-content: space-between;
   padding: 15px 28px;
+  box-sizing: border-box;
   box-shadow: 0 2px 10px rgba(0,0,0,0.12);
 }
 
@@ -29,6 +32,13 @@
   padding: 0 70px;
   align-items: center;
   justify-content: space-between;
+}
+
+.admin-header-left,
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;                    /* ロゴ・名前・ログアウトの間隔 */
 }
 
 .admin-logo {
@@ -45,12 +55,14 @@
 
 .admin-user-name {
   color: #ffffff;
+  line-height: 1;
   font-weight: 600;
 }
 
 
 .admin-logout-link {
-  padding: 6px 12px;
+  padding: 6px 14px;
+  line-height: 1;
   border-radius: 999px;
   border: 1px solid #ffffff;
   color: #ffffff;
@@ -344,15 +356,6 @@
   text-decoration: underline;
 }
 
-.admin-header-right {
-  margin-left: auto;
-  margin-right: 22px;   /* ✅ 右に少し余白 */
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 16px;
-}
-
 .admin-user-name {
   color: #fff;
   font-weight: 600;
@@ -408,9 +411,9 @@
 
 .admin-contact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  margin-top: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
 }
 
 .admin-contact-card {
@@ -419,9 +422,12 @@
   padding: 16px 18px;
   text-decoration: none;
   color: #1E3A5F;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   transition: 0.2s;
+  display: flex;
   position: relative;
+  flex-direction: column;
+  gap: 8px;
   border-left: 5px solid #1E3A5F;
 }
 
@@ -430,31 +436,35 @@
   box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
-.contact-head {
+.admin-contact-head {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.9rem;
   margin-bottom: 6px;
 }
 
-.contact-date {
+.admin-contact-date {
   font-size: 0.75rem;
   opacity: 0.7;
 }
 
-.contact-body {
+.admin-contact-body {
   font-size: 0.9rem;
+  color: #444;
   line-height: 1.5;
+  min-height: 3em;
   margin-top: 6px;
+  overflow: hidden;
 }
 
-.contact-badge {
+.admin-contact-badge {
   position: absolute;
   top: 12px;
   right: 12px;
   font-size: 0.7rem;
-  background: #e63946;
+  background: #e45858;
   color: #fff;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 20px;
 }

@@ -8,16 +8,16 @@
   {% for c in items %}
   <a href="/admin/contact/{{ c.id }}" class="admin-contact-card unread">
 
-    <div class="contact-head">
+    <div class="admin-contact-head">
       <strong>{{ c.name }}</strong>
-      <span class="contact-date">{{ to_jst(c.created_at) }}</span>
+      <span class="admin-contact-date">{{ to_jst(c.created_at) }}</span>
     </div>
 
-    <p class="contact-body">
+    <p class="admin-contact-body">
       {{ c.message[:60] }}{% if c.message|length > 60 %}...{% endif %}
     </p>
 
-    <span class="contact-badge">未対応</span>
+    <span class="admin-contact-badge">未対応</span>
 
   </a>
   {% endfor %}

@@ -20,10 +20,12 @@
     </div>
 
     <div class="admin-header-right">
-      <span class="admin-user-name">
-        {{ session.staff.name if session.staff else "STAFF" }}
-      </span>
-      <a href="/staff/logout" class="logout-btn">ログアウト</a>
+          <div class="admin-user">
+            <a href="/staff/profile" class="admin-user-name">
+                {{ staff_name }} さん
+            </a>
+            <a href="{{ url_for('staff_logout') }}" class="admin-logout-link">ログアウト</a>
+          </div>
     </div>
   </header>
 
