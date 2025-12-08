@@ -387,15 +387,16 @@ def submit_contact():
         )
 
         # ▼ Supabase に保存
-        supabase.table("contacts").insert({
+        supabase_admin.table("contacts").insert({
             "id": str(uuid.uuid4()),
             "name": name,
             "email": email,
             "phone": phone,
             "message": message,
-            "created_at": timestamp,
+            "created_at": datetime.utcnow().isoformat(),
             "processed": False
         }).execute()
+
 
 
         return redirect(url_for(
@@ -414,7 +415,7 @@ def submit_contact():
 @app.route("/admin/contacts")
 @admin_required
 def admin_contacts():
-    res = supabase.table("contacts") \
+    res = supabase_admin.table("contacts") \
         .select("*") \
         .eq("processed", False) \
         .order("created_at", desc=True) \
@@ -426,7 +427,7 @@ def admin_contacts():
 @app.route("/admin/contacts/replied")
 @admin_required
 def admin_contacts_replied():
-    res = supabase.table("contacts") \
+    res = supabase_admin.table("contacts") \
         .select("*") \
         .eq("processed", True) \
         .order("created_at", desc=True) \
@@ -438,7 +439,7 @@ def admin_contacts_replied():
 @app.route("/admin/contact/<contact_id>")
 @admin_required
 def admin_contact_detail(contact_id):
-    res = supabase.table("contacts").select("*").eq("id", contact_id).execute()
+    res = supabase_admin.table("contacts").select("*").eq("id", contact_id).execute()
     if not res.data:
         return "お問い合わせが見つかりません", 404
     contact = res.data[0]
@@ -448,8 +449,13 @@ def admin_contact_detail(contact_id):
 @app.route("/admin/contact/<contact_id>/done", methods=["POST"])
 @admin_required
 def admin_contact_done(contact_id):
-    supabase.table("contacts").update({"processed": True}).eq("id", contact_id).execute()
+    supabase_admin.table("contacts") \
+        .update({"processed": True}) \
+        .eq("id", contact_id) \
+        .execute()
+
     return redirect("/admin/contacts")
+
 
 
 
