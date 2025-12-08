@@ -13,18 +13,16 @@
 <body class="admin-page">
 
   <header class="admin-header">
-    <div class="admin-header-inner">
-      <div class="admin-header-left">
-          <div class="admin-logo">KARiN. 管理ダッシュボード</div>
-      </div>
-      <div class="admin-header-right">
-          <div class="admin-user">
-            <a href="/staff/profile" class="admin-user-name">
-                {{ staff_name }} さん
-            </a>
-            <a href="{{ url_for('staff_logout') }}" class="admin-logout-link">ログアウト</a>
-          </div>
-      </div>
+    <div class="admin-header-left">
+        <div class="admin-logo">KARiN. 管理ダッシュボード</div>
+    </div>
+    <div class="admin-header-right">
+        <div class="admin-user">
+        <a href="/staff/profile" class="admin-user-name">
+            {{ staff_name }} さん
+        </a>
+        <a href="{{ url_for('staff_logout') }}" class="admin-logout-link">ログアウト</a>
+        </div>
     </div>
   </header>
 
