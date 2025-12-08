@@ -9,7 +9,7 @@
   {% for c in items %}
     <li>
       <a href="/admin/contact/{{ c.id }}">
-        <strong>{{ c.name }}</strong> （{{ c.created_at }}）
+        <strong>{{ c.name }}</strong> （{{ to_jst(c.created_at) }}）
         <div>{{ c.message[:30] }}...</div>
       </a>
     </li>

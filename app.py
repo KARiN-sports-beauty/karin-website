@@ -1,6 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9))
+
+def to_jst(dt_str):
+    if not dt_str:
+        return ""
+
+    try:
+        # SupabaseのISO形式 → JST変換
+        dt = datetime.fromisoformat(dt_str.replace("Z", ""))
+        return dt.astimezone(JST).strftime("%Y/%m/%d %H:%M")
+    except Exception:
+        return dt_str
+
+
 import json, os
 from dotenv import load_dotenv
 import requests
@@ -79,6 +92,8 @@ def send_line_message(text: str):
 # ▼ Flaskアプリ初期化
 # =====================================
 app = Flask(__name__, template_folder="templates")
+
+app.jinja_env.globals.update(to_jst=to_jst)
 
 # session の暗号化キー
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
@@ -348,7 +363,7 @@ def submit_contact():
         phone = request.form.get("phone")
         email = request.form.get("email")
         message = request.form.get("message")
-        timestamp = datetime.now().strftime("%Y/%m/%d %H:%M")
+        timestamp = datetime.now(JST).strftime("%Y/%m/%d %H:%M")
 
         data = {
             "name": name,
