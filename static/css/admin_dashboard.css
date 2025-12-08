@@ -123,6 +123,11 @@
   border-left-color: #bf8b30; /* 上段：少しだけゴールド寄りのアクセント */
 }
 
+/* 件数がある場合の背景色変更 */
+.dash-card-has-items {
+  background: #fff8f0; /* 薄いオレンジ系の背景 */
+}
+
 .dash-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);

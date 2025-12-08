@@ -35,7 +35,7 @@
     <div class="dashboard-grid">
 
       <!-- 🔵 上段：重要通知 -->
-        <a href="/admin/comments" class="dash-card dash-card-top">
+        <a href="/admin/comments" class="dash-card dash-card-top{% if unreplied_comments and unreplied_comments > 0 %} dash-card-has-items{% endif %}">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信コメント</span>
             <span class="dash-card-badge">
@@ -47,7 +47,7 @@
         </p>
         </a>
 
-        <a href="/admin/contacts" class="dash-card dash-card-top">
+        <a href="/admin/contacts" class="dash-card dash-card-top{% if unprocessed_contacts and unprocessed_contacts > 0 %} dash-card-has-items{% endif %}">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信お問い合わせ</span>
             <span class="dash-card-badge dash-card-badge-warning">
