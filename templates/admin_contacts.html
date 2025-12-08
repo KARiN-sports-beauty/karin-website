@@ -1,24 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>📩 未返信お問い合わせ</h2>
+<h2 class="admin-title">📩 未返信お問い合わせ</h2>
 
 {% if items %}
 <div class="admin-contact-grid">
   {% for c in items %}
   <a href="/admin/contact/{{ c.id }}" class="admin-contact-card unread">
-
     <div class="admin-contact-head">
       <strong>{{ c.name }}</strong>
       <span class="admin-contact-date">{{ to_jst(c.created_at) }}</span>
     </div>
 
     <p class="admin-contact-body">
-      {{ c.message[:60] }}{% if c.message|length > 60 %}...{% endif %}
+      {{ c.message[:30] }}{% if c.message|length > 30 %}...{% endif %}
     </p>
-
-    <span class="admin-contact-badge">未対応</span>
-
   </a>
   {% endfor %}
 </div>

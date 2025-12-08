@@ -11,19 +11,19 @@
   <div class="admin-comment-card unread">
 
     <!-- ✅ どの記事かを表示（追加） -->
-    <p class="comment-blog-title">
+    <p class="admin-comment-blog-title">
       記事：
       <a href="/blog/{{ c.blog.slug }}" target="_blank">
         {{ c.blog.title }}
       </a>
     </p>
 
-    <div class="comment-head">
+    <div class="admin-comment-head">
       <strong>{{ c.name }}</strong>
       <span class="comment-date">{{ to_jst(c.created_at[:-3]) }}</span>
     </div>
 
-    <p class="comment-body">{{ c.body }}</p>
+    <p class="admin-comment-body">{{ c.body }}</p>
 
     <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 返信する</a>
   </div>
@@ -39,12 +39,12 @@
 <div class="admin-comment-grid">
   {% for c in replied %}
   <div class="admin-comment-card replied">
-    <div class="comment-head">
+    <div class="admin-comment-head">
       <strong>{{ c.name }}</strong>
-      <span class="comment-date">{{ c.created_at }}</span>
+      <span class="admin-comment-date">{{ c.created_at }}</span>
     </div>
 
-    <p class="comment-body">{{ c.body }}</p>
+    <p class="admin-comment-body">{{ c.body }}</p>
 
     <div class="reply-info">
       → {{ c.reply_author }}（{{ c.reply_date }}）

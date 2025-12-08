@@ -295,20 +295,20 @@
 }
 
 /* ヘッダー */
-.comment-head {
+.admin-comment-head {
   display: flex;
   justify-content: space-between;
   font-size: 0.85em;
   margin-bottom: 6px;
 }
 
-.comment-date {
+.admin-comment-date {
   font-size: 0.75rem;
   opacity: 0.7;
 }
 
 /* 本文 */
-.comment-body {
+.admin-comment-body {
   font-size: 0.85em;
   line-height: 1.4;
   margin-bottom: 8px;
@@ -340,19 +340,19 @@
 }
 
 
-.comment-blog-title {
+.admin-comment-blog-title {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 6px;
 }
 
-.comment-blog-title a {
+.admin-comment-blog-title a {
   color: #1E3A5F;
   font-weight: 600;
   text-decoration: none;
 }
 
-.comment-blog-title a:hover {
+.admin-comment-blog-title a:hover {
   text-decoration: underline;
 }
 
@@ -411,24 +411,27 @@
 
 .admin-contact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-  gap: 18px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
 }
 
 .admin-contact-card {
   background: #fff;
-  border-radius: 16px;
-  padding: 16px 18px;
+  border-radius: 18px;
+  padding: 14px;
   text-decoration: none;
   color: #1E3A5F;
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   transition: 0.2s;
   display: flex;
-  position: relative;
   flex-direction: column;
   gap: 8px;
-  border-left: 5px solid #1E3A5F;
+  min-height: 130px;
+}
+
+/* 未返信お問い合わせカード */
+.admin-contact-card.unread {
+  border-left: 6px solid #C97A3D;
 }
 
 .admin-contact-card:hover {
@@ -439,8 +442,7 @@
 .admin-contact-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.85em;
   margin-bottom: 6px;
 }
 
@@ -450,12 +452,9 @@
 }
 
 .admin-contact-body {
-  font-size: 0.9rem;
-  color: #444;
-  line-height: 1.5;
-  min-height: 3em;
-  margin-top: 6px;
-  overflow: hidden;
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
 .admin-contact-badge {
@@ -467,4 +466,10 @@
   color: #fff;
   padding: 3px 10px;
   border-radius: 20px;
+}
+
+/* 返信済みお問い合わせカード */
+.admin-contact-card.replied {
+  opacity: 0.7;
+  border-left-color: #aaa;
 }

@@ -2,19 +2,23 @@
 {% block title %}返信済みお問い合わせ | KARiN.{% endblock %}
 
 {% block content %}
-<h2>✔ お問い合わせ（返信済み）</h2>
+<h2 class="admin-title">✔ お問い合わせ（返信済み）</h2>
 
 {% if items %}
-<ul class="admin-list">
-  {% for c in items %}
-    <li>
-      <a href="/admin/contact/{{ c.id }}">
-        <strong>{{ c.name }}</strong> （{{ to_jst(c.created_at) }}）
-        <div>{{ c.message[:30] }}...</div>
-      </a>
-    </li>
+<div class="admin-contact-grid">
+  {% for c in items[:6] %}
+  <a href="/admin/contact/{{ c.id }}" class="admin-contact-card replied">
+    <div class="admin-contact-head">
+      <strong>{{ c.name }}</strong>
+      <span class="admin-contact-date">{{ to_jst(c.created_at) }}</span>
+    </div>
+
+    <p class="admin-contact-body">
+      {{ c.message[:30] }}{% if c.message|length > 30 %}...{% endif %}
+    </p>
+  </a>
   {% endfor %}
-</ul>
+</div>
 {% else %}
 <p>返信済みのお問い合わせはありません。</p>
 {% endif %}
