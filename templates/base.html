@@ -22,7 +22,7 @@
     <div class="admin-header-right">
           <div class="admin-user">
             <a href="/staff/profile" class="admin-user-name">
-                {{ staff_name }} さん
+              {{ session.staff.name if session.staff else "STAFF" }}さん
             </a>
             <a href="{{ url_for('staff_logout') }}" class="admin-logout-link">ログアウト</a>
           </div>
