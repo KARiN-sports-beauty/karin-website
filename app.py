@@ -413,7 +413,6 @@ def submit_contact():
 # ===================================================
 @app.route("/admin/contacts")
 @admin_required
-@staff_required
 def admin_contacts():
     res = supabase.table("contacts") \
         .select("*") \
@@ -426,7 +425,6 @@ def admin_contacts():
 
 @app.route("/admin/contacts/replied")
 @admin_required
-@staff_required
 def admin_contacts_replied():
     res = supabase.table("contacts") \
         .select("*") \
@@ -439,7 +437,6 @@ def admin_contacts_replied():
 
 @app.route("/admin/contact/<contact_id>")
 @admin_required
-@staff_required
 def admin_contact_detail(contact_id):
     res = supabase.table("contacts").select("*").eq("id", contact_id).execute()
     if not res.data:
@@ -450,7 +447,6 @@ def admin_contact_detail(contact_id):
 
 @app.route("/admin/contact/<contact_id>/done", methods=["POST"])
 @admin_required
-@staff_required
 def admin_contact_done(contact_id):
     supabase.table("contacts").update({"processed": True}).eq("id", contact_id).execute()
     return redirect("/admin/contacts")
@@ -1132,6 +1128,67 @@ def api_comment():
 
 
 
+@app.route("/admin/comments")
+@staff_required
+def admin_comments():
+
+    try:
+        # ✅ 未返信コメント（reply が NULL）
+        res_unreplied = (
+            supabase
+            .table("comments")
+            .select("*")
+            .is_("reply", None)
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+        unreplied = res_unreplied.data or []
+
+        # ✅ blog_id からブログ情報を後から付与
+        for c in unreplied:
+            blog_id = c.get("blog_id")
+            if blog_id:
+                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                if b.data:
+                    c["blog"] = b.data[0]
+                else:
+                    c["blog"] = None
+
+
+        res_replied = (
+            supabase
+            .table("comments")
+            .select("*")
+            .not_.is_("reply", None) 
+            .order("reply_date", desc=True)
+            .limit(6)
+            .execute()
+        )
+
+        replied = res_replied.data or []
+
+        for c in replied:
+            blog_id = c.get("blog_id")
+            if blog_id:
+                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                if b.data:
+                    c["blog"] = b.data[0]
+                else:
+                    c["blog"] = None
+
+
+        return render_template(
+            "admin_comments.html",
+            unreplied=unreplied,
+            replied=replied
+        )
+
+    except Exception as e:
+        print("❌ ADMIN COMMENTS ERROR:", e)
+        return "コメント取得エラー", 500
+    
+
 
 @app.route("/admin/reply/<comment_id>", methods=["GET", "POST"])
 @staff_required
@@ -1194,68 +1251,6 @@ def admin_reply(comment_id):
     # ✅ 返信後は「元のブログ」ではなく「管理画面の一覧」に戻す
     return redirect("/admin/comments")
 
-
-
-
-@app.route("/admin/comments")
-@staff_required
-def admin_comments():
-
-    try:
-        # ✅ 未返信コメント（reply が NULL）
-        res_unreplied = (
-            supabase
-            .table("comments")
-            .select("*")
-            .is_("reply", None)
-            .order("created_at", desc=True)
-            .execute()
-        )
-
-        unreplied = res_unreplied.data or []
-
-        # ✅ blog_id からブログ情報を後から付与
-        for c in unreplied:
-            blog_id = c.get("blog_id")
-            if blog_id:
-                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
-                if b.data:
-                    c["blog"] = b.data[0]
-                else:
-                    c["blog"] = None
-
-
-        res_replied = (
-            supabase
-            .table("comments")
-            .select("*")
-            .not_.is_("reply", None) 
-            .order("reply_date", desc=True)
-            .limit(6)
-            .execute()
-        )
-
-        replied = res_replied.data or []
-
-        for c in replied:
-            blog_id = c.get("blog_id")
-            if blog_id:
-                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
-                if b.data:
-                    c["blog"] = b.data[0]
-                else:
-                    c["blog"] = None
-
-
-        return render_template(
-            "admin_comments.html",
-            unreplied=unreplied,
-            replied=replied
-        )
-
-    except Exception as e:
-        print("❌ ADMIN COMMENTS ERROR:", e)
-        return "コメント取得エラー", 500
 
 
 

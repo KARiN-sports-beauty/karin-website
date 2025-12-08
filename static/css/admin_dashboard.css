@@ -151,14 +151,14 @@
   min-width: 64px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: #1E3A5F;
+  background: #c65a3a;
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 700;
 }
 
 .dash-card-badge-warning {
-  background: #c65a3a;
+  background: #1E3A5F;
 }
 
 /* レイアウト調整用プレースホルダ（上段2列揃え用）*/
