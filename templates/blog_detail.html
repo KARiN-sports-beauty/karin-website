@@ -99,7 +99,7 @@
           <div class="comment-bubble">
             <div class="bubble-header">
               <span class="comment-author">{{ c.name }}</span>
-              <span class="comment-date">{{ c.created_at }}</span>
+              <span class="comment-date">{{ c.created_at[:-3] }}</span>
             </div>
             <p class="comment-text">{{ c.body }}</p>
             {% if session.staff %}
