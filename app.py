@@ -157,6 +157,10 @@ def to_jst_filter(value):
         return value
 
 app.jinja_env.filters["to_jst"] = to_jst_filter
+
+@app.template_filter("age_from_birthday")
+def age_from_birthday_filter(value):
+    return calc_age(value)
 # session の暗号化キー
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
@@ -253,6 +257,15 @@ KARiN. ~ Sports & Beauty ~
 # =====================================
 # ▼ ユーティリティ関数
 # =====================================
+def calc_age(birthday_str):
+    if not birthday_str:
+        return None
+    birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+    today = datetime.now(JST).date()
+    age = today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
+    return age
+
+
 def format_datetime(dt_str):
     if dt_str:
         try:
@@ -261,6 +274,7 @@ def format_datetime(dt_str):
         except ValueError:
             return dt_str
     return ""
+
 
 def load_schedule():
     try:
@@ -342,57 +356,97 @@ def form():
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
     try:
-        data = {
-            "name": request.form.get("name"),
-            "kana": request.form.get("kana"),
-            "age": request.form.get("age"),
-            "gender": request.form.get("gender"),
-            "phone": request.form.get("phone"),
-            "email": request.form.get("email"),
-            "address": request.form.get("address"),
-            "preferred_date1": format_datetime(request.form.get("preferred_date1")),
-            "preferred_date2": format_datetime(request.form.get("preferred_date2")),
-            "preferred_date3": format_datetime(request.form.get("preferred_date3")),
-            "chief_complaint": request.form.get("chief_complaint"),
-            "onset": request.form.get("onset"),
-            "pain_level": request.form.get("pain_level"),
-            "shinkyu_pref": request.form.get("shinkyu_pref"),
-            "electric_pref": request.form.get("electric_pref"),
-            "pressure_pref": request.form.get("pressure_pref"),
-            "heart": request.form.get("heart"),
-            "pregnant": request.form.get("pregnant"),
-            "chronic": request.form.get("chronic"),
-            "surgery": request.form.get("surgery"),
-            "under_medical": request.form.get("under_medical"),
-            "signature": request.form.get("signature"),
-            "agreed_date": f"{request.form.get('agree_year')}年{request.form.get('agree_month')}月{request.form.get('agree_day')}日",
+        # フォームデータ取得
+        name = request.form.get("name", "").strip()
+        kana = request.form.get("kana", "").strip()
+        birthday = request.form.get("birthday")
+        gender = request.form.get("gender", "").strip()
+        phone = request.form.get("phone", "").strip()
+        email = request.form.get("email", "").strip()
+        address = request.form.get("address", "").strip()
+        introducer = request.form.get("introducer", "").strip()
+        chief_complaint = request.form.get("chief_complaint", "").strip()
+        onset = request.form.get("onset", "").strip()
+        pain_level = request.form.get("pain_level", "").strip()
+        shinkyu_pref = request.form.get("shinkyu_pref", "").strip()
+        electric_pref = request.form.get("electric_pref", "").strip()
+        pressure_pref = request.form.get("pressure_pref", "").strip()
+        heart = request.form.get("heart", "").strip()
+        pregnant = request.form.get("pregnant", "").strip()
+        chronic = request.form.get("chronic", "").strip()
+        surgery = request.form.get("surgery", "").strip()
+        under_medical = request.form.get("under_medical", "").strip()
+        signature = request.form.get("signature", "").strip()
+        
+        # 希望日をフォーマット
+        preferred_date1 = format_datetime(request.form.get("preferred_date1"))
+        preferred_date2 = format_datetime(request.form.get("preferred_date2"))
+        preferred_date3 = format_datetime(request.form.get("preferred_date3"))
+        
+        # agreed_atをYYYY-MM-DD形式で作成
+        agree_year = request.form.get("agree_year", "").strip()
+        agree_month = request.form.get("agree_month", "").strip()
+        agree_day = request.form.get("agree_day", "").strip()
+        agreed_at = f"{agree_year}-{agree_month}-{agree_day}" if agree_year and agree_month and agree_day else None
+        
+        # Supabase patientsテーブルに保存
+        patient_data = {
+            "name": name,
+            "kana": kana,
+            "birthday": birthday,
+            "gender": gender,
+            "phone": phone,
+            "email": email,
+            "address": address,
+            "introducer": introducer,
+            "chief_complaint": chief_complaint,
+            "onset": onset,
+            "pain_level": pain_level,
+            "shinkyu_pref": shinkyu_pref,
+            "electric_pref": electric_pref,
+            "pressure_pref": pressure_pref,
+            "heart": heart,
+            "pregnant": pregnant,
+            "chronic": chronic,
+            "surgery": surgery,
+            "under_medical": under_medical,
+            "preferred_date1": preferred_date1,
+            "preferred_date2": preferred_date2,
+            "preferred_date3": preferred_date3,
+            "signature": signature,
+            "agreed_at": agreed_at,
+            "created_at": now_iso(),
         }
+        
+        res = supabase_admin.table("patients").insert(patient_data).execute()
+        
+        # 保存したデータを取得（JSON用）
+        saved_patient = res.data[0] if res.data else patient_data
 
-
-        print("📨 送信されるJSON:")
-        print(json.dumps(data, ensure_ascii=False, indent=2))
-
-
-        # 🟢 LINE通知
+        # 🟢 LINE通知（introducerも追記）
+        age_display = calc_age(birthday) if birthday else "未入力"
         line_message = f"""
 【初診フォーム】
-お名前：{data['name']}
-ふりがな：{data['kana']}
-年齢：{data['age']}
-性別：{data['gender']}
-電話番号：{data['phone']}
-メール：{data['email']}
-第1希望：{data['preferred_date1']}
-主訴：{data['chief_complaint']}
+お名前：{name}
+ふりがな：{kana}
+生年月日：{birthday if birthday else '未入力'}
+年齢：{age_display}
+性別：{gender}
+電話番号：{phone}
+メール：{email}
+住所：{address}
+紹介者：{introducer if introducer else 'なし'}
+第1希望：{preferred_date1}
+主訴：{chief_complaint}
 """
         send_line_message(line_message)
 
-                # 📨 メール通知（SendGrid）
+        # 📨 メール通知（patientsに保存した内容をJSONで）
         send_email(
             from_addr=FROM_ADDRESS,
             to_addr="form@karin-sb.jp",
             subject="【KARiN.】初診フォーム送信",
-            content=json.dumps(data, ensure_ascii=False, indent=2)
+            content=json.dumps(saved_patient, ensure_ascii=False, indent=2)
         )
 
         return redirect(url_for(
