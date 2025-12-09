@@ -46,6 +46,61 @@ def now_iso():
     """JST の ISO8601 文字列を返す"""
     return datetime.now(JST).isoformat()
 
+def today():
+    """JST の YYYY-MM-DD 文字列を返す"""
+    return datetime.now(JST).strftime("%Y-%m-%d")
+
+# =========================
+# slug生成関数
+# =========================
+import re
+
+def generate_slug_base(title: str) -> str:
+    """
+    タイトルから slug のベース文字列を生成（日本語タイトルにも対応する簡易版）。
+    日本語や記号は '-' に置き換え、a-z0-9 と - だけを残す。
+    """
+    s = title.strip()
+    # 全角スペースを半角に
+    s = s.replace("　", " ")
+    # 非ASCIIを一旦ハイフンに
+    s_ascii = "".join(ch if ord(ch) < 128 else "-" for ch in s)
+    s_ascii = s_ascii.lower()
+    # 許可文字以外をハイフンに
+    s_ascii = re.sub(r"[^a-z0-9\-]+", "-", s_ascii)
+    # 連続ハイフンを1つに
+    s_ascii = re.sub(r"-{2,}", "-", s_ascii)
+    # 先頭末尾のハイフン除去
+    s_ascii = s_ascii.strip("-")
+
+    if not s_ascii:
+        # タイトルが全部日本語などで slug が空になった場合のフォールバック
+        s_ascii = datetime.now(JST).strftime("post-%Y%m%d-%H%M%S")
+
+    return s_ascii
+
+def generate_unique_slug(table: str, title: str, current_id=None) -> str:
+    """
+    blogs/news テーブル用の slug を生成。
+    既に同じ slug が存在する場合、-2, -3... を付与してユニークにする。
+    current_id が指定されている場合、その記事自身は除外してチェックする。
+    """
+    base = generate_slug_base(title)
+    slug = base
+    counter = 2
+
+    while True:
+        query = supabase_admin.table(table).select("id, slug").eq("slug", slug)
+        if current_id is not None:
+            query = query.neq("id", current_id)
+        res = query.execute()
+        if not res.data:
+            break
+        slug = f"{base}-{counter}"
+        counter += 1
+
+    return slug
+
 # ===============================
 # LINE通知（Messaging API）
 # ===============================
@@ -93,7 +148,13 @@ def send_line_message(text: str):
 # =====================================
 app = Flask(__name__, template_folder="templates")
 
-app.jinja_env.globals.update(to_jst=to_jst)
+@app.template_filter("to_jst")
+def to_jst_filter(value):
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt.astimezone(JST).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return value
 
 # session の暗号化キー
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
@@ -933,6 +994,149 @@ def show_blog(slug):
     )
 
 
+# ===================================================
+# ✅ ブログ管理（/admin/blogs）
+# ===================================================
+@app.route("/admin/blogs")
+@staff_required
+def admin_blogs():
+    """ブログ一覧（新しい順）"""
+    try:
+        res = supabase_admin.table("blogs").select("*").order("created_at", desc=True).execute()
+        blogs = res.data or []
+        return render_template("admin_blogs.html", blogs=blogs)
+    except Exception as e:
+        print("❌ ブログ一覧取得エラー:", e)
+        return "ブログ一覧の取得に失敗しました", 500
+
+
+@app.route("/admin/blogs/new", methods=["GET", "POST"])
+@staff_required
+def admin_blog_new():
+    """新規ブログ作成"""
+    if request.method == "GET":
+        return render_template("admin_blog_new.html")
+    
+    # POST処理
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("タイトルを入力してください", "error")
+        return render_template("admin_blog_new.html")
+    
+    slug_input = request.form.get("slug", "").strip()
+    if slug_input:
+        slug = generate_unique_slug("blogs", slug_input)
+    else:
+        slug = generate_unique_slug("blogs", title)
+
+    excerpt = request.form.get("excerpt", "").strip()
+    image = request.form.get("image", "").strip()
+    category = request.form.get("category", "").strip()
+    tags_raw = request.form.get("tags", "").strip()
+    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    body_raw = request.form.get("body", "").strip()
+    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    draft = request.form.get("draft") == "on"
+    
+    insert_data = {
+        "title": title,
+        "slug": slug,
+        "excerpt": excerpt,
+        "image": image,
+        "category": category,
+        "tags": tags,
+        "body": body_html,
+        "draft": draft,
+        "date": today(),
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    
+    try:
+        res = supabase_admin.table("blogs").insert(insert_data).execute()
+        blog_id = res.data[0]["id"]
+        flash("ブログを作成しました", "success")
+        return redirect(f"/admin/blogs/edit/{blog_id}")
+    except Exception as e:
+        print("❌ ブログ作成エラー:", e)
+        flash(f"ブログの作成に失敗しました: {e}", "error")
+        return render_template("admin_blog_new.html")
+
+
+@app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
+@staff_required
+def admin_blog_edit(blog_id):
+    """ブログ編集"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("blogs").select("*").eq("id", blog_id).execute()
+            if not res.data:
+                flash("ブログが見つかりません", "error")
+                return redirect("/admin/blogs")
+            blog = res.data[0]
+            # bodyの<br>を\nに戻す
+            if blog.get("body"):
+                blog["body"] = blog["body"].replace("<br>", "\n")
+            return render_template("admin_blog_edit.html", blog=blog)
+        except Exception as e:
+            print("❌ ブログ取得エラー:", e)
+            flash("ブログの取得に失敗しました", "error")
+            return redirect("/admin/blogs")
+    
+    # POST処理
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("タイトルを入力してください", "error")
+        return redirect(f"/admin/blogs/edit/{blog_id}")
+    
+    slug_input = request.form.get("slug", "").strip()
+    if slug_input:
+        slug = generate_unique_slug("blogs", slug_input, current_id=blog_id)
+    else:
+        slug = generate_unique_slug("blogs", title, current_id=blog_id)
+    
+    excerpt = request.form.get("excerpt", "").strip()
+    image = request.form.get("image", "").strip()
+    category = request.form.get("category", "").strip()
+    tags_raw = request.form.get("tags", "").strip()
+    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    body_raw = request.form.get("body", "").strip()
+    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    draft = request.form.get("draft") == "on"
+    
+    update_data = {
+        "title": title,
+        "slug": slug,
+        "excerpt": excerpt,
+        "image": image,
+        "category": category,
+        "tags": tags,
+        "body": body_html,
+        "draft": draft,
+        "updated_at": now_iso(),
+    }
+    
+    try:
+        supabase_admin.table("blogs").update(update_data).eq("id", blog_id).execute()
+        flash("ブログを更新しました", "success")
+        return redirect(f"/admin/blogs/edit/{blog_id}")
+    except Exception as e:
+        print("❌ ブログ更新エラー:", e)
+        flash(f"ブログの更新に失敗しました: {e}", "error")
+        return redirect(f"/admin/blogs/edit/{blog_id}")
+
+
+@app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
+@staff_required
+def admin_blog_delete(blog_id):
+    """ブログ削除"""
+    try:
+        supabase_admin.table("blogs").delete().eq("id", blog_id).execute()
+        flash("ブログを削除しました", "success")
+    except Exception as e:
+        print("❌ ブログ削除エラー:", e)
+        flash(f"ブログの削除に失敗しました: {e}", "error")
+    return redirect("/admin/blogs")
 
 
 # ===========================
@@ -1271,6 +1475,7 @@ def admin_reply(comment_id):
 
     # ✅ 返信後は「元のブログ」ではなく「管理画面の一覧」に戻す
     return redirect("/admin/comments")
+
 
 
 

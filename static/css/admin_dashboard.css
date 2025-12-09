@@ -519,3 +519,163 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+/* ブログ管理用スタイル */
+.admin-blog-category {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 4px 0;
+}
+
+.admin-blog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.admin-blog-status {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-blog-status.draft {
+  background: #aaa;
+}
+
+.admin-blog-status.published {
+  background: #C97A3D;
+}
+
+.admin-blog-view-link {
+  font-size: 0.75rem;
+  color: #1E3A5F;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-blog-view-link:hover {
+  text-decoration: underline;
+}
+
+.admin-blog-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-blog-delete-btn {
+  padding: 6px 14px;
+  background: #ff8a8a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-blog-delete-btn:hover {
+  background: #ff9d9d;
+  transform: translateY(-1px);
+}
+
+/* ブログ管理用グリッド・カード（contactと同じデザイン） */
+.admin-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.admin-blog-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px;
+  text-decoration: none;
+  color: #1E3A5F;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  transition: 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 130px;
+}
+
+/* 未公開ブログカード */
+.admin-blog-card.unread {
+  border-left: 6px solid #C97A3D;
+}
+
+.admin-blog-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.admin-blog-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+
+.admin-blog-date {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.admin-blog-body {
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* 返信済みブログカード（下書き） */
+.admin-blog-card.replied {
+  opacity: 0.7;
+  border-left-color: #aaa;
+}
+
+/* ブログ管理用ボタン（contactと同じデザイン） */
+.admin-blog-btn {
+  display: inline-block;
+  margin-top: 30px;
+  padding: 10px 20px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+}
+
+.admin-blog-btn:hover {
+  background: #2a4a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+/* 白背景のブログ管理用ボタン（contactと同じデザイン） */
+.admin-blog-btn-white {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-blog-btn-white:hover {
+  background: #f5f7fb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

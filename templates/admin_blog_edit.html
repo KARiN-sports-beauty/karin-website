@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}ブログ編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏ ブログ編集</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/blogs/edit/{{ blog.id }}" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">タイトル <span style="color: #c65a3a;">*</span></label>
+    <input type="text" name="title" value="{{ blog.title }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">URLスラッグ（空欄なら自動生成）</label>
+    <input type="text" name="slug" value="{{ blog.slug }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">導入文（meta説明）</label>
+    <input type="text" name="excerpt" value="{{ blog.excerpt or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">サムネイル画像URL</label>
+    <input type="text" name="image" value="{{ blog.image or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">カテゴリ</label>
+    <input type="text" name="category" value="{{ blog.category or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">タグ（カンマ区切り）</label>
+    <input type="text" name="tags" value="{{ blog.tags|join(', ') if blog.tags else '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1E3A5F;">
+      <input type="checkbox" name="draft" {% if blog.draft %}checked{% endif %} style="width: 18px; height: 18px;">
+      <span>非公開（下書き）</span>
+    </label>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">本文（改行は自動で&lt;br&gt;に変換されます）</label>
+    <textarea name="body" rows="15" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit;">{{ blog.body.replace("<br>", "\n") if blog.body else "" }}</textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-blog-btn" style="border: none; cursor: pointer;">💾 更新</button>
+    <a href="/admin/blogs" class="admin-blog-btn-white" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+    {% if blog.slug %}
+    <a href="/blog/{{ blog.slug }}" target="_blank" class="admin-blog-btn-white" style="text-decoration: none; display: inline-block; text-align: center;">🔗 表示</a>
+    {% endif %}
+  </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}ブログ管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📝 ブログ管理</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/blogs/new" class="admin-blog-btn">🆕 新規ブログ作成</a>
+</div>
+
+{% if blogs %}
+<div class="admin-blog-grid">
+  {% for blog in blogs %}
+  <div class="admin-blog-card{% if blog.draft %} replied{% else %} unread{% endif %}">
+    <div class="admin-blog-head">
+      <strong>{{ blog.title }}</strong>
+      <span class="admin-blog-date">{{ to_jst(blog.created_at) }}</span>
+    </div>
+    
+    {% if blog.category %}
+    <p class="admin-blog-category">カテゴリ: {{ blog.category }}</p>
+    {% endif %}
+    
+    <p class="admin-blog-body">
+      {% if blog.excerpt %}
+        {{ blog.excerpt[:30] }}{% if blog.excerpt|length > 30 %}...{% endif %}
+      {% else %}
+      {{ blog.body
+        |striptags
+        |replace("\n", "")
+        |replace("&nbsp;", "")
+        |truncate(40)
+      }}
+      {% endif %}
+    </p>
+    
+    <div class="admin-blog-actions">
+      <span class="admin-blog-status{% if blog.draft %} draft{% else %} published{% endif %}">
+        {% if blog.draft %}📝 下書き{% else %}📢 公開{% endif %}
+      </span>
+      {% if blog.slug %}
+      <a href="/blog/{{ blog.slug }}" target="_blank" class="admin-blog-view-link">🔗 表示</a>
+      {% endif %}
+    </div>
+    
+    <div class="admin-blog-buttons">
+      <a href="/admin/blogs/edit/{{ blog.id }}" class="reply-btn">✏ 編集</a>
+      <form action="/admin/blogs/delete/{{ blog.id }}" method="POST" style="display: inline;" onsubmit="return confirm('このブログを削除しますか？\n（元には戻せません）');">
+        <button type="submit" class="admin-blog-delete-btn">🗑 削除</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>ブログがありません。</p>
+{% endif %}
+
+{% endblock %}
