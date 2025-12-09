@@ -1353,11 +1353,30 @@ def admin_news_delete(news_id):
 
 
 # ===================================================
-# ✅ カルテ管理（/admin/karte）
-# ===================================================
-# ===================================================
 # ✅ カルテ管理（/admin/karte）【IN句 最適化 完全版】
 # ===================================================
+@app.route("/admin/karte/new", methods=["GET", "POST"])
+@staff_required
+def admin_karte_new():
+    if request.method == "GET":
+        return render_template("admin_karte_new.html")
+
+    data = {
+        "name": request.form.get("name"),
+        "kana": request.form.get("kana"),
+        "birthday": request.form.get("birthday"),
+        "gender": request.form.get("gender"),
+        "phone": request.form.get("phone"),
+        "email": request.form.get("email"),
+        "address": request.form.get("address"),
+        "introducer": request.form.get("introducer"),
+        "created_at": now_iso()
+    }
+
+    supabase_admin.table("patients").insert(data).execute()
+    return redirect("/admin/karte")
+
+
 @app.route("/admin/karte")
 @staff_required
 def admin_karte():

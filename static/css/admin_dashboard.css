@@ -949,3 +949,28 @@ form .admin-news-btn {
   border-radius: 999px;
   margin-left: 6px;
 }
+
+.admin-karte-white-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+  border: none;
+  cursor: pointer;
+}
+
+.admin-karte-btn:hover {
+  background: #2a4a6f;
+  transform: translateY(-2px);
+}
+
