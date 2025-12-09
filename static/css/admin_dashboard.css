@@ -694,3 +694,178 @@ form .admin-blog-btn {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+/* ニュース管理用スタイル（ブログ管理と同じデザイン） */
+.admin-news-category {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 4px 0;
+}
+
+.admin-news-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.admin-news-status {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-news-status.draft {
+  background: #aaa;
+}
+
+.admin-news-status.published {
+  background: #C97A3D;
+}
+
+.admin-news-view-link {
+  font-size: 0.75rem;
+  color: #1E3A5F;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-news-view-link:hover {
+  text-decoration: underline;
+}
+
+.admin-news-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-news-delete-btn {
+  padding: 6px 14px;
+  background: #ff8a8a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-news-delete-btn:hover {
+  background: #ff9d9d;
+  transform: translateY(-1px);
+}
+
+/* ニュース管理用グリッド・カード（ブログ管理と同じデザイン） */
+.admin-news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.admin-news-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px;
+  text-decoration: none;
+  color: #1E3A5F;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  transition: 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 130px;
+}
+
+/* 未公開ニュースカード */
+.admin-news-card.unread {
+  border-left: 6px solid #C97A3D;
+}
+
+.admin-news-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.admin-news-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+
+.admin-news-date {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.admin-news-body {
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* 返信済みニュースカード（下書き） */
+.admin-news-card.replied {
+  opacity: 0.7;
+  border-left-color: #aaa;
+}
+
+/* ニュース管理用ボタン（ブログ管理と同じデザイン） */
+.admin-news-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 10px 20px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+  height: auto;
+}
+
+.admin-news-btn:hover {
+  background: #2a4a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+/* フォーム内で使う場合のmargin-top削除 */
+form .admin-news-btn {
+  margin-top: 0;
+}
+
+/* 白背景のニュース管理用ボタン（ブログ管理と同じデザイン） */
+.admin-news-btn-white {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  line-height: 1;
+  height: auto;
+}
+
+.admin-news-btn-white:hover {
+  background: #f5f7fb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

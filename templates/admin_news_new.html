@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}新規ニュース作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🆕 新規ニュース作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/news/new" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">タイトル <span style="color: #c65a3a;">*</span></label>
+    <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="ニュースタイトルを入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">URLスラッグ（空欄なら自動生成）</label>
+    <input type="text" name="slug" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="url-slug">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">導入文（meta説明）</label>
+    <input type="text" name="excerpt" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="記事の概要を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">サムネイル画像URL</label>
+    <input type="text" name="image" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="https://...">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">カテゴリ</label>
+    <input type="text" name="category" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="例：お知らせ、イベント、キャンペーン">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">タグ（カンマ区切り）</label>
+    <input type="text" name="tags" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="タグ1, タグ2, タグ3">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1E3A5F;">
+      <input type="checkbox" name="draft" style="width: 18px; height: 18px;">
+      <span>非公開（下書き）</span>
+    </label>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">本文（改行は自動で&lt;br&gt;に変換されます）</label>
+    <textarea name="body" rows="15" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit;" placeholder="ここに本文を入力してください"></textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-news-btn" style="border: none; cursor: pointer;">💾 保存</button>
+    <a href="/admin/news" class="admin-news-btn-white" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+{% endblock %}

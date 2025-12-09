@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}ニュース管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📰 ニュース管理</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/news/new" class="admin-news-btn">🆕 新規ニュース作成</a>
+</div>
+
+{% if news_list %}
+<div class="admin-news-grid">
+  {% for news in news_list %}
+  <div class="admin-news-card{% if news.draft %} replied{% else %} unread{% endif %}">
+    <div class="admin-news-head">
+      <strong>{{ news.title }}</strong>
+      <span class="admin-news-date">{{ news.created_at | to_jst }}
+      </span>
+    </div>
+    
+    {% if news.category %}
+    <p class="admin-news-category">カテゴリ: {{ news.category }}</p>
+    {% endif %}
+    
+    <p class="admin-news-body">
+      {% if news.excerpt %}
+        {{ news.excerpt[:30] }}{% if news.excerpt|length > 30 %}...{% endif %}
+      {% else %}
+      {{ news.body
+        |striptags
+        |replace("\n", "")
+        |replace("&nbsp;", "")
+        |truncate(40)
+      }}
+      {% endif %}
+    </p>
+    
+    <div class="admin-news-actions">
+      <span class="admin-news-status{% if news.draft %} draft{% else %} published{% endif %}">
+        {% if news.draft %}📝 下書き{% else %}📢 公開{% endif %}
+      </span>
+      {% if news.slug %}
+      <a href="/news/{{ news.slug }}" target="_blank" class="admin-news-view-link">🔗 表示</a>
+      {% endif %}
+    </div>
+    
+    <div class="admin-news-buttons">
+      <a href="/admin/news/edit/{{ news.id }}" class="reply-btn">✏ 編集</a>
+      <form action="/admin/news/delete/{{ news.id }}" method="POST" style="display: inline;" onsubmit="return confirm('このニュースを削除しますか？\n（元には戻せません）');">
+        <button type="submit" class="admin-news-delete-btn">🗑 削除</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>ニュースがありません。</p>
+{% endif %}
+
+{% endblock %}

@@ -1140,6 +1140,150 @@ def admin_blog_delete(blog_id):
     return redirect("/admin/blogs")
 
 
+# ===================================================
+# ✅ ニュース管理（/admin/news）
+# ===================================================
+@app.route("/admin/news")
+@staff_required
+def admin_news():
+    """ニュース一覧（新しい順）"""
+    try:
+        res = supabase_admin.table("news").select("*").order("created_at", desc=True).execute()
+        news_list = res.data or []
+        return render_template("admin_news.html", news_list=news_list)
+    except Exception as e:
+        print("❌ ニュース一覧取得エラー:", e)
+        return "ニュース一覧の取得に失敗しました", 500
+
+
+@app.route("/admin/news/new", methods=["GET", "POST"])
+@staff_required
+def admin_news_new():
+    """新規ニュース作成"""
+    if request.method == "GET":
+        return render_template("admin_news_new.html")
+    
+    # POST処理
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("タイトルを入力してください", "error")
+        return render_template("admin_news_new.html")
+    
+    slug_input = request.form.get("slug", "").strip()
+    if slug_input:
+        slug = generate_unique_slug("news", slug_input)
+    else:
+        slug = generate_unique_slug("news", title)
+
+    excerpt = request.form.get("excerpt", "").strip()
+    image = request.form.get("image", "").strip()
+    category = request.form.get("category", "").strip()
+    tags_raw = request.form.get("tags", "").strip()
+    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    body_raw = request.form.get("body", "").strip()
+    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    draft = request.form.get("draft") == "on"
+    
+    insert_data = {
+        "title": title,
+        "slug": slug,
+        "excerpt": excerpt,
+        "image": image,
+        "category": category,
+        "tags": tags,
+        "body": body_html,
+        "draft": draft,
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    
+    try:
+        res = supabase_admin.table("news").insert(insert_data).execute()
+        news_id = res.data[0]["id"]
+        flash("ニュースを作成しました", "success")
+        return redirect(f"/admin/news/edit/{news_id}")
+    except Exception as e:
+        print("❌ ニュース作成エラー:", e)
+        flash(f"ニュースの作成に失敗しました: {e}", "error")
+        return render_template("admin_news_new.html")
+
+
+@app.route("/admin/news/edit/<news_id>", methods=["GET", "POST"])
+@staff_required
+def admin_news_edit(news_id):
+    """ニュース編集"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("news").select("*").eq("id", news_id).execute()
+            if not res.data:
+                flash("ニュースが見つかりません", "error")
+                return redirect("/admin/news")
+            news = res.data[0]
+            # bodyの<br>を\nに戻す
+            if news.get("body"):
+                news["body"] = news["body"].replace("<br>", "\n")
+            return render_template("admin_news_edit.html", news=news)
+        except Exception as e:
+            print("❌ ニュース取得エラー:", e)
+            flash("ニュースの取得に失敗しました", "error")
+            return redirect("/admin/news")
+    
+    # POST処理
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("タイトルを入力してください", "error")
+        return redirect(f"/admin/news/edit/{news_id}")
+    
+    slug_input = request.form.get("slug", "").strip()
+    if slug_input:
+        slug = generate_unique_slug("news", slug_input, current_id=news_id)
+    else:
+        slug = generate_unique_slug("news", title, current_id=news_id)
+    
+    excerpt = request.form.get("excerpt", "").strip()
+    image = request.form.get("image", "").strip()
+    category = request.form.get("category", "").strip()
+    tags_raw = request.form.get("tags", "").strip()
+    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    body_raw = request.form.get("body", "").strip()
+    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    draft = request.form.get("draft") == "on"
+    
+    update_data = {
+        "title": title,
+        "slug": slug,
+        "excerpt": excerpt,
+        "image": image,
+        "category": category,
+        "tags": tags,
+        "body": body_html,
+        "draft": draft,
+        "updated_at": now_iso(),
+    }
+    
+    try:
+        supabase_admin.table("news").update(update_data).eq("id", news_id).execute()
+        flash("ニュースを更新しました", "success")
+        return redirect(f"/admin/news/edit/{news_id}")
+    except Exception as e:
+        print("❌ ニュース更新エラー:", e)
+        flash(f"ニュースの更新に失敗しました: {e}", "error")
+        return redirect(f"/admin/news/edit/{news_id}")
+
+
+@app.route("/admin/news/delete/<news_id>", methods=["POST"])
+@staff_required
+def admin_news_delete(news_id):
+    """ニュース削除"""
+    try:
+        supabase_admin.table("news").delete().eq("id", news_id).execute()
+        flash("ニュースを削除しました", "success")
+    except Exception as e:
+        print("❌ ニュース削除エラー:", e)
+        flash(f"ニュースの削除に失敗しました: {e}", "error")
+    return redirect("/admin/news")
+
+
 # ===========================
 # NEWS 詳細（slug 版）
 # ===========================
