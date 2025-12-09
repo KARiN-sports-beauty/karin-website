@@ -22,7 +22,8 @@
   <div class="admin-blog-card{% if blog.draft %} replied{% else %} unread{% endif %}">
     <div class="admin-blog-head">
       <strong>{{ blog.title }}</strong>
-      <span class="admin-blog-date">{{ to_jst(blog.created_at) }}</span>
+      <span class="admin-blog-date">{{ blog.created_at | to_jst }}
+      </span>
     </div>
     
     {% if blog.category %}

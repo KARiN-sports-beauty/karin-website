@@ -10,7 +10,7 @@
   <a href="/admin/contact/{{ c.id }}" class="admin-contact-card replied">
     <div class="admin-contact-head">
       <strong>{{ c.name }}</strong>
-      <span class="admin-contact-date">{{ to_jst(c.created_at) }}</span>
+      <span class="admin-contact-date">{{ (c.created_at) | to_jst }}</span>
     </div>
 
     <p class="admin-contact-body">

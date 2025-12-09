@@ -7,7 +7,7 @@
 <p><strong>名前：</strong>{{ contact.name }}</p>
 <p><strong>メール：</strong>{{ contact.email }}</p>
 <p><strong>電話番号：</strong>{{ contact.phone }}</p>
-<p><strong>日時：</strong>{{ to_jst(contact.created_at) }}</p>
+<p><strong>日時：</strong>{{ (contact.created_at) | to_jst }}</p>
 
 <h3>内容</h3>
 <p style="white-space: pre-line;">{{ contact.message }}</p>

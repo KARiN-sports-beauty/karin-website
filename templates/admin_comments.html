@@ -20,7 +20,7 @@
 
     <div class="admin-comment-head">
       <strong>{{ c.name }}</strong>
-      <span class="comment-date">{{ to_jst(c.created_at[:-3]) }}</span>
+      <span class="comment-date">{{ (c.created_at[:-3])| to_jst }}</span>
     </div>
 
     <p class="admin-comment-body">{{ c.body }}</p>

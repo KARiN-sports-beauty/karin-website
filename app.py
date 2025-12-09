@@ -156,6 +156,7 @@ def to_jst_filter(value):
     except Exception:
         return value
 
+app.jinja_env.filters["to_jst"] = to_jst_filter
 # session の暗号化キー
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
