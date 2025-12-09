@@ -869,3 +869,83 @@ form .admin-news-btn {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+/* カルテ管理用スタイル */
+.admin-karte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.admin-karte-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px;
+  text-decoration: none;
+  color: #1E3A5F;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  transition: 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 130px;
+  border-left: 6px solid #1E3A5F;
+}
+
+.admin-karte-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.admin-karte-head {
+  margin-bottom: 10px;
+}
+
+.admin-karte-name-link {
+  color: #1E3A5F;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.admin-karte-name-link:hover {
+  text-decoration: underline;
+}
+
+.admin-karte-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-karte-field {
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.admin-karte-label {
+  font-weight: 600;
+  min-width: 90px;
+  color: #666;
+}
+
+.admin-karte-introducer-link {
+  color: #1E3A5F;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-karte-introducer-link:hover {
+  text-decoration: underline;
+}
+
+.admin-introducer-badge {
+  background: #1E3A5F;
+  color: #fff;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  margin-left: 6px;
+}

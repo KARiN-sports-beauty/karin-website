@@ -158,10 +158,19 @@ def to_jst_filter(value):
 
 app.jinja_env.filters["to_jst"] = to_jst_filter
 
+
+def calc_age(birthday_str):
+    if not birthday_str:
+        return None
+    birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+    today = datetime.now(JST).date()
+    return today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
+
 @app.template_filter("age_from_birthday")
 def age_from_birthday_filter(value):
-    return calc_age(value)
-# session の暗号化キー
+    age = calc_age(value)
+    return age if age is not None else ""
+
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
 
@@ -313,6 +322,11 @@ def save_json_safely(path, data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"❌ JSON書き込みエラー: {path}", e)
+
+
+def sort_key(p):
+    last = p.get("last_visit_date")
+    return (last is None, last or "")
 
 # =====================================
 # ▼ 各ページルート定義
@@ -1336,6 +1350,76 @@ def admin_news_delete(news_id):
         print("❌ ニュース削除エラー:", e)
         flash(f"ニュースの削除に失敗しました: {e}", "error")
     return redirect("/admin/news")
+
+
+# ===================================================
+# ✅ カルテ管理（/admin/karte）
+# ===================================================
+# ===================================================
+# ✅ カルテ管理（/admin/karte）【IN句 最適化 完全版】
+# ===================================================
+@app.route("/admin/karte")
+@staff_required
+def admin_karte():
+    """カルテ一覧（高速化IN句対応版）"""
+    try:
+        # ✅ patients 全件取得
+        res_patients = supabase_admin.table("patients").select("*").execute()
+        patients = res_patients.data or []
+
+        # ✅ karte_logs 最終来院日取得
+        res_logs = supabase_admin.table("karte_logs").select("patient_id, date").execute()
+        logs = res_logs.data or []
+
+        # ✅ 最終来院日マップ作成
+        last_visit_map = {}
+        for log in logs:
+            pid = log.get("patient_id")
+            date = log.get("date")
+            if pid:
+                if pid not in last_visit_map or (date and date > last_visit_map[pid]):
+                    last_visit_map[pid] = date
+
+        # ✅ 紹介者IDだけを一括収集
+        introducer_ids = list({
+            p.get("introduced_by_patient_id")
+            for p in patients
+            if p.get("introduced_by_patient_id")
+        })
+
+        introducer_map = {}
+
+        # ✅ IN句で紹介者を一括取得（ここが最重要）
+        if introducer_ids:
+            res_intro = (
+                supabase_admin
+                .table("patients")
+                .select("id, name")
+                .in_("id", introducer_ids)
+                .execute()
+            )
+            if res_intro.data:
+                introducer_map = {
+                    p["id"]: p for p in res_intro.data
+                }
+
+        # ✅ patients に 最終来院日・紹介者情報 を合成
+        for patient in patients:
+            pid = patient.get("id")
+
+            patient["last_visit_date"] = last_visit_map.get(pid)
+            intro_id = patient.get("introduced_by_patient_id")
+            patient["introducer_info"] = introducer_map.get(intro_id)
+
+        # ✅ 並び順（最後に来た人が上）
+        patients.sort(key=sort_key, reverse=True)
+
+        return render_template("admin_karte.html", patients=patients)
+
+    except Exception as e:
+        print("❌ カルテ一覧取得エラー:", e)
+        return "カルテ一覧の取得に失敗しました", 500
+
 
 
 # ===========================

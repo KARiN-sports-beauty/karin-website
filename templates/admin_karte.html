@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}カルテ管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📋 カルテ管理</h2>
+
+<div style="margin-bottom: 20px;">
+  <input type="text" id="karte-search" placeholder="名前で検索..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+</div>
+
+{% if patients %}
+<div class="admin-karte-grid" id="karte-grid">
+  {% for patient in patients %}
+  <div class="admin-karte-card" data-name="{{ patient.name }}" data-kana="{{ patient.kana }}">
+    <div class="admin-karte-head">
+      <a href="/admin/karte/{{ patient.id }}" class="admin-karte-name-link">
+        <strong>{{ patient.name }}</strong>
+      </a>
+    </div>
+    
+    <div class="admin-karte-info">
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">フリガナ：</span>
+        <span>{{ patient.kana }}</span>
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">年齢：</span>
+        <span>{{ patient.birthday | age_from_birthday if patient.birthday else '未入力' }}歳</span>
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">紹介者：</span>
+        {% if patient.introducer_info %}
+          <a href="/admin/karte/{{ patient.introducer_info.id }}" class="admin-karte-introducer-link">
+            {{ patient.introducer_info.name }}
+          </a>
+          <span class="admin-introducer-badge">{{ patient.introduced_count }}人紹介</span>
+        {% else %}
+          <span>なし</span>
+        {% endif %}
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">最終来院日：</span>
+        <span>{{ patient.last_visit_date if patient.last_visit_date else '未記録' }}</span>
+      </p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>患者が登録されていません。</p>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('karte-search');
+  const grid = document.getElementById('karte-grid');
+  const cards = grid ? Array.from(grid.querySelectorAll('.admin-karte-card')) : [];
+  
+  searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase().trim();
+    
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      const kana = card.getAttribute('data-kana') || '';
+      const searchText = (name + ' ' + kana).toLowerCase();
+      
+      if (searchText.includes(query)) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}
