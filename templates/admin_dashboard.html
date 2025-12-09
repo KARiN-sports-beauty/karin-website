@@ -47,6 +47,7 @@
         </p>
         </a>
 
+        {% if session.staff and session.staff.is_admin == True %}
         <a href="/admin/contacts" class="dash-card dash-card-top">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信お問い合わせ</span>
@@ -58,6 +59,7 @@
             フォームから届いたお問い合わせのうち、未処理の件数です。
         </p>
         </a>
+        {% endif %}
 
 
         <!-- 🔵 上段を2列で揃えるためのダミー（必要なければ削除） -->
@@ -136,6 +138,27 @@
             スタッフ情報、シフト、勤務報告などを管理するためのページです。（順次拡張予定）
             </p>
         </a>
+
+        {% if session.staff and session.staff.is_admin == True %}
+        <!-- 🔒 管理者専用：財務管理 -->
+        <a href="/admin/invoices" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">請求書一覧</span>
+            </div>
+            <p class="dash-card-text">
+            請求書の作成・管理・確認を行います。
+            </p>
+        </a>
+
+        <a href="/admin/sales" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">売上一覧</span>
+            </div>
+            <p class="dash-card-text">
+            売上データの確認・分析を行います。
+            </p>
+        </a>
+        {% endif %}
 
     </div><!-- /.dashboard-grid -->
     <div style="margin-top:40px; text-align:center;">
