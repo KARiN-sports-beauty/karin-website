@@ -113,7 +113,11 @@
 
       <label class="form-field">
         <span>性別（必須）</span>
-        <input type="text" name="gender" required>
+        <div class="radio-row">
+          <label><input type="radio" name="gender" value="男性" required> 男性</label>
+          <label><input type="radio" name="gender" value="女性"> 女性</label>
+          <label><input type="radio" name="gender" value="回答しない"> 回答しない</label>
+        </div>
       </label>
 
       <label class="form-field">
@@ -126,10 +130,16 @@
         <input type="email" name="email" required>
       </label>
 
-      <label class="form-field">
+      <div class="form-field h-adr">
+        <span>郵便番号</span>
+        <input type="text" class="p-postal-code" size="8" maxlength="8" name="postal_code">
+      </div>
+      
+      <div class="form-field h-adr">
         <span>住所（出張希望の場所）（必須）</span>
-        <input type="text" name="address" placeholder="例：福岡市◯◯区／東京都渋谷区◯◯ など" required>
-      </label>
+        <input type="text" class="p-region p-locality p-street-address p-extended-address" name="address" required>
+      </div>
+      
 
       <label class="form-field">
         <span>紹介者（任意）</span>
@@ -364,6 +374,6 @@
   <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
   <span>ホームに戻る</span>
 </a>
-
+<script src="https://yubinbango.github.io/yubinbango/yubinbango.js"></script>
 </body>
 </html>

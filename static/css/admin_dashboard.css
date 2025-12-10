@@ -941,6 +941,355 @@ form .admin-news-btn {
   text-decoration: underline;
 }
 
+/* カルテ詳細ページ用スタイル（白カード型UI） */
+.admin-karte-detail-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  margin-bottom: 30px;
+}
+
+.admin-karte-detail-section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.admin-karte-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.admin-karte-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-karte-detail-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.admin-karte-detail-value {
+  font-size: 0.95rem;
+  color: #1E3A5F;
+  line-height: 1.5;
+}
+
+.admin-karte-detail-age {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+
+.admin-karte-detail-introducer-link {
+  color: #1E3A5F;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-karte-detail-introducer-link:hover {
+  text-decoration: underline;
+}
+
+.admin-karte-detail-logs-section {
+  margin-bottom: 30px;
+}
+
+.admin-karte-detail-logs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-karte-log-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.admin-karte-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-karte-log-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1E3A5F;
+}
+
+.admin-karte-log-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-karte-log-edit-btn {
+  padding: 6px 14px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.admin-karte-log-edit-btn:hover {
+  background: #2a4a6f;
+  transform: translateY(-1px);
+}
+
+.admin-karte-log-delete-btn {
+  padding: 6px 14px;
+  background: #ff8a8a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-karte-log-delete-btn:hover {
+  background: #ff9d9d;
+  transform: translateY(-1px);
+}
+
+.admin-karte-log-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-karte-log-field {
+  display: flex;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.admin-karte-log-label {
+  font-weight: 600;
+  color: #666;
+  min-width: 100px;
+}
+
+.admin-karte-log-images {
+  margin-top: 8px;
+}
+
+.admin-karte-log-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.admin-karte-log-image-item {
+  position: relative;
+}
+
+.admin-karte-log-image-link {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-karte-log-image-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.admin-karte-log-image-thumb:hover {
+  transform: scale(1.05);
+}
+
+.admin-karte-log-image-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 0, 0, 0.8);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-karte-log-image-delete:hover {
+  background: rgba(255, 0, 0, 1);
+}
+
+.admin-karte-log-scroll-container {
+  max-height: 600px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.admin-karte-detail-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+  margin-bottom: 40px;
+}
+
+.admin-karte-detail-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+}
+
+.admin-karte-detail-btn-primary:hover {
+  background: #2a4a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+.admin-karte-detail-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-karte-detail-btn-secondary:hover {
+  background: #f5f7fb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-karte-detail-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #ff8a8a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 138, 138, 0.2);
+}
+
+.admin-karte-detail-btn-danger:hover {
+  background: #ff9d9d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 138, 138, 0.3);
+}
+
+.admin-karte-detail-btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #1E3A5F;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-karte-detail-btn-back:hover {
+  background: #f5f7fb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 画像拡大モーダル */
+.admin-karte-image-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-karte-image-modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-karte-image-modal-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.admin-karte-image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.admin-karte-image-modal-close:hover {
+  opacity: 0.7;
+}
+
 .admin-introducer-badge {
   background: #1E3A5F;
   color: #fff;
@@ -950,7 +1299,7 @@ form .admin-news-btn {
   margin-left: 6px;
 }
 
-.admin-karte-white-btn {
+.admin-karte-btn-white {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -965,11 +1314,10 @@ form .admin-news-btn {
   text-decoration: none;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
-  border: none;
   cursor: pointer;
 }
 
-.admin-karte-btn:hover {
+.admin-karte-btn-white:hover {
   background: #2a4a6f;
   transform: translateY(-2px);
 }

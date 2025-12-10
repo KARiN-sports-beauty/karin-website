@@ -15,6 +15,7 @@ def to_jst(dt_str):
 
 
 import json, os
+import mimetypes
 from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
@@ -377,6 +378,7 @@ def submit_form():
         gender = request.form.get("gender", "").strip()
         phone = request.form.get("phone", "").strip()
         email = request.form.get("email", "").strip()
+        postal_code = request.form.get("postal_code", "").strip()
         address = request.form.get("address", "").strip()
         introducer = request.form.get("introducer", "").strip()
         chief_complaint = request.form.get("chief_complaint", "").strip()
@@ -412,6 +414,7 @@ def submit_form():
             "phone": phone,
             "email": email,
             "address": address,
+            "postal_code": postal_code,
             "introducer": introducer,
             "chief_complaint": chief_complaint,
             "onset": onset,
@@ -1439,6 +1442,382 @@ def admin_karte():
         print("❌ カルテ一覧取得エラー:", e)
         return "カルテ一覧の取得に失敗しました", 500
 
+
+@app.route("/admin/karte/<patient_id>")
+@staff_required
+def admin_karte_detail(patient_id):
+    """カルテ詳細"""
+    try:
+        # 患者情報取得
+        res_patient = supabase_admin.table("patients").select("*").eq("id", patient_id).execute()
+        if not res_patient.data:
+            flash("患者が見つかりません", "error")
+            return redirect("/admin/karte")
+        patient = res_patient.data[0]
+        
+        # 紹介者情報取得
+        introducer_info = None
+        if patient.get("introduced_by_patient_id"):
+            res_intro = supabase_admin.table("patients").select("id, name").eq("id", patient.get("introduced_by_patient_id")).execute()
+            if res_intro.data:
+                introducer_info = res_intro.data[0]
+        patient["introducer_info"] = introducer_info
+        
+        # karte_logs取得（IN句で高速化）
+        res_logs = supabase_admin.table("karte_logs").select("*").eq("patient_id", patient_id).order("date", desc=True).execute()
+        logs = res_logs.data or []
+        
+        # ログIDを収集して画像を一括取得
+        log_ids = [log.get("id") for log in logs if log.get("id")]
+        log_images_map = {}
+        if log_ids:
+            res_images = supabase_admin.table("karte_images").select("*").in_("log_id", log_ids).execute()
+            if res_images.data:
+                for img in res_images.data:
+                    log_id = img.get("log_id")
+                    if log_id not in log_images_map:
+                        log_images_map[log_id] = []
+                    log_images_map[log_id].append(img)
+        
+        # ログに画像を追加
+        for log in logs:
+            log["images"] = log_images_map.get(log.get("id"), [])
+        
+        # 最終来院日を取得
+        last_visit_date = None
+        if logs:
+            last_visit_date = logs[0].get("date")
+        patient["last_visit_date"] = last_visit_date
+        
+        # スタッフ情報取得（ログのstaff_idから）
+        staff_ids = list({log.get("staff_id") for log in logs if log.get("staff_id")})
+        staff_map = {}
+        if staff_ids:
+            # まずstaffテーブルを試す
+            try:
+                res_staff = supabase_admin.table("staff").select("id, name").in_("id", staff_ids).execute()
+                if res_staff.data:
+                    staff_map = {s["id"]: s for s in res_staff.data}
+            except:
+                # staffテーブルがない場合はSupabase Authから取得
+                try:
+                    for staff_id in staff_ids:
+                        try:
+                            user = supabase_admin.auth.admin.get_user_by_id(staff_id)
+                            if user and hasattr(user, 'user'):
+                                metadata = user.user.user_metadata or {}
+                                staff_map[staff_id] = {
+                                    "id": staff_id,
+                                    "name": metadata.get("name", "不明")
+                                }
+                        except:
+                            pass
+                except Exception as e:
+                    print("❌ スタッフ情報取得エラー:", e)
+        
+        for log in logs:
+            staff_id = log.get("staff_id")
+            log["staff_name"] = staff_map.get(staff_id, {}).get("name", "不明") if staff_id else "不明"
+        
+        # 管理者チェック
+        staff = session.get("staff", {})
+        is_admin = staff.get("is_admin") == True
+        
+        return render_template("admin_karte_detail.html", patient=patient, logs=logs, is_admin=is_admin)
+    except Exception as e:
+        print("❌ カルテ詳細取得エラー:", e)
+        flash("カルテ詳細の取得に失敗しました", "error")
+        return redirect("/admin/karte")
+
+
+@app.route("/admin/karte/<patient_id>/edit", methods=["GET", "POST"])
+@staff_required
+def admin_karte_edit(patient_id):
+    """基本情報編集"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("patients").select("*").eq("id", patient_id).execute()
+            if not res.data:
+                flash("患者が見つかりません", "error")
+                return redirect("/admin/karte")
+            patient = res.data[0]
+            
+            # 紹介者候補を取得（検索用）
+            res_all = supabase_admin.table("patients").select("id, name, kana").order("name").execute()
+            all_patients = res_all.data or []
+            
+            return render_template("admin_karte_edit.html", patient=patient, all_patients=all_patients)
+        except Exception as e:
+            print("❌ 患者取得エラー:", e)
+            flash("患者の取得に失敗しました", "error")
+            return redirect("/admin/karte")
+    
+    # POST処理
+    try:
+        update_data = {
+            "name": request.form.get("name", "").strip(),
+            "kana": request.form.get("kana", "").strip(),
+            "birthday": request.form.get("birthday", "").strip() or None,
+            "gender": request.form.get("gender", "").strip(),
+            "category": request.form.get("category", "").strip(),
+            "phone": request.form.get("phone", "").strip(),
+            "email": request.form.get("email", "").strip(),
+            "postal_code": request.form.get("postal_code", "").strip(),
+            "address": request.form.get("address", "").strip(),
+            "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
+            "heart": request.form.get("heart", "").strip(),
+            "pregnant": request.form.get("pregnant", "").strip(),
+            "chronic": request.form.get("chronic", "").strip(),
+            "surgery": request.form.get("surgery", "").strip(),
+            "under_medical": request.form.get("under_medical", "").strip(),
+            "shinkyu_pref": request.form.get("shinkyu_pref", "").strip(),
+            "electric_pref": request.form.get("electric_pref", "").strip(),
+            "pressure_pref": request.form.get("pressure_pref", "").strip(),
+            "signature": request.form.get("signature", "").strip(),
+            "agreed_at": request.form.get("agreed_at", "").strip() or None,
+        }
+        
+        supabase_admin.table("patients").update(update_data).eq("id", patient_id).execute()
+        flash("基本情報を更新しました", "success")
+        return redirect(f"/admin/karte/{patient_id}")
+    except Exception as e:
+        print("❌ 基本情報更新エラー:", e)
+        flash(f"基本情報の更新に失敗しました: {e}", "error")
+        return redirect(f"/admin/karte/{patient_id}/edit")
+
+
+@app.route("/admin/karte/<patient_id>/new_log", methods=["GET", "POST"])
+@staff_required
+def admin_karte_new_log(patient_id):
+    """新規施術ログ作成"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
+            if not res.data:
+                flash("患者が見つかりません", "error")
+                return redirect("/admin/karte")
+            patient = res.data[0]
+            
+            staff = session.get("staff", {})
+            staff_id = staff.get("id")
+            staff_name = staff.get("name", "スタッフ")
+            
+            return render_template("admin_karte_new_log.html", patient=patient, staff_id=staff_id, staff_name=staff_name)
+        except Exception as e:
+            print("❌ 患者取得エラー:", e)
+            flash("患者の取得に失敗しました", "error")
+            return redirect("/admin/karte")
+    
+    # POST処理
+    try:
+        log_data = {
+            "patient_id": patient_id,
+            "date": request.form.get("date", "").strip(),
+            "location_type": request.form.get("location_type", "").strip(),
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
+            "today_condition": request.form.get("today_condition", "").strip(),
+            "treatment": request.form.get("treatment", "").strip(),
+            "memo": request.form.get("memo", "").strip(),
+            "staff_id": request.form.get("staff_id", "").strip(),
+            "created_at": now_iso(),
+        }
+        
+        res = supabase_admin.table("karte_logs").insert(log_data).execute()
+        log_id = res.data[0]["id"] if res.data else None
+        
+        flash("施術ログを作成しました", "success")
+        return redirect(f"/admin/karte/{patient_id}")
+    except Exception as e:
+        print("❌ 施術ログ作成エラー:", e)
+        flash(f"施術ログの作成に失敗しました: {e}", "error")
+        return redirect(f"/admin/karte/{patient_id}/new_log")
+
+
+@app.route("/admin/karte/log/<log_id>/edit", methods=["GET", "POST"])
+@staff_required
+def admin_karte_log_edit(log_id):
+    """施術ログ編集"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("karte_logs").select("*").eq("id", log_id).execute()
+            if not res.data:
+                flash("ログが見つかりません", "error")
+                return redirect("/admin/karte")
+            log = res.data[0]
+            
+            patient_id = log.get("patient_id")
+            res_patient = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
+            patient = res_patient.data[0] if res_patient.data else None
+            
+            # 画像取得
+            res_images = supabase_admin.table("karte_images").select("*").eq("log_id", log_id).execute()
+            images = res_images.data or []
+            log["images"] = images
+            
+            staff = session.get("staff", {})
+            staff_id = staff.get("id")
+            staff_name = staff.get("name", "スタッフ")
+            
+            return render_template("admin_karte_log_edit.html", log=log, patient=patient, staff_id=staff_id, staff_name=staff_name)
+        except Exception as e:
+            print("❌ ログ取得エラー:", e)
+            flash("ログの取得に失敗しました", "error")
+            return redirect("/admin/karte")
+    
+    # POST処理
+    try:
+        update_data = {
+            "date": request.form.get("date", "").strip(),
+            "location_type": request.form.get("location_type", "").strip(),
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
+            "today_condition": request.form.get("today_condition", "").strip(),
+            "treatment": request.form.get("treatment", "").strip(),
+            "memo": request.form.get("memo", "").strip(),
+            "staff_id": request.form.get("staff_id", "").strip(),
+        }
+        
+        supabase_admin.table("karte_logs").update(update_data).eq("id", log_id).execute()
+        flash("施術ログを更新しました", "success")
+        
+        # ログからpatient_idを取得
+        res = supabase_admin.table("karte_logs").select("patient_id").eq("id", log_id).execute()
+        patient_id = res.data[0].get("patient_id") if res.data else None
+        
+        return redirect(f"/admin/karte/{patient_id}")
+    except Exception as e:
+        print("❌ 施術ログ更新エラー:", e)
+        flash(f"施術ログの更新に失敗しました: {e}", "error")
+        return redirect(f"/admin/karte/log/{log_id}/edit")
+
+
+@app.route("/admin/karte/log/<log_id>/img", methods=["POST"])
+@staff_required
+def admin_karte_log_upload_image(log_id):
+    """画像アップロード"""
+    try:
+        if "image" not in request.files:
+            return jsonify({"error": "画像が選択されていません"}), 400
+        
+        file = request.files["image"]
+        if file.filename == "":
+            return jsonify({"error": "ファイルが選択されていません"}), 400
+        
+        # ファイル名を生成
+        ext = os.path.splitext(file.filename)[1].lower()
+        safe_name = f"{uuid.uuid4().hex}{ext}"
+        storage_path = f"{log_id}/{safe_name}"
+        
+        # MIMEタイプを取得
+        mime_type, _ = mimetypes.guess_type(file.filename)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+        
+        # Supabase Storageにアップロード
+        file_data = file.read()
+        supabase_admin.storage.from_("karte-images").upload(
+            path=storage_path,
+            file=file_data,
+            file_options={"content-type": mime_type}
+        )
+        
+        # public URLを取得
+        public_url = supabase_admin.storage.from_("karte-images").get_public_url(storage_path)
+        
+        # karte_imagesテーブルに保存
+        supabase_admin.table("karte_images").insert({
+            "log_id": log_id,
+            "image_url": public_url,
+            "storage_path": storage_path,
+            "created_at": now_iso(),
+        }).execute()
+        
+        return jsonify({"success": True, "url": public_url})
+    except Exception as e:
+        print("❌ 画像アップロードエラー:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/karte/<patient_id>/delete", methods=["POST"])
+@admin_required
+def admin_karte_delete(patient_id):
+    """カルテ削除（管理者のみ）"""
+    try:
+        supabase_admin.table("patients").delete().eq("id", patient_id).execute()
+        flash("カルテを削除しました", "success")
+    except Exception as e:
+        print("❌ カルテ削除エラー:", e)
+        flash(f"カルテの削除に失敗しました: {e}", "error")
+    return redirect("/admin/karte")
+
+
+@app.route("/admin/karte/log/<log_id>/delete", methods=["POST"])
+@admin_required
+def admin_karte_log_delete(log_id):
+    """施術ログ削除（管理者のみ）"""
+    try:
+        # ログからpatient_idを取得
+        res = supabase_admin.table("karte_logs").select("patient_id").eq("id", log_id).execute()
+        patient_id = res.data[0].get("patient_id") if res.data else None
+        
+        # 画像を削除
+        res_images = supabase_admin.table("karte_images").select("storage_path").eq("log_id", log_id).execute()
+        for img in res_images.data or []:
+            storage_path = img.get("storage_path")
+            if storage_path:
+                try:
+                    supabase_admin.storage.from_("karte-images").remove([storage_path])
+                except:
+                    pass
+        
+        # 画像レコードを削除
+        supabase_admin.table("karte_images").delete().eq("log_id", log_id).execute()
+        
+        # ログを削除
+        supabase_admin.table("karte_logs").delete().eq("id", log_id).execute()
+        
+        flash("施術ログを削除しました", "success")
+        return redirect(f"/admin/karte/{patient_id}")
+    except Exception as e:
+        print("❌ 施術ログ削除エラー:", e)
+        flash(f"施術ログの削除に失敗しました: {e}", "error")
+        return redirect("/admin/karte")
+
+
+@app.route("/admin/karte/image/<image_id>/delete", methods=["POST"])
+@admin_required
+def admin_karte_image_delete(image_id):
+    """画像削除（管理者のみ）"""
+    try:
+        # 画像情報を取得
+        res = supabase_admin.table("karte_images").select("log_id, storage_path").eq("id", image_id).execute()
+        if not res.data:
+            return jsonify({"error": "画像が見つかりません"}), 404
+        
+        image = res.data[0]
+        log_id = image.get("log_id")
+        storage_path = image.get("storage_path")
+        
+        # Storageから削除
+        if storage_path:
+            try:
+                supabase_admin.storage.from_("karte-images").remove([storage_path])
+            except:
+                pass
+        
+        # 画像レコードを削除
+        supabase_admin.table("karte_images").delete().eq("id", image_id).execute()
+        
+        # ログからpatient_idを取得
+        res_log = supabase_admin.table("karte_logs").select("patient_id").eq("id", log_id).execute()
+        patient_id = res_log.data[0].get("patient_id") if res_log.data else None
+        
+        flash("画像を削除しました", "success")
+        return redirect(f"/admin/karte/{patient_id}")
+    except Exception as e:
+        print("❌ 画像削除エラー:", e)
+        flash(f"画像の削除に失敗しました: {e}", "error")
+        return redirect("/admin/karte")
 
 
 # ===========================

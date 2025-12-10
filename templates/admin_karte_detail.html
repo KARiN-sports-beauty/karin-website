@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block title %}カルテ詳細 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📋 カルテ詳細</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- 基本情報ブロック（表紙） -->
+<div class="admin-karte-detail-card">
+  <h3 class="admin-karte-detail-section-title">基本情報</h3>
+  
+  <div class="admin-karte-detail-info-grid">
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">1. 名前</span>
+      <span class="admin-karte-detail-value">{{ patient.name or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">2. フリガナ</span>
+      <span class="admin-karte-detail-value">{{ patient.kana or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">3. 生年月日</span>
+      <span class="admin-karte-detail-value">
+        {{ patient.birthday if patient.birthday else '未入力' }}
+        {% if patient.birthday %}
+          <span class="admin-karte-detail-age">（{{ patient.birthday | age_from_birthday }}歳）</span>
+        {% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">4. 性別</span>
+      <span class="admin-karte-detail-value">{{ patient.gender or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">5. 区分</span>
+      <span class="admin-karte-detail-value">{{ patient.category or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">6. 電話番号</span>
+      <span class="admin-karte-detail-value">{{ patient.phone or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">7. メール</span>
+      <span class="admin-karte-detail-value">{{ patient.email or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">8. 郵便番号</span>
+      <span class="admin-karte-detail-value">{{ patient.postal_code or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">9. 住所</span>
+      <span class="admin-karte-detail-value">{{ patient.address or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">10. 紹介者</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.introducer_info %}
+          <a href="/admin/karte/{{ patient.introducer_info.id }}" class="admin-karte-detail-introducer-link">
+            {{ patient.introducer_info.name }}
+          </a>
+        {% else %}
+          なし
+        {% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">11. 主訴</span>
+      <span class="admin-karte-detail-value">{{ patient.chief_complaint or '未入力' }}</span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">12. 既往歴・注意事項</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.heart or patient.pregnant or patient.chronic or patient.surgery or patient.under_medical %}
+          {% if patient.heart %}心疾患あり{% endif %}
+          {% if patient.pregnant %}妊娠中{% endif %}
+          {% if patient.chronic %}慢性疾患あり{% endif %}
+          {% if patient.surgery %}手術歴あり{% endif %}
+          {% if patient.under_medical %}医療機関受診中{% endif %}
+        {% else %}
+          なし
+        {% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">13. 刺激の好み</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.shinkyu_pref or patient.electric_pref or patient.pressure_pref %}
+          鍼灸：{{ patient.shinkyu_pref or '指定なし' }} / 
+          電気：{{ patient.electric_pref or '指定なし' }} / 
+          圧力：{{ patient.pressure_pref or '指定なし' }}
+        {% else %}
+          未入力
+        {% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">14. 初回署名</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.signature %}◯{% else %}❌{% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">15. 初回同意日</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.agreed_at %}{{ patient.agreed_at }}{% else %}❌（null）{% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">16. 初診日</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.created_at %}{{ patient.created_at[:10] }}{% else %}未入力{% endif %}
+      </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">17. 最終来院日</span>
+      <span class="admin-karte-detail-value">
+        {{ patient.last_visit_date if patient.last_visit_date else '未記録' }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- 施術ログ一覧 -->
+<div class="admin-karte-detail-logs-section">
+  <h3 class="admin-karte-detail-section-title">施術ログ</h3>
+  
+  {% if logs %}
+  <div class="admin-karte-detail-logs-container">
+    {% for log in logs[:5] %}
+    <div class="admin-karte-log-card">
+      <div class="admin-karte-log-header">
+        <div class="admin-karte-log-date">{{ log.date }}</div>
+        <div class="admin-karte-log-actions">
+          <a href="/admin/karte/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
+          {% if is_admin %}
+          <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
+            <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="admin-karte-log-content">
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">現場区分：</span>
+          <span>{{ log.location_type or '未入力' }}</span>
+        </div>
+        
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">主訴：</span>
+          <span>{{ log.chief_complaint or '未入力' }}</span>
+        </div>
+        
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">今日の状態：</span>
+          <span>{{ log.today_condition or '未入力' }}</span>
+        </div>
+        
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">施術内容：</span>
+          <span>{{ log.treatment or '未入力' }}</span>
+        </div>
+        
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">メモ：</span>
+          <span>{{ log.memo or '未入力' }}</span>
+        </div>
+        
+        <div class="admin-karte-log-field">
+          <span class="admin-karte-log-label">スタッフ：</span>
+          <span>{{ log.staff_name or '不明' }}</span>
+        </div>
+        
+        {% if log.images %}
+        <div class="admin-karte-log-images">
+          <span class="admin-karte-log-label">添付画像：</span>
+          <div class="admin-karte-log-images-grid">
+            {% for image in log.images %}
+            <div class="admin-karte-log-image-item">
+              <a href="{{ image.image_url }}" target="_blank" class="admin-karte-log-image-link" onclick="event.preventDefault(); showImageModal('{{ image.image_url }}');">
+                <img src="{{ image.image_url }}" alt="画像" class="admin-karte-log-image-thumb">
+              </a>
+              {% if is_admin %}
+              <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この画像を削除しますか？');">
+                <button type="submit" class="admin-karte-log-image-delete">×</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    
+    {% if logs|length > 5 %}
+    <div class="admin-karte-log-scroll-container" id="older-logs">
+      {% for log in logs[5:] %}
+      <div class="admin-karte-log-card">
+        <div class="admin-karte-log-header">
+          <div class="admin-karte-log-date">{{ log.date }}</div>
+          <div class="admin-karte-log-actions">
+            <a href="/admin/karte/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
+            {% if is_admin %}
+            <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
+              <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="admin-karte-log-content">
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">現場区分：</span>
+            <span>{{ log.location_type or '未入力' }}</span>
+          </div>
+          
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">主訴：</span>
+            <span>{{ log.chief_complaint or '未入力' }}</span>
+          </div>
+          
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">今日の状態：</span>
+            <span>{{ log.today_condition or '未入力' }}</span>
+          </div>
+          
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">施術内容：</span>
+            <span>{{ log.treatment or '未入力' }}</span>
+          </div>
+          
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">メモ：</span>
+            <span>{{ log.memo or '未入力' }}</span>
+          </div>
+          
+          <div class="admin-karte-log-field">
+            <span class="admin-karte-log-label">スタッフ：</span>
+            <span>{{ log.staff_name or '不明' }}</span>
+          </div>
+          
+          {% if log.images %}
+          <div class="admin-karte-log-images">
+            <span class="admin-karte-log-label">添付画像：</span>
+            <div class="admin-karte-log-images-grid">
+              {% for image in log.images %}
+              <div class="admin-karte-log-image-item">
+                <a href="{{ image.image_url }}" target="_blank" class="admin-karte-log-image-link" onclick="event.preventDefault(); showImageModal('{{ image.image_url }}');">
+                  <img src="{{ image.image_url }}" alt="画像" class="admin-karte-log-image-thumb">
+                </a>
+                {% if is_admin %}
+                <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この画像を削除しますか？');">
+                  <button type="submit" class="admin-karte-log-image-delete">×</button>
+                </form>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>施術ログがありません。</p>
+  {% endif %}
+</div>
+
+<!-- アクションボタン -->
+<div class="admin-karte-detail-actions">
+  <a href="/admin/karte/{{ patient.id }}/new_log" class="admin-karte-detail-btn-primary">➕ 新規施術ログ追加</a>
+  <a href="/admin/karte/{{ patient.id }}/edit" class="admin-karte-detail-btn-secondary">✏ 基本情報編集</a>
+  {% if is_admin %}
+  <form action="/admin/karte/{{ patient.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('このカルテを削除しますか？\n（元には戻せません）');">
+    <button type="submit" class="admin-karte-detail-btn-danger">🗑 カルテ削除</button>
+  </form>
+  {% endif %}
+  <a href="/admin/karte" class="admin-karte-detail-btn-back">← 一覧に戻る</a>
+</div>
+
+<!-- 画像拡大モーダル -->
+<div id="image-modal" class="admin-karte-image-modal" onclick="closeImageModal()">
+  <div class="admin-karte-image-modal-content" onclick="event.stopPropagation();">
+    <span class="admin-karte-image-modal-close" onclick="closeImageModal()">&times;</span>
+    <img id="modal-image" src="" alt="拡大画像" class="admin-karte-image-modal-img">
+  </div>
+</div>
+
+<script>
+function showImageModal(imageUrl) {
+  const modal = document.getElementById('image-modal');
+  const img = document.getElementById('modal-image');
+  img.src = imageUrl;
+  modal.style.display = 'flex';
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('image-modal');
+  modal.style.display = 'none';
+}
+
+// ESCキーで閉じる
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeImageModal();
+  }
+});
+</script>
+
+{% endblock %}
