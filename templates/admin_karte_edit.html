@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}カルテ編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏ カルテ編集</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/karte/{{ patient.id }}/edit" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">名前</label>
+    <input type="text" name="name" value="{{ patient.name or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">フリガナ</label>
+    <input type="text" name="kana" value="{{ patient.kana or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">生年月日</label>
+    <input type="date" name="birthday" value="{{ patient.birthday or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">性別</label>
+    <select name="gender" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="男性" {% if patient.gender == '男性' %}selected{% endif %}>男性</option>
+      <option value="女性" {% if patient.gender == '女性' %}selected{% endif %}>女性</option>
+      <option value="その他" {% if patient.gender == 'その他' %}selected{% endif %}>その他</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">区分</label>
+    <select name="category" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="一般" {% if patient.category == '一般' %}selected{% endif %}>一般</option>
+      <option value="スポーツ選手" {% if patient.category == 'スポーツ選手' %}selected{% endif %}>スポーツ選手</option>
+      <option value="アーティスト" {% if patient.category == 'アーティスト' %}selected{% endif %}>アーティスト</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">電話番号</label>
+    <input type="text" name="phone" value="{{ patient.phone or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メール</label>
+    <input type="email" name="email" value="{{ patient.email or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">郵便番号</label>
+    <input type="text" name="postal_code" value="{{ patient.postal_code or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">住所</label>
+    <input type="text" name="address" value="{{ patient.address or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">紹介者（自由記入）</label>
+    <input type="text" name="introducer" value="{{ patient.introducer or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">紹介者（患者IDで紐付け）</label>
+    <select name="introduced_by_patient_id" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択なし</option>
+      {% for p in all_patients %}
+        <option value="{{ p.id }}" {% if patient.introduced_by_patient_id == p.id %}selected{% endif %}>{{ p.id }}：{{ p.name }}（{{ p.kana }}）</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">主訴</label>
+    <textarea name="chief_complaint" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ patient.chief_complaint or '' }}</textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">心疾患</label>
+    <input type="text" name="heart" value="{{ patient.heart or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="心疾患の有無">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">妊娠中・可能性あり</label>
+    <input type="text" name="pregnant" value="{{ patient.pregnant or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="妊娠の有無">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">慢性疾患</label>
+    <input type="text" name="chronic" value="{{ patient.chronic or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="慢性疾患の有無">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">手術歴</label>
+    <input type="text" name="surgery" value="{{ patient.surgery or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="手術歴の有無">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">医療機関受診中</label>
+    <input type="text" name="under_medical" value="{{ patient.under_medical or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="医療機関受診の有無">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">鍼灸の好み</label>
+    <input type="text" name="shinkyu_pref" value="{{ patient.shinkyu_pref or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="鍼灸の好み">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">電気の好み</label>
+    <input type="text" name="electric_pref" value="{{ patient.electric_pref or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="電気の好み">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">圧力の好み</label>
+    <input type="text" name="pressure_pref" value="{{ patient.pressure_pref or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="圧力の好み">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">初回署名</label>
+    <input type="text" name="signature" value="{{ patient.signature or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="署名">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">初回同意日</label>
+    <input type="date" name="agreed_at" value="{{ patient.agreed_at or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">備考</label>
+    <textarea name="note" rows="5" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ patient.note or '' }}</textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 更新</button>
+    <a href="/admin/karte/{{ patient.id }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 詳細に戻る</a>
+  </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}新規カルテ作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">➕ 新規カルテ作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/karte/new" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">名前</label>
+    <input type="text" name="name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="患者名を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">フリガナ</label>
+    <input type="text" name="kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="フリガナを入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">生年月日</label>
+    <input type="date" name="birthday" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">性別</label>
+    <select name="gender" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="男性">男性</option>
+      <option value="女性">女性</option>
+      <option value="その他">その他</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">区分</label>
+    <select name="category" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="一般">一般</option>
+      <option value="スポーツ選手">スポーツ選手</option>
+      <option value="アーティスト">アーティスト</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">電話番号</label>
+    <input type="text" name="phone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="電話番号を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メール</label>
+    <input type="email" name="email" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="メールアドレスを入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">郵便番号</label>
+    <input type="text" name="postal_code" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="郵便番号を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">住所</label>
+    <input type="text" name="address" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="住所を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">紹介者（自由記入）</label>
+    <input type="text" name="introducer" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="紹介者名を入力">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">紹介者（検索して選択）</label>
+    
+    <input type="text" id="introducer_search" placeholder="名前・フリガナで検索" class="search-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 8px;">
+    
+    <select id="introducer_select" name="introduced_by_patient_id" size="6" class="introducer-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択なし</option>
+      {% for p in all_patients %}
+        <option value="{{ p.id }}">{{ p.id }}：{{ p.name }}（{{ p.kana }}）</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">主訴</label>
+    <textarea name="chief_complaint" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="主訴を入力"></textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">備考</label>
+    <textarea name="note" rows="5" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="備考を入力"></textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 保存</button>
+    <a href="/admin/karte" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+<script>
+document.getElementById("introducer_search").addEventListener("input", function() {
+  const q = this.value.toLowerCase();
+  const options = document.querySelectorAll("#introducer_select option");
+
+  options.forEach(op => {
+    const text = op.textContent.toLowerCase();
+    op.style.display = text.includes(q) ? "block" : "none";
+  });
+});
+</script>
+
+{% endblock %}

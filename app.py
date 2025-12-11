@@ -405,7 +405,7 @@ def submit_form():
         agree_day = request.form.get("agree_day", "").strip()
         agreed_at = f"{agree_year}-{agree_month}-{agree_day}" if agree_year and agree_month and agree_day else None
         
-        # Supabase patientsテーブルに保存
+        # Supabase patientsテーブルに保存（DBスキーマと完全同期）
         patient_data = {
             "name": name,
             "kana": kana,
@@ -413,8 +413,8 @@ def submit_form():
             "gender": gender,
             "phone": phone,
             "email": email,
-            "address": address,
             "postal_code": postal_code,
+            "address": address,
             "introducer": introducer,
             "chief_complaint": chief_complaint,
             "onset": onset,
@@ -432,6 +432,7 @@ def submit_form():
             "preferred_date3": preferred_date3,
             "signature": signature,
             "agreed_at": agreed_at,
+            "note": "",  # 空でも入れる
             "created_at": now_iso(),
         }
         
@@ -1362,22 +1363,48 @@ def admin_news_delete(news_id):
 @staff_required
 def admin_karte_new():
     if request.method == "GET":
-        return render_template("admin_karte_new.html")
+        # 全患者一覧を取得
+        try:
+            res_all = supabase_admin.table("patients").select("id, name, kana").order("name").execute()
+            all_patients = res_all.data or []
+        except Exception as e:
+            print("❌ 患者一覧取得エラー:", e)
+            all_patients = []
+        
+        return render_template("admin_karte_new.html", all_patients=all_patients)
 
-    data = {
-        "name": request.form.get("name"),
-        "kana": request.form.get("kana"),
-        "birthday": request.form.get("birthday"),
-        "gender": request.form.get("gender"),
-        "phone": request.form.get("phone"),
-        "email": request.form.get("email"),
-        "address": request.form.get("address"),
-        "introducer": request.form.get("introducer"),
-        "created_at": now_iso()
-    }
-
-    supabase_admin.table("patients").insert(data).execute()
-    return redirect("/admin/karte")
+    # POST処理
+    try:
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "kana": request.form.get("kana", "").strip(),
+            "birthday": request.form.get("birthday", "").strip() or None,
+            "gender": request.form.get("gender", "").strip(),
+            "category": request.form.get("category", "").strip(),
+            "phone": request.form.get("phone", "").strip(),
+            "email": request.form.get("email", "").strip(),
+            "postal_code": request.form.get("postal_code", "").strip(),
+            "address": request.form.get("address", "").strip(),
+            "introducer": request.form.get("introducer", "").strip(),
+            "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
+            "note": request.form.get("note", "").strip(),
+            "created_at": now_iso()
+        }
+        
+        supabase_admin.table("patients").insert(data).execute()
+        flash("カルテを作成しました", "success")
+        return redirect("/admin/karte")
+    except Exception as e:
+        print("❌ カルテ作成エラー:", e)
+        flash(f"カルテの作成に失敗しました: {e}", "error")
+        # エラー時も患者一覧を取得して再表示
+        try:
+            res_all = supabase_admin.table("patients").select("id, name, kana").order("name").execute()
+            all_patients = res_all.data or []
+        except:
+            all_patients = []
+        return render_template("admin_karte_new.html", all_patients=all_patients)
 
 
 @app.route("/admin/karte")
@@ -1580,6 +1607,7 @@ def admin_karte_edit(patient_id):
             "pressure_pref": request.form.get("pressure_pref", "").strip(),
             "signature": request.form.get("signature", "").strip(),
             "agreed_at": request.form.get("agreed_at", "").strip() or None,
+            "note": request.form.get("note", "").strip(),
         }
         
         supabase_admin.table("patients").update(update_data).eq("id", patient_id).execute()
