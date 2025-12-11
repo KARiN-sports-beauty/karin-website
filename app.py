@@ -1463,6 +1463,10 @@ def admin_karte_detail(patient_id):
                 introducer_info = res_intro.data[0]
         patient["introducer_info"] = introducer_info
         
+        # 紹介された人数を取得
+        res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient_id).execute()
+        patient["introduced_count"] = res_introduced.count or 0
+        
         # karte_logs取得（IN句で高速化）
         res_logs = supabase_admin.table("karte_logs").select("*").eq("patient_id", patient_id).order("date", desc=True).execute()
         logs = res_logs.data or []

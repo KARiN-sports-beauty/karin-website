@@ -32,6 +32,11 @@
       </p>
       
       <p class="admin-karte-field">
+        <span class="admin-karte-label">区分：</span>
+        <span>{{ patient.category or '未設定' }}</span>
+      </p>
+
+      <p class="admin-karte-field">
         <span class="admin-karte-label">紹介者：</span>
         {% if patient.introducer_info %}
           <a href="/admin/karte/{{ patient.introducer_info.id }}" class="admin-karte-introducer-link">

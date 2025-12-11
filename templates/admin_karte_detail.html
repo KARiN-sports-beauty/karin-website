@@ -74,6 +74,9 @@
           <a href="/admin/karte/{{ patient.introducer_info.id }}" class="admin-karte-detail-introducer-link">
             {{ patient.introducer_info.name }}
           </a>
+          {% if patient.introduced_count %}
+            <span class="admin-introducer-badge">{{ patient.introduced_count }}人紹介</span>
+          {% endif %}
         {% else %}
           なし
         {% endif %}
@@ -89,11 +92,11 @@
       <span class="admin-karte-detail-label">12. 既往歴・注意事項</span>
       <span class="admin-karte-detail-value">
         {% if patient.heart or patient.pregnant or patient.chronic or patient.surgery or patient.under_medical %}
-          {% if patient.heart %}心疾患あり{% endif %}
-          {% if patient.pregnant %}妊娠中{% endif %}
-          {% if patient.chronic %}慢性疾患あり{% endif %}
-          {% if patient.surgery %}手術歴あり{% endif %}
-          {% if patient.under_medical %}医療機関受診中{% endif %}
+          {% if patient.heart %}心疾患あり　{% endif %}
+          {% if patient.pregnant %}妊娠中・可能性あり　{% endif %}
+          {% if patient.chronic %}慢性疾患あり　{% endif %}
+          {% if patient.surgery %}手術歴あり　{% endif %}
+          {% if patient.under_medical %}医療機関受診中　{% endif %}
         {% else %}
           なし
         {% endif %}
@@ -139,6 +142,11 @@
       <span class="admin-karte-detail-value">
         {{ patient.last_visit_date if patient.last_visit_date else '未記録' }}
       </span>
+    </div>
+    
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">18. 備考</span>
+      <span class="admin-karte-detail-value">{{ patient.note or '未入力' }}</span>
     </div>
   </div>
 </div>
