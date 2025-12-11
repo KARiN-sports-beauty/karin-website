@@ -276,14 +276,37 @@ def calc_age(birthday_str):
     return age
 
 
-def format_datetime(dt_str):
-    if dt_str:
-        try:
-            dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M")
-            return dt.strftime("%Y年%m月%d日 %H:%M")
-        except ValueError:
-            return dt_str
-    return ""
+def normalize_datetime(dt):
+    """
+    入力された日時文字列を PostgreSQL が受け取れる ISO8601 に統一する。
+    日本語形式（2025年12月31日 23:59）なども吸収。
+    """
+    if not dt:
+        return None
+
+    dt = dt.strip()
+
+    # すでに ISO（2025-12-31T23:59）ならそのまま
+    if "T" in dt and "-" in dt:
+        return dt
+
+    # 日本語やスラッシュ形式を yyyy-mm-dd hh:mm に揃える
+    dt = (
+        dt.replace("年", "-")
+          .replace("月", "-")
+          .replace("日", "")
+          .replace("/", "-")
+    )
+
+    # "2025-12-31 23:59" → "2025-12-31T23:59"
+    if " " in dt:
+        parts = dt.split(" ")
+        if len(parts) == 2:
+            date_part, time_part = parts
+            return f"{date_part}T{time_part}"
+
+    return None
+
 
 
 def load_schedule():
@@ -395,9 +418,10 @@ def submit_form():
         signature = request.form.get("signature", "").strip()
         
         # 希望日をフォーマット
-        preferred_date1 = format_datetime(request.form.get("preferred_date1"))
-        preferred_date2 = format_datetime(request.form.get("preferred_date2"))
-        preferred_date3 = format_datetime(request.form.get("preferred_date3"))
+        preferred_date1 = normalize_datetime(request.form.get("preferred_date1"))
+        preferred_date2 = normalize_datetime(request.form.get("preferred_date2"))
+        preferred_date3 = normalize_datetime(request.form.get("preferred_date3"))
+
         
         # agreed_atをYYYY-MM-DD形式で作成
         agree_year = request.form.get("agree_year", "").strip()
@@ -454,7 +478,7 @@ def submit_form():
 メール：{email}
 住所：{address}
 紹介者：{introducer if introducer else 'なし'}
-第1希望：{preferred_date1}
+第1希望：{to_jst(preferred_date1) if preferred_date1 else "未入力"}
 主訴：{chief_complaint}
 """
         send_line_message(line_message)
