@@ -1330,18 +1330,52 @@ form .admin-news-btn {
 }
 
 /* カルテ新規作成・編集フォーム用スタイル */
-.admin-form-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.admin-form-col {
-  flex: 1;
+/* スマホ表示（デフォルト）：1カラム縦並び */
+.admin-karte-form {
+  max-width: 700px;
 }
 
 .admin-form-field {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+/* PC表示（768px以上）：CSS Gridで横並び */
+@media (min-width: 768px) {
+  .admin-karte-form {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  
+  /* 1-4番目：4列（姓/名/生年月日/性別） */
+  .admin-karte-form .admin-form-field:nth-child(1),
+  .admin-karte-form .admin-form-field:nth-child(2),
+  .admin-karte-form .admin-form-field:nth-child(3),
+  .admin-karte-form .admin-form-field:nth-child(4) {
+    grid-column: span 1;
+  }
+  
+  /* 5-6番目：セイ/メイ（各1列） */
+  .admin-karte-form .admin-form-field:nth-child(5),
+  .admin-karte-form .admin-form-field:nth-child(6) {
+    grid-column: span 1;
+  }
+  
+  /* 7番目：区分（3列目から2列分） */
+  .admin-karte-form .admin-form-field:nth-child(7) {
+    grid-column: 3 / 5;
+  }
+  
+  /* 8-9番目：2列（紹介者） */
+  .admin-karte-form .admin-form-field:nth-child(8),
+  .admin-karte-form .admin-form-field:nth-child(9) {
+    grid-column: span 2;
+  }
+  
+  /* アクションボタンは全幅 */
+  .admin-form-actions {
+    grid-column: 1 / -1;
+  }
 }
 
 .admin-form-label {
@@ -1379,7 +1413,7 @@ form .admin-news-btn {
 .admin-form-actions {
   display: flex;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 /* 紹介者検索用のスペーシング */
@@ -1389,11 +1423,7 @@ form .admin-news-btn {
 
 /* 紹介者セレクトのサイズ調整 */
 #introducer_select {
-  max-height: 150px;
+  max-height: 120px;
 }
 
-/* カルテフォームコンテナ */
-.admin-karte-form {
-  max-width: 700px;
-}
 

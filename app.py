@@ -394,9 +394,16 @@ def form():
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
     try:
-        # フォームデータ取得
-        name = request.form.get("name", "").strip()
-        kana = request.form.get("kana", "").strip()
+        # フォームデータ取得（姓名分離）
+        last_name = request.form.get("last_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_kana = request.form.get("last_kana", "").strip()
+        first_kana = request.form.get("first_kana", "").strip()
+        
+        # name / kana を自動生成（半角スペース1つで結合）
+        name = f"{last_name} {first_name}".strip()
+        kana = f"{last_kana} {first_kana}".strip()
+        
         birthday = request.form.get("birthday")
         gender = request.form.get("gender", "").strip()
         phone = request.form.get("phone", "").strip()
@@ -431,6 +438,10 @@ def submit_form():
         
         # Supabase patientsテーブルに保存（DBスキーマと完全同期）
         patient_data = {
+            "last_name": last_name,
+            "first_name": first_name,
+            "last_kana": last_kana,
+            "first_kana": first_kana,
             "name": name,
             "kana": kana,
             "birthday": birthday,
@@ -1399,20 +1410,28 @@ def admin_karte_new():
 
     # POST処理
     try:
+        # 姓名分離フィールドを取得
+        last_name = request.form.get("last_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_kana = request.form.get("last_kana", "").strip()
+        first_kana = request.form.get("first_kana", "").strip()
+        
+        # name / kana を自動生成（半角スペース1つで結合）
+        name = f"{last_name} {first_name}".strip()
+        kana = f"{last_kana} {first_kana}".strip()
+        
         data = {
-            "name": request.form.get("name", "").strip(),
-            "kana": request.form.get("kana", "").strip(),
+            "last_name": last_name,
+            "first_name": first_name,
+            "last_kana": last_kana,
+            "first_kana": first_kana,
+            "name": name,
+            "kana": kana,
             "birthday": request.form.get("birthday", "").strip() or None,
             "gender": request.form.get("gender", "").strip(),
             "category": request.form.get("category", "").strip(),
-            "phone": request.form.get("phone", "").strip(),
-            "email": request.form.get("email", "").strip(),
-            "postal_code": request.form.get("postal_code", "").strip(),
-            "address": request.form.get("address", "").strip(),
             "introducer": request.form.get("introducer", "").strip(),
             "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
-            "chief_complaint": request.form.get("chief_complaint", "").strip(),
-            "note": request.form.get("note", "").strip(),
             "created_at": now_iso()
         }
         
@@ -1609,9 +1628,23 @@ def admin_karte_edit(patient_id):
     
     # POST処理
     try:
+        # 姓名分離フィールドを取得
+        last_name = request.form.get("last_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_kana = request.form.get("last_kana", "").strip()
+        first_kana = request.form.get("first_kana", "").strip()
+        
+        # name / kana を自動生成（半角スペース1つで結合）
+        name = f"{last_name} {first_name}".strip()
+        kana = f"{last_kana} {first_kana}".strip()
+        
         update_data = {
-            "name": request.form.get("name", "").strip(),
-            "kana": request.form.get("kana", "").strip(),
+            "last_name": last_name,
+            "first_name": first_name,
+            "last_kana": last_kana,
+            "first_kana": first_kana,
+            "name": name,
+            "kana": kana,
             "birthday": request.form.get("birthday", "").strip() or None,
             "gender": request.form.get("gender", "").strip(),
             "category": request.form.get("category", "").strip(),

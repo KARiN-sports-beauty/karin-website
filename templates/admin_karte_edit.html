@@ -14,13 +14,23 @@
 
 <form method="POST" action="/admin/karte/{{ patient.id }}/edit" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">名前</label>
-    <input type="text" name="name" value="{{ patient.name or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">姓</label>
+    <input type="text" name="last_name" value="{{ patient.last_name or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
   
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">フリガナ</label>
-    <input type="text" name="kana" value="{{ patient.kana or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">名</label>
+    <input type="text" name="first_name" value="{{ patient.first_name or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">セイ</label>
+    <input type="text" name="last_kana" value="{{ patient.last_kana or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メイ</label>
+    <input type="text" name="first_kana" value="{{ patient.first_kana or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
   
   <div style="margin-bottom: 20px;">
