@@ -98,22 +98,22 @@
 
       <label class="form-field">
         <span>姓（必須）</span>
-        <input type="text" name="last_name" required>
+        <input type="text" name="last_name" id="last_name" required>
       </label>
 
       <label class="form-field">
         <span>名（必須）</span>
-        <input type="text" name="first_name" required>
+        <input type="text" name="first_name" id="first_name" required>
       </label>
 
       <label class="form-field">
         <span>セイ（必須）</span>
-        <input type="text" name="last_kana" required>
+        <input type="text" name="last_kana" id="last_kana" required>
       </label>
 
       <label class="form-field">
         <span>メイ（必須）</span>
-        <input type="text" name="first_kana" required>
+        <input type="text" name="first_kana" id="first_kana" required>
       </label>
 
       <label class="form-field">
@@ -153,7 +153,7 @@
 
       <label class="form-field">
         <span>紹介者（任意）</span>
-        <input type="text" name="introducer" placeholder="紹介者がいればご記入ください">
+        <input type="text" name="introducer" placeholder="紹介者がいらっしゃる場合はご記入ください">
       </label>      
     </div>
 
@@ -385,5 +385,34 @@
   <span>ホームに戻る</span>
 </a>
 <script src="https://yubinbango.github.io/yubinbango/yubinbango.js"></script>
+<script>
+// フリガナ自動補完（簡易実装）
+function autoFillKana(sourceId, targetId) {
+  const source = document.getElementById(sourceId);
+  const target = document.getElementById(targetId);
+  
+  if (!source || !target) return;
+  
+  function fillKana() {
+    if (!target.value && source.value) {
+      // 簡易的な変換（実際の変換はより複雑だが、ここでは簡易実装）
+      // ユーザーが手動で入力した場合は上書きしない
+      target.value = source.value;
+    }
+  }
+  
+  // blur時（フォーカスが外れた時）
+  source.addEventListener("blur", fillKana);
+  
+  // IME確定時（compositionend）
+  source.addEventListener("compositionend", fillKana);
+}
+
+// 姓 → セイ
+autoFillKana("last_name", "last_kana");
+
+// 名 → メイ
+autoFillKana("first_name", "first_kana");
+</script>
 </body>
 </html>

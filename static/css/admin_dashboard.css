@@ -1352,7 +1352,7 @@ form .admin-news-btn {
   .admin-karte-form {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    column-gap: 16px;
+    column-gap: 20px;
     row-gap: 28px;
   }
   
@@ -1410,6 +1410,16 @@ form .admin-news-btn {
   border-radius: 6px;
   font-size: 0.95rem;
   font-family: inherit;
+  margin-bottom: 0;
+}
+
+/* 同一フィールド内でinput/selectが連続する場合のスペース */
+.admin-form-field .admin-form-input + .admin-form-select,
+.admin-form-field .admin-form-input + .admin-form-textarea,
+.admin-form-field .admin-form-select + .admin-form-input,
+.admin-form-field .admin-form-select + .admin-form-select,
+.admin-form-field .admin-form-input + .admin-form-input {
+  margin-top: 12px;
 }
 
 .admin-form-input:focus,
@@ -1433,13 +1443,24 @@ form .admin-news-btn {
 
 /* 紹介者検索用のスペーシング */
 #introducer_search {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 /* 紹介者セレクトのサイズ調整 */
 #introducer_select {
   max-height: 120px;
-  margin-top: 0;
+  margin-top: 12px;
+}
+
+/* スマホ表示時もinput/select間のスペースを確保 */
+@media (max-width: 767px) {
+  .admin-form-field .admin-form-input + .admin-form-select,
+  .admin-form-field .admin-form-input + .admin-form-textarea,
+  .admin-form-field .admin-form-select + .admin-form-input,
+  .admin-form-field .admin-form-select + .admin-form-select,
+  .admin-form-field .admin-form-input + .admin-form-input {
+    margin-top: 12px;
+  }
 }
 
 
