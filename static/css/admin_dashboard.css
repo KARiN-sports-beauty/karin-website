@@ -1333,16 +1333,17 @@ form .admin-news-btn {
 /* スマホ表示（デフォルト）：1カラム縦並び */
 .admin-karte-form {
   max-width: 700px;
+  padding: 20px 0;
 }
 
 .admin-form-field {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 /* スマホ表示での行間調整 */
 @media (max-width: 767px) {
   .admin-form-field {
-    margin-bottom: 16px;
+    margin-bottom: 24px;
   }
 }
 
@@ -1351,8 +1352,8 @@ form .admin-news-btn {
   .admin-karte-form {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    column-gap: 10px;
-    row-gap: 20px;
+    column-gap: 16px;
+    row-gap: 28px;
   }
   
   /* PC表示時は各フィールドのmargin-bottomを0にして、Gridのrow-gapで制御 */
@@ -1388,13 +1389,13 @@ form .admin-news-btn {
   /* アクションボタンは全幅 */
   .admin-form-actions {
     grid-column: 1 / -1;
-    margin-top: 24px;
+    margin-top: 32px;
   }
 }
 
 .admin-form-label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   font-weight: 600;
   color: #1E3A5F;
   font-size: 0.9rem;
@@ -1404,7 +1405,7 @@ form .admin-news-btn {
 .admin-form-select,
 .admin-form-textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.95rem;
@@ -1427,12 +1428,12 @@ form .admin-news-btn {
 .admin-form-actions {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 /* 紹介者検索用のスペーシング */
 #introducer_search {
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 /* 紹介者セレクトのサイズ調整 */
