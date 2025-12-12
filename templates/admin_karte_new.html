@@ -6,7 +6,7 @@
 
 {% if get_flashed_messages() %}
   {% for message in get_flashed_messages(with_categories=true) %}
-    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 12px; padding: 10px; border-radius: 6px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %}; font-size: 0.9rem;">
       {{ message[1] }}
     </div>
   {% endfor %}
@@ -109,13 +109,13 @@
   <!-- 主訴（1カラム） -->
   <div class="admin-form-field">
     <label class="admin-form-label">主訴</label>
-    <textarea name="chief_complaint" rows="3" class="admin-form-textarea" placeholder="主訴を入力"></textarea>
+    <textarea name="chief_complaint" rows="2" class="admin-form-textarea" placeholder="主訴を入力"></textarea>
   </div>
   
   <!-- 備考（1カラム） -->
   <div class="admin-form-field">
     <label class="admin-form-label">備考</label>
-    <textarea name="note" rows="5" class="admin-form-textarea" placeholder="備考を入力"></textarea>
+    <textarea name="note" rows="3" class="admin-form-textarea" placeholder="備考を入力"></textarea>
   </div>
   
   <!-- アクションボタン -->
