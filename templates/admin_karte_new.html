@@ -75,7 +75,7 @@
   <div class="admin-form-field">
     <label class="admin-form-label">紹介者（検索して選択）</label>
     <input type="text" id="introducer_search" placeholder="名前・フリガナで検索" class="admin-form-input">
-    <select id="introducer_select" name="introduced_by_patient_id" size="4" class="admin-form-select" style="margin-top: 6px;">
+    <select id="introducer_select" name="introduced_by_patient_id" size="4" class="admin-form-select">
       <option value="">選択なし</option>
       {% for p in all_patients %}
         <option value="{{ p.id }}">{{ p.id }}：{{ p.name }}（{{ p.kana }}）</option>

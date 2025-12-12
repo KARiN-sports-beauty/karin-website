@@ -1336,7 +1336,14 @@ form .admin-news-btn {
 }
 
 .admin-form-field {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+/* スマホ表示での行間調整 */
+@media (max-width: 767px) {
+  .admin-form-field {
+    margin-bottom: 16px;
+  }
 }
 
 /* PC表示（768px以上）：CSS Gridで横並び */
@@ -1344,7 +1351,13 @@ form .admin-news-btn {
   .admin-karte-form {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    column-gap: 10px;
+    row-gap: 20px;
+  }
+  
+  /* PC表示時は各フィールドのmargin-bottomを0にして、Gridのrow-gapで制御 */
+  .admin-karte-form .admin-form-field {
+    margin-bottom: 0;
   }
   
   /* 1-4番目：4列（姓/名/生年月日/性別） */
@@ -1375,6 +1388,7 @@ form .admin-news-btn {
   /* アクションボタンは全幅 */
   .admin-form-actions {
     grid-column: 1 / -1;
+    margin-top: 24px;
   }
 }
 
@@ -1418,12 +1432,13 @@ form .admin-news-btn {
 
 /* 紹介者検索用のスペーシング */
 #introducer_search {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 /* 紹介者セレクトのサイズ調整 */
 #introducer_select {
   max-height: 120px;
+  margin-top: 0;
 }
 
 
