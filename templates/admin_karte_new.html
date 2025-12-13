@@ -102,24 +102,64 @@ document.getElementById("introducer_search").addEventListener("input", function(
   });
 });
 
-// フリガナ自動補完（簡易実装）
+// ひらがなをカタカナに変換する関数
+function hiraganaToKatakana(str) {
+  return str.replace(/[ぁ-ゖ]/g, function(match) {
+    return String.fromCharCode(match.charCodeAt(0) + 0x60);
+  });
+}
+
+// フリガナ自動補完（IME入力中の読み仮名をカタカナに変換）
 function autoFillKana(sourceId, targetId) {
   const source = document.getElementById(sourceId);
   const target = document.getElementById(targetId);
   
-  function fillKana() {
-    if (!target.value && source.value) {
-      // 簡易的な変換（実際の変換はより複雑だが、ここでは簡易実装）
-      // ユーザーが手動で入力した場合は上書きしない
-      target.value = source.value;
+  if (!source || !target) return;
+  
+  let compositionText = "";
+  
+  // IME入力開始時
+  source.addEventListener("compositionstart", function() {
+    compositionText = "";
+  });
+  
+  // IME入力中（読み仮名を取得）
+  source.addEventListener("compositionupdate", function(e) {
+    // e.dataに読み仮名が含まれている場合がある（ブラウザ依存）
+    if (e.data) {
+      compositionText = e.data;
+      // 読み仮名をカタカナに変換して反映
+      if (!target.value || target.value === hiraganaToKatakana(compositionText)) {
+        target.value = hiraganaToKatakana(compositionText);
+      }
     }
-  }
+  });
   
-  // blur時（フォーカスが外れた時）
-  source.addEventListener("blur", fillKana);
+  // IME確定時
+  source.addEventListener("compositionend", function(e) {
+    // 確定後の文字列を取得
+    const finalValue = e.data || source.value;
+    
+    // ひらがなまたはカタカナのみの場合、カタカナに変換
+    if (/^[ぁ-ゖァ-ヶー\s]*$/.test(finalValue)) {
+      const katakanaValue = hiraganaToKatakana(finalValue);
+      if (!target.value || target.value === katakanaValue) {
+        target.value = katakanaValue;
+      }
+    }
+    compositionText = "";
+  });
   
-  // IME確定時（compositionend）
-  source.addEventListener("compositionend", fillKana);
+  // blur時（フォーカスが外れた時）も最終確認
+  source.addEventListener("blur", function() {
+    if (!target.value && source.value) {
+      const sourceValue = source.value;
+      // ひらがなまたはカタカナのみの場合、カタカナに変換
+      if (/^[ぁ-ゖァ-ヶー\s]*$/.test(sourceValue)) {
+        target.value = hiraganaToKatakana(sourceValue);
+      }
+    }
+  });
 }
 
 // 姓 → セイ

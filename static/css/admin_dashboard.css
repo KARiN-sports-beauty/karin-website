@@ -1337,42 +1337,48 @@ form .admin-news-btn {
 }
 
 .admin-form-field {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-/* スマホ表示での行間調整 */
-@media (max-width: 767px) {
-  .admin-form-field {
-    margin-bottom: 24px;
-  }
-}
-
-/* PC表示（768px以上）：CSS Gridで横並び */
+/* タブレット表示（768px〜1023px）：2カラムGrid */
 @media (min-width: 768px) {
   .admin-karte-form {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    column-gap: 20px;
-    row-gap: 28px;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-flow: row;
+    column-gap: 16px;
+    row-gap: 20px;
   }
   
-  /* PC表示時は各フィールドのmargin-bottomを0にして、Gridのrow-gapで制御 */
+  /* Grid有効時は各フィールドのmargin-bottomを0にして、Gridのrow-gapで制御 */
   .admin-karte-form .admin-form-field {
     margin-bottom: 0;
   }
   
-  /* 1-4番目：4列（姓/名/生年月日/性別） */
-  .admin-karte-form .admin-form-field:nth-child(1),
-  .admin-karte-form .admin-form-field:nth-child(2),
-  .admin-karte-form .admin-form-field:nth-child(3),
-  .admin-karte-form .admin-form-field:nth-child(4) {
-    grid-column: span 1;
+  /* 7番目：区分（2列目に配置） */
+  .admin-karte-form .admin-form-field:nth-child(7) {
+    grid-column: 2 / 3;
   }
   
-  /* 5-6番目：セイ/メイ（各1列） */
-  .admin-karte-form .admin-form-field:nth-child(5),
-  .admin-karte-form .admin-form-field:nth-child(6) {
-    grid-column: span 1;
+  /* 8-9番目：紹介者（各2列分 = 全幅） */
+  .admin-karte-form .admin-form-field:nth-child(8),
+  .admin-karte-form .admin-form-field:nth-child(9) {
+    grid-column: 1 / -1;
+  }
+  
+  /* アクションボタンは全幅 */
+  .admin-form-actions {
+    grid-column: 1 / -1;
+    margin-top: 28px;
+  }
+}
+
+/* PC表示（1024px以上）：4カラムGrid */
+@media (min-width: 1024px) {
+  .admin-karte-form {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 20px;
+    row-gap: 24px;
   }
   
   /* 7番目：区分（3列目から2列分） */
@@ -1380,7 +1386,7 @@ form .admin-news-btn {
     grid-column: 3 / 5;
   }
   
-  /* 8-9番目：2列（紹介者） */
+  /* 8-9番目：紹介者（各2列分） */
   .admin-karte-form .admin-form-field:nth-child(8),
   .admin-karte-form .admin-form-field:nth-child(9) {
     grid-column: span 2;
@@ -1388,7 +1394,6 @@ form .admin-news-btn {
   
   /* アクションボタンは全幅 */
   .admin-form-actions {
-    grid-column: 1 / -1;
     margin-top: 32px;
   }
 }
