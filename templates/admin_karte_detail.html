@@ -92,25 +92,40 @@
       <span class="admin-karte-detail-label">12. 既往歴・注意事項</span>
       <span class="admin-karte-detail-value">
         {% set has_content = false %}
-        {% if patient.heart and patient.heart|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
-          {% set has_content = true %}
-          心疾患：{{ patient.heart }}　
+        {% if patient.heart and patient.heart != '' and patient.heart != None %}
+          {% set heart_normalized = (patient.heart|string|replace(' ', '')|replace('　', '')|replace('。', '')|replace('、', '')|lower) %}
+          {% if heart_normalized not in ['なし', '無し', 'ない', 'ないし', ''] %}
+            {% set has_content = true %}
+            心疾患：{{ patient.heart }}　
+          {% endif %}
         {% endif %}
-        {% if patient.pregnant and patient.pregnant|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
-          {% set has_content = true %}
-          妊娠：{{ patient.pregnant }}　
+        {% if patient.pregnant and patient.pregnant != '' and patient.pregnant != None %}
+          {% set pregnant_normalized = (patient.pregnant|string|replace(' ', '')|replace('　', '')|replace('。', '')|replace('、', '')|lower) %}
+          {% if pregnant_normalized not in ['なし', '無し', 'ない', 'ないし', ''] %}
+            {% set has_content = true %}
+            妊娠：{{ patient.pregnant }}　
+          {% endif %}
         {% endif %}
-        {% if patient.chronic and patient.chronic|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
-          {% set has_content = true %}
-          慢性疾患：{{ patient.chronic }}　
+        {% if patient.chronic and patient.chronic != '' and patient.chronic != None %}
+          {% set chronic_normalized = (patient.chronic|string|replace(' ', '')|replace('　', '')|replace('。', '')|replace('、', '')|lower) %}
+          {% if chronic_normalized not in ['なし', '無し', 'ない', 'ないし', ''] %}
+            {% set has_content = true %}
+            慢性疾患：{{ patient.chronic }}　
+          {% endif %}
         {% endif %}
-        {% if patient.surgery and patient.surgery|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
-          {% set has_content = true %}
-          手術歴：{{ patient.surgery }}　
+        {% if patient.surgery and patient.surgery != '' and patient.surgery != None %}
+          {% set surgery_normalized = (patient.surgery|string|replace(' ', '')|replace('　', '')|replace('。', '')|replace('、', '')|lower) %}
+          {% if surgery_normalized not in ['なし', '無し', 'ない', 'ないし', ''] %}
+            {% set has_content = true %}
+            手術歴：{{ patient.surgery }}　
+          {% endif %}
         {% endif %}
-        {% if patient.under_medical and patient.under_medical|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
-          {% set has_content = true %}
-          医療機関受診中：{{ patient.under_medical }}　
+        {% if patient.under_medical and patient.under_medical != '' and patient.under_medical != None %}
+          {% set medical_normalized = (patient.under_medical|string|replace(' ', '')|replace('　', '')|replace('。', '')|replace('、', '')|lower) %}
+          {% if medical_normalized not in ['なし', '無し', 'ない', 'ないし', ''] %}
+            {% set has_content = true %}
+            医療機関受診中：{{ patient.under_medical }}　
+          {% endif %}
         {% endif %}
         {% if not has_content %}
           なし

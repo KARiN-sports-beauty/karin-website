@@ -1374,7 +1374,7 @@ form .admin-news-btn {
 
 @media (min-width: 1024px) {
   .admin-karte-form {
-    display: grid;
+    display: grid; /* ← これが無いのが致命傷 */
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-template-areas:
       "last first birthday gender"
