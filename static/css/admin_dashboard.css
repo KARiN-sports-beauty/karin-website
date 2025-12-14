@@ -1379,42 +1379,62 @@ form .admin-news-btn {
     row-gap: 24px;
   }
 
-  /*
-    div.admin-form-field のみをカウントする
-    （コメントやテキストノードは無視される）
-  */
-
-  /* ===== 1行目：姓・名・セイ・メイ ===== */
-  .admin-karte-form .admin-form-field:nth-of-type(1),
-  .admin-karte-form .admin-form-field:nth-of-type(2),
-  .admin-karte-form .admin-form-field:nth-of-type(3),
-  .admin-karte-form .admin-form-field:nth-of-type(4) {
-    grid-column: span 1;
+  /* ========= 1行目 ========= */
+  /* 姓 */
+  .admin-karte-form .admin-form-field:nth-of-type(1) {
+    grid-column: 1 / 2;
   }
 
-  /* ===== 2行目：生年月日・性別 ===== */
-  .admin-karte-form .admin-form-field:nth-of-type(5),
+  /* 名 */
+  .admin-karte-form .admin-form-field:nth-of-type(2) {
+    grid-column: 2 / 3;
+  }
+
+  /* 生年月日 */
+  .admin-karte-form .admin-form-field:nth-of-type(5) {
+    grid-column: 3 / 4;
+  }
+
+  /* 性別 */
   .admin-karte-form .admin-form-field:nth-of-type(6) {
-    grid-column: span 1;
+    grid-column: 4 / 5;
   }
 
-  /* ===== 2行目：区分（2列分） ===== */
+  /* ========= 2行目 ========= */
+  /* セイ */
+  .admin-karte-form .admin-form-field:nth-of-type(3) {
+    grid-column: 1 / 2;
+  }
+
+  /* メイ */
+  .admin-karte-form .admin-form-field:nth-of-type(4) {
+    grid-column: 2 / 3;
+  }
+
+  /* 区分 */
   .admin-karte-form .admin-form-field:nth-of-type(7) {
-    grid-column: span 2;
+    grid-column: 3 / 4;
+  }
+  /* 4列目は何も置かない（空き） */
+
+  /* ========= 3行目 ========= */
+  /* 紹介者（自由） */
+  .admin-karte-form .admin-form-field:nth-of-type(8) {
+    grid-column: 1 / 3;
   }
 
-  /* ===== 3行目：紹介者（各2列） ===== */
-  .admin-karte-form .admin-form-field:nth-of-type(8),
+  /* 紹介者（検索） */
   .admin-karte-form .admin-form-field:nth-of-type(9) {
-    grid-column: span 2;
+    grid-column: 3 / 5;
   }
 
-  /* ===== アクションボタン ===== */
+  /* アクションボタン */
   .admin-form-actions {
     grid-column: 1 / -1;
     margin-top: 32px;
   }
 }
+
 
 
 
