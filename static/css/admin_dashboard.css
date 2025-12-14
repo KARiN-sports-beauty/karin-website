@@ -1374,36 +1374,30 @@ form .admin-news-btn {
 
 @media (min-width: 1024px) {
   .admin-karte-form {
-    display: grid; /* ← これが無いのが致命傷 */
+    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-template-areas:
       "last first birthday gender"
-      "last_kana first_kana empty empty"
-      "category empty empty empty"
-      "introducer_free introducer_free introducer_free introducer_free"
-      "introducer_search introducer_search introducer_search introducer_search";
-    min-width: 0; /* ← grid内input潰れ防止 */
+      "last_kana first_kana category empty"
+      "introducer_free introducer_search introducer_search introducer_search";
+    min-width: 0;
     column-gap: 32px;
     row-gap: 28px;
   }
 
-  /* ===== 1行目 ===== */
+  /* ===== 1行目：姓 | 名 | 生年月日 | 性別 ===== */
   .admin-form-field:nth-of-type(1) { grid-area: last; }        /* 姓 */
-  .admin-form-field:nth-of-type(2) { grid-area: first; }       /* 名 */
-  .admin-form-field:nth-of-type(5) { grid-area: birthday; }    /* 生年月日 */
-  .admin-form-field:nth-of-type(6) { grid-area: gender; }      /* 性別 */
+  .admin-form-field:nth-of-type(2) { grid-area: first; }        /* 名 */
+  .admin-form-field:nth-of-type(5) { grid-area: birthday; }     /* 生年月日 */
+  .admin-form-field:nth-of-type(6) { grid-area: gender; }       /* 性別 */
 
-  /* ===== 2行目 ===== */
-  .admin-form-field:nth-of-type(3) { grid-area: last_kana; }   /* セイ */
-  .admin-form-field:nth-of-type(4) { grid-area: first_kana; }  /* メイ */
+  /* ===== 2行目：セイ | メイ | 区分 | （空） ===== */
+  .admin-form-field:nth-of-type(3) { grid-area: last_kana; }     /* セイ */
+  .admin-form-field:nth-of-type(4) { grid-area: first_kana; }    /* メイ */
+  .admin-form-field:nth-of-type(7) { grid-area: category; }       /* 区分 */
 
-  /* ===== 3行目 ===== */
-  .admin-form-field:nth-of-type(7) { grid-area: category; }    /* 区分 */
-
-  /* ===== 4行目 ===== */
+  /* ===== 3行目：紹介者（自由） | 紹介者（検索） ===== */
   .admin-form-field:nth-of-type(8) { grid-area: introducer_free; }
-
-  /* ===== 5行目 ===== */
   .admin-form-field:nth-of-type(9) { grid-area: introducer_search; }
 
   /* ボタン */
