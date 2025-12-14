@@ -91,15 +91,27 @@
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">12. 既往歴・注意事項</span>
       <span class="admin-karte-detail-value">
-        {% if patient.heart or patient.pregnant or patient.chronic or patient.surgery or patient.under_medical %}
-          {% if patient.heart %}心疾患あり　{% endif %}
-          {% if patient.pregnant %}妊娠中・可能性あり　{% endif %}
-          {% if patient.chronic %}慢性疾患あり　{% endif %}
-          {% if patient.surgery %}手術歴あり　{% endif %}
-          {% if patient.under_medical %}医療機関受診中　{% endif %}
-        {% else %}
+        {%- set items = [] -%}
+        {%- if patient.heart and patient.heart.strip() -%}
+          {%- set _ = items.append('心疾患：' + patient.heart) -%}
+        {%- endif -%}
+        {%- if patient.pregnant and patient.pregnant.strip() -%}
+          {%- set _ = items.append('妊娠：' + patient.pregnant) -%}
+        {%- endif -%}
+        {%- if patient.chronic and patient.chronic.strip() -%}
+          {%- set _ = items.append('慢性疾患：' + patient.chronic) -%}
+        {%- endif -%}
+        {%- if patient.surgery and patient.surgery.strip() -%}
+          {%- set _ = items.append('手術歴：' + patient.surgery) -%}
+        {%- endif -%}
+        {%- if patient.under_medical and patient.under_medical.strip() -%}
+          {%- set _ = items.append('医療機関受診中：' + patient.under_medical) -%}
+        {%- endif -%}
+        {%- if items -%}
+          {{ items | join('　') }}
+        {%- else -%}
           なし
-        {% endif %}
+        {%- endif -%}
       </span>
     </div>
     
