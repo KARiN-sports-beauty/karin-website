@@ -1380,20 +1380,20 @@ form .admin-news-btn {
       "last first birthday gender"
       "last_kana first_kana category empty"
       "introducer_free introducer_search introducer_search introducer_search";
-    column-gap: 32px;   /* ← 横の隙間を明確に */
-    row-gap: 28px;      /* ← 縦も少し広めに */
+    column-gap: 32px;
+    row-gap: 28px;
   }
 
   /* ===== 1行目 ===== */
-  .admin-form-field:nth-of-type(1) { grid-area: last; }
-  .admin-form-field:nth-of-type(2) { grid-area: first; }
-  .admin-form-field:nth-of-type(5) { grid-area: birthday; }
-  .admin-form-field:nth-of-type(6) { grid-area: gender; }
+  .admin-form-field:nth-of-type(1) { grid-area: last; }        /* 姓 */
+  .admin-form-field:nth-of-type(2) { grid-area: first; }       /* 名 */
+  .admin-form-field:nth-of-type(5) { grid-area: birthday; }    /* 生年月日 */
+  .admin-form-field:nth-of-type(6) { grid-area: gender; }      /* 性別 */
 
   /* ===== 2行目 ===== */
-  .admin-form-field:nth-of-type(3) { grid-area: last_kana; }
-  .admin-form-field:nth-of-type(4) { grid-area: first_kana; }
-  .admin-form-field:nth-of-type(7) { grid-area: category; }
+  .admin-form-field:nth-of-type(3) { grid-area: last_kana; }   /* セイ */
+  .admin-form-field:nth-of-type(4) { grid-area: first_kana; }  /* メイ */
+  .admin-form-field:nth-of-type(7) { grid-area: category; }    /* 区分 */
 
   /* ===== 3行目 ===== */
   .admin-form-field:nth-of-type(8) { grid-area: introducer_free; }
@@ -1405,8 +1405,6 @@ form .admin-news-btn {
     margin-top: 36px;
   }
 }
-
-
 
 
 
