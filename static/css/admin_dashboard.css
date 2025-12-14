@@ -1369,59 +1369,53 @@ form .admin-news-btn {
   }
 }
 
-/* PC表示（1024px以上）：4カラムGrid */
+
 /* PC表示（1024px以上）：4カラムGrid */
 @media (min-width: 1024px) {
   .admin-karte-form {
+    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     column-gap: 20px;
     row-gap: 24px;
   }
 
   /*
-    HTML順（重要）：
-    1 姓
-    2 名
-    3 セイ
-    4 メイ
-    5 生年月日
-    6 性別
-    7 区分
-    8 紹介者（自由）
-    9 紹介者（検索）
+    div.admin-form-field のみをカウントする
+    （コメントやテキストノードは無視される）
   */
 
-  /* ========= 1行目：姓・名・生年月日・性別 ========= */
-  .admin-karte-form .admin-form-field:nth-child(1), /* 姓 */
-  .admin-karte-form .admin-form-field:nth-child(2), /* 名 */
-  .admin-karte-form .admin-form-field:nth-child(5), /* 生年月日 */
-  .admin-karte-form .admin-form-field:nth-child(6)  /* 性別 */ {
+  /* ===== 1行目：姓・名・セイ・メイ ===== */
+  .admin-karte-form .admin-form-field:nth-of-type(1),
+  .admin-karte-form .admin-form-field:nth-of-type(2),
+  .admin-karte-form .admin-form-field:nth-of-type(3),
+  .admin-karte-form .admin-form-field:nth-of-type(4) {
     grid-column: span 1;
   }
 
-  /* ========= 2行目：セイ・メイ ========= */
-  .admin-karte-form .admin-form-field:nth-child(3), /* セイ */
-  .admin-karte-form .admin-form-field:nth-child(4)  /* メイ */ {
+  /* ===== 2行目：生年月日・性別 ===== */
+  .admin-karte-form .admin-form-field:nth-of-type(5),
+  .admin-karte-form .admin-form-field:nth-of-type(6) {
     grid-column: span 1;
   }
 
-  /* ========= 2行目：区分（残り2列） ========= */
-  .admin-karte-form .admin-form-field:nth-child(7) {
+  /* ===== 2行目：区分（2列分） ===== */
+  .admin-karte-form .admin-form-field:nth-of-type(7) {
     grid-column: span 2;
   }
 
-  /* ========= 3行目：紹介者（各2列） ========= */
-  .admin-karte-form .admin-form-field:nth-child(8),
-  .admin-karte-form .admin-form-field:nth-child(9) {
+  /* ===== 3行目：紹介者（各2列） ===== */
+  .admin-karte-form .admin-form-field:nth-of-type(8),
+  .admin-karte-form .admin-form-field:nth-of-type(9) {
     grid-column: span 2;
   }
 
-  /* ========= アクションボタンは全幅 ========= */
+  /* ===== アクションボタン ===== */
   .admin-form-actions {
     grid-column: 1 / -1;
     margin-top: 32px;
   }
 }
+
 
 
 .admin-form-label {
