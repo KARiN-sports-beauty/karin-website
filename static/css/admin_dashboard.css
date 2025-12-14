@@ -1370,70 +1370,40 @@ form .admin-news-btn {
 }
 
 
-/* PC表示（1024px以上）：4カラムGrid */
 @media (min-width: 1024px) {
   .admin-karte-form {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    column-gap: 20px;
-    row-gap: 24px;
+    grid-template-areas:
+      "last first birthday gender"
+      "last_kana first_kana category empty"
+      "introducer_free introducer_search introducer_search introducer_search";
+    column-gap: 32px;   /* ← 横の隙間を明確に */
+    row-gap: 28px;      /* ← 縦も少し広めに */
   }
 
-  /* ========= 1行目 ========= */
-  /* 姓 */
-  .admin-karte-form .admin-form-field:nth-of-type(1) {
-    grid-column: 1 / 2;
-  }
+  /* ===== 1行目 ===== */
+  .admin-form-field:nth-of-type(1) { grid-area: last; }
+  .admin-form-field:nth-of-type(2) { grid-area: first; }
+  .admin-form-field:nth-of-type(5) { grid-area: birthday; }
+  .admin-form-field:nth-of-type(6) { grid-area: gender; }
 
-  /* 名 */
-  .admin-karte-form .admin-form-field:nth-of-type(2) {
-    grid-column: 2 / 3;
-  }
+  /* ===== 2行目 ===== */
+  .admin-form-field:nth-of-type(3) { grid-area: last_kana; }
+  .admin-form-field:nth-of-type(4) { grid-area: first_kana; }
+  .admin-form-field:nth-of-type(7) { grid-area: category; }
 
-  /* 生年月日 */
-  .admin-karte-form .admin-form-field:nth-of-type(5) {
-    grid-column: 3 / 4;
-  }
+  /* ===== 3行目 ===== */
+  .admin-form-field:nth-of-type(8) { grid-area: introducer_free; }
+  .admin-form-field:nth-of-type(9) { grid-area: introducer_search; }
 
-  /* 性別 */
-  .admin-karte-form .admin-form-field:nth-of-type(6) {
-    grid-column: 4 / 5;
-  }
-
-  /* ========= 2行目 ========= */
-  /* セイ */
-  .admin-karte-form .admin-form-field:nth-of-type(3) {
-    grid-column: 1 / 2;
-  }
-
-  /* メイ */
-  .admin-karte-form .admin-form-field:nth-of-type(4) {
-    grid-column: 2 / 3;
-  }
-
-  /* 区分 */
-  .admin-karte-form .admin-form-field:nth-of-type(7) {
-    grid-column: 3 / 4;
-  }
-  /* 4列目は何も置かない（空き） */
-
-  /* ========= 3行目 ========= */
-  /* 紹介者（自由） */
-  .admin-karte-form .admin-form-field:nth-of-type(8) {
-    grid-column: 1 / 3;
-  }
-
-  /* 紹介者（検索） */
-  .admin-karte-form .admin-form-field:nth-of-type(9) {
-    grid-column: 3 / 5;
-  }
-
-  /* アクションボタン */
+  /* ボタン */
   .admin-form-actions {
     grid-column: 1 / -1;
-    margin-top: 32px;
+    margin-top: 36px;
   }
 }
+
 
 
 
