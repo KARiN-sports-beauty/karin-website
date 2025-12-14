@@ -78,7 +78,11 @@
     <select id="introducer_select" name="introduced_by_patient_id" size="4" class="admin-form-select">
       <option value="">選択なし</option>
       {% for p in all_patients %}
-        <option value="{{ p.id }}">{{ p.id }}：{{ p.name }}（{{ p.kana }}）</option>
+        <option value="{{ p.id }}">
+          {{ p.name }}（{{ p.kana }}）
+          {% if p.birthday %}・生年月日：{{ p.birthday }}{% endif %}
+          {% if p.introducer %}・紹介者：{{ p.introducer }}{% endif %}
+        </option>
       {% endfor %}
     </select>
   </div>

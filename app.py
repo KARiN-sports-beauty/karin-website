@@ -1398,9 +1398,9 @@ def admin_news_delete(news_id):
 @staff_required
 def admin_karte_new():
     if request.method == "GET":
-        # 全患者一覧を取得
+        # 全患者一覧を取得（姓名、生年月日、紹介者も取得）
         try:
-            res_all = supabase_admin.table("patients").select("id, name, kana").order("name").execute()
+            res_all = supabase_admin.table("patients").select("id, name, kana, birthday, introducer").order("name").execute()
             all_patients = res_all.data or []
         except Exception as e:
             print("❌ 患者一覧取得エラー:", e)
