@@ -74,17 +74,31 @@
   <!-- 入力順：9. 紹介者（検索して選択） -->
   <div class="admin-form-field">
     <label class="admin-form-label">紹介者（検索して選択）</label>
-    <input type="text" id="introducer_search" placeholder="名前・フリガナで検索" class="admin-form-input">
-    <select id="introducer_select" name="introduced_by_patient_id" size="4" class="admin-form-select">
-      <option value="">選択なし</option>
-      {% for p in all_patients %}
-        <option value="{{ p.id }}">
-          {{ p.name }}（{{ p.kana }}）
-          {% if p.birthday %}・生年月日：{{ p.birthday }}{% endif %}
-          {% if p.introducer %}・紹介者：{{ p.introducer }}{% endif %}
-        </option>
-      {% endfor %}
-    </select>
+    
+    <!-- 表示用 input -->
+    <input
+      type="text"
+      id="introducer_search"
+      class="admin-form-input"
+      placeholder="名前・フリガナで検索"
+      autocomplete="off"
+    >
+    
+    <!-- 選択結果表示 -->
+    <div id="introducer_results" class="admin-autocomplete-list"></div>
+    
+    <!-- 選択解除ボタン（初期は非表示） -->
+    <button
+      type="button"
+      id="introducer_clear"
+      class="admin-introducer-clear"
+      style="display: none;"
+    >
+      ✕ 選択解除
+    </button>
+    
+    <!-- 実際に送信するID -->
+    <input type="hidden" name="introduced_by_patient_id" id="introduced_by_patient_id">
   </div>
   
   <!-- アクションボタン -->
@@ -95,16 +109,8 @@
 </form>
 
 <script>
-// 紹介者検索フィルタ
-document.getElementById("introducer_search").addEventListener("input", function() {
-  const q = this.value.toLowerCase();
-  const options = document.querySelectorAll("#introducer_select option");
-
-  options.forEach(op => {
-    const text = op.textContent.toLowerCase();
-    op.style.display = text.includes(q) ? "block" : "none";
-  });
-});
+// all_patients を JSON で埋め込む
+const allPatients = {{ all_patients | tojson }};
 
 // ひらがなをカタカナに変換する関数
 function hiraganaToKatakana(str) {
@@ -171,6 +177,81 @@ autoFillKana("last_name", "last_kana");
 
 // 名 → メイ
 autoFillKana("first_name", "first_kana");
+
+// autocomplete ロジック
+const searchInput = document.getElementById("introducer_search");
+const resultsBox = document.getElementById("introducer_results");
+const hiddenInput = document.getElementById("introduced_by_patient_id");
+const clearBtn = document.getElementById("introducer_clear");
+
+if (searchInput && resultsBox && hiddenInput && clearBtn) {
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    resultsBox.innerHTML = "";
+
+    if (!q) {
+      resultsBox.style.display = "none";
+      hiddenInput.value = "";
+      clearBtn.style.display = "none";
+      return;
+    }
+
+    const matched = allPatients.filter(p => {
+      const searchText = `${p.last_name || ''}${p.first_name || ''}${p.last_kana || ''}${p.first_kana || ''}`.toLowerCase();
+      return searchText.includes(q);
+    });
+
+    matched.forEach(p => {
+      const item = document.createElement("div");
+      item.className = "admin-autocomplete-item";
+
+      const text = document.createElement("span");
+      const lastName = p.last_name || '';
+      const firstName = p.first_name || '';
+      const lastKana = p.last_kana || '';
+      const firstKana = p.first_kana || '';
+      const birthday = p.birthday || "生年月日不明";
+      const introducer = p.introducer || "紹介者なし";
+      
+      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducer}`;
+      item.appendChild(text);
+
+      // 紹介者数バッジ（あれば表示）
+      if (p.introduced_count && p.introduced_count > 0) {
+        const badge = document.createElement("span");
+        badge.className = "admin-introducer-badge";
+        badge.textContent = `紹介 ${p.introduced_count}`;
+        item.appendChild(badge);
+      }
+
+      item.onclick = () => {
+        searchInput.value = `${lastName} ${firstName}`;
+        hiddenInput.value = p.id;
+        resultsBox.style.display = "none";
+        clearBtn.style.display = "inline-block";
+      };
+
+      resultsBox.appendChild(item);
+    });
+
+    resultsBox.style.display = matched.length ? "block" : "none";
+  });
+
+  // 選択解除
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    hiddenInput.value = "";
+    clearBtn.style.display = "none";
+    resultsBox.style.display = "none";
+  });
+
+  // クリック外で候補リストを閉じる
+  document.addEventListener("click", (e) => {
+    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target) && !clearBtn.contains(e.target)) {
+      resultsBox.style.display = "none";
+    }
+  });
+}
 </script>
 
 {% endblock %}

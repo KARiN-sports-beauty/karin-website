@@ -1479,4 +1479,88 @@ form .admin-news-btn {
   }
 }
 
+/* autocomplete 候補リスト */
+.admin-autocomplete-list {
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  position: relative;
+}
+
+.admin-autocomplete-item {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1E3A5F;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.admin-autocomplete-item:hover {
+  background: #f5f7fb;
+}
+
+.admin-autocomplete-item:active {
+  background: #e8ecf1;
+}
+
+/* 紹介者数バッジ */
+.admin-introducer-badge {
+  background: #1E3A5F;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+/* 選択解除ボタン */
+.admin-introducer-clear {
+  margin-top: 8px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.admin-introducer-clear:hover {
+  background: #f5f7fb;
+}
+
+/* カルテ詳細：名前のフリガナ表示 */
+.admin-karte-detail-kana {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 4px;
+}
+
+/* カルテ詳細：紹介者リンク */
+.admin-karte-detail-introducer-link {
+  color: #1E3A5F;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-karte-detail-introducer-link:hover {
+  text-decoration: underline;
+}
+
 

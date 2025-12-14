@@ -1398,10 +1398,16 @@ def admin_news_delete(news_id):
 @staff_required
 def admin_karte_new():
     if request.method == "GET":
-        # 全患者一覧を取得（姓名、生年月日、紹介者も取得）
+        # 全患者一覧を取得（姓名分離、生年月日、紹介者、紹介者数も取得）
         try:
-            res_all = supabase_admin.table("patients").select("id, name, kana, birthday, introducer").order("name").execute()
+            # まず基本情報を取得
+            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer").order("name").execute()
             all_patients = res_all.data or []
+            
+            # 各患者の紹介者数を取得
+            for patient in all_patients:
+                res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient["id"]).execute()
+                patient["introduced_count"] = res_introduced.count or 0
         except Exception as e:
             print("❌ 患者一覧取得エラー:", e)
             all_patients = []
@@ -1529,10 +1535,10 @@ def admin_karte_detail(patient_id):
         print(f"🔍 DEBUG - patient.heart: {patient.get('heart')} (type: {type(patient.get('heart'))})")
         print(f"🔍 DEBUG - patient.under_medical: {patient.get('under_medical')} (type: {type(patient.get('under_medical'))})")
         
-        # 紹介者情報取得
+        # 紹介者情報取得（姓名分離フィールドも取得）
         introducer_info = None
         if patient.get("introduced_by_patient_id"):
-            res_intro = supabase_admin.table("patients").select("id, name").eq("id", patient.get("introduced_by_patient_id")).execute()
+            res_intro = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana").eq("id", patient.get("introduced_by_patient_id")).execute()
             if res_intro.data:
                 introducer_info = res_intro.data[0]
         patient["introducer_info"] = introducer_info
