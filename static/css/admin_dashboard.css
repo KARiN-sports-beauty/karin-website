@@ -900,14 +900,15 @@ form .admin-news-btn {
   margin-bottom: 10px;
 }
 
-.admin-karte-name-link {
+.admin-karte-name {
   color: #1E3A5F;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 600;
+  display: block;
 }
 
-.admin-karte-name-link:hover {
+.admin-karte-card:hover .admin-karte-name {
   text-decoration: underline;
 }
 
@@ -931,13 +932,14 @@ form .admin-news-btn {
   color: #666;
 }
 
-.admin-karte-introducer-link {
+.admin-karte-introducer-text {
   color: #1E3A5F;
   text-decoration: none;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.admin-karte-introducer-link:hover {
+.admin-karte-introducer-text:hover {
   text-decoration: underline;
 }
 
