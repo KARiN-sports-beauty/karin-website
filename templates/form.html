@@ -90,7 +90,7 @@
     2回目以降の方はラインもしくはメールにてご連絡ください。
   </p>
 
-  <form action="{{ url_for('submit_form') }}" method="POST" class="form-card">
+  <form action="{{ url_for('submit_form') }}" method="POST" class="form-card h-adr">
 
     <!-- 1. 基本情報 -->
     <div class="form-block">
@@ -140,12 +140,12 @@
         <input type="email" name="email" required>
       </label>
 
-      <div class="form-field h-adr">
+      <div class="form-field">
         <span>郵便番号</span>
-        <input type="text" class="p-postal-code" size="8" maxlength="8" name="postal_code">
+        <input type="text" class="p-postal-code" size="8" maxlength="8" name="postal_code" placeholder="例：1234567">
       </div>
       
-      <div class="form-field h-adr">
+      <div class="form-field">
         <span>住所（出張希望の場所等）（必須）</span>
         <input type="text" class="p-region p-locality p-street-address p-extended-address" name="address" required>
       </div>
@@ -384,6 +384,6 @@
   <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
   <span>ホームに戻る</span>
 </a>
-<script src="https://yubinbango.github.io/yubinbango/yubinbango.js"></script>
+<script src="https://yubinbango.github.io/yubinbango/yubinbango.js" charset="UTF-8"></script>
 </body>
 </html>

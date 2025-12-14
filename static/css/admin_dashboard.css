@@ -999,10 +999,6 @@ form .admin-news-btn {
   text-decoration: underline;
 }
 
-.admin-karte-detail-note {
-  /* 備考欄用（必要に応じて追加スタイル） */
-}
-
 .admin-karte-detail-logs-section {
   margin-bottom: 30px;
 }
