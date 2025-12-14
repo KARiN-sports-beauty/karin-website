@@ -91,27 +91,30 @@
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">12. 既往歴・注意事項</span>
       <span class="admin-karte-detail-value">
-        {%- set items = [] -%}
-        {%- if patient.heart and patient.heart.strip() -%}
-          {%- set _ = items.append('心疾患：' + patient.heart) -%}
-        {%- endif -%}
-        {%- if patient.pregnant and patient.pregnant.strip() -%}
-          {%- set _ = items.append('妊娠：' + patient.pregnant) -%}
-        {%- endif -%}
-        {%- if patient.chronic and patient.chronic.strip() -%}
-          {%- set _ = items.append('慢性疾患：' + patient.chronic) -%}
-        {%- endif -%}
-        {%- if patient.surgery and patient.surgery.strip() -%}
-          {%- set _ = items.append('手術歴：' + patient.surgery) -%}
-        {%- endif -%}
-        {%- if patient.under_medical and patient.under_medical.strip() -%}
-          {%- set _ = items.append('医療機関受診中：' + patient.under_medical) -%}
-        {%- endif -%}
-        {%- if items -%}
-          {{ items | join('　') }}
-        {%- else -%}
+        {% set has_content = false %}
+        {% if patient.heart and patient.heart|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
+          {% set has_content = true %}
+          心疾患：{{ patient.heart }}　
+        {% endif %}
+        {% if patient.pregnant and patient.pregnant|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
+          {% set has_content = true %}
+          妊娠：{{ patient.pregnant }}　
+        {% endif %}
+        {% if patient.chronic and patient.chronic|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
+          {% set has_content = true %}
+          慢性疾患：{{ patient.chronic }}　
+        {% endif %}
+        {% if patient.surgery and patient.surgery|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
+          {% set has_content = true %}
+          手術歴：{{ patient.surgery }}　
+        {% endif %}
+        {% if patient.under_medical and patient.under_medical|replace(' ', '')|replace('　', '')|replace('。', '') not in ['なし', '無し', ''] %}
+          {% set has_content = true %}
+          医療機関受診中：{{ patient.under_medical }}　
+        {% endif %}
+        {% if not has_content %}
           なし
-        {%- endif -%}
+        {% endif %}
       </span>
     </div>
     
