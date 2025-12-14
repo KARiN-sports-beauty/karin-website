@@ -1525,6 +1525,10 @@ def admin_karte_detail(patient_id):
             return redirect("/admin/karte")
         patient = res_patient.data[0]
         
+        # デバッグ: heart と under_medical の値を確認
+        print(f"🔍 DEBUG - patient.heart: {patient.get('heart')} (type: {type(patient.get('heart'))})")
+        print(f"🔍 DEBUG - patient.under_medical: {patient.get('under_medical')} (type: {type(patient.get('under_medical'))})")
+        
         # 紹介者情報取得
         introducer_info = None
         if patient.get("introduced_by_patient_id"):

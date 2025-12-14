@@ -1380,6 +1380,7 @@ form .admin-news-btn {
       "last first birthday gender"
       "last_kana first_kana category empty"
       "introducer_free introducer_search introducer_search introducer_search";
+    min-width: 0; /* ← grid内input潰れ防止 */
     column-gap: 32px;
     row-gap: 28px;
   }
