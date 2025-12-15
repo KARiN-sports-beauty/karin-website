@@ -4,10 +4,18 @@
 {% block content %}
 <h2 class="admin-title">📋 カルテ管理</h2>
 
-<a href="/admin/karte/new" class="admin-karte-btn-white">➕ 新規カルテ作成（入力用）</a>
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+  <a href="/admin/karte/new" class="admin-karte-btn-white">➕ 新規カルテ作成（入力用）</a>
+  
+  {% if introducer_ranking %}
+  <button type="button" id="introducer-ranking-toggle" class="admin-karte-btn-white" style="border: none; cursor: pointer;">
+    🏆 紹介者ランキング
+  </button>
+  {% endif %}
+</div>
 
 {% if introducer_ranking %}
-<div class="admin-introducer-ranking-card" style="margin-top: 20px; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+<div id="introducer-ranking-content" class="admin-introducer-ranking-card" style="display: none; margin-top: 20px; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">🏆 紹介者ランキング（上位10名）</h3>
   <ul style="list-style: none; padding: 0; margin: 0;">
     {% for item in introducer_ranking %}
@@ -80,6 +88,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // 紹介者ランキングのアコーディオン
+  const rankingToggle = document.getElementById('introducer-ranking-toggle');
+  const rankingContent = document.getElementById('introducer-ranking-content');
+  if (rankingToggle && rankingContent) {
+    rankingToggle.addEventListener('click', function() {
+      if (rankingContent.style.display === 'none') {
+        rankingContent.style.display = 'block';
+      } else {
+        rankingContent.style.display = 'none';
+      }
+    });
+  }
+  
+  // 名前検索
   const searchInput = document.getElementById('karte-search');
   const grid = document.getElementById('karte-grid');
   const cards = grid ? Array.from(grid.querySelectorAll('.admin-karte-card')) : [];
