@@ -182,8 +182,51 @@
       <span class="admin-karte-detail-label">18. 備考</span>
       <span class="admin-karte-detail-value">{{ patient.note or '未入力' }}</span>
     </div>
+    
+    {% if patient.introduced_count and patient.introduced_count > 0 %}
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">19. 紹介患者</span>
+      <span class="admin-karte-detail-value">
+        <button type="button" id="introduced-patients-toggle" class="admin-introduced-badge">
+          紹介 {{ patient.introduced_count }}人
+        </button>
+      </span>
+    </div>
+    {% endif %}
   </div>
 </div>
+
+<!-- 紹介患者一覧（開閉表示） -->
+{% if patient.introduced_count and patient.introduced_count > 0 %}
+<div id="introduced-patients-list" class="admin-introduced-list" style="display: none;">
+  <div class="admin-karte-detail-card">
+    <h3 class="admin-karte-detail-section-title">紹介患者一覧（{{ patient.introduced_count }}人）</h3>
+    <div class="admin-introduced-grid">
+      {% for introduced_patient in patient.introduced_patients %}
+      <a href="/admin/karte/{{ introduced_patient.id }}" class="admin-introduced-card">
+        <div class="admin-introduced-head">
+          <strong class="admin-introduced-name">
+            {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}
+          </strong>
+        </div>
+        <div class="admin-introduced-info">
+          <p class="admin-introduced-field">
+            <span class="admin-introduced-label">フリガナ：</span>
+            <span>{{ introduced_patient.last_kana or '' }} {{ introduced_patient.first_kana or '' }}</span>
+          </p>
+          {% if introduced_patient.birthday %}
+          <p class="admin-introduced-field">
+            <span class="admin-introduced-label">生年月日：</span>
+            <span>{{ introduced_patient.birthday }}</span>
+          </p>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- 施術ログ一覧 -->
 <div class="admin-karte-detail-logs-section">
@@ -378,6 +421,20 @@ document.addEventListener('keydown', function(e) {
     closeImageModal();
   }
 });
+
+// 紹介患者一覧の開閉
+const introducedToggle = document.getElementById('introduced-patients-toggle');
+const introducedList = document.getElementById('introduced-patients-list');
+
+if (introducedToggle && introducedList) {
+  introducedToggle.addEventListener('click', function() {
+    if (introducedList.style.display === 'none') {
+      introducedList.style.display = 'block';
+    } else {
+      introducedList.style.display = 'none';
+    }
+  });
+}
 </script>
 
 {% endblock %}

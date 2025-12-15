@@ -468,6 +468,7 @@ def submit_form():
             "signature": signature,
             "agreed_at": agreed_at,
             "note": "",  # 空でも入れる
+            "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso(),
         }
         
@@ -1438,6 +1439,7 @@ def admin_karte_new():
             "category": request.form.get("category", "").strip(),
             "introducer": request.form.get("introducer", "").strip(),
             "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso()
         }
         
@@ -1573,21 +1575,30 @@ def admin_karte_detail(patient_id):
         res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient_id).execute()
         patient["introduced_count"] = res_introduced.count or 0
         
+        # この患者が紹介した患者一覧を取得
+        res_introduced_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday").eq("introduced_by_patient_id", patient_id).order("created_at", desc=True).execute()
+        patient["introduced_patients"] = res_introduced_patients.data or []
+        
         # karte_logs取得（IN句で高速化）
         res_logs = supabase_admin.table("karte_logs").select("*").eq("patient_id", patient_id).order("date", desc=True).execute()
         logs = res_logs.data or []
         
-        # ログIDを収集して画像を一括取得
+        # ログIDを収集して画像を一括取得（karte_imagesテーブルが存在しない場合でもエラーにしない）
         log_ids = [log.get("id") for log in logs if log.get("id")]
         log_images_map = {}
         if log_ids:
-            res_images = supabase_admin.table("karte_images").select("*").in_("log_id", log_ids).execute()
-            if res_images.data:
-                for img in res_images.data:
-                    log_id = img.get("log_id")
-                    if log_id not in log_images_map:
-                        log_images_map[log_id] = []
-                    log_images_map[log_id].append(img)
+            try:
+                res_images = supabase_admin.table("karte_images").select("*").in_("log_id", log_ids).execute()
+                if res_images.data:
+                    for img in res_images.data:
+                        log_id = img.get("log_id")
+                        if log_id not in log_images_map:
+                            log_images_map[log_id] = []
+                        log_images_map[log_id].append(img)
+            except Exception as e:
+                # karte_imagesテーブルが存在しない場合など、エラーが発生しても処理を続行
+                print(f"⚠️ WARNING - karte_images取得エラー（テーブルが存在しない可能性）: {e}")
+                # log_images_mapは空のまま（画像なしとして扱う）
         
         # ログに画像を追加
         for log in logs:
