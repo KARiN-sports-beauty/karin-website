@@ -1534,8 +1534,33 @@ def admin_karte():
 
         # ✅ 並び順（最後に来た人が上）
         patients.sort(key=sort_key, reverse=True)
+        
+        # ✅ 紹介者ランキング取得（上位10名）
+        introducer_ranking = []
+        if introduced_count_map:
+            # 紹介人数でソート（降順）
+            sorted_introducers = sorted(
+                introduced_count_map.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:10]  # 上位10名のみ
+            
+            # 各紹介者の情報を取得
+            for introducer_id, count in sorted_introducers:
+                introducer_info = introducer_map.get(introducer_id)
+                if introducer_info:
+                    # 名前を結合
+                    name = f"{introducer_info.get('last_name', '')} {introducer_info.get('first_name', '')}".strip()
+                    if not name:
+                        name = introducer_info.get('name', '不明')
+                    
+                    introducer_ranking.append({
+                        "patient_id": introducer_id,
+                        "name": name,
+                        "count": count
+                    })
 
-        return render_template("admin_karte.html", patients=patients)
+        return render_template("admin_karte.html", patients=patients, introducer_ranking=introducer_ranking)
 
     except Exception as e:
         print("❌ カルテ一覧取得エラー:", e)

@@ -128,12 +128,34 @@
 
         <a href="/admin/staff" class="dash-card">
             <div class="dash-card-header">
-            <span class="dash-card-label">スタッフ一覧</span>
+            <span class="dash-card-label">スタッフ一覧(管理)</span>
             </div>
             <p class="dash-card-text">
-            スタッフ情報、シフト、勤務報告などを管理するためのページです。（順次拡張予定）
+            ログインできるスタッフのページです。ここで制御を行います。
             </p>
         </a>
+
+        {% if session.staff and session.staff.is_admin == True %}
+        <!-- 🔒 管理者専用：スタッフ報告 -->
+        <a href="/admin/staff" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">スタッフ報告</span>
+            </div>
+            <p class="dash-card-text">
+            各スタッフの情報、シフト、勤務報告などを確認・管理します。
+            </p>
+        </a>
+        {% else %}
+        <!-- 👤 一般スタッフ用：本人のスタッフページ -->
+        <a href="/staff/profile" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">スタッフページ</span>
+            </div>
+            <p class="dash-card-text">
+            あなたのスタッフ情報、シフト、勤務報告などを管理します。
+            </p>
+        </a>
+        {% endif %}
 
         {% if session.staff and session.staff.is_admin == True %}
         <!-- 🔒 管理者専用：財務管理 -->

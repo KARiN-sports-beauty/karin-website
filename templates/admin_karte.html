@@ -6,6 +6,23 @@
 
 <a href="/admin/karte/new" class="admin-karte-btn-white">➕ 新規カルテ作成（入力用）</a>
 
+{% if introducer_ranking %}
+<div class="admin-introducer-ranking-card" style="margin-top: 20px; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">🏆 紹介者ランキング（上位10名）</h3>
+  <ul style="list-style: none; padding: 0; margin: 0;">
+    {% for item in introducer_ranking %}
+    <li style="padding: 10px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
+      <a href="/admin/karte/{{ item.patient_id }}" style="text-decoration: none; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem;">{{ loop.index }}.</span>
+        <span style="font-weight: 500;">{{ item.name }}</span>
+        <span style="color: #999; font-size: 0.9rem;">（紹介 {{ item.count }}人）</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 <div style="margin-top: 20px; margin-bottom: 20px;">
   <input type="text" id="karte-search" placeholder="名前で検索..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
 </div>
