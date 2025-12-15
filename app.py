@@ -1502,15 +1502,15 @@ def admin_karte():
                 }
 
         # ✅ 紹介された人数を一括取得（各患者が紹介した人数）
-        # introduced_by_patient_idがpatient_idsに含まれる患者のみを取得して集計
+        # introduced_by_patient_idをキーにして紹介人数をCOUNTするmapをPython側で作成
         introduced_count_map = {}
         if patients:
             patient_ids = [p.get("id") for p in patients if p.get("id")]
             if patient_ids:
-                # introduced_by_patient_idがpatient_idsに含まれる患者を取得
+                # introduced_by_patient_idがpatient_idsに含まれる患者を一括取得
                 res_introduced_patients = supabase_admin.table("patients").select("introduced_by_patient_id").in_("introduced_by_patient_id", patient_ids).execute()
                 if res_introduced_patients.data:
-                    # 紹介者IDごとにカウント
+                    # 紹介者IDごとにカウント（Python側で集計）
                     for patient_record in res_introduced_patients.data:
                         intro_id = patient_record.get("introduced_by_patient_id")
                         if intro_id:
@@ -1522,7 +1522,12 @@ def admin_karte():
 
             patient["last_visit_date"] = last_visit_map.get(pid)
             intro_id = patient.get("introduced_by_patient_id")
-            patient["introducer_info"] = introducer_map.get(intro_id)
+            introducer_info = introducer_map.get(intro_id)
+            if introducer_info:
+                # 紹介者の紹介者数を追加
+                introducer_info["introduced_count"] = introduced_count_map.get(introducer_info.get("id"), 0)
+            patient["introducer_info"] = introducer_info
+            # 現在の患者が紹介した人数
             patient["introduced_count"] = introduced_count_map.get(pid, 0)
 
         # ✅ 並び順（最後に来た人が上）
@@ -1557,9 +1562,14 @@ def admin_karte_detail(patient_id):
             res_intro = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana").eq("id", patient.get("introduced_by_patient_id")).execute()
             if res_intro.data:
                 introducer_info = res_intro.data[0]
+                introducer_id = introducer_info.get("id")
+                # 紹介者の紹介者数を一括取得（N+1を避けるため）
+                if introducer_id:
+                    res_introducer_count = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", introducer_id).execute()
+                    introducer_info["introduced_count"] = res_introducer_count.count or 0
         patient["introducer_info"] = introducer_info
         
-        # 紹介された人数を取得
+        # 現在の患者が紹介した人数を取得（表示用）
         res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient_id).execute()
         patient["introduced_count"] = res_introduced.count or 0
         

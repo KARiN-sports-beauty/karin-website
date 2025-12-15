@@ -93,8 +93,8 @@
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
             （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
           </a>
-          {% if patient.introduced_count and patient.introduced_count > 0 %}
-            <span class="admin-introducer-badge">◯{{ patient.introduced_count }}</span>
+          {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
+            <span class="admin-introducer-badge">◯{{ patient.introducer_info.introduced_count }}</span>
           {% endif %}
         {% else %}
           <span style="color:#999;">なし</span>
