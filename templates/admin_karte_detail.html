@@ -279,7 +279,7 @@
         
         <div class="admin-karte-log-field">
           <span class="admin-karte-log-label">スタッフ：</span>
-          <span>{{ log.staff_name or '不明' }}</span>
+          <span>{{ log.staff_name if log.staff_name else '不明' }}</span>
         </div>
         
         {% if log.images %}
@@ -349,7 +349,7 @@
           
           <div class="admin-karte-log-field">
             <span class="admin-karte-log-label">スタッフ：</span>
-            <span>{{ log.staff_name or '不明' }}</span>
+            <span>{{ log.staff_name if log.staff_name else '不明' }}</span>
           </div>
           
           {% if log.images %}

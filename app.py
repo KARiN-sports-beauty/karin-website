@@ -1610,35 +1610,14 @@ def admin_karte_detail(patient_id):
             last_visit_date = logs[0].get("date")
         patient["last_visit_date"] = last_visit_date
         
-        # スタッフ情報取得（ログのstaff_idから）
-        staff_ids = list({log.get("staff_id") for log in logs if log.get("staff_id")})
-        staff_map = {}
-        if staff_ids:
-            # まずstaffテーブルを試す
-            try:
-                res_staff = supabase_admin.table("staff").select("id, name").in_("id", staff_ids).execute()
-                if res_staff.data:
-                    staff_map = {s["id"]: s for s in res_staff.data}
-            except:
-                # staffテーブルがない場合はSupabase Authから取得
-                try:
-                    for staff_id in staff_ids:
-                        try:
-                            user = supabase_admin.auth.admin.get_user_by_id(staff_id)
-                            if user and hasattr(user, 'user'):
-                                metadata = user.user.user_metadata or {}
-                                staff_map[staff_id] = {
-                                    "id": staff_id,
-                                    "name": metadata.get("name", "不明")
-                                }
-                        except:
-                            pass
-                except Exception as e:
-                    print("❌ スタッフ情報取得エラー:", e)
-        
+        # staff_nameは既にDBから取得されているため、追加処理は不要
+        # ログからstaff_idなどの不要な参照を削除（staff_nameのみを使用）
         for log in logs:
-            staff_id = log.get("staff_id")
-            log["staff_name"] = staff_map.get(staff_id, {}).get("name", "不明") if staff_id else "不明"
+            # staff_idなどの不要なキーを削除（将来のstaff_id導入まで）
+            if "staff_id" in log:
+                del log["staff_id"]
+            if "staff" in log:
+                del log["staff"]
         
         # 管理者チェック
         staff = session.get("staff", {})
@@ -1778,10 +1757,8 @@ def admin_karte_new_log(patient_id):
     
     # POST処理
     try:
-        # staff_nameはsession.staffを初期値にし、selectの値を優先
-        staff = session.get("staff", {})
-        default_staff_name = staff.get("name", "スタッフ")
-        staff_name = request.form.get("staff_name", "").strip() or default_staff_name
+        # staff_nameはフォームから取得し、空文字の場合はNoneに変換
+        staff_name = request.form.get("staff_name", "").strip() or None
         
         # スキーマ準拠のデータ構造
         log_data = {
@@ -1869,10 +1846,8 @@ def admin_karte_log_edit(patient_id, log_id):
     
     # POST処理
     try:
-        # staff_nameはsession.staffを初期値にし、selectの値を優先
-        staff = session.get("staff", {})
-        default_staff_name = staff.get("name", "スタッフ")
-        staff_name = request.form.get("staff_name", "").strip() or default_staff_name
+        # staff_nameはフォームから取得し、空文字の場合はNoneに変換
+        staff_name = request.form.get("staff_name", "").strip() or None
         
         update_data = {
             "date": request.form.get("date", "").strip(),
