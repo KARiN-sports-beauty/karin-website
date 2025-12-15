@@ -1826,12 +1826,12 @@ def admin_karte_log_edit(log_id):
     try:
         update_data = {
             "date": request.form.get("date", "").strip(),
-            "location_type": request.form.get("location_type", "").strip(),
-            "chief_complaint": request.form.get("chief_complaint", "").strip(),
-            "today_condition": request.form.get("today_condition", "").strip(),
+            "place_type": request.form.get("place_type", "").strip(),
+            "place_name": request.form.get("place_name", "").strip(),
+            "body_state": request.form.get("body_state", "").strip(),
             "treatment": request.form.get("treatment", "").strip(),
+            "staff_name": request.form.get("staff_name", "").strip(),
             "memo": request.form.get("memo", "").strip(),
-            "staff_id": request.form.get("staff_id", "").strip(),
         }
         
         supabase_admin.table("karte_logs").update(update_data).eq("id", log_id).execute()

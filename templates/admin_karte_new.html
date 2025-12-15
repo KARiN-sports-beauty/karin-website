@@ -218,7 +218,7 @@ if (searchInput && resultsBox && hiddenInput && clearBtn) {
       if (p.introduced_count && p.introduced_count > 0) {
         const badge = document.createElement("span");
         badge.className = "admin-introducer-badge";
-        badge.textContent = `◯${p.introduced_count}`;
+        badge.textContent = `${p.introduced_count}`;
         item.appendChild(badge);
       }
 

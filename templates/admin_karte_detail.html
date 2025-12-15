@@ -94,7 +94,7 @@
             （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
           </a>
           {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
-            <span class="admin-introducer-badge">◯{{ patient.introducer_info.introduced_count }}</span>
+            <span class="admin-introducer-badge">{{ patient.introducer_info.introduced_count }}</span>
           {% endif %}
         {% else %}
           <span style="color:#999;">なし</span>
@@ -208,7 +208,10 @@
       <div class="admin-karte-log-content">
         <div class="admin-karte-log-field">
           <span class="admin-karte-log-label">現場区分：</span>
-          <span>{{ log.location_type or '未入力' }}</span>
+          <span>
+            {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+            {{ place_map.get(log.place_type, log.place_type or '未入力') }}
+          </span>
         </div>
         
         <div class="admin-karte-log-field">
