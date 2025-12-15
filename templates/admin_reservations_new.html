@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}新規予約作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">➕ 新規予約作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/reservations/new" style="max-width: 800px;">
+  <!-- 患者選択方式 -->
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 12px; font-weight: 600; color: #1E3A5F;">患者選択</label>
+    <div style="display: flex; gap: 20px; margin-bottom: 16px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="patient_mode" value="existing" id="patient_mode_existing" checked onchange="togglePatientMode()">
+        <span>既存患者を選択</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="patient_mode" value="new" id="patient_mode_new" onchange="togglePatientMode()">
+        <span>新規患者を作成</span>
+      </label>
+    </div>
+    
+    <!-- 既存患者選択（autocomplete方式） -->
+    <div id="existing_patient_section">
+      <input
+        type="text"
+        id="patient_search"
+        class="admin-form-input"
+        placeholder="名前・フリガナで検索"
+        autocomplete="off"
+        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
+      >
+      <div id="patient_results" class="admin-autocomplete-list"></div>
+      <input type="hidden" name="patient_id" id="patient_id">
+    </div>
+    
+    <!-- 新規患者作成フォーム -->
+    <div id="new_patient_section" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">姓（必須）</label>
+          <input type="text" name="last_name" id="new_last_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">名（必須）</label>
+          <input type="text" name="first_name" id="new_first_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">セイ（必須）</label>
+          <input type="text" name="last_kana" id="new_last_kana" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メイ（必須）</label>
+          <input type="text" name="first_kana" id="new_first_kana" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">電話番号（任意）</label>
+        <input type="text" name="phone" id="new_phone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メモ（任意）</label>
+        <textarea name="patient_memo" id="new_patient_memo" rows="2" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+      </div>
+    </div>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
+    <input type="datetime-local" name="reserved_at" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">施術時間（分）</label>
+    <select name="duration_minutes" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="60">60分</option>
+      <option value="90" selected>90分</option>
+      <option value="120">120分</option>
+    </select>
+    <input type="number" name="duration_minutes_custom" placeholder="または手入力（分）" min="15" max="300" step="15" style="width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <small style="color: #666; font-size: 0.85rem;">手入力を選択した場合は、上記の選択は無視されます</small>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
+    <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="in_house">院内</option>
+      <option value="visit">往診</option>
+      <option value="field">帯同</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px; display: none;" id="place_name_wrapper">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名</label>
+    <input type="text" name="place_name" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">担当スタッフ</label>
+    <select name="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      {% for staff in staff_list %}
+        <option value="{{ staff.name }}" {% if staff.name == staff_name %}selected{% endif %}>{{ staff.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
+    <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 保存</button>
+    <a href="/admin/reservations" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+<script>
+// 患者選択方式の切替
+const allPatients = {{ patients | tojson }};
+
+function togglePatientMode() {
+  const existingMode = document.getElementById('patient_mode_existing').checked;
+  const existingSection = document.getElementById('existing_patient_section');
+  const newSection = document.getElementById('new_patient_section');
+  const patientIdInput = document.getElementById('patient_id');
+  
+  if (existingMode) {
+    existingSection.style.display = 'block';
+    newSection.style.display = 'none';
+    // 新規患者の必須フィールドを解除
+    document.getElementById('new_last_name').removeAttribute('required');
+    document.getElementById('new_first_name').removeAttribute('required');
+    document.getElementById('new_last_kana').removeAttribute('required');
+    document.getElementById('new_first_kana').removeAttribute('required');
+  } else {
+    existingSection.style.display = 'none';
+    newSection.style.display = 'block';
+    patientIdInput.value = '';
+    // 新規患者の必須フィールドを設定
+    document.getElementById('new_last_name').setAttribute('required', 'required');
+    document.getElementById('new_first_name').setAttribute('required', 'required');
+    document.getElementById('new_last_kana').setAttribute('required', 'required');
+    document.getElementById('new_first_kana').setAttribute('required', 'required');
+  }
+}
+
+// 既存患者検索（autocomplete方式）
+const searchInput = document.getElementById('patient_search');
+const resultsBox = document.getElementById('patient_results');
+const hiddenInput = document.getElementById('patient_id');
+
+if (searchInput && resultsBox && hiddenInput) {
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    resultsBox.innerHTML = '';
+    
+    if (!q) {
+      resultsBox.style.display = 'none';
+      hiddenInput.value = '';
+      return;
+    }
+    
+    const matched = allPatients.filter(p => {
+      const lastName = (p.last_name || '').toLowerCase();
+      const firstName = (p.first_name || '').toLowerCase();
+      const lastKana = (p.last_kana || '').toLowerCase();
+      const firstKana = (p.first_kana || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const kana = (p.kana || '').toLowerCase();
+      const searchText = `${lastName}${firstName}${lastKana}${firstKana}${name}${kana}`;
+      return searchText.includes(q);
+    });
+    
+    matched.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'admin-autocomplete-item';
+      const text = document.createElement('span');
+      const lastName = p.last_name || '';
+      const firstName = p.first_name || '';
+      const lastKana = p.last_kana || '';
+      const firstKana = p.first_kana || '';
+      const displayName = `${lastName} ${firstName}`.trim() || p.name || '不明';
+      const displayKana = `${lastKana} ${firstKana}`.trim() || p.kana || '';
+      text.textContent = `${displayName}（${displayKana}）`;
+      item.appendChild(text);
+      
+      item.onclick = () => {
+        searchInput.value = displayName;
+        hiddenInput.value = p.id;
+        resultsBox.style.display = 'none';
+      };
+      
+      resultsBox.appendChild(item);
+    });
+    
+    resultsBox.style.display = matched.length ? 'block' : 'none';
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+      resultsBox.style.display = 'none';
+    }
+  });
+}
+
+// 現場区分に応じて現場名入力欄を表示/非表示
+document.getElementById('place_type').addEventListener('change', function() {
+  const placeType = this.value;
+  const placeNameWrapper = document.getElementById('place_name_wrapper');
+  if (placeType === 'visit' || placeType === 'field') {
+    placeNameWrapper.style.display = 'block';
+  } else {
+    placeNameWrapper.style.display = 'none';
+  }
+});
+
+// フォーム送信時のバリデーション
+document.querySelector('form').addEventListener('submit', function(e) {
+  const existingMode = document.getElementById('patient_mode_existing').checked;
+  
+  // 既存患者選択時はpatient_idが必要
+  if (existingMode) {
+    const patientId = document.getElementById('patient_id').value;
+    if (!patientId) {
+      e.preventDefault();
+      alert('患者を選択してください');
+      return false;
+    }
+  }
+  
+  // 手入力の施術時間が入力されたら、selectの値を上書き
+  const customDuration = document.querySelector('input[name="duration_minutes_custom"]').value;
+  if (customDuration) {
+    const select = document.querySelector('select[name="duration_minutes"]');
+    select.value = customDuration;
+  }
+});
+</script>
+
+{% endblock %}

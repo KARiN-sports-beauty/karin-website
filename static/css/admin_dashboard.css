@@ -1654,3 +1654,190 @@ form .admin-news-btn {
   color: #1E3A5F;
   flex: 1;
 }
+
+/* =========================
+   予約管理（HotPepper風）
+========================= */
+
+.admin-resv-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-resv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.admin-resv-nav-btn {
+  padding: 8px 16px;
+  background: #1E3A5F;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.admin-resv-nav-btn:hover {
+  background: #2a4d7a;
+}
+
+.admin-resv-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 1024px) {
+  .admin-resv-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-resv-calendar {
+  background: #fff;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.admin-resv-calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-resv-calendar-header > div {
+  text-align: center;
+  font-weight: 600;
+  color: #1E3A5F;
+  padding: 8px;
+}
+
+.admin-resv-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.admin-resv-day {
+  aspect-ratio: 1;
+  background: #fff;
+  color: #1E3A5F;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-resv-day:hover {
+  background: #f5f7fb;
+  border-color: #1E3A5F;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.admin-resv-day.selected {
+  background: #1E3A5F;
+  color: #fff;
+  border-color: #1E3A5F;
+}
+
+.admin-resv-day.today {
+  background: #E3F2FD;
+  border-color: #2196F3;
+}
+
+.admin-resv-badge {
+  margin-top: 4px;
+  padding: 2px 6px;
+  background: #1E3A5F;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-resv-day.selected .admin-resv-badge {
+  background: #fff;
+  color: #1E3A5F;
+}
+
+.admin-resv-list {
+  background: #fff;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.admin-resv-card {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fafafa;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.admin-resv-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.admin-resv-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.admin-resv-status-reserved {
+  background: #2196F3;
+  color: #fff;
+}
+
+.admin-resv-status-visited {
+  background: #FF9800;
+  color: #fff;
+}
+
+.admin-resv-status-completed {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.admin-resv-status-canceled {
+  background: #f44336;
+  color: #fff;
+}
+
+.admin-resv-btn {
+  padding: 6px 12px;
+  background: #4CAF50;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  display: inline-block;
+}
+
+.admin-resv-btn:hover {
+  background: #45a049;
+}

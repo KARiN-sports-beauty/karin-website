@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}予約管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📅 予約管理</h2>
+
+<!-- 月移動ヘッダー -->
+<div class="admin-resv-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <a href="/admin/reservations?ym={{ prev_month }}&day={{ selected_day }}" class="admin-resv-nav-btn" style="padding: 8px 16px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">← 前月</a>
+  <h3 style="margin: 0; font-size: 1.3rem; font-weight: 600; color: #1E3A5F;">{{ current_date.strftime('%Y年%m月') }}</h3>
+  <a href="/admin/reservations?ym={{ next_month }}&day={{ selected_day }}" class="admin-resv-nav-btn" style="padding: 8px 16px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">次月 →</a>
+</div>
+
+<!-- フィルタ -->
+<div style="margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <form method="GET" action="/admin/reservations" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <input type="hidden" name="ym" value="{{ current_ym }}">
+    <input type="hidden" name="day" value="{{ selected_day }}">
+    
+    <label style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-weight: 500; color: #1E3A5F;">現場区分：</span>
+      <select name="place_type" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+        <option value="all" {% if place_type_filter == 'all' %}selected{% endif %}>すべて</option>
+        <option value="in_house" {% if place_type_filter == 'in_house' %}selected{% endif %}>院内</option>
+        <option value="visit" {% if place_type_filter == 'visit' %}selected{% endif %}>往診</option>
+        <option value="field" {% if place_type_filter == 'field' %}selected{% endif %}>帯同</option>
+      </select>
+    </label>
+    
+    <label style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-weight: 500; color: #1E3A5F;">スタッフ：</span>
+      <select name="staff" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+        <option value="all" {% if staff_filter == 'all' %}selected{% endif %}>すべて</option>
+        {% for staff in staff_list %}
+        <option value="{{ staff.name }}" {% if staff_filter == staff.name %}selected{% endif %}>{{ staff.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    
+    <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">適用</button>
+    <a href="/admin/reservations/new" style="padding: 8px 16px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">➕ 新規予約</a>
+  </form>
+</div>
+
+<!-- メインコンテンツ（カレンダー + 一覧） -->
+<div class="admin-resv-grid">
+  {% if current_date %}
+  <!-- カレンダー -->
+  <div class="admin-resv-calendar">
+    <div class="admin-resv-calendar-header">
+      <div>日</div>
+      <div>月</div>
+      <div>火</div>
+      <div>水</div>
+      <div>木</div>
+      <div>金</div>
+      <div>土</div>
+    </div>
+    
+    <div class="admin-resv-calendar-days">
+      {# 前月の空白セル #}
+      {% for i in range(first_weekday) %}
+      <div style="aspect-ratio: 1; background: #f5f7fb; border-radius: 8px;"></div>
+      {% endfor %}
+      
+      {# 当月の日付セル #}
+      {% for day_num in range(1, days_in_month + 1) %}
+        {% set day_key = '%04d-%02d-%02d'|format(current_date.year, current_date.month, day_num) %}
+        {% set is_selected = (day_key == selected_day.strftime('%Y-%m-%d')) %}
+        {% set count = counts_by_day.get(day_key, 0) %}
+        {% set today_str = now_jst.strftime('%Y-%m-%d') %}
+        {% set is_today = (day_key == today_str) %}
+        
+        <a href="/admin/reservations?ym={{ current_ym }}&day={{ day_key }}&place_type={{ place_type_filter }}&staff={{ staff_filter }}" 
+           class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %}">
+          <span style="font-size: 1rem; font-weight: 600;">{{ day_num }}</span>
+          {% if count > 0 %}
+          <span class="admin-resv-badge">{{ count }}</span>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- 選択日の予約一覧 -->
+  <div class="admin-resv-list">
+    <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">
+      {{ selected_day.strftime('%Y年%m月%d日') }}の予約
+    </h3>
+    
+    {% if reservations_of_day %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for reservation in reservations_of_day %}
+      <div class="admin-resv-card">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+          <div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
+            <a href="/admin/karte/{{ reservation.patient_id }}" style="font-size: 1rem; font-weight: 500; color: #1E3A5F; text-decoration: none;">
+              {{ reservation.patient_name or '患者不明' }}
+            </a>
+          </div>
+          <span class="admin-resv-status admin-resv-status-{{ reservation.status }}">
+            {% if reservation.status == 'reserved' %}予約中
+            {% elif reservation.status == 'visited' %}来院済
+            {% elif reservation.status == 'completed' %}完了
+            {% elif reservation.status == 'canceled' %}キャンセル
+            {% else %}{{ reservation.status }}{% endif %}
+          </span>
+        </div>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
+          {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+          <span>現場：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
+          {% if reservation.place_name %}
+          <span>（{{ reservation.place_name }}）</span>
+          {% endif %}
+          {% if reservation.staff_name %}
+          <span>｜スタッフ：{{ reservation.staff_name }}</span>
+          {% endif %}
+          <span>｜{{ reservation.duration_minutes or 60 }}分</span>
+        </div>
+        
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          {{ reservation.memo }}
+        </div>
+        {% endif %}
+        
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="/admin/karte/{{ reservation.patient_id }}/log/new?date={{ selected_day.strftime('%Y-%m-%d') }}" 
+             class="admin-resv-btn" 
+             style="padding: 6px 12px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            📝 ログ作成
+          </a>
+          
+          {% if reservation.status == 'reserved' %}
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="visited">
+            <button type="submit" style="padding: 6px 12px; background: #2196F3; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 来院済</button>
+          </form>
+          {% endif %}
+          
+          {% if reservation.status == 'visited' %}
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="completed">
+            <button type="submit" style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 完了</button>
+          </form>
+          {% endif %}
+          
+          {% if reservation.status != 'canceled' %}
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="canceled">
+            <button type="submit" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;" onclick="return confirm('この予約をキャンセルしますか？');">✕ キャンセル</button>
+          </form>
+          {% endif %}
+          
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この予約を削除しますか？');">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 40px 0;">この日の予約はありません</p>
+    {% endif %}
+  </div>
+</div>
+
+
+{% endblock %}

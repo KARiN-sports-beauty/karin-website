@@ -1771,8 +1771,17 @@ def admin_karte_new_log(patient_id):
                 # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            # 今日の日付をデフォルト値として設定
-            today_date = datetime.now(JST).strftime("%Y-%m-%d")
+            # 日付のデフォルト値（クエリパラメータがあればそれ、なければ今日）
+            date_param = request.args.get("date")
+            if date_param:
+                try:
+                    # 日付形式を検証
+                    datetime.strptime(date_param, "%Y-%m-%d")
+                    today_date = date_param
+                except:
+                    today_date = datetime.now(JST).strftime("%Y-%m-%d")
+            else:
+                today_date = datetime.now(JST).strftime("%Y-%m-%d")
             
             return render_template("admin_karte_new_log.html", patient=patient, staff_name=staff_name, staff_list=staff_list, today_date=today_date)
         except Exception as e:
@@ -2430,6 +2439,378 @@ def robots_txt():
     ]
     return "\n".join(lines), 200, {"Content-Type": "text/plain"}
 
+
+
+# ==========================================
+# 予約管理
+# ==========================================
+
+@app.route("/admin/reservations", methods=["GET"])
+@staff_required
+def admin_reservations():
+    """予約管理（カレンダー表示）"""
+    try:
+        # クエリパラメータ取得
+        ym = request.args.get("ym")  # YYYY-MM
+        day = request.args.get("day")  # YYYY-MM-DD
+        place_type_filter = request.args.get("place_type", "all")  # all/in_house/visit/field
+        staff_filter = request.args.get("staff", "all")  # all or staff_name
+        
+        # 現在日時（JST）
+        now_jst = datetime.now(JST)
+        
+        # ymが未指定なら当月
+        if ym:
+            try:
+                year, month = map(int, ym.split("-"))
+                current_date = datetime(year, month, 1, tzinfo=JST)
+            except:
+                current_date = now_jst.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            current_date = now_jst.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # 月初と月末（翌月1日の直前）
+        start_date = current_date
+        if current_date.month == 12:
+            end_date = datetime(current_date.year + 1, 1, 1, tzinfo=JST)
+        else:
+            end_date = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
+        
+        # dayが未指定なら今日
+        if day:
+            try:
+                selected_day = datetime.strptime(day, "%Y-%m-%d").date()
+            except:
+                selected_day = now_jst.date()
+        else:
+            selected_day = now_jst.date()
+        
+        # 予約取得（月初〜月末）
+        start_iso = start_date.isoformat()
+        end_iso = end_date.isoformat()
+        
+        query = supabase_admin.table("reservations").select("*").gte("reserved_at", start_iso).lt("reserved_at", end_iso)
+        
+        # フィルタ適用
+        if place_type_filter != "all":
+            query = query.eq("place_type", place_type_filter)
+        if staff_filter != "all":
+            query = query.eq("staff_name", staff_filter)
+        
+        res_reservations = query.order("reserved_at", desc=False).execute()
+        reservations = res_reservations.data or []
+        
+        # patient_idの集合を取得
+        patient_ids = list({r.get("patient_id") for r in reservations if r.get("patient_id")})
+        
+        # 患者情報を一括取得
+        patient_map = {}
+        if patient_ids:
+            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+            if res_patients.data:
+                patient_map = {p["id"]: p for p in res_patients.data}
+        
+        # 予約に患者情報を結合
+        for reservation in reservations:
+            patient_id = reservation.get("patient_id")
+            patient = patient_map.get(patient_id)
+            if patient:
+                # 名前を結合
+                name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+                if not name:
+                    name = patient.get("name", "不明")
+                reservation["patient_name"] = name
+                reservation["patient"] = patient
+            else:
+                reservation["patient_name"] = "不明"
+                reservation["patient"] = None
+        
+        # 日付ごとの件数マップ（YYYY-MM-DD -> 件数）
+        counts_by_day = {}
+        for r in reservations:
+            # reserved_atをJSTの日付に変換
+            try:
+                dt = datetime.fromisoformat(r.get("reserved_at", "").replace("Z", "+00:00"))
+                dt_jst = dt.astimezone(JST)
+                day_key = dt_jst.strftime("%Y-%m-%d")
+                counts_by_day[day_key] = counts_by_day.get(day_key, 0) + 1
+            except:
+                pass
+        
+        # 選択日の予約一覧（その日の00:00〜24:00）
+        selected_day_start = datetime.combine(selected_day, datetime.min.time()).replace(tzinfo=JST)
+        selected_day_end = selected_day_start + timedelta(days=1)
+        selected_day_start_iso = selected_day_start.isoformat()
+        selected_day_end_iso = selected_day_end.isoformat()
+        
+        reservations_of_day = [
+            r for r in reservations
+            if selected_day_start_iso <= r.get("reserved_at", "") < selected_day_end_iso
+        ]
+        # 時刻順にソート
+        reservations_of_day.sort(key=lambda x: x.get("reserved_at", ""))
+        
+        # 予約の時刻をJSTで表示用に変換
+        for r in reservations_of_day:
+            try:
+                dt_str = r.get("reserved_at", "")
+                if dt_str:
+                    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                    dt_jst = dt.astimezone(JST)
+                    r["reserved_at_display"] = dt_jst.strftime("%H:%M")
+                else:
+                    r["reserved_at_display"] = "時刻不明"
+            except:
+                r["reserved_at_display"] = "時刻不明"
+        
+        # スタッフリスト取得（フィルタ用）
+        staff_list = []
+        try:
+            try:
+                res_staff = supabase_admin.table("staff").select("id, name").execute()
+                if res_staff.data:
+                    staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
+            except:
+                pass
+            # 現在のスタッフも追加
+            staff = session.get("staff", {})
+            current_staff_name = staff.get("name", "スタッフ")
+            if not any(s.get("name") == current_staff_name for s in staff_list):
+                staff_list.append({"name": current_staff_name, "id": staff.get("id")})
+        except Exception as e:
+            print("❌ スタッフリスト取得エラー:", e)
+            staff = session.get("staff", {})
+            staff_list = [{"name": staff.get("name", "スタッフ"), "id": staff.get("id")}]
+        
+        # 前月・次月の計算
+        if current_date.month == 1:
+            prev_month = datetime(current_date.year - 1, 12, 1, tzinfo=JST)
+        else:
+            prev_month = datetime(current_date.year, current_date.month - 1, 1, tzinfo=JST)
+        
+        if current_date.month == 12:
+            next_month = datetime(current_date.year + 1, 1, 1, tzinfo=JST)
+        else:
+            next_month = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
+        
+        # カレンダー表示用の日付計算
+        calendar_days = []
+        # 月初の曜日（0=月曜日、6=日曜日）
+        first_weekday = current_date.weekday()
+        # 月の日数
+        if current_date.month == 12:
+            next_month_first = datetime(current_date.year + 1, 1, 1, tzinfo=JST)
+        else:
+            next_month_first = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
+        days_in_month = (next_month_first - current_date).days
+        
+        return render_template(
+            "admin_reservations.html",
+            current_date=current_date,
+            selected_day=selected_day,
+            reservations=reservations,
+            counts_by_day=counts_by_day,
+            reservations_of_day=reservations_of_day,
+            place_type_filter=place_type_filter,
+            staff_filter=staff_filter,
+            staff_list=staff_list,
+            prev_month=prev_month.strftime("%Y-%m"),
+            next_month=next_month.strftime("%Y-%m"),
+            current_ym=current_date.strftime("%Y-%m"),
+            first_weekday=first_weekday,
+            days_in_month=days_in_month,
+            now_jst=now_jst
+        )
+    except Exception as e:
+        print("❌ 予約一覧取得エラー:", e)
+        flash("予約一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/reservations/new", methods=["GET", "POST"])
+@staff_required
+def admin_reservations_new():
+    """新規予約作成"""
+    if request.method == "GET":
+        try:
+            # 患者一覧取得（autocomplete用に姓名分離フィールドも取得）
+            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana").order("created_at", desc=True).execute()
+            patients = res_patients.data or []
+            
+            # スタッフリスト取得
+            staff = session.get("staff", {})
+            staff_name = staff.get("name", "スタッフ")
+            staff_list = []
+            try:
+                try:
+                    res_staff = supabase_admin.table("staff").select("id, name").execute()
+                    if res_staff.data:
+                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
+                except:
+                    pass
+                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
+                if not current_staff_in_list:
+                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            return render_template("admin_reservations_new.html", patients=patients, staff_name=staff_name, staff_list=staff_list)
+        except Exception as e:
+            print("❌ 予約作成画面取得エラー:", e)
+            flash("予約作成画面の取得に失敗しました", "error")
+            return redirect("/admin/reservations")
+    
+    # POST処理
+    try:
+        # 患者選択方式を確認
+        patient_mode = request.form.get("patient_mode", "existing")
+        
+        # 新規患者作成の場合
+        if patient_mode == "new":
+            # 新規患者データを作成
+            last_name = request.form.get("last_name", "").strip()
+            first_name = request.form.get("first_name", "").strip()
+            last_kana = request.form.get("last_kana", "").strip()
+            first_kana = request.form.get("first_kana", "").strip()
+            phone = request.form.get("phone", "").strip() or None
+            patient_memo = request.form.get("patient_memo", "").strip() or None
+            
+            # 必須項目チェック
+            if not last_name or not first_name or not last_kana or not first_kana:
+                flash("姓・名・セイ・メイは必須です", "error")
+                return redirect("/admin/reservations/new")
+            
+            # 名前を結合（name, kana）
+            name = f"{last_name} {first_name}".strip()
+            kana = f"{last_kana} {first_kana}".strip()
+            
+            # 新規患者を登録
+            patient_data = {
+                "last_name": last_name,
+                "first_name": first_name,
+                "last_kana": last_kana,
+                "first_kana": first_kana,
+                "name": name,
+                "kana": kana,
+                "phone": phone,
+                "note": patient_memo,
+                "visibility": "all",
+                "created_at": now_iso()
+            }
+            
+            res_patient = supabase_admin.table("patients").insert(patient_data).execute()
+            if not res_patient.data:
+                flash("患者の登録に失敗しました", "error")
+                return redirect("/admin/reservations/new")
+            
+            patient_id = res_patient.data[0]["id"]
+            redirect_to_karte = True  # 新規患者の場合はカルテ詳細へ
+        else:
+            # 既存患者選択の場合
+            patient_id = request.form.get("patient_id", "").strip()
+            if not patient_id:
+                flash("患者を選択してください", "error")
+                return redirect("/admin/reservations/new")
+            redirect_to_karte = False  # 既存患者の場合は予約一覧へ
+        
+        # 日時取得（datetime-local形式）
+        reserved_at_str = request.form.get("reserved_at", "").strip()
+        if not reserved_at_str:
+            flash("予約日時を入力してください", "error")
+            return redirect("/admin/reservations/new")
+        
+        # datetime-local形式をISO形式に変換
+        try:
+            dt_naive = datetime.strptime(reserved_at_str, "%Y-%m-%dT%H:%M")
+            dt_jst = dt_naive.replace(tzinfo=JST)
+            reserved_at_iso = dt_jst.isoformat()
+        except Exception as e:
+            flash("予約日時の形式が正しくありません", "error")
+            return redirect("/admin/reservations/new")
+        
+        # 施術時間（手入力があればそれを優先）
+        duration_custom = request.form.get("duration_minutes_custom", "").strip()
+        if duration_custom:
+            try:
+                duration_minutes = int(duration_custom)
+            except:
+                duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
+        else:
+            duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
+        place_type = request.form.get("place_type", "").strip()
+        if place_type not in ["in_house", "visit", "field"]:
+            flash("現場区分を選択してください", "error")
+            return redirect("/admin/reservations/new")
+        
+        place_name = request.form.get("place_name", "").strip() or None
+        staff_name = request.form.get("staff_name", "").strip() or None
+        memo = request.form.get("memo", "").strip() or None
+        
+        # 予約作成
+        reservation_data = {
+            "patient_id": patient_id,
+            "reserved_at": reserved_at_iso,
+            "duration_minutes": duration_minutes,
+            "place_type": place_type,
+            "place_name": place_name,
+            "staff_name": staff_name,
+            "status": "reserved",
+            "memo": memo,
+            "created_at": now_iso()
+        }
+        
+        supabase_admin.table("reservations").insert(reservation_data).execute()
+        
+        flash("予約を作成しました", "success")
+        
+        # リダイレクト先を決定
+        if redirect_to_karte:
+            # 新規患者の場合はカルテ詳細へ
+            return redirect(f"/admin/karte/{patient_id}")
+        else:
+            # 既存患者の場合は予約一覧へ
+            day_str = dt_jst.strftime("%Y-%m-%d")
+            ym_str = dt_jst.strftime("%Y-%m")
+            return redirect(f"/admin/reservations?ym={ym_str}&day={day_str}")
+    except Exception as e:
+        print("❌ 予約作成エラー:", e)
+        flash(f"予約の作成に失敗しました: {e}", "error")
+        return redirect("/admin/reservations/new")
+
+
+@app.route("/admin/reservations/<reservation_id>/status", methods=["POST"])
+@staff_required
+def admin_reservations_status(reservation_id):
+    """予約ステータス更新"""
+    try:
+        new_status = request.form.get("status", "").strip()
+        if new_status not in ["reserved", "visited", "completed", "canceled"]:
+            flash("無効なステータスです", "error")
+            return redirect("/admin/reservations")
+        
+        supabase_admin.table("reservations").update({"status": new_status}).eq("id", reservation_id).execute()
+        
+        flash("予約ステータスを更新しました", "success")
+        return redirect(request.referrer or "/admin/reservations")
+    except Exception as e:
+        print("❌ 予約ステータス更新エラー:", e)
+        flash("予約ステータスの更新に失敗しました", "error")
+        return redirect("/admin/reservations")
+
+
+@app.route("/admin/reservations/<reservation_id>/delete", methods=["POST"])
+@staff_required
+def admin_reservations_delete(reservation_id):
+    """予約削除"""
+    try:
+        supabase_admin.table("reservations").delete().eq("id", reservation_id).execute()
+        flash("予約を削除しました", "success")
+        return redirect(request.referrer or "/admin/reservations")
+    except Exception as e:
+        print("❌ 予約削除エラー:", e)
+        flash("予約の削除に失敗しました", "error")
+        return redirect("/admin/reservations")
 
 
 @app.errorhandler(404)
