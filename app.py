@@ -1778,15 +1778,21 @@ def admin_karte_new_log(patient_id):
     
     # POST処理
     try:
+        # staff_nameはsession.staffを初期値にし、selectの値を優先
+        staff = session.get("staff", {})
+        default_staff_name = staff.get("name", "スタッフ")
+        staff_name = request.form.get("staff_name", "").strip() or default_staff_name
+        
         # スキーマ準拠のデータ構造
         log_data = {
             "patient_id": patient_id,
             "date": request.form.get("date", "").strip(),
             "place_type": request.form.get("place_type", "").strip(),
             "place_name": request.form.get("place_name", "").strip(),
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
             "body_state": request.form.get("body_state", "").strip(),
             "treatment": request.form.get("treatment", "").strip(),
-            "staff_name": request.form.get("staff_name", "").strip(),
+            "staff_name": staff_name,
             "memo": request.form.get("memo", "").strip(),
             "created_at": now_iso(),
         }
@@ -1835,13 +1841,19 @@ def admin_karte_log_edit(log_id):
     
     # POST処理
     try:
+        # staff_nameはsession.staffを初期値にし、selectの値を優先
+        staff = session.get("staff", {})
+        default_staff_name = staff.get("name", "スタッフ")
+        staff_name = request.form.get("staff_name", "").strip() or default_staff_name
+        
         update_data = {
             "date": request.form.get("date", "").strip(),
             "place_type": request.form.get("place_type", "").strip(),
             "place_name": request.form.get("place_name", "").strip(),
+            "chief_complaint": request.form.get("chief_complaint", "").strip(),
             "body_state": request.form.get("body_state", "").strip(),
             "treatment": request.form.get("treatment", "").strip(),
-            "staff_name": request.form.get("staff_name", "").strip(),
+            "staff_name": staff_name,
             "memo": request.form.get("memo", "").strip(),
         }
         
