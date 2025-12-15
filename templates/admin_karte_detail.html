@@ -239,7 +239,7 @@
       <div class="admin-karte-log-header">
         <div class="admin-karte-log-date">{{ log.date }}</div>
         <div class="admin-karte-log-actions">
-          <a href="/admin/karte/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
+          <a href="/admin/karte/{{ patient.id }}/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
           {% if is_admin %}
           <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
             <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>
@@ -312,7 +312,7 @@
         <div class="admin-karte-log-header">
           <div class="admin-karte-log-date">{{ log.date }}</div>
           <div class="admin-karte-log-actions">
-            <a href="/admin/karte/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
+            <a href="/admin/karte/{{ patient.id }}/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
             {% if is_admin %}
             <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
               <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>

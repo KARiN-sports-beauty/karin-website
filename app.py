@@ -1808,36 +1808,64 @@ def admin_karte_new_log(patient_id):
         return redirect(f"/admin/karte/{patient_id}/log/new")
 
 
-@app.route("/admin/karte/log/<log_id>/edit", methods=["GET", "POST"])
+@app.route("/admin/karte/<patient_id>/log/<log_id>/edit", methods=["GET", "POST"])
 @staff_required
-def admin_karte_log_edit(log_id):
+def admin_karte_log_edit(patient_id, log_id):
     """施術ログ編集"""
     if request.method == "GET":
         try:
             res = supabase_admin.table("karte_logs").select("*").eq("id", log_id).execute()
             if not res.data:
                 flash("ログが見つかりません", "error")
-                return redirect("/admin/karte")
+                return redirect(f"/admin/karte/{patient_id}")
             log = res.data[0]
             
-            patient_id = log.get("patient_id")
+            # patient_idの整合性チェック
+            if log.get("patient_id") != patient_id:
+                flash("患者IDが一致しません", "error")
+                return redirect(f"/admin/karte/{patient_id}")
+            
             res_patient = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
             patient = res_patient.data[0] if res_patient.data else None
             
+            if not patient:
+                flash("患者が見つかりません", "error")
+                return redirect("/admin/karte")
+            
             # 画像取得
-            res_images = supabase_admin.table("karte_images").select("*").eq("log_id", log_id).execute()
-            images = res_images.data or []
+            try:
+                res_images = supabase_admin.table("karte_images").select("*").eq("log_id", log_id).execute()
+                images = res_images.data or []
+            except Exception as e:
+                print(f"⚠️ WARNING - karte_images取得エラー: {e}")
+                images = []
             log["images"] = images
             
             staff = session.get("staff", {})
-            staff_id = staff.get("id")
-            staff_name = staff.get("name", "スタッフ")
+            staff_name = log.get("staff_name") or staff.get("name", "スタッフ")
             
-            return render_template("admin_karte_log_edit.html", log=log, patient=patient, staff_id=staff_id, staff_name=staff_name)
+            # スタッフリストを取得（新規作成画面と同じロジック）
+            staff_list = []
+            try:
+                try:
+                    res_staff = supabase_admin.table("staff").select("id, name").execute()
+                    if res_staff.data:
+                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
+                except:
+                    staff_list = [{"name": staff_name, "id": staff.get("id")}]
+                
+                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
+                if not current_staff_in_list:
+                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            return render_template("admin_karte_log_edit.html", log=log, patient=patient, staff_name=staff_name, staff_list=staff_list)
         except Exception as e:
             print("❌ ログ取得エラー:", e)
             flash("ログの取得に失敗しました", "error")
-            return redirect("/admin/karte")
+            return redirect(f"/admin/karte/{patient_id}")
     
     # POST処理
     try:
@@ -1859,10 +1887,6 @@ def admin_karte_log_edit(log_id):
         
         supabase_admin.table("karte_logs").update(update_data).eq("id", log_id).execute()
         flash("施術ログを更新しました", "success")
-        
-        # ログからpatient_idを取得
-        res = supabase_admin.table("karte_logs").select("patient_id").eq("id", log_id).execute()
-        patient_id = res.data[0].get("patient_id") if res.data else None
         
         return redirect(f"/admin/karte/{patient_id}")
     except Exception as e:

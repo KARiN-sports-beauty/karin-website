@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}施術ログ編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏ 施術ログ編集</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
+  <strong>患者：</strong>{{ patient.name or '未入力' }}
+</div>
+
+<form method="POST" action="/admin/karte/{{ patient.id }}/log/{{ log.id }}/edit" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付</label>
+    <input type="date" name="date" value="{{ log.date or '' }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
+    <select name="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="in_house" {% if log.place_type == 'in_house' %}selected{% endif %}>院内</option>
+      <option value="visit" {% if log.place_type == 'visit' %}selected{% endif %}>往診</option>
+      <option value="field" {% if log.place_type == 'field' %}selected{% endif %}>帯同</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名</label>
+    <input type="text" name="place_name" value="{{ log.place_name or '' }}" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">主訴</label>
+    <textarea name="chief_complaint" rows="3" placeholder="主訴を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ log.chief_complaint or '' }}</textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">今日の状態</label>
+    <textarea name="body_state" rows="3" placeholder="今日の状態を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ log.body_state or '' }}</textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">施術内容</label>
+    <textarea name="treatment" rows="3" placeholder="施術内容を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ log.treatment or '' }}</textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">担当スタッフ</label>
+    <select name="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      {% for staff in staff_list %}
+        {% set current_staff_name = log.staff_name or staff_name %}
+        <option value="{{ staff.name }}" {% if staff.name == current_staff_name %}selected{% endif %}>{{ staff.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
+    <textarea name="memo" rows="5" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ log.memo or '' }}</textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 更新</button>
+    <a href="/admin/karte/{{ patient.id }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 詳細に戻る</a>
+  </div>
+</form>
+
+{% endblock %}
