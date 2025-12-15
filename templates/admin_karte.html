@@ -40,7 +40,9 @@
           <span class="admin-karte-introducer-text" onclick="event.stopPropagation(); window.location.href='/admin/karte/{{ patient.introducer_info.id }}';">
             {{ patient.introducer_info.name }}
           </span>
-          <span class="admin-introducer-badge">{{ patient.introduced_count }}人紹介</span>
+          {% if patient.introduced_count and patient.introduced_count > 0 %}
+            <span class="admin-introducer-badge">{{ patient.introduced_count }}</span>
+          {% endif %}
         {% else %}
           <span>なし</span>
         {% endif %}

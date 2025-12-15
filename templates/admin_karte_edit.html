@@ -88,7 +88,11 @@
     <select name="introduced_by_patient_id" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択なし</option>
       {% for p in all_patients %}
-        <option value="{{ p.id }}" {% if patient.introduced_by_patient_id == p.id %}selected{% endif %}>{{ p.id }}：{{ p.name }}（{{ p.kana }}）</option>
+        <option value="{{ p.id }}" {% if patient.introduced_by_patient_id == p.id %}selected{% endif %}>
+          {{ p.last_name or '' }} {{ p.first_name or '' }}（{{ p.last_kana or '' }} {{ p.first_kana or '' }}）
+          {% if p.birthday %}｜{{ p.birthday }}{% endif %}
+          {% if p.introducer %}｜{{ p.introducer }}{% else %}｜紹介者なし{% endif %}
+        </option>
       {% endfor %}
     </select>
   </div>

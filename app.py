@@ -1501,13 +1501,29 @@ def admin_karte():
                     p["id"]: p for p in res_intro.data
                 }
 
-        # ✅ patients に 最終来院日・紹介者情報 を合成
+        # ✅ 紹介された人数を一括取得（各患者が紹介した人数）
+        # introduced_by_patient_idがpatient_idsに含まれる患者のみを取得して集計
+        introduced_count_map = {}
+        if patients:
+            patient_ids = [p.get("id") for p in patients if p.get("id")]
+            if patient_ids:
+                # introduced_by_patient_idがpatient_idsに含まれる患者を取得
+                res_introduced_patients = supabase_admin.table("patients").select("introduced_by_patient_id").in_("introduced_by_patient_id", patient_ids).execute()
+                if res_introduced_patients.data:
+                    # 紹介者IDごとにカウント
+                    for patient_record in res_introduced_patients.data:
+                        intro_id = patient_record.get("introduced_by_patient_id")
+                        if intro_id:
+                            introduced_count_map[intro_id] = introduced_count_map.get(intro_id, 0) + 1
+
+        # ✅ patients に 最終来院日・紹介者情報・紹介者数 を合成
         for patient in patients:
             pid = patient.get("id")
 
             patient["last_visit_date"] = last_visit_map.get(pid)
             intro_id = patient.get("introduced_by_patient_id")
             patient["introducer_info"] = introducer_map.get(intro_id)
+            patient["introduced_count"] = introduced_count_map.get(pid, 0)
 
         # ✅ 並び順（最後に来た人が上）
         patients.sort(key=sort_key, reverse=True)
@@ -1626,8 +1642,8 @@ def admin_karte_edit(patient_id):
                 return redirect("/admin/karte")
             patient = res.data[0]
             
-            # 紹介者候補を取得（検索用）
-            res_all = supabase_admin.table("patients").select("id, name, kana").order("name").execute()
+            # 紹介者候補を取得（検索用：姓名分離、生年月日、紹介者も取得）
+            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, birthday, introducer").order("name").execute()
             all_patients = res_all.data or []
             
             return render_template("admin_karte_edit.html", patient=patient, all_patients=all_patients)
