@@ -1487,12 +1487,12 @@ def admin_karte():
 
         introducer_map = {}
 
-        # ✅ IN句で紹介者を一括取得（ここが最重要）
+        # ✅ IN句で紹介者を一括取得（ここが最重要：姓名分離フィールドも取得）
         if introducer_ids:
             res_intro = (
                 supabase_admin
                 .table("patients")
-                .select("id, name")
+                .select("id, last_name, first_name, last_kana, first_kana, name")
                 .in_("id", introducer_ids)
                 .execute()
             )
@@ -1702,12 +1702,20 @@ def admin_karte_edit(patient_id):
         return redirect(f"/admin/karte/{patient_id}/edit")
 
 
-@app.route("/admin/karte/<patient_id>/new_log", methods=["GET", "POST"])
+@app.route("/admin/karte/<patient_id>/log/new", methods=["GET", "POST"])
 @staff_required
 def admin_karte_new_log(patient_id):
     """新規施術ログ作成"""
     if request.method == "GET":
         try:
+            # 同一日付のログが存在するかチェック（指示⑤）
+            today = datetime.now(JST).strftime("%Y-%m-%d")
+            res_existing = supabase_admin.table("karte_logs").select("id").eq("patient_id", patient_id).eq("date", today).execute()
+            if res_existing.data:
+                # 既存のログがあれば編集画面へリダイレクト
+                log_id = res_existing.data[0]["id"]
+                return redirect(f"/admin/karte/log/{log_id}/edit")
+            
             res = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
             if not res.data:
                 flash("患者が見つかりません", "error")
@@ -1715,10 +1723,33 @@ def admin_karte_new_log(patient_id):
             patient = res.data[0]
             
             staff = session.get("staff", {})
-            staff_id = staff.get("id")
             staff_name = staff.get("name", "スタッフ")
             
-            return render_template("admin_karte_new_log.html", patient=patient, staff_id=staff_id, staff_name=staff_name)
+            # スタッフリストを取得（承認済みスタッフのみ）
+            staff_list = []
+            try:
+                # まずstaffテーブルから取得を試みる
+                try:
+                    res_staff = supabase_admin.table("staff").select("id, name").execute()
+                    if res_staff.data:
+                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
+                except:
+                    # staffテーブルがない場合は、現在のスタッフのみ
+                    staff_list = [{"name": staff_name, "id": staff.get("id")}]
+                
+                # 現在のスタッフがリストに含まれていない場合は追加
+                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
+                if not current_staff_in_list:
+                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                # エラー時は現在のスタッフのみ
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            # 今日の日付をデフォルト値として設定
+            today_date = datetime.now(JST).strftime("%Y-%m-%d")
+            
+            return render_template("admin_karte_new_log.html", patient=patient, staff_name=staff_name, staff_list=staff_list, today_date=today_date)
         except Exception as e:
             print("❌ 患者取得エラー:", e)
             flash("患者の取得に失敗しました", "error")
@@ -1726,15 +1757,16 @@ def admin_karte_new_log(patient_id):
     
     # POST処理
     try:
+        # スキーマ準拠のデータ構造
         log_data = {
             "patient_id": patient_id,
             "date": request.form.get("date", "").strip(),
-            "location_type": request.form.get("location_type", "").strip(),
-            "chief_complaint": request.form.get("chief_complaint", "").strip(),
-            "today_condition": request.form.get("today_condition", "").strip(),
+            "place_type": request.form.get("place_type", "").strip(),
+            "place_name": request.form.get("place_name", "").strip(),
+            "body_state": request.form.get("body_state", "").strip(),
             "treatment": request.form.get("treatment", "").strip(),
+            "staff_name": request.form.get("staff_name", "").strip(),
             "memo": request.form.get("memo", "").strip(),
-            "staff_id": request.form.get("staff_id", "").strip(),
             "created_at": now_iso(),
         }
         
@@ -1746,7 +1778,7 @@ def admin_karte_new_log(patient_id):
     except Exception as e:
         print("❌ 施術ログ作成エラー:", e)
         flash(f"施術ログの作成に失敗しました: {e}", "error")
-        return redirect(f"/admin/karte/{patient_id}/new_log")
+        return redirect(f"/admin/karte/{patient_id}/log/new")
 
 
 @app.route("/admin/karte/log/<log_id>/edit", methods=["GET", "POST"])

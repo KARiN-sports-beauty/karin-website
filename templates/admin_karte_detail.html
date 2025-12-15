@@ -93,8 +93,8 @@
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
             （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
           </a>
-          {% if patient.introduced_count %}
-            <span class="admin-introducer-badge">{{ patient.introduced_count }}人紹介</span>
+          {% if patient.introduced_count and patient.introduced_count > 0 %}
+            <span class="admin-introducer-badge">◯{{ patient.introduced_count }}</span>
           {% endif %}
         {% else %}
           <span style="color:#999;">なし</span>
@@ -338,7 +338,7 @@
 
 <!-- アクションボタン -->
 <div class="admin-karte-detail-actions">
-  <a href="/admin/karte/{{ patient.id }}/new_log" class="admin-karte-detail-btn-primary">➕ 新規施術ログ追加</a>
+  <a href="/admin/karte/{{ patient.id }}/log/new" class="admin-karte-detail-btn-primary">➕ 新規施術ログ追加</a>
   <a href="/admin/karte/{{ patient.id }}/edit" class="admin-karte-detail-btn-secondary">✏ 基本情報編集</a>
   {% if is_admin %}
   <form action="/admin/karte/{{ patient.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('このカルテを削除しますか？\n（元には戻せません）');">

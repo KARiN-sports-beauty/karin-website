@@ -38,10 +38,11 @@
         <span class="admin-karte-label">紹介者：</span>
         {% if patient.introducer_info %}
           <span class="admin-karte-introducer-text" onclick="event.stopPropagation(); window.location.href='/admin/karte/{{ patient.introducer_info.id }}';">
-            {{ patient.introducer_info.name }}
+            {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
+            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
           </span>
           {% if patient.introduced_count and patient.introduced_count > 0 %}
-            <span class="admin-introducer-badge">{{ patient.introduced_count }}</span>
+            <span class="admin-introducer-badge">◯{{ patient.introduced_count }}</span>
           {% endif %}
         {% else %}
           <span>なし</span>

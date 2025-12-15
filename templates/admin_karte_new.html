@@ -172,11 +172,9 @@ function autoFillKana(sourceId, targetId) {
   });
 }
 
-// 姓 → セイ
-autoFillKana("last_name", "last_kana");
-
-// 名 → メイ
-autoFillKana("first_name", "first_kana");
+// 自動補完機能は無効化（姓・名からセイ・メイへの自動反映を停止）
+// autoFillKana("last_name", "last_kana");
+// autoFillKana("first_name", "first_kana");
 
 // autocomplete ロジック
 const searchInput = document.getElementById("introducer_search");
@@ -220,7 +218,7 @@ if (searchInput && resultsBox && hiddenInput && clearBtn) {
       if (p.introduced_count && p.introduced_count > 0) {
         const badge = document.createElement("span");
         badge.className = "admin-introducer-badge";
-        badge.textContent = `紹介 ${p.introduced_count}`;
+        badge.textContent = `◯${p.introduced_count}`;
         item.appendChild(badge);
       }
 
