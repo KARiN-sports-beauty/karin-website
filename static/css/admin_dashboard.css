@@ -893,11 +893,11 @@ form .admin-news-btn {
 
 /* 区分による色分け（優先） */
 .admin-karte-card.category-artist {
-  border-left-color: #FFD700; /* ゴールド */
+  border-left-color: #c0a062; /* ゴールド（ブログのアンダーラインと同じ） */
 }
 
 .admin-karte-card.category-sports {
-  border-left-color: #C0C0C0; /* シルバー */
+  border-left-color: #E8E8E8; /* シルバー（煌びやかな感じ） */
 }
 
 /* 性別による色分け（区分が設定されていない場合のみ） */
@@ -906,7 +906,7 @@ form .admin-news-btn {
 }
 
 .admin-karte-card.gender-female {
-  border-left-color: #E57373; /* 赤系 */
+  border-left-color: #FFB6C1; /* ピンク（明るめ） */
 }
 
 .admin-karte-card.gender-other {
@@ -1861,7 +1861,7 @@ form .admin-news-btn {
 }
 
 .admin-resv-card.place-field {
-  border-left-color: #E91E63; /* ピンク */
+  border-left-color: #FFB6C1; /* ピンク（明るめ） */
 }
 
 .admin-resv-status {

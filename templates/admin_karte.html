@@ -7,24 +7,20 @@
 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
   <a href="/admin/karte/new" class="admin-karte-btn-white">➕ 新規カルテ作成（入力用）</a>
   
-  {% if introducer_ranking or reservation_ranking %}
-  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-    {% if introducer_ranking %}
-    <button type="button" id="introducer-ranking-toggle" class="admin-karte-btn-white ranking-tab active" style="border: none; cursor: pointer;" onclick="switchRankingTab('introducer')">
-      🏆 紹介者ランキング
-    </button>
-    {% endif %}
-    {% if reservation_ranking %}
-    <button type="button" id="reservation-ranking-toggle" class="admin-karte-btn-white ranking-tab" style="border: none; cursor: pointer;" onclick="switchRankingTab('reservation')">
-      📅 予約数順ランキング
-    </button>
-    {% endif %}
-  </div>
+  {% if introducer_ranking %}
+  <button type="button" id="introducer-ranking-toggle" class="admin-karte-btn-white" style="border: none; cursor: pointer;">
+    🏆 紹介者ランキング
+  </button>
+  {% endif %}
+  {% if reservation_ranking %}
+  <button type="button" id="reservation-ranking-toggle" class="admin-karte-btn-white" style="border: none; cursor: pointer;">
+    📅 予約数順ランキング
+  </button>
   {% endif %}
 </div>
 
 {% if introducer_ranking %}
-<div id="introducer-ranking-content" class="admin-introducer-ranking-card" style="display: block; margin-top: 20px; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+<div id="introducer-ranking-content" class="admin-introducer-ranking-card" style="display: none; margin-top: 20px; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">🏆 紹介者ランキング（上位10名）</h3>
   <ul style="list-style: none; padding: 0; margin: 0;">
     {% for item in introducer_ranking %}
@@ -126,28 +122,31 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // ランキングタブの切替
-  function switchRankingTab(tabType) {
-    const introducerTab = document.getElementById('introducer-ranking-toggle');
-    const reservationTab = document.getElementById('reservation-ranking-toggle');
-    const introducerContent = document.getElementById('introducer-ranking-content');
-    const reservationContent = document.getElementById('reservation-ranking-content');
-    
-    if (tabType === 'introducer') {
-      if (introducerContent) introducerContent.style.display = 'block';
-      if (reservationContent) reservationContent.style.display = 'none';
-      if (introducerTab) introducerTab.classList.add('active');
-      if (reservationTab) reservationTab.classList.remove('active');
-    } else if (tabType === 'reservation') {
-      if (introducerContent) introducerContent.style.display = 'none';
-      if (reservationContent) reservationContent.style.display = 'block';
-      if (introducerTab) introducerTab.classList.remove('active');
-      if (reservationTab) reservationTab.classList.add('active');
-    }
+  // 紹介者ランキングのアコーディオン
+  const introducerToggle = document.getElementById('introducer-ranking-toggle');
+  const introducerContent = document.getElementById('introducer-ranking-content');
+  if (introducerToggle && introducerContent) {
+    introducerToggle.addEventListener('click', function() {
+      if (introducerContent.style.display === 'none') {
+        introducerContent.style.display = 'block';
+      } else {
+        introducerContent.style.display = 'none';
+      }
+    });
   }
   
-  // グローバルスコープに公開
-  window.switchRankingTab = switchRankingTab;
+  // 予約数順ランキングのアコーディオン
+  const reservationToggle = document.getElementById('reservation-ranking-toggle');
+  const reservationContent = document.getElementById('reservation-ranking-content');
+  if (reservationToggle && reservationContent) {
+    reservationToggle.addEventListener('click', function() {
+      if (reservationContent.style.display === 'none') {
+        reservationContent.style.display = 'block';
+      } else {
+        reservationContent.style.display = 'none';
+      }
+    });
+  }
   
   // 名前検索
   const searchInput = document.getElementById('karte-search');
