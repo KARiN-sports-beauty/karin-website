@@ -47,21 +47,21 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">姓（必須）</label>
-          <input type="text" name="last_name" id="new_last_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="last_name" id="new_last_name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">名（必須）</label>
-          <input type="text" name="first_name" id="new_first_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="first_name" id="new_first_name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">セイ（必須）</label>
-          <input type="text" name="last_kana" id="new_last_kana" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="last_kana" id="new_last_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メイ（必須）</label>
-          <input type="text" name="first_kana" id="new_first_kana" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="first_kana" id="new_first_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
       </div>
       <div style="margin-bottom: 12px;">
@@ -136,23 +136,34 @@ function togglePatientMode() {
   const newSection = document.getElementById('new_patient_section');
   const patientIdInput = document.getElementById('patient_id');
   
+  const newLastName = document.getElementById('new_last_name');
+  const newFirstName = document.getElementById('new_first_name');
+  const newLastKana = document.getElementById('new_last_kana');
+  const newFirstKana = document.getElementById('new_first_kana');
+  
   if (existingMode) {
     existingSection.style.display = 'block';
     newSection.style.display = 'none';
-    // 新規患者の必須フィールドを解除
-    document.getElementById('new_last_name').removeAttribute('required');
-    document.getElementById('new_first_name').removeAttribute('required');
-    document.getElementById('new_last_kana').removeAttribute('required');
-    document.getElementById('new_first_kana').removeAttribute('required');
+    // 新規患者の必須フィールドを解除し、値をクリア
+    newLastName.removeAttribute('required');
+    newFirstName.removeAttribute('required');
+    newLastKana.removeAttribute('required');
+    newFirstKana.removeAttribute('required');
+    newLastName.value = '';
+    newFirstName.value = '';
+    newLastKana.value = '';
+    newFirstKana.value = '';
   } else {
-    existingSection.style.display = 'none';
+    existingSection.style.display = 'block'; // 一旦表示してからrequiredを設定
     newSection.style.display = 'block';
     patientIdInput.value = '';
-    // 新規患者の必須フィールドを設定
-    document.getElementById('new_last_name').setAttribute('required', 'required');
-    document.getElementById('new_first_name').setAttribute('required', 'required');
-    document.getElementById('new_last_kana').setAttribute('required', 'required');
-    document.getElementById('new_first_kana').setAttribute('required', 'required');
+    // 新規患者の必須フィールドを設定（表示後に設定することでブラウザのバリデーションエラーを回避）
+    setTimeout(() => {
+      newLastName.setAttribute('required', 'required');
+      newFirstName.setAttribute('required', 'required');
+      newLastKana.setAttribute('required', 'required');
+      newFirstKana.setAttribute('required', 'required');
+    }, 0);
   }
 }
 
@@ -273,6 +284,15 @@ document.querySelector('form').addEventListener('submit', function(e) {
     if (!lastName || !firstName || !lastKana || !firstKana) {
       e.preventDefault();
       alert('姓・名・セイ・メイは必須です');
+      // 必須フィールドにrequired属性を設定してからフォーカス
+      document.getElementById('new_last_name').setAttribute('required', 'required');
+      document.getElementById('new_first_name').setAttribute('required', 'required');
+      document.getElementById('new_last_kana').setAttribute('required', 'required');
+      document.getElementById('new_first_kana').setAttribute('required', 'required');
+      if (!lastName) document.getElementById('new_last_name').focus();
+      else if (!firstName) document.getElementById('new_first_name').focus();
+      else if (!lastKana) document.getElementById('new_last_kana').focus();
+      else if (!firstKana) document.getElementById('new_first_kana').focus();
       return false;
     }
   }
