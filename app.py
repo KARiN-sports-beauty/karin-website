@@ -2620,8 +2620,9 @@ def admin_reservations():
         
         # カレンダー表示用の日付計算
         calendar_days = []
-        # 月初の曜日（0=月曜日、6=日曜日）
-        first_weekday = current_date.weekday()
+        # 月初の曜日（0=日曜日、6=土曜日に変換）
+        # weekday()は月曜日=0、日曜日=6なので、日曜始まりに変換
+        first_weekday = (current_date.weekday() + 1) % 7
         # 月の日数
         if current_date.month == 12:
             next_month_first = datetime(current_date.year + 1, 1, 1, tzinfo=JST)
