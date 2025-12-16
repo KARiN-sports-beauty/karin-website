@@ -209,9 +209,18 @@ if (searchInput && resultsBox && hiddenInput && clearBtn) {
       const lastKana = p.last_kana || '';
       const firstKana = p.first_kana || '';
       const birthday = p.birthday || "生年月日不明";
-      const introducer = p.introducer || "紹介者なし";
       
-      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducer}`;
+      // 紹介者表示：introduced_by_patient_idがあれば紹介者の姓名、なければ手書きのintroducer
+      let introducerDisplay = "紹介者なし";
+      if (p.introducer_info) {
+        const introLastName = p.introducer_info.last_name || '';
+        const introFirstName = p.introducer_info.first_name || '';
+        introducerDisplay = `${introLastName} ${introFirstName}`.trim() || "紹介者不明";
+      } else if (p.introducer) {
+        introducerDisplay = p.introducer; // 手書きの紹介者
+      }
+      
+      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducerDisplay}`;
       item.appendChild(text);
 
       // 紹介者数バッジ（あれば表示）

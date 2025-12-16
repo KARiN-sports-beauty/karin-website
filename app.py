@@ -1402,11 +1402,36 @@ def admin_karte_new():
         # 全患者一覧を取得（姓名分離、生年月日、紹介者、紹介者数も取得）
         try:
             # まず基本情報を取得
-            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer").order("name").execute()
+            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id").order("name").execute()
             all_patients = res_all.data or []
             
-            # 各患者の紹介者数を取得
+            # 紹介者IDの集合を取得
+            introducer_ids = list({
+                p.get("introduced_by_patient_id")
+                for p in all_patients
+                if p.get("introduced_by_patient_id")
+            })
+            
+            # 紹介者情報を一括取得
+            introducer_map = {}
+            if introducer_ids:
+                res_introducers = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana").in_("id", introducer_ids).execute()
+                if res_introducers.data:
+                    introducer_map = {
+                        intro["id"]: intro for intro in res_introducers.data
+                    }
+            
+            # 各患者に紹介者情報と紹介者数を結合
             for patient in all_patients:
+                # 紹介者情報を結合
+                intro_id = patient.get("introduced_by_patient_id")
+                if intro_id and intro_id in introducer_map:
+                    introducer_info = introducer_map[intro_id]
+                    patient["introducer_info"] = introducer_info
+                else:
+                    patient["introducer_info"] = None
+                
+                # 紹介者数を取得
                 res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient["id"]).execute()
                 patient["introduced_count"] = res_introduced.count or 0
         except Exception as e:
@@ -2634,8 +2659,33 @@ def admin_reservations_new():
     if request.method == "GET":
         try:
             # 患者一覧取得（autocomplete用に姓名分離フィールド・生年月日・紹介者も取得）
-            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer").order("created_at", desc=True).execute()
+            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id").order("created_at", desc=True).execute()
             patients = res_patients.data or []
+            
+            # 紹介者IDの集合を取得
+            introducer_ids = list({
+                p.get("introduced_by_patient_id")
+                for p in patients
+                if p.get("introduced_by_patient_id")
+            })
+            
+            # 紹介者情報を一括取得
+            introducer_map = {}
+            if introducer_ids:
+                res_introducers = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana").in_("id", introducer_ids).execute()
+                if res_introducers.data:
+                    introducer_map = {
+                        intro["id"]: intro for intro in res_introducers.data
+                    }
+            
+            # 各患者に紹介者情報を結合
+            for patient in patients:
+                intro_id = patient.get("introduced_by_patient_id")
+                if intro_id and intro_id in introducer_map:
+                    introducer_info = introducer_map[intro_id]
+                    patient["introducer_info"] = introducer_info
+                else:
+                    patient["introducer_info"] = None
             
             # スタッフリスト取得
             staff = session.get("staff", {})
@@ -2767,7 +2817,15 @@ def admin_reservations_new():
             "created_at": now_iso()
         }
         
-        supabase_admin.table("reservations").insert(reservation_data).execute()
+        try:
+            res_reservation = supabase_admin.table("reservations").insert(reservation_data).execute()
+            if not res_reservation.data:
+                flash("予約の作成に失敗しました（データが返されませんでした）", "error")
+                return redirect("/admin/reservations/new")
+        except Exception as insert_error:
+            print(f"❌ 予約作成エラー: {insert_error}")
+            flash(f"予約の作成に失敗しました: {str(insert_error)}", "error")
+            return redirect("/admin/reservations/new")
         
         flash("予約を作成しました", "success")
         
@@ -2781,8 +2839,10 @@ def admin_reservations_new():
             ym_str = dt_jst.strftime("%Y-%m")
             return redirect(f"/admin/reservations?ym={ym_str}&day={day_str}")
     except Exception as e:
+        import traceback
         print("❌ 予約作成エラー:", e)
-        flash(f"予約の作成に失敗しました: {e}", "error")
+        print("❌ トレースバック:", traceback.format_exc())
+        flash(f"予約の作成に失敗しました: {str(e)}", "error")
         return redirect("/admin/reservations/new")
 
 

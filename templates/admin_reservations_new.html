@@ -38,7 +38,7 @@
         style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
       >
       <div id="patient_results" class="admin-autocomplete-list"></div>
-      <input type="hidden" name="patient_id" id="patient_id" required>
+      <input type="hidden" name="patient_id" id="patient_id">
       <small id="patient_selected_hint" style="display: none; color: #4CAF50; font-size: 0.85rem; margin-top: 4px;">✓ 患者が選択されました</small>
     </div>
     
@@ -192,10 +192,19 @@ if (searchInput && resultsBox && hiddenInput) {
       const lastKana = p.last_kana || '';
       const firstKana = p.first_kana || '';
       const birthday = p.birthday || '生年月日不明';
-      const introducer = p.introducer || '紹介者なし';
+      
+      // 紹介者表示：introduced_by_patient_idがあれば紹介者の姓名、なければ手書きのintroducer
+      let introducerDisplay = '紹介者なし';
+      if (p.introducer_info) {
+        const introLastName = p.introducer_info.last_name || '';
+        const introFirstName = p.introducer_info.first_name || '';
+        introducerDisplay = `${introLastName} ${introFirstName}`.trim() || '紹介者不明';
+      } else if (p.introducer) {
+        introducerDisplay = p.introducer; // 手書きの紹介者
+      }
       
       // カルテの紹介者入力と同じ形式で表示
-      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducer}`;
+      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducerDisplay}`;
       item.appendChild(text);
       
       item.onclick = () => {
@@ -239,17 +248,51 @@ document.getElementById('place_type').addEventListener('change', function() {
 
 // フォーム送信時のバリデーション
 document.querySelector('form').addEventListener('submit', function(e) {
+  console.log('🔍 フォーム送信開始');
   const existingMode = document.getElementById('patient_mode_existing').checked;
+  console.log('🔍 患者選択モード:', existingMode ? '既存' : '新規');
   
   // 既存患者選択時はpatient_idが必要
   if (existingMode) {
     const patientId = document.getElementById('patient_id').value;
+    console.log('🔍 patient_id:', patientId);
     if (!patientId) {
       e.preventDefault();
       alert('患者を選択してください。検索して患者をクリックしてください。');
       document.getElementById('patient_search').focus();
       return false;
     }
+  } else {
+    // 新規患者の必須項目チェック
+    const lastName = document.getElementById('new_last_name').value.trim();
+    const firstName = document.getElementById('new_first_name').value.trim();
+    const lastKana = document.getElementById('new_last_kana').value.trim();
+    const firstKana = document.getElementById('new_first_kana').value.trim();
+    console.log('🔍 新規患者データ:', {lastName, firstName, lastKana, firstKana});
+    
+    if (!lastName || !firstName || !lastKana || !firstKana) {
+      e.preventDefault();
+      alert('姓・名・セイ・メイは必須です');
+      return false;
+    }
+  }
+  
+  // 予約日時のチェック
+  const reservedAt = document.querySelector('input[name="reserved_at"]').value;
+  console.log('🔍 予約日時:', reservedAt);
+  if (!reservedAt) {
+    e.preventDefault();
+    alert('予約日時を入力してください');
+    return false;
+  }
+  
+  // 現場区分のチェック
+  const placeType = document.getElementById('place_type').value;
+  console.log('🔍 現場区分:', placeType);
+  if (!placeType) {
+    e.preventDefault();
+    alert('現場区分を選択してください');
+    return false;
   }
   
   // 手入力の施術時間が入力されたら、selectの値を上書き
@@ -258,6 +301,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
     const select = document.querySelector('select[name="duration_minutes"]');
     select.value = customDuration;
   }
+  
+  console.log('🔍 フォーム送信を許可');
 });
 </script>
 
