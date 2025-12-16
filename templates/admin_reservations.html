@@ -92,7 +92,7 @@
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for reservation in reservations_of_day %}
-      <div class="admin-resv-card">
+      <div class="admin-resv-card {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
           <div>
             <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>

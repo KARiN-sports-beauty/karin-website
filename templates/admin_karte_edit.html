@@ -54,7 +54,7 @@
       <option value="">選択してください</option>
       <option value="一般" {% if patient.category == '一般' %}selected{% endif %}>一般</option>
       <option value="スポーツ選手" {% if patient.category == 'スポーツ選手' %}selected{% endif %}>スポーツ選手</option>
-      <option value="アーティスト" {% if patient.category == 'アーティスト' %}selected{% endif %}>アーティスト</option>
+      <option value="アーティスト・タレント" {% if patient.category == 'アーティスト・タレント' or patient.category == 'アーティスト' %}selected{% endif %}>アーティスト・タレント</option>
     </select>
   </div>
   

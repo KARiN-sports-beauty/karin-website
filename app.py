@@ -1531,17 +1531,20 @@ def admin_karte():
         # ✅ 紹介された人数を一括取得（各患者が紹介した人数）
         # introduced_by_patient_idをキーにして紹介人数をCOUNTするmapをPython側で作成
         introduced_count_map = {}
+        res_introduced_patients = None  # 予約数集計でも使用するため、スコープを広げる
         if patients:
             patient_ids = [p.get("id") for p in patients if p.get("id")]
             if patient_ids:
-                # introduced_by_patient_idがpatient_idsに含まれる患者を一括取得
-                res_introduced_patients = supabase_admin.table("patients").select("introduced_by_patient_id").in_("introduced_by_patient_id", patient_ids).execute()
+                # introduced_by_patient_idがpatient_idsに含まれる患者を一括取得（IDも取得して予約数集計に使用）
+                res_introduced_patients = supabase_admin.table("patients").select("id, introduced_by_patient_id").in_("introduced_by_patient_id", patient_ids).execute()
                 if res_introduced_patients.data:
                     # 紹介者IDごとにカウント（Python側で集計）
                     for patient_record in res_introduced_patients.data:
                         intro_id = patient_record.get("introduced_by_patient_id")
                         if intro_id:
                             introduced_count_map[intro_id] = introduced_count_map.get(intro_id, 0) + 1
+        else:
+            res_introduced_patients = None
 
         # ✅ patients に 最終来院日・紹介者情報・紹介者数 を合成
         for patient in patients:
@@ -1570,6 +1573,40 @@ def admin_karte():
                 reverse=True
             )[:10]  # 上位10名のみ
             
+            # 紹介経由予約数を一括取得（N+1を避ける）
+            # 既存のres_introduced_patientsの結果を再利用して、紹介者IDごとの紹介された患者IDリストを作成
+            introduced_patient_ids_map = {}  # {紹介者ID: [紹介された患者IDのリスト]}
+            if res_introduced_patients and res_introduced_patients.data:
+                for patient_record in res_introduced_patients.data:
+                    intro_id = patient_record.get("introduced_by_patient_id")
+                    patient_id = patient_record.get("id")  # 紹介された患者のID
+                    if intro_id and patient_id:
+                        if intro_id not in introduced_patient_ids_map:
+                            introduced_patient_ids_map[intro_id] = []
+                        introduced_patient_ids_map[intro_id].append(patient_id)
+            
+            # 全紹介された患者IDを収集（重複除去）
+            all_introduced_patient_ids = list(set([
+                pid for patient_ids in introduced_patient_ids_map.values() for pid in patient_ids
+            ]))
+            
+            # 紹介経由予約数を一括取得（キャンセル除外）
+            reservation_count_map = {}  # {紹介者ID: 予約数}
+            if all_introduced_patient_ids:
+                try:
+                    res_reservations = supabase_admin.table("reservations").select("patient_id").in_("patient_id", all_introduced_patient_ids).neq("status", "canceled").execute()
+                    if res_reservations.data:
+                        # 紹介者IDごとに予約数を集計
+                        for reservation in res_reservations.data:
+                            patient_id = reservation.get("patient_id")
+                            # この患者を紹介した紹介者を特定
+                            for introducer_id, introduced_patient_ids in introduced_patient_ids_map.items():
+                                if patient_id in introduced_patient_ids:
+                                    reservation_count_map[introducer_id] = reservation_count_map.get(introducer_id, 0) + 1
+                except Exception as e:
+                    print(f"⚠️ WARNING - 紹介経由予約数取得エラー: {e}")
+                    # エラーが発生してもランキング表示は続行
+            
             # 各紹介者の情報を取得
             for introducer_id, count in sorted_introducers:
                 introducer_info = introducer_map.get(introducer_id)
@@ -1579,13 +1616,47 @@ def admin_karte():
                     if not name:
                         name = introducer_info.get('name', '不明')
                     
+                    # 紹介経由予約数を取得
+                    reservation_count = reservation_count_map.get(introducer_id, 0)
+                    
                     introducer_ranking.append({
                         "patient_id": introducer_id,
                         "name": name,
-                        "count": count
+                        "count": count,
+                        "reservation_count": reservation_count
+                    })
+        
+        # ✅ 予約数順ランキング取得（上位10名）
+        # 紹介者が紹介した患者の予約数の合計でランキング（reservation_count_mapを利用）
+        reservation_ranking = []
+        if reservation_count_map:
+            # 予約数でソート（降順）
+            sorted_by_reservation = sorted(
+                reservation_count_map.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:10]  # 上位10名のみ
+            
+            # 各紹介者の情報を取得
+            for introducer_id, reservation_count in sorted_by_reservation:
+                introducer_info = introducer_map.get(introducer_id)
+                if introducer_info:
+                    # 名前を結合
+                    name = f"{introducer_info.get('last_name', '')} {introducer_info.get('first_name', '')}".strip()
+                    if not name:
+                        name = introducer_info.get('name', '不明')
+                    
+                    # 紹介人数も取得
+                    intro_count = introduced_count_map.get(introducer_id, 0)
+                    
+                    reservation_ranking.append({
+                        "patient_id": introducer_id,
+                        "name": name,
+                        "count": intro_count,
+                        "reservation_count": reservation_count
                     })
 
-        return render_template("admin_karte.html", patients=patients, introducer_ranking=introducer_ranking)
+        return render_template("admin_karte.html", patients=patients, introducer_ranking=introducer_ranking, reservation_ranking=reservation_ranking)
 
     except Exception as e:
         print("❌ カルテ一覧取得エラー:", e)
@@ -1624,6 +1695,14 @@ def admin_karte_detail(patient_id):
         # 現在の患者が紹介した人数を取得（表示用）
         res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient_id).execute()
         patient["introduced_count"] = res_introduced.count or 0
+        
+        # 累計予約数を取得（全期間、キャンセル除外）
+        try:
+            res_reservations = supabase_admin.table("reservations").select("id", count="exact").eq("patient_id", patient_id).neq("status", "canceled").execute()
+            patient["total_reservation_count"] = res_reservations.count or 0
+        except Exception as e:
+            print(f"⚠️ WARNING - 累計予約数取得エラー: {e}")
+            patient["total_reservation_count"] = 0
         
         # この患者が紹介した患者一覧を取得
         res_introduced_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday").eq("introduced_by_patient_id", patient_id).order("created_at", desc=True).execute()

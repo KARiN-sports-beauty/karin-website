@@ -888,7 +888,29 @@ form .admin-news-btn {
   display: flex;
   flex-direction: column;
   min-height: 130px;
-  border-left: 6px solid #1E3A5F;
+  border-left: 6px solid transparent;
+}
+
+/* 区分による色分け（優先） */
+.admin-karte-card.category-artist {
+  border-left-color: #FFD700; /* ゴールド */
+}
+
+.admin-karte-card.category-sports {
+  border-left-color: #C0C0C0; /* シルバー */
+}
+
+/* 性別による色分け（区分が設定されていない場合のみ） */
+.admin-karte-card.gender-male {
+  border-left-color: #1E3A5F; /* KARiN.カラー（濃紺） */
+}
+
+.admin-karte-card.gender-female {
+  border-left-color: #E57373; /* 赤系 */
+}
+
+.admin-karte-card.gender-other {
+  border-left-color: #FFA726; /* オレンジ系 */
 }
 
 .admin-karte-card:hover {
@@ -1655,6 +1677,36 @@ form .admin-news-btn {
   flex: 1;
 }
 
+/* カルテ詳細：バッジ */
+.admin-karte-detail-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-karte-detail-badge-introducer {
+  background: #1E3A5F; /* KARiN.カラー（濃紺） */
+  color: #fff;
+}
+
+.admin-karte-detail-badge-reservation {
+  background: #4CAF50; /* 緑 */
+  color: #fff;
+}
+
+/* ランキングタブ */
+.ranking-tab.active {
+  background: #1E3A5F;
+  color: #fff;
+}
+
+.ranking-tab:not(.active) {
+  background: #fff;
+  color: #1E3A5F;
+}
+
 /* =========================
    予約管理（HotPepper風）
 ========================= */
@@ -1788,6 +1840,7 @@ form .admin-news-btn {
 .admin-resv-card {
   padding: 16px;
   border: 1px solid #e0e0e0;
+  border-left: 6px solid transparent;
   border-radius: 12px;
   background: #fafafa;
   margin-bottom: 12px;
@@ -1796,6 +1849,19 @@ form .admin-news-btn {
 
 .admin-resv-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 現場区分による色分け */
+.admin-resv-card.place-inhouse {
+  border-left-color: #1E3A5F; /* KARiN.カラー（濃紺） */
+}
+
+.admin-resv-card.place-visit {
+  border-left-color: #4CAF50; /* グリーン */
+}
+
+.admin-resv-card.place-field {
+  border-left-color: #E91E63; /* ピンク */
 }
 
 .admin-resv-status {

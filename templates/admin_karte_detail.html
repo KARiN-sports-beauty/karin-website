@@ -14,7 +14,21 @@
 
 <!-- 基本情報ブロック（表紙） -->
 <div class="admin-karte-detail-card">
-  <h3 class="admin-karte-detail-section-title">基本情報</h3>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 class="admin-karte-detail-section-title" style="margin: 0;">基本情報</h3>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      {% if patient.introduced_count and patient.introduced_count > 0 %}
+      <span class="admin-karte-detail-badge admin-karte-detail-badge-introducer">
+        紹介 {{ patient.introduced_count }}人
+      </span>
+      {% endif %}
+      {% if patient.total_reservation_count and patient.total_reservation_count > 0 %}
+      <span class="admin-karte-detail-badge admin-karte-detail-badge-reservation">
+        予約 {{ patient.total_reservation_count }}件
+      </span>
+      {% endif %}
+    </div>
+  </div>
   
   <div class="admin-karte-detail-info-grid">
     <div class="admin-karte-detail-field">
@@ -59,7 +73,13 @@
     
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">5. 区分</span>
-      <span class="admin-karte-detail-value">{{ patient.category or '未入力' }}</span>
+      <span class="admin-karte-detail-value">
+        {% if patient.category == 'アーティスト' %}
+          アーティスト・タレント
+        {% else %}
+          {{ patient.category or '未入力' }}
+        {% endif %}
+      </span>
     </div>
     
     <div class="admin-karte-detail-field">
@@ -183,21 +203,16 @@
       <span class="admin-karte-detail-value">{{ patient.note or '未入力' }}</span>
     </div>
     
-    {% if patient.introduced_count and patient.introduced_count > 0 %}
-    <div class="admin-karte-detail-field">
-      <span class="admin-karte-detail-label">19. 紹介患者</span>
-      <span class="admin-karte-detail-value">
-        <button type="button" id="introduced-patients-toggle" class="admin-introduced-badge">
-          紹介 {{ patient.introduced_count }}人
-        </button>
-      </span>
-    </div>
-    {% endif %}
   </div>
 </div>
 
 <!-- 紹介患者一覧（開閉表示） -->
 {% if patient.introduced_count and patient.introduced_count > 0 %}
+<div style="margin-top: 20px; margin-bottom: 20px;">
+  <button type="button" id="introduced-patients-toggle" class="admin-karte-detail-btn-secondary" style="border: none; cursor: pointer;">
+    紹介患者一覧を見る（{{ patient.introduced_count }}人）
+  </button>
+</div>
 <div id="introduced-patients-list" class="admin-introduced-list" style="display: none;">
   <div class="admin-karte-detail-card">
     <h3 class="admin-karte-detail-section-title">紹介患者一覧（{{ patient.introduced_count }}人）</h3>
