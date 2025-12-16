@@ -33,12 +33,13 @@
         type="text"
         id="patient_search"
         class="admin-form-input"
-        placeholder="名前・フリガナで検索"
+        placeholder="名前・フリガナで検索して患者を選択してください"
         autocomplete="off"
         style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
       >
       <div id="patient_results" class="admin-autocomplete-list"></div>
-      <input type="hidden" name="patient_id" id="patient_id">
+      <input type="hidden" name="patient_id" id="patient_id" required>
+      <small id="patient_selected_hint" style="display: none; color: #4CAF50; font-size: 0.85rem; margin-top: 4px;">✓ 患者が選択されました</small>
     </div>
     
     <!-- 新規患者作成フォーム -->
@@ -190,15 +191,26 @@ if (searchInput && resultsBox && hiddenInput) {
       const firstName = p.first_name || '';
       const lastKana = p.last_kana || '';
       const firstKana = p.first_kana || '';
-      const displayName = `${lastName} ${firstName}`.trim() || p.name || '不明';
-      const displayKana = `${lastKana} ${firstKana}`.trim() || p.kana || '';
-      text.textContent = `${displayName}（${displayKana}）`;
+      const birthday = p.birthday || '生年月日不明';
+      const introducer = p.introducer || '紹介者なし';
+      
+      // カルテの紹介者入力と同じ形式で表示
+      text.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducer}`;
       item.appendChild(text);
       
       item.onclick = () => {
+        const displayName = `${lastName} ${firstName}`.trim() || p.name || '不明';
         searchInput.value = displayName;
         hiddenInput.value = p.id;
         resultsBox.style.display = 'none';
+        // 選択されたことを視覚的に表示
+        const hint = document.getElementById('patient_selected_hint');
+        if (hint) {
+          hint.style.display = 'block';
+          hint.textContent = `✓ 患者が選択されました: ${displayName}`;
+        }
+        // デバッグ用（開発時のみ）
+        console.log('患者を選択しました:', p.id, displayName);
       };
       
       resultsBox.appendChild(item);
@@ -234,7 +246,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
     const patientId = document.getElementById('patient_id').value;
     if (!patientId) {
       e.preventDefault();
-      alert('患者を選択してください');
+      alert('患者を選択してください。検索して患者をクリックしてください。');
+      document.getElementById('patient_search').focus();
       return false;
     }
   }

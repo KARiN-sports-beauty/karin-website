@@ -2633,8 +2633,8 @@ def admin_reservations_new():
     """新規予約作成"""
     if request.method == "GET":
         try:
-            # 患者一覧取得（autocomplete用に姓名分離フィールドも取得）
-            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana").order("created_at", desc=True).execute()
+            # 患者一覧取得（autocomplete用に姓名分離フィールド・生年月日・紹介者も取得）
+            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer").order("created_at", desc=True).execute()
             patients = res_patients.data or []
             
             # スタッフリスト取得
@@ -2710,8 +2710,15 @@ def admin_reservations_new():
             # 既存患者選択の場合
             patient_id = request.form.get("patient_id", "").strip()
             if not patient_id:
-                flash("患者を選択してください", "error")
+                flash("患者を選択してください。検索して患者をクリックしてください。", "error")
                 return redirect("/admin/reservations/new")
+            
+            # 患者が存在するか確認
+            res_check = supabase_admin.table("patients").select("id").eq("id", patient_id).execute()
+            if not res_check.data:
+                flash("選択された患者が見つかりません", "error")
+                return redirect("/admin/reservations/new")
+            
             redirect_to_karte = False  # 既存患者の場合は予約一覧へ
         
         # 日時取得（datetime-local形式）
