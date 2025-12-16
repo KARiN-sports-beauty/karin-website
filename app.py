@@ -2805,6 +2805,55 @@ def admin_reservations_new():
         staff_name = request.form.get("staff_name", "").strip() or None
         memo = request.form.get("memo", "").strip() or None
         
+        # 予約重複チェック（同一スタッフ × 時間帯が被る場合）
+        # 予約終了時刻を計算
+        reserved_end = dt_jst + timedelta(minutes=duration_minutes)
+        reserved_end_iso = reserved_end.isoformat()
+        
+        # 重複チェック：同じスタッフで、時間帯が被る予約を検索
+        # キャンセル済みは除外
+        query = supabase_admin.table("reservations").select("id, reserved_at, duration_minutes, staff_name, patient_id").eq("staff_name", staff_name).neq("status", "canceled")
+        
+        # 時間帯が被る予約を検索
+        res_overlapping = query.execute()
+        overlapping_reservations = []
+        
+        if res_overlapping.data:
+            for other_res in res_overlapping.data:
+                try:
+                    other_start_str = other_res.get("reserved_at", "")
+                    other_duration = other_res.get("duration_minutes", 60)
+                    if other_start_str:
+                        other_start = datetime.fromisoformat(other_start_str.replace("Z", "+00:00")).astimezone(JST)
+                        other_end = other_start + timedelta(minutes=other_duration)
+                        
+                        # 時間帯が被るかチェック
+                        if dt_jst < other_end and reserved_end > other_start:
+                            overlapping_reservations.append(other_res)
+                except:
+                    pass
+        
+        if overlapping_reservations:
+            # 重複している予約の情報を取得
+            patient_ids = [r.get("patient_id") for r in overlapping_reservations if r.get("patient_id")]
+            patient_map = {}
+            if patient_ids:
+                res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                if res_patients.data:
+                    for p in res_patients.data:
+                        name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                        patient_map[p["id"]] = name or p.get("name", "不明")
+            
+            # エラーメッセージを作成
+            conflict_details = []
+            for conflict in overlapping_reservations:
+                conflict_start = datetime.fromisoformat(conflict.get("reserved_at", "").replace("Z", "+00:00")).astimezone(JST)
+                conflict_patient_name = patient_map.get(conflict.get("patient_id"), "不明")
+                conflict_details.append(f"{conflict_start.strftime('%Y-%m-%d %H:%M')} - {conflict_patient_name}")
+            
+            flash(f"予約が重複しています。同じスタッフの以下の予約と時間帯が被っています：\n" + "\n".join(conflict_details), "error")
+            return redirect("/admin/reservations/new")
+        
         # 予約作成
         reservation_data = {
             "patient_id": patient_id,
@@ -2865,6 +2914,193 @@ def admin_reservations_status(reservation_id):
         print("❌ 予約ステータス更新エラー:", e)
         flash("予約ステータスの更新に失敗しました", "error")
         return redirect("/admin/reservations")
+
+
+@app.route("/admin/reservations/<reservation_id>/edit", methods=["GET", "POST"])
+@staff_required
+def admin_reservations_edit(reservation_id):
+    """予約編集"""
+    if request.method == "GET":
+        try:
+            # 予約情報取得
+            res = supabase_admin.table("reservations").select("*").eq("id", reservation_id).execute()
+            if not res.data:
+                flash("予約が見つかりません", "error")
+                return redirect("/admin/reservations")
+            reservation = res.data[0]
+            
+            # 患者情報取得
+            patient_id = reservation.get("patient_id")
+            res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
+            if res_patient.data:
+                patient = res_patient.data[0]
+                name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+                reservation["patient_name"] = name or patient.get("name", "不明")
+            else:
+                reservation["patient_name"] = "不明"
+            
+            # reserved_atをdatetime-local形式に変換
+            try:
+                dt_str = reservation.get("reserved_at", "")
+                if dt_str:
+                    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                    dt_jst = dt.astimezone(JST)
+                    reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
+                else:
+                    reservation["reserved_at_display_local"] = ""
+            except:
+                reservation["reserved_at_display_local"] = ""
+            
+            # スタッフリスト取得
+            staff = session.get("staff", {})
+            staff_name = staff.get("name", "スタッフ")
+            staff_list = []
+            try:
+                try:
+                    res_staff = supabase_admin.table("staff").select("id, name").execute()
+                    if res_staff.data:
+                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
+                except:
+                    pass
+                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
+                if not current_staff_in_list:
+                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            return render_template("admin_reservations_edit.html", reservation=reservation, staff_list=staff_list)
+        except Exception as e:
+            print("❌ 予約編集画面取得エラー:", e)
+            flash("予約編集画面の取得に失敗しました", "error")
+            return redirect("/admin/reservations")
+    
+    # POST処理
+    try:
+        # 既存の予約情報を取得（重複チェック用）
+        res_existing = supabase_admin.table("reservations").select("*").eq("id", reservation_id).execute()
+        if not res_existing.data:
+            flash("予約が見つかりません", "error")
+            return redirect("/admin/reservations")
+        existing_reservation = res_existing.data[0]
+        
+        # 日時取得（datetime-local形式）
+        reserved_at_str = request.form.get("reserved_at", "").strip()
+        if not reserved_at_str:
+            flash("予約日時を入力してください", "error")
+            return redirect(f"/admin/reservations/{reservation_id}/edit")
+        
+        # datetime-local形式をISO形式に変換
+        try:
+            dt_naive = datetime.strptime(reserved_at_str, "%Y-%m-%dT%H:%M")
+            dt_jst = dt_naive.replace(tzinfo=JST)
+            reserved_at_iso = dt_jst.isoformat()
+        except Exception as e:
+            flash("予約日時の形式が正しくありません", "error")
+            return redirect(f"/admin/reservations/{reservation_id}/edit")
+        
+        # 施術時間（手入力があればそれを優先）
+        duration_custom = request.form.get("duration_minutes_custom", "").strip()
+        if duration_custom:
+            try:
+                duration_minutes = int(duration_custom)
+            except:
+                duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
+        else:
+            duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
+        
+        place_type = request.form.get("place_type", "").strip()
+        if place_type not in ["in_house", "visit", "field"]:
+            flash("現場区分を選択してください", "error")
+            return redirect(f"/admin/reservations/{reservation_id}/edit")
+        
+        place_name = request.form.get("place_name", "").strip() or None
+        staff_name = request.form.get("staff_name", "").strip() or None
+        status = request.form.get("status", "").strip()
+        if status not in ["reserved", "visited", "completed", "canceled"]:
+            flash("無効なステータスです", "error")
+            return redirect(f"/admin/reservations/{reservation_id}/edit")
+        
+        memo = request.form.get("memo", "").strip() or None
+        
+        # 予約重複チェック（同一スタッフ × 時間帯が被る場合）
+        # 予約終了時刻を計算
+        reserved_end = dt_jst + timedelta(minutes=duration_minutes)
+        reserved_end_iso = reserved_end.isoformat()
+        
+        # 重複チェック：同じスタッフで、時間帯が被る予約を検索
+        # 自分自身の予約は除外
+        query = supabase_admin.table("reservations").select("id, reserved_at, duration_minutes, staff_name, patient_id").eq("staff_name", staff_name).neq("id", reservation_id)
+        
+        # キャンセル済みは除外
+        query = query.neq("status", "canceled")
+        
+        # 時間帯が被る予約を検索
+        # 条件：新しい予約の開始時刻 < 既存予約の終了時刻 AND 新しい予約の終了時刻 > 既存予約の開始時刻
+        res_overlapping = query.execute()
+        overlapping_reservations = []
+        
+        if res_overlapping.data:
+            for other_res in res_overlapping.data:
+                try:
+                    other_start_str = other_res.get("reserved_at", "")
+                    other_duration = other_res.get("duration_minutes", 60)
+                    if other_start_str:
+                        other_start = datetime.fromisoformat(other_start_str.replace("Z", "+00:00")).astimezone(JST)
+                        other_end = other_start + timedelta(minutes=other_duration)
+                        
+                        # 時間帯が被るかチェック
+                        if dt_jst < other_end and reserved_end > other_start:
+                            overlapping_reservations.append(other_res)
+                except:
+                    pass
+        
+        if overlapping_reservations:
+            # 重複している予約の情報を取得
+            patient_ids = [r.get("patient_id") for r in overlapping_reservations if r.get("patient_id")]
+            patient_map = {}
+            if patient_ids:
+                res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                if res_patients.data:
+                    for p in res_patients.data:
+                        name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                        patient_map[p["id"]] = name or p.get("name", "不明")
+            
+            # エラーメッセージを作成
+            conflict_details = []
+            for conflict in overlapping_reservations:
+                conflict_start = datetime.fromisoformat(conflict.get("reserved_at", "").replace("Z", "+00:00")).astimezone(JST)
+                conflict_patient_name = patient_map.get(conflict.get("patient_id"), "不明")
+                conflict_details.append(f"{conflict_start.strftime('%Y-%m-%d %H:%M')} - {conflict_patient_name}")
+            
+            flash(f"予約が重複しています。同じスタッフの以下の予約と時間帯が被っています：\n" + "\n".join(conflict_details), "error")
+            return redirect(f"/admin/reservations/{reservation_id}/edit")
+        
+        # 予約更新
+        update_data = {
+            "reserved_at": reserved_at_iso,
+            "duration_minutes": duration_minutes,
+            "place_type": place_type,
+            "place_name": place_name,
+            "staff_name": staff_name,
+            "status": status,
+            "memo": memo
+        }
+        
+        supabase_admin.table("reservations").update(update_data).eq("id", reservation_id).execute()
+        
+        flash("予約を更新しました", "success")
+        
+        # 予約日付にリダイレクト
+        day_str = dt_jst.strftime("%Y-%m-%d")
+        ym_str = dt_jst.strftime("%Y-%m")
+        return redirect(f"/admin/reservations?ym={ym_str}&day={day_str}")
+    except Exception as e:
+        import traceback
+        print("❌ 予約更新エラー:", e)
+        print("❌ トレースバック:", traceback.format_exc())
+        flash(f"予約の更新に失敗しました: {str(e)}", "error")
+        return redirect(f"/admin/reservations/{reservation_id}/edit")
 
 
 @app.route("/admin/reservations/<reservation_id>/delete", methods=["POST"])

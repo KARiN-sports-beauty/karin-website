@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}予約編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏ 予約編集</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" style="max-width: 800px;">
+  <!-- 患者情報（編集不可） -->
+  <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
+    <strong style="color: #1E3A5F;">患者：</strong>
+    <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
+      {{ reservation.patient_name or '患者不明' }}
+    </a>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
+    <input type="datetime-local" name="reserved_at" value="{{ reservation.reserved_at_display_local }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">施術時間（分）</label>
+    <select name="duration_minutes" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="60" {% if reservation.duration_minutes == 60 %}selected{% endif %}>60分</option>
+      <option value="90" {% if reservation.duration_minutes == 90 %}selected{% endif %}>90分</option>
+      <option value="120" {% if reservation.duration_minutes == 120 %}selected{% endif %}>120分</option>
+    </select>
+    <input type="number" name="duration_minutes_custom" placeholder="または手入力（分）" min="15" max="300" step="15" value="{% if reservation.duration_minutes not in [60, 90, 120] %}{{ reservation.duration_minutes }}{% endif %}" style="width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <small style="color: #666; font-size: 0.85rem;">手入力を選択した場合は、上記の選択は無視されます</small>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
+    <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="in_house" {% if reservation.place_type == 'in_house' %}selected{% endif %}>院内</option>
+      <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>往診</option>
+      <option value="field" {% if reservation.place_type == 'field' %}selected{% endif %}>帯同</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px; {% if reservation.place_type not in ['visit', 'field'] %}display: none;{% endif %}" id="place_name_wrapper">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名</label>
+    <input type="text" name="place_name" value="{{ reservation.place_name or '' }}" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">担当スタッフ</label>
+    <select name="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      {% for staff in staff_list %}
+        <option value="{{ staff.name }}" {% if staff.name == reservation.staff_name %}selected{% endif %}>{{ staff.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">ステータス</label>
+    <select name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="reserved" {% if reservation.status == 'reserved' %}selected{% endif %}>予約中</option>
+      <option value="visited" {% if reservation.status == 'visited' %}selected{% endif %}>来院済</option>
+      <option value="completed" {% if reservation.status == 'completed' %}selected{% endif %}>完了</option>
+      <option value="canceled" {% if reservation.status == 'canceled' %}selected{% endif %}>キャンセル</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
+    <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ reservation.memo or '' }}</textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 更新</button>
+    <a href="/admin/reservations" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+<script>
+// 現場区分に応じて現場名入力欄を表示/非表示
+document.getElementById('place_type').addEventListener('change', function() {
+  const placeType = this.value;
+  const placeNameWrapper = document.getElementById('place_name_wrapper');
+  if (placeType === 'visit' || placeType === 'field') {
+    placeNameWrapper.style.display = 'block';
+  } else {
+    placeNameWrapper.style.display = 'none';
+  }
+});
+
+// フォーム送信時のバリデーション
+document.querySelector('form').addEventListener('submit', function(e) {
+  // 予約日時のチェック
+  const reservedAt = document.querySelector('input[name="reserved_at"]').value;
+  if (!reservedAt) {
+    e.preventDefault();
+    alert('予約日時を入力してください');
+    return false;
+  }
+  
+  // 現場区分のチェック
+  const placeType = document.getElementById('place_type').value;
+  if (!placeType) {
+    e.preventDefault();
+    alert('現場区分を選択してください');
+    return false;
+  }
+  
+  // 手入力の施術時間が入力されたら、selectの値を上書き
+  const customDuration = document.querySelector('input[name="duration_minutes_custom"]').value;
+  if (customDuration) {
+    const select = document.querySelector('select[name="duration_minutes"]');
+    select.value = customDuration;
+  }
+});
+</script>
+
+{% endblock %}
