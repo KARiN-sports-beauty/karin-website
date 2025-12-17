@@ -84,8 +84,13 @@
   <form action="/staff/profile" method="POST">
     
     <div class="form-group">
-      <label>名前</label>
-      <input type="text" name="name" class="input" value="{{ staff.name }}" required>
+      <label>姓（漢字）</label>
+      <input type="text" name="last_name" class="input" value="{{ staff.last_name or (staff.name.split(' ')[0] if staff.name and ' ' in staff.name else staff.name) }}" required>
+    </div>
+
+    <div class="form-group">
+      <label>名（漢字）</label>
+      <input type="text" name="first_name" class="input" value="{{ staff.first_name or (staff.name.split(' ')[1] if staff.name and ' ' in staff.name else '') }}" required>
     </div>
 
     <div class="form-group">

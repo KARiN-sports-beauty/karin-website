@@ -659,13 +659,17 @@ def thanks():
 @app.route("/staff/register", methods=["GET", "POST"])
 def staff_register():
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
         phone = request.form.get("phone", "").strip()
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "").strip()
 
-        if not name or not phone or not email or not password:
+        if not last_name or not first_name or not phone or not email or not password:
             return render_template("staff_register.html", error="全ての項目を入力してください。")
+
+        # 姓と名を結合してnameを作成（半角スペース区切り）
+        name = f"{last_name} {first_name}".strip()
 
         # Supabase Auth にユーザー作成（未承認）
         try:
@@ -674,7 +678,9 @@ def staff_register():
                 "password": password,
                 "options": {
                     "data": {
-                        "name": name,
+                        "last_name": last_name,
+                        "first_name": first_name,
+                        "name": name,  # 後方互換性のため
                         "phone": phone,
                         "approved": False
                     }
@@ -744,11 +750,20 @@ def admin_staff():
     # ここが重要！ users は「そのままリストなので」 users.users ではない
     for u in users:
         meta = u.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            display_name = f"{last_name} {first_name}"
+        else:
+            # 後方互換性：既存データはnameフィールドを使用
+            display_name = meta.get("name", "未設定")
 
         staff_list.append({
             "id": u.id,
             "email": u.email,
-            "name": meta.get("name", "未設定"),
+            "name": display_name,
             "phone": meta.get("phone", "未登録"),
             "approved": meta.get("approved", False),
             "created_at": str(u.created_at)[:10],
@@ -781,8 +796,17 @@ def admin_staff_approve(user_id):
             {"user_metadata": {"approved": True}}
         )
 
+        # 表示名を生成（姓・名から、半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            display_name = f"{last_name} {first_name}"
+        else:
+            # 後方互換性：既存データはnameフィールドを使用
+            display_name = meta.get("name", "")
+
         # 承認メール送信
-        send_staff_approved_email(user.email, meta.get("name", ""))
+        send_staff_approved_email(user.email, display_name)
 
         flash("スタッフを承認しました（メール送信済み）", "success")
 
@@ -832,6 +856,17 @@ def admin_staff_delete(user_id):
 @staff_required
 def staff_profile():
     staff = session.get("staff")
+    
+    # ユーザーメタデータから姓・名を取得
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        user = next((u for u in users if u.id == staff["id"]), None)
+        if user:
+            meta = user.user_metadata or {}
+            staff["last_name"] = meta.get("last_name", "")
+            staff["first_name"] = meta.get("first_name", "")
+    except:
+        pass
 
     return render_template(
         "staff_profile.html",
@@ -847,15 +882,24 @@ def staff_profile_update():
         staff = session.get("staff")
         user_id = staff["id"]
 
-        new_name = request.form.get("name")
+        last_name = request.form.get("last_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
         new_phone = request.form.get("phone", "")
+
+        if not last_name or not first_name:
+            return redirect(url_for("staff_profile", message="姓と名を入力してください"))
+
+        # 姓と名を結合してnameを作成（半角スペース区切り）
+        new_name = f"{last_name} {first_name}".strip()
 
         # Supabase Auth メタデータ更新
         result = supabase_admin.auth.admin.update_user_by_id(
             uid=user_id,
             attributes={
                 "user_metadata": {
-                    "name": new_name,
+                    "last_name": last_name,
+                    "first_name": first_name,
+                    "name": new_name,  # 後方互換性のため
                     "phone": new_phone
                 }
             }
@@ -863,6 +907,8 @@ def staff_profile_update():
 
         # セッション情報を更新（ここ重要）
         session["staff"]["name"] = new_name
+        session["staff"]["last_name"] = last_name
+        session["staff"]["first_name"] = first_name
         session["staff"]["phone"] = new_phone
 
         return redirect(url_for(
@@ -907,12 +953,18 @@ def staff_login():
     if not metadata.get("approved", False):
         return render_template("stafflogin.html", error="まだ管理者の承認が必要です")
 
-    # 🔹 表示名を決定
-    full_name = (
-        metadata.get("name")
-        or metadata.get("full_name")
-        or email
-    )
+    # 🔹 表示名を決定（姓・名から生成、半角スペース区切り）
+    last_name = metadata.get("last_name", "")
+    first_name = metadata.get("first_name", "")
+    if last_name and first_name:
+        full_name = f"{last_name} {first_name}"
+    else:
+        # 後方互換性：既存データはnameフィールドを使用
+        full_name = (
+            metadata.get("name")
+            or metadata.get("full_name")
+            or email
+        )
 
     is_admin = metadata.get("is_admin", False)
 
@@ -921,6 +973,8 @@ def staff_login():
         "id": user.id,
         "email": user.email,
         "name": full_name,
+        "last_name": last_name,
+        "first_name": first_name,
         "is_admin": is_admin
     }
 
