@@ -110,9 +110,8 @@
             href="/admin/karte/{{ patient.introducer_info.id }}"
             class="admin-karte-detail-introducer-link"
           >
-            {% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
-            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
+            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）{% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
           </a>
           {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
             <span class="admin-introducer-badge">{{ patient.introducer_info.introduced_count }}</span>
@@ -237,8 +236,7 @@
       <a href="/admin/karte/{{ introduced_patient.id }}" class="admin-introduced-card">
         <div class="admin-introduced-head">
           <strong class="admin-introduced-name">
-            {% if introduced_patient.vip_level == 'star' %}⭐️{% elif introduced_patient.vip_level == 'clover' %}🍀{% endif %}
-            {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}
+            {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}{% if introduced_patient.vip_level == 'star' %}⭐️{% elif introduced_patient.vip_level == 'clover' %}🍀{% endif %}
           </strong>
         </div>
         <div class="admin-introduced-info">

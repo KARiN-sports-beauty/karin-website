@@ -2690,12 +2690,31 @@ def admin_reservations():
         # patient_idの集合を取得
         patient_ids = list({r.get("patient_id") for r in reservations if r.get("patient_id")})
         
-        # 患者情報を一括取得
+        # 患者情報を一括取得（category, gender, vip_levelも取得）
         patient_map = {}
         if patient_ids:
-            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name, category, gender, vip_level").in_("id", patient_ids).execute()
             if res_patients.data:
                 patient_map = {p["id"]: p for p in res_patients.data}
+        
+        # 予約情報にnomination_type、nominated_staff_ids、areaを追加
+        for reservation in reservations:
+            # nomination_typeが存在しない場合はデフォルト値'本指名'を設定
+            if "nomination_type" not in reservation or not reservation.get("nomination_type"):
+                reservation["nomination_type"] = "本指名"
+            
+            # nominated_staff_idsをJSONからパース
+            try:
+                nominated_staff_ids_str = reservation.get("nominated_staff_ids")
+                if nominated_staff_ids_str:
+                    if isinstance(nominated_staff_ids_str, str):
+                        reservation["nominated_staff_ids"] = json.loads(nominated_staff_ids_str)
+                    else:
+                        reservation["nominated_staff_ids"] = nominated_staff_ids_str
+                else:
+                    reservation["nominated_staff_ids"] = []
+            except:
+                reservation["nominated_staff_ids"] = []
         
         # 予約に患者情報を結合
         for reservation in reservations:
@@ -3016,6 +3035,65 @@ def admin_reservations_new():
             flash(f"予約が重複しています。同じスタッフの以下の予約と時間帯が被っています：\n" + "\n".join(conflict_details), "error")
             return redirect("/admin/reservations/new")
         
+        # エリア取得
+        area = request.form.get("area", "").strip() or None
+        if area and area not in ["tokyo", "fukuoka"]:
+            area = None
+        
+        # メニュー取得（施術時間と連動）
+        menu = request.form.get("menu", "").strip()
+        if menu and menu != duration_minutes:
+            # メニューと施術時間が一致しない場合はメニューを優先
+            try:
+                duration_minutes = int(menu)
+            except:
+                pass
+        
+        # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
+        nomination_type = request.form.get("nomination_type", "本指名").strip()
+        # 英語値から日本語値への変換（後方互換性のため）
+        nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
+        if nomination_type in nomination_type_map:
+            nomination_type = nomination_type_map[nomination_type]
+        # 有効な値でない場合はデフォルト値
+        if nomination_type not in ["本指名", "枠指名", "希望", "フリー"]:
+            nomination_type = "本指名"
+        
+        # 枠指名スタッフID取得（全スタッフ選択可能）
+        nominated_staff_ids = []
+        nomination_priority = None
+        if nomination_type == "枠指名":
+            # フォームから全てのframe_staff_*を取得（数に制限なし）
+            i = 1
+            while True:
+                frame_staff = request.form.get(f"frame_staff_{i}", "").strip()
+                if not frame_staff:
+                    break
+                frame_priority = request.form.get(f"frame_priority_{i}", "").strip()
+                # スタッフ名を追加（現状はstaff_nameのみ、将来staff_idに置換可能）
+                nominated_staff_ids.append(frame_staff)
+                if frame_priority:
+                    try:
+                        priority_int = int(frame_priority)
+                        if not nomination_priority or priority_int < nomination_priority:
+                            nomination_priority = priority_int
+                    except:
+                        pass
+                i += 1
+        
+        # 価格取得
+        base_price_str = request.form.get("base_price", "").strip()
+        try:
+            base_price = int(base_price_str) if base_price_str else None
+        except:
+            base_price = None
+        
+        final_price_str = request.form.get("final_price", "").strip()
+        try:
+            final_price = int(final_price_str) if final_price_str else None
+        except:
+            final_price = None
+        
         # 予約作成
         reservation_data = {
             "patient_id": patient_id,
@@ -3024,6 +3102,12 @@ def admin_reservations_new():
             "place_type": place_type,
             "place_name": place_name,
             "staff_name": staff_name,
+            "area": area,
+            "nomination_type": nomination_type,
+            "nominated_staff_ids": json.dumps(nominated_staff_ids) if nominated_staff_ids else json.dumps([]),
+            "nomination_priority": nomination_priority,
+            "base_price": base_price,
+            "final_price": final_price,
             "status": "reserved",
             "memo": memo,
             "created_at": now_iso()
@@ -3068,7 +3152,204 @@ def admin_reservations_status(reservation_id):
             flash("無効なステータスです", "error")
             return redirect("/admin/reservations")
         
+        # 予約情報を取得（日報反映用）
+        res_reservation = supabase_admin.table("reservations").select("*").eq("id", reservation_id).execute()
+        if not res_reservation.data:
+            flash("予約が見つかりません", "error")
+            return redirect("/admin/reservations")
+        reservation = res_reservation.data[0]
+        
+        # ステータス更新
         supabase_admin.table("reservations").update({"status": new_status}).eq("id", reservation_id).execute()
+        
+        # 予約完了時に日報へ自動反映（院内 or 往診のみ）
+        if new_status == "completed":
+            try:
+                staff_name = reservation.get("staff_name")
+                place_type = reservation.get("place_type")
+                patient_id = reservation.get("patient_id")
+                reserved_at_str = reservation.get("reserved_at")
+                
+                # 院内・往診・帯同すべてで日報に反映
+                if staff_name and place_type in ["in_house", "visit", "field"] and patient_id and reserved_at_str:
+                    # 予約日時をJSTに変換して日付を取得
+                    dt = datetime.fromisoformat(reserved_at_str.replace("Z", "+00:00"))
+                    dt_jst = dt.astimezone(JST)
+                    date_str = dt_jst.strftime("%Y-%m-%d")
+                    
+                    # 当日の日報を取得または作成
+                    res_report = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).eq("report_date", date_str).execute()
+                    
+                    if res_report.data:
+                        report_id = res_report.data[0]["id"]
+                    else:
+                        # 日報が存在しない場合は作成
+                        report_data = {
+                            "staff_name": staff_name,
+                            "report_date": date_str,
+                            "memo": None,
+                            "created_at": now_iso(),
+                            "updated_at": now_iso()
+                        }
+                        res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
+                        if res_new_report.data:
+                            report_id = res_new_report.data[0]["id"]
+                        else:
+                            report_id = None
+                    
+                    if report_id:
+                        # 該当区分の勤務カードを取得または作成
+                        res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", report_id).eq("work_type", place_type).execute()
+                        
+                        if res_items.data:
+                            # 既存のカードがあれば最初の1つを使用
+                            item_id = res_items.data[0]["id"]
+                        else:
+                            # カードが存在しない場合は作成
+                            item_data = {
+                                "report_id": report_id,
+                                "work_type": place_type,
+                                "start_time": None,
+                                "end_time": None,
+                                "break_minutes": 0,
+                                "memo": None,
+                                "created_at": now_iso()
+                            }
+                            res_new_item = supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+                            if res_new_item.data:
+                                item_id = res_new_item.data[0]["id"]
+                            else:
+                                item_id = None
+                        
+                        if item_id:
+                            # 患者情報を取得（名前表示用）
+                            patient_name = "患者不明"
+                            try:
+                                res_patient = supabase_admin.table("patients").select("last_name, first_name, name").eq("id", patient_id).execute()
+                                if res_patient.data:
+                                    p = res_patient.data[0]
+                                    name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                                    patient_name = name or p.get("name", "患者不明")
+                            except:
+                                pass
+                            
+                            # 予約情報からコース名と価格を取得
+                            course_name = None
+                            amount = reservation.get("base_price")
+                            nomination_type = reservation.get("nomination_type", "本指名")
+                            
+                            # 英語値から日本語値への変換（後方互換性のため）
+                            nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
+                            if nomination_type in nomination_type_map:
+                                nomination_type = nomination_type_map[nomination_type]
+                            
+                            # メニュー名を生成（指名タイプ＋現場区分の形式で統一）
+                            place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
+                            
+                            # 表記ルール：本指名（院内）、枠指名（帯同）の形式（本指名/枠指名は必ずこの形式）
+                            if nomination_type in ["本指名", "枠指名"]:
+                                course_name = f"{nomination_type}（{place_type_label}）"
+                            else:
+                                # 希望/フリーの場合は従来通り（エリア＋時間）
+                                area = reservation.get("area")
+                                duration = reservation.get("duration_minutes")
+                                if area and duration:
+                                    area_label = "東京" if area == "tokyo" else "福岡" if area == "fukuoka" else ""
+                                    course_name = f"{area_label} {duration}分コース"
+                                else:
+                                    course_name = f"{nomination_type}（{place_type_label}）"
+                            
+                            # 患者・売上明細を追加（重複チェック）
+                            res_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", item_id).eq("reservation_id", reservation_id).execute()
+                            if not res_existing.data:
+                                patient_data = {
+                                    "item_id": item_id,
+                                    "patient_id": patient_id,
+                                    "reservation_id": reservation_id,
+                                    "course_name": course_name,
+                                    "amount": amount,  # 基本価格を初期値として設定（日報で編集可能）
+                                    "memo": None,
+                                    "created_at": now_iso()
+                                }
+                                supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
+                            
+                            # 枠指名スタッフ全員の日報にも反映（対応スタッフ以外）
+                            nominated_staff_ids_str = reservation.get("nominated_staff_ids")
+                            nominated_staff_names = []
+                            if nominated_staff_ids_str:
+                                try:
+                                    if isinstance(nominated_staff_ids_str, str):
+                                        nominated_staff_names = json.loads(nominated_staff_ids_str)
+                                    else:
+                                        nominated_staff_names = nominated_staff_ids_str
+                                except:
+                                    nominated_staff_names = []
+                            
+                            # 枠指名スタッフが存在する場合、対応スタッフ以外にも0円で追加
+                            if nomination_type == "枠指名" and nominated_staff_names:
+                                # 各枠指名スタッフの日報に0円で追加（対応スタッフは既に処理済みなのでスキップ）
+                                for nominated_staff_name in nominated_staff_names:
+                                    if nominated_staff_name == staff_name:
+                                        continue  # 対応スタッフは既に処理済み
+                                    
+                                    # 該当スタッフの当日の日報を取得または作成
+                                    res_nom_report = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", nominated_staff_name).eq("report_date", date_str).execute()
+                                    
+                                    if res_nom_report.data:
+                                        nom_report_id = res_nom_report.data[0]["id"]
+                                    else:
+                                        nom_report_data = {
+                                            "staff_name": nominated_staff_name,
+                                            "report_date": date_str,
+                                            "memo": None,
+                                            "created_at": now_iso(),
+                                            "updated_at": now_iso()
+                                        }
+                                        res_new_nom_report = supabase_admin.table("staff_daily_reports").insert(nom_report_data).execute()
+                                        if res_new_nom_report.data:
+                                            nom_report_id = res_new_nom_report.data[0]["id"]
+                                        else:
+                                            nom_report_id = None
+                                    
+                                    if nom_report_id:
+                                        # 該当区分の勤務カードを取得または作成
+                                        res_nom_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", nom_report_id).eq("work_type", place_type).execute()
+                                        
+                                        if res_nom_items.data:
+                                            nom_item_id = res_nom_items.data[0]["id"]
+                                        else:
+                                            nom_item_data = {
+                                                "report_id": nom_report_id,
+                                                "work_type": place_type,
+                                                "start_time": None,
+                                                "end_time": None,
+                                                "break_minutes": 0,
+                                                "memo": None,
+                                                "created_at": now_iso()
+                                            }
+                                            res_new_nom_item = supabase_admin.table("staff_daily_report_items").insert(nom_item_data).execute()
+                                            if res_new_nom_item.data:
+                                                nom_item_id = res_new_nom_item.data[0]["id"]
+                                            else:
+                                                nom_item_id = None
+                                        
+                                        if nom_item_id:
+                                            # 枠指名（0円）として追加
+                                            res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
+                                            if not res_nom_existing.data:
+                                                nom_patient_data = {
+                                                    "item_id": nom_item_id,
+                                                    "patient_id": patient_id,
+                                                    "reservation_id": reservation_id,
+                                                    "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
+                                                    "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
+                                                    "memo": None,
+                                                    "created_at": now_iso()
+                                                }
+                                                supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
+            except Exception as e:
+                print(f"⚠️ WARNING - 日報への自動反映エラー: {e}")
+                # 日報反映エラーは警告のみ（予約ステータス更新は成功）
         
         flash("予約ステータスを更新しました", "success")
         return redirect(request.referrer or "/admin/reservations")
@@ -3112,6 +3393,19 @@ def admin_reservations_edit(reservation_id):
                     reservation["reserved_at_display_local"] = ""
             except:
                 reservation["reserved_at_display_local"] = ""
+            
+            # nominated_staff_idsをJSONからパース
+            try:
+                nominated_staff_ids_str = reservation.get("nominated_staff_ids")
+                if nominated_staff_ids_str:
+                    if isinstance(nominated_staff_ids_str, str):
+                        reservation["nominated_staff_ids"] = json.loads(nominated_staff_ids_str)
+                    else:
+                        reservation["nominated_staff_ids"] = nominated_staff_ids_str
+                else:
+                    reservation["nominated_staff_ids"] = []
+            except:
+                reservation["nominated_staff_ids"] = []
             
             # スタッフリスト取得
             staff = session.get("staff", {})
@@ -3178,6 +3472,64 @@ def admin_reservations_edit(reservation_id):
         
         place_name = request.form.get("place_name", "").strip() or None
         staff_name = request.form.get("staff_name", "").strip() or None
+        
+        # エリア取得
+        area = request.form.get("area", "").strip() or None
+        if area and area not in ["tokyo", "fukuoka"]:
+            area = None
+        
+        # メニュー取得（施術時間と連動）
+        menu = request.form.get("menu", "").strip()
+        if menu and menu != str(duration_minutes):
+            try:
+                duration_minutes = int(menu)
+            except:
+                pass
+        
+        # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
+        nomination_type = request.form.get("nomination_type", "本指名").strip()
+        # 英語値から日本語値への変換（後方互換性のため）
+        nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
+        if nomination_type in nomination_type_map:
+            nomination_type = nomination_type_map[nomination_type]
+        # 有効な値でない場合はデフォルト値
+        if nomination_type not in ["本指名", "枠指名", "希望", "フリー"]:
+            nomination_type = "本指名"
+        
+        # 枠指名スタッフID取得（全スタッフ選択可能）
+        nominated_staff_ids = []
+        nomination_priority = None
+        if nomination_type == "枠指名":
+            # フォームから全てのframe_staff_*を取得（数に制限なし）
+            i = 1
+            while True:
+                frame_staff = request.form.get(f"frame_staff_{i}", "").strip()
+                if not frame_staff:
+                    break
+                frame_priority = request.form.get(f"frame_priority_{i}", "").strip()
+                nominated_staff_ids.append(frame_staff)
+                if frame_priority:
+                    try:
+                        priority_int = int(frame_priority)
+                        if not nomination_priority or priority_int < nomination_priority:
+                            nomination_priority = priority_int
+                    except:
+                        pass
+                i += 1
+        
+        # 価格取得
+        base_price_str = request.form.get("base_price", "").strip()
+        try:
+            base_price = int(base_price_str) if base_price_str else None
+        except:
+            base_price = None
+        
+        final_price_str = request.form.get("final_price", "").strip()
+        try:
+            final_price = int(final_price_str) if final_price_str else None
+        except:
+            final_price = None
+        
         status = request.form.get("status", "").strip()
         if status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
@@ -3245,6 +3597,12 @@ def admin_reservations_edit(reservation_id):
             "place_type": place_type,
             "place_name": place_name,
             "staff_name": staff_name,
+            "area": area,
+            "nomination_type": nomination_type,
+            "nominated_staff_ids": json.dumps(nominated_staff_ids) if nominated_staff_ids else json.dumps([]),
+            "nomination_priority": nomination_priority,
+            "base_price": base_price,
+            "final_price": final_price,
             "status": status,
             "memo": memo
         }
@@ -3277,6 +3635,373 @@ def admin_reservations_delete(reservation_id):
         print("❌ 予約削除エラー:", e)
         flash("予約の削除に失敗しました", "error")
         return redirect("/admin/reservations")
+
+
+# ===================================================
+# スタッフ日報管理
+# ===================================================
+@app.route("/staff/daily-report/new", methods=["GET", "POST"])
+@staff_required
+def staff_daily_report_new():
+    """スタッフ用日報作成（1日1枚＋複数勤務カード）"""
+    if request.method == "GET":
+        # ログイン中のスタッフ情報を取得
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        today_date = datetime.now(JST).strftime("%Y-%m-%d")
+        
+        # 実働時間計算
+        now_jst = datetime.now(JST)
+        
+        # 今週の開始日（月曜日）
+        week_start = now_jst - timedelta(days=now_jst.weekday())
+        week_start_date = week_start.date()
+        
+        # 今週の実働時間を計算
+        weekly_hours = 0
+        try:
+            res_weekly = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").eq("report_id", supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", week_start_date.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute())
+            # 簡易版：実際にはJOINが必要
+            res_weekly_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", week_start_date.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute()
+            report_ids = [r["id"] for r in res_weekly_reports.data] if res_weekly_reports.data else []
+            if report_ids:
+                res_weekly_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
+                if res_weekly_items.data:
+                    for item in res_weekly_items.data:
+                        start = item.get("start_time")
+                        end = item.get("end_time")
+                        break_mins = item.get("break_minutes", 0) or 0
+                        if start and end:
+                            try:
+                                # time型をdatetimeに変換して計算
+                                start_parts = str(start).split(":")
+                                end_parts = str(end).split(":")
+                                start_dt = datetime(2000, 1, 1, int(start_parts[0]), int(start_parts[1]))
+                                end_dt = datetime(2000, 1, 1, int(end_parts[0]), int(end_parts[1]))
+                                if end_dt < start_dt:
+                                    end_dt += timedelta(days=1)
+                                diff = end_dt - start_dt
+                                hours = diff.total_seconds() / 3600 - (break_mins / 60)
+                                weekly_hours += max(0, hours)
+                            except:
+                                pass
+        except:
+            weekly_hours = 0
+        
+        # 目標との差
+        target_hours = 40
+        diff_hours = target_hours - weekly_hours
+        
+        # 年間累計実働時間と過不足
+        year_start = datetime(now_jst.year, 1, 1, tzinfo=JST)
+        yearly_hours = 0
+        try:
+            res_yearly_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", year_start.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute()
+            report_ids = [r["id"] for r in res_yearly_reports.data] if res_yearly_reports.data else []
+            if report_ids:
+                res_yearly_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
+                if res_yearly_items.data:
+                    for item in res_yearly_items.data:
+                        start = item.get("start_time")
+                        end = item.get("end_time")
+                        break_mins = item.get("break_minutes", 0) or 0
+                        if start and end:
+                            try:
+                                start_parts = str(start).split(":")
+                                end_parts = str(end).split(":")
+                                start_dt = datetime(2000, 1, 1, int(start_parts[0]), int(start_parts[1]))
+                                end_dt = datetime(2000, 1, 1, int(end_parts[0]), int(end_parts[1]))
+                                if end_dt < start_dt:
+                                    end_dt += timedelta(days=1)
+                                diff = end_dt - start_dt
+                                hours = diff.total_seconds() / 3600 - (break_mins / 60)
+                                yearly_hours += max(0, hours)
+                            except:
+                                pass
+        except:
+            yearly_hours = 0
+        
+        # 年間目標時間（40h × 52週 = 2080h）との差
+        target_yearly_hours = 2080
+        yearly_hours_diff = yearly_hours - target_yearly_hours
+        
+        return render_template(
+            "staff_daily_report_new.html",
+            staff_name=staff_name,
+            today_date=today_date,
+            weekly_hours=round(weekly_hours, 1),
+            diff_hours=round(diff_hours, 1),
+            yearly_hours_diff=round(yearly_hours_diff, 1)
+        )
+    
+    # POST処理
+    try:
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        
+        # 日報基本情報
+        report_date = request.form.get("report_date", "").strip()
+        report_memo = request.form.get("report_memo", "").strip()
+        
+        # バリデーション
+        if not report_date:
+            flash("日付を入力してください", "error")
+            return redirect("/staff/daily-report/new")
+        
+        # 当日の日報が既に存在するかチェック
+        res_existing = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).eq("report_date", report_date).execute()
+        
+        if res_existing.data:
+            # 既存の日報を更新
+            report_id = res_existing.data[0]["id"]
+            supabase_admin.table("staff_daily_reports").update({
+                "memo": report_memo if report_memo else None,
+                "updated_at": now_iso()
+            }).eq("id", report_id).execute()
+        else:
+            # 新規日報を作成
+            report_data = {
+                "staff_name": staff_name,
+                "report_date": report_date,
+                "memo": report_memo if report_memo else None,
+                "created_at": now_iso(),
+                "updated_at": now_iso()
+            }
+            res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
+            if not res_new_report.data:
+                flash("日報の作成に失敗しました", "error")
+                return redirect("/staff/daily-report/new")
+            report_id = res_new_report.data[0]["id"]
+        
+        # 勤務カードを取得（work_type_1, start_time_1, ... の形式）
+        work_cards = []
+        card_index = 1
+        while True:
+            work_type = request.form.get(f"work_type_{card_index}", "").strip()
+            if not work_type:
+                break
+            
+            if work_type not in ["in_house", "visit", "field"]:
+                card_index += 1
+                continue
+            
+            start_time = request.form.get(f"start_time_{card_index}", "").strip() or None
+            end_time = request.form.get(f"end_time_{card_index}", "").strip() or None
+            break_minutes_str = request.form.get(f"break_minutes_{card_index}", "0").strip()
+            memo = request.form.get(f"memo_{card_index}", "").strip() or None
+            
+            try:
+                break_minutes_int = int(break_minutes_str) if break_minutes_str else 0
+            except:
+                break_minutes_int = 0
+            
+            work_cards.append({
+                "work_type": work_type,
+                "start_time": start_time,
+                "end_time": end_time,
+                "break_minutes": break_minutes_int,
+                "memo": memo
+            })
+            card_index += 1
+        
+        if not work_cards:
+            flash("少なくとも1つの勤務カードを追加してください", "error")
+            return redirect("/staff/daily-report/new")
+        
+        # 既存の勤務カードを削除（再作成のため）
+        supabase_admin.table("staff_daily_report_items").delete().eq("report_id", report_id).execute()
+        
+        # 勤務カードを挿入
+        for card in work_cards:
+            item_data = {
+                "report_id": report_id,
+                "work_type": card["work_type"],
+                "start_time": card["start_time"],
+                "end_time": card["end_time"],
+                "break_minutes": card["break_minutes"],
+                "memo": card["memo"],
+                "created_at": now_iso()
+            }
+            supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+        
+        flash("日報を登録しました", "success")
+        return redirect("/staff/daily-report/new")
+    except Exception as e:
+        import traceback
+        print(f"❌ 日報作成エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"日報の登録に失敗しました: {str(e)}", "error")
+        return redirect("/staff/daily-report/new")
+
+
+@app.route("/admin/daily-reports", methods=["GET"])
+@admin_required
+def admin_daily_reports():
+    """管理者用日報一覧（1日1枚＋複数勤務カード表示）"""
+    try:
+        # クエリパラメータ取得
+        work_type_filter = request.args.get("work_type", "all")  # all/in_house/visit/field
+        date_from = request.args.get("date_from", "")  # YYYY-MM-DD
+        date_to = request.args.get("date_to", "")  # YYYY-MM-DD
+        
+        # 日報取得
+        query = supabase_admin.table("staff_daily_reports").select("*").order("report_date", desc=True).order("created_at", desc=True)
+        
+        # フィルタ適用
+        if date_from:
+            query = query.gte("report_date", date_from)
+        
+        if date_to:
+            query = query.lte("report_date", date_to)
+        
+        res_reports = query.execute()
+        reports = res_reports.data or []
+        
+        # 各日報の勤務カードを取得
+        report_ids = [r["id"] for r in reports]
+        items_map = {}  # {report_id: [items]}
+        patients_map = {}  # {item_id: [patients]}
+        
+        if report_ids:
+            # 勤務カードを一括取得
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            items = res_items.data or []
+            
+            # フィルタ適用（work_type）
+            if work_type_filter != "all":
+                items = [item for item in items if item.get("work_type") == work_type_filter]
+            
+            # report_idごとにグループ化
+            for item in items:
+                report_id = item.get("report_id")
+                if report_id not in items_map:
+                    items_map[report_id] = []
+                items_map[report_id].append(item)
+            
+            # 患者・売上明細を一括取得
+            item_ids = [item["id"] for item in items]
+            if item_ids:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者情報を一括取得（名前表示用）
+                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                patient_info_map = {}
+                if patient_ids_from_reports:
+                    res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                    if res_patient_info.data:
+                        for p in res_patient_info.data:
+                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                            patient_info_map[p["id"]] = name or p.get("name", "患者不明")
+                
+                # item_idごとにグループ化し、患者名を追加
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    patient_id = patient.get("patient_id")
+                    if patient_id and patient_id in patient_info_map:
+                        patient["patient_name"] = patient_info_map[patient_id]
+                    else:
+                        patient["patient_name"] = None
+                    
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patients_map[item_id].append(patient)
+        
+        # 日報に勤務カードと患者情報を結合
+        for report in reports:
+            report_id = report.get("id")
+            report["items"] = items_map.get(report_id, [])
+            
+            # 各勤務カードに患者情報を結合
+            for item in report["items"]:
+                item_id = item.get("id")
+                item["patients"] = patients_map.get(item_id, [])
+                
+                # 時刻表示用に整形
+                if item.get("start_time"):
+                    try:
+                        if isinstance(item["start_time"], str):
+                            time_parts = item["start_time"].split(":")
+                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["start_time_display"] = str(item["start_time"])[:5]
+                    except:
+                        item["start_time_display"] = item.get("start_time", "")
+                else:
+                    item["start_time_display"] = ""
+                
+                if item.get("end_time"):
+                    try:
+                        if isinstance(item["end_time"], str):
+                            time_parts = item["end_time"].split(":")
+                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["end_time_display"] = str(item["end_time"])[:5]
+                    except:
+                        item["end_time_display"] = item.get("end_time", "")
+                else:
+                    item["end_time_display"] = ""
+        
+        # フィルタ適用後、勤務カードが0件の日報を除外
+        if work_type_filter != "all":
+            reports = [r for r in reports if r.get("items")]
+        
+        return render_template(
+            "admin_daily_reports.html",
+            reports=reports,
+            work_type_filter=work_type_filter,
+            date_from=date_from,
+            date_to=date_to
+        )
+
+
+@app.route("/admin/daily-reports/patient/<patient_report_id>/amount", methods=["POST"])
+@staff_required
+def admin_daily_reports_patient_amount(patient_report_id):
+    """日報患者の金額を更新（予約データにも同期）"""
+    try:
+        amount_str = request.form.get("amount", "").strip()
+        try:
+            amount = int(amount_str) if amount_str else None
+        except:
+            amount = None
+        
+        if amount is None or amount < 0:
+            flash("有効な金額を入力してください", "error")
+            return redirect("/admin/daily-reports")
+        
+        # 日報患者情報を取得
+        res_patient = supabase_admin.table("staff_daily_report_patients").select("id, reservation_id, amount").eq("id", patient_report_id).execute()
+        if not res_patient.data:
+            flash("日報患者情報が見つかりません", "error")
+            return redirect("/admin/daily-reports")
+        
+        patient_report = res_patient.data[0]
+        reservation_id = patient_report.get("reservation_id")
+        
+        # 日報患者の金額を更新
+        supabase_admin.table("staff_daily_report_patients").update({"amount": amount}).eq("id", patient_report_id).execute()
+        
+        # 予約データにも同期（final_priceを更新）
+        if reservation_id:
+            try:
+                supabase_admin.table("reservations").update({"final_price": amount}).eq("id", reservation_id).execute()
+            except Exception as e:
+                print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
+                # 日報更新は成功しているので警告のみ
+        
+        flash("金額を更新しました（予約データにも反映済み）", "success")
+        return redirect(request.referrer or "/admin/daily-reports")
+    except Exception as e:
+        print("❌ 日報患者金額更新エラー:", e)
+        flash("金額の更新に失敗しました", "error")
+        return redirect("/admin/daily-reports")
+    except Exception as e:
+        import traceback
+        print(f"❌ 日報一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("日報一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
 
 
 @app.errorhandler(404)

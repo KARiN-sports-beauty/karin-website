@@ -69,8 +69,7 @@
   <a href="/admin/karte/{{ patient.id }}" class="admin-karte-card {% if patient.category == 'アーティスト・タレント' or patient.category == 'アーティスト' %}category-artist{% elif patient.category == 'スポーツ選手' %}category-sports{% elif patient.gender == '男性' or patient.gender == 'male' or patient.gender == '男' %}gender-male{% elif patient.gender == '女性' or patient.gender == 'female' or patient.gender == '女' %}gender-female{% else %}gender-other{% endif %}" data-name="{{ patient.name }}" data-kana="{{ patient.kana }}">
     <div class="admin-karte-head">
       <strong class="admin-karte-name">
-        {% if patient.vip_level == 'star' %}⭐️{% elif patient.vip_level == 'clover' %}🍀{% endif %}
-        {{ patient.name }}
+        {{ patient.name }}{% if patient.vip_level == 'star' %}⭐️{% elif patient.vip_level == 'clover' %}🍀{% endif %}
       </strong>
     </div>
     
@@ -100,9 +99,8 @@
         <span class="admin-karte-label">紹介者：</span>
         {% if patient.introducer_info %}
           <span class="admin-karte-introducer-text" onclick="event.stopPropagation(); window.location.href='/admin/karte/{{ patient.introducer_info.id }}';">
-            {% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
-            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
+            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）{% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
           </span>
           {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
             <span class="admin-introducer-badge">{{ patient.introducer_info.introduced_count }}</span>

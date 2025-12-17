@@ -1852,16 +1852,57 @@ form .admin-news-btn {
 }
 
 /* 現場区分による色分け */
-.admin-resv-card.place-inhouse {
+/* 予約カードの色分け（区分による色分けを最優先） */
+.admin-resv-card.category-artist {
+  border-left-color: #c0a062 !important; /* ゴールド（ブログのアンダーラインと同じ） */
+}
+
+.admin-resv-card.category-sports {
+  border-left-color: #E8E8E8 !important; /* シルバー（煌びやかな感じ） */
+}
+
+/* 性別による色分け（区分が設定されていない場合のみ） */
+.admin-resv-card.gender-male:not(.category-artist):not(.category-sports) {
   border-left-color: #1E3A5F; /* KARiN.カラー（濃紺） */
 }
 
-.admin-resv-card.place-visit {
+.admin-resv-card.gender-female:not(.category-artist):not(.category-sports) {
+  border-left-color: #FFB6C1; /* ピンク（明るめ） */
+}
+
+.admin-resv-card.gender-other:not(.category-artist):not(.category-sports) {
+  border-left-color: #FFA726; /* オレンジ系 */
+}
+
+/* エリアによる色分け（区分・性別・現場区分が設定されていない場合のみ） */
+.admin-resv-card.area-tokyo:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other):not(.place-inhouse):not(.place-visit):not(.place-field) {
+  border-left-color: #1976D2; /* 東京：青 */
+}
+
+.admin-resv-card.area-fukuoka:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other):not(.place-inhouse):not(.place-visit):not(.place-field) {
+  border-left-color: #F57C00; /* 福岡：オレンジ */
+}
+
+/* 現場区分による色分け（区分・性別が設定されていない場合のみ） */
+.admin-resv-card.place-inhouse:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other) {
+  border-left-color: #1E3A5F; /* KARiN.カラー（濃紺） */
+}
+
+.admin-resv-card.place-visit:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other) {
   border-left-color: #4CAF50; /* グリーン */
 }
 
-.admin-resv-card.place-field {
+.admin-resv-card.place-field:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other) {
   border-left-color: #FFB6C1; /* ピンク（明るめ） */
+}
+
+/* エリア別色分け（予約カードの右側に表示） */
+.admin-resv-card.area-tokyo {
+  border-right: 3px solid #81C784; /* 東京：薄めグリーン */
+}
+
+.admin-resv-card.area-fukuoka {
+  border-right: 3px solid #5C9BD1; /* 福岡：薄めKARiN.カラー */
 }
 
 .admin-resv-status {

@@ -38,6 +38,22 @@
   </div>
   
   <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">エリア（必須）</label>
+    <select name="area" id="area" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">選択してください</option>
+      <option value="tokyo" {% if reservation.area == 'tokyo' %}selected{% endif %}>東京</option>
+      <option value="fukuoka" {% if reservation.area == 'fukuoka' %}selected{% endif %}>福岡</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須）</label>
+    <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <option value="">エリアを選択してください</option>
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
     <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択してください</option>
@@ -53,12 +69,55 @@
   </div>
   
   <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名タイプ（必須）</label>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="nomination_type" value="本指名" {% if reservation.nomination_type == '本指名' or reservation.nomination_type == 'main' or not reservation.nomination_type %}checked{% endif %} onchange="updateNominationUI()">
+        <span>本指名</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="nomination_type" value="枠指名" {% if reservation.nomination_type == '枠指名' or reservation.nomination_type == 'frame' %}checked{% endif %} onchange="updateNominationUI()">
+        <span>枠指名（全スタッフ選択可能）</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="nomination_type" value="希望" {% if reservation.nomination_type == '希望' or reservation.nomination_type == 'hope' %}checked{% endif %} onchange="updateNominationUI()">
+        <span>希望</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="radio" name="nomination_type" value="フリー" {% if reservation.nomination_type == 'フリー' or reservation.nomination_type == 'free' %}checked{% endif %} onchange="updateNominationUI()">
+        <span>フリー</span>
+      </label>
+    </div>
+  </div>
+  
+  <!-- 枠指名用のスタッフ選択（全スタッフ選択可能） -->
+  <div id="frame_nomination_section" style="margin-bottom: 20px; {% if reservation.nomination_type != '枠指名' and reservation.nomination_type != 'frame' %}display: none;{% endif %}">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">対応スタッフ（全スタッフ選択可能）</label>
+    <div id="frame_staff_list" style="display: flex; flex-direction: column; gap: 8px;">
+      <!-- JavaScriptで動的に追加 -->
+    </div>
+    <button type="button" id="add_frame_staff_btn" style="margin-top: 8px; padding: 6px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">➕ スタッフを追加</button>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">担当スタッフ</label>
-    <select name="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <select name="staff_name" id="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       {% for staff in staff_list %}
         <option value="{{ staff.name }}" {% if staff.name == reservation.staff_name %}selected{% endif %}>{{ staff.name }}</option>
       {% endfor %}
     </select>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">基本価格（円）</label>
+    <input type="number" name="base_price" id="base_price" value="{{ reservation.base_price or '' }}" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" readonly>
+    <small style="color: #666; font-size: 0.85rem;">メニュー選択で自動入力されます（編集可）</small>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">確定価格（円）</label>
+    <input type="number" name="final_price" id="final_price" value="{{ reservation.final_price or '' }}" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <small style="color: #666; font-size: 0.85rem;">日報で確定（未確定の場合は空欄）</small>
   </div>
   
   <div style="margin-bottom: 20px;">
@@ -83,6 +142,182 @@
 </form>
 
 <script>
+// メニュー定義（エリア別・時間別）
+const menuPrices = {
+  tokyo: {
+    60: 11000,
+    90: 16500,
+    120: 22000
+  },
+  fukuoka: {
+    60: 8800,
+    90: 13200,
+    120: 17600
+  }
+};
+
+// エリア変更時にメニューを更新
+document.getElementById('area').addEventListener('change', function() {
+  const area = this.value;
+  const menuSelect = document.getElementById('menu');
+  const durationSelect = document.querySelector('select[name="duration_minutes"]');
+  
+  menuSelect.innerHTML = '<option value="">エリアを選択してください</option>';
+  
+  if (area && menuPrices[area]) {
+    const prices = menuPrices[area];
+    for (const [minutes, price] of Object.entries(prices)) {
+      const option = document.createElement('option');
+      option.value = minutes;
+      option.textContent = `${minutes}分コース（¥${price.toLocaleString()}）`;
+      option.dataset.price = price;
+      if (minutes == {{ reservation.duration_minutes or 90 }}) {
+        option.selected = true;
+      }
+      menuSelect.appendChild(option);
+    }
+  }
+  
+  updatePrice();
+});
+
+// メニュー選択時に価格を自動入力
+document.getElementById('menu').addEventListener('change', function() {
+  updatePrice();
+  // メニュー選択時に施術時間も自動設定
+  const durationSelect = document.querySelector('select[name="duration_minutes"]');
+  if (this.value) {
+    durationSelect.value = this.value;
+  }
+});
+
+// 施術時間変更時に価格を更新
+document.querySelector('select[name="duration_minutes"]').addEventListener('change', function() {
+  updatePrice();
+});
+
+// 価格更新関数
+function updatePrice() {
+  const area = document.getElementById('area').value;
+  const menuSelect = document.getElementById('menu');
+  const durationSelect = document.querySelector('select[name="duration_minutes"]');
+  const duration = durationSelect.value;
+  const basePriceInput = document.getElementById('base_price');
+  
+  if (area && duration && menuPrices[area] && menuPrices[area][duration]) {
+    basePriceInput.value = menuPrices[area][duration];
+  } else if (area && menuSelect.value) {
+    const selectedOption = menuSelect.options[menuSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.price) {
+      basePriceInput.value = selectedOption.dataset.price;
+    }
+  }
+}
+
+// 指名タイプ変更時のUI更新
+function updateNominationUI() {
+  const nominationType = document.querySelector('input[name="nomination_type"]:checked').value;
+  const frameSection = document.getElementById('frame_nomination_section');
+  const staffNameSelect = document.getElementById('staff_name');
+  
+  if (nominationType === '枠指名') {
+    frameSection.style.display = 'block';
+    staffNameSelect.removeAttribute('required');
+  } else {
+    frameSection.style.display = 'none';
+    staffNameSelect.setAttribute('required', 'required');
+    // 枠指名のスタッフリストをクリア
+    document.getElementById('frame_staff_list').innerHTML = '';
+  }
+}
+
+// 枠指名スタッフ追加
+let frameStaffCount = 0;
+const staffList = {{ staff_list | tojson if staff_list else '[]' }};
+
+document.getElementById('add_frame_staff_btn').addEventListener('click', function() {
+  frameStaffCount++;
+  const container = document.getElementById('frame_staff_list');
+  const div = document.createElement('div');
+  div.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  div.innerHTML = `
+    <select name="frame_staff_${frameStaffCount}" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+      <option value="">選択してください</option>
+      ${staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
+    </select>
+    <select name="frame_priority_${frameStaffCount}" required style="width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+      <option value="1">優先1</option>
+      <option value="2">優先2</option>
+      <option value="3">優先3</option>
+    </select>
+    <button type="button" class="remove-frame-staff" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
+  `;
+  
+  container.appendChild(div);
+  
+  // 削除ボタンのイベント
+  div.querySelector('.remove-frame-staff').addEventListener('click', function() {
+    div.remove();
+    frameStaffCount--;
+  });
+});
+
+// 初期化：エリアが選択されている場合はメニューを更新
+document.addEventListener('DOMContentLoaded', function() {
+  const areaSelect = document.getElementById('area');
+  const basePriceInput = document.getElementById('base_price');
+  
+  // 基本価格はreadonlyのまま（メニュー選択で自動入力）
+  
+  if (areaSelect.value) {
+    areaSelect.dispatchEvent(new Event('change'));
+    // メニューも既存の施術時間に合わせて選択
+    const durationSelect = document.querySelector('select[name="duration_minutes"]');
+    const menuSelect = document.getElementById('menu');
+    if (durationSelect.value && menuSelect.options.length > 1) {
+      for (let i = 0; i < menuSelect.options.length; i++) {
+        if (menuSelect.options[i].value == durationSelect.value) {
+          menuSelect.selectedIndex = i;
+          updatePrice();
+          break;
+        }
+      }
+    }
+  }
+  
+  // 既存の枠指名スタッフを表示（編集時・全スタッフ選択可能）
+  {% if (reservation.nomination_type == '枠指名' or reservation.nomination_type == 'frame') and reservation.nominated_staff_ids %}
+  const nominatedStaffIds = {{ reservation.nominated_staff_ids | tojson if reservation.nominated_staff_ids else '[]' }};
+  const nominationPriority = {{ reservation.nomination_priority or 1 }};
+  if (nominatedStaffIds && nominatedStaffIds.length > 0) {
+    nominatedStaffIds.forEach((staffName, index) => {
+      frameStaffCount++;
+      const container = document.getElementById('frame_staff_list');
+      const div = document.createElement('div');
+      div.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+      const priority = (index === 0 && nominationPriority) ? nominationPriority : (index + 1);
+      div.innerHTML = `
+        <select name="frame_staff_${frameStaffCount}" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+          <option value="">選択してください</option>
+          ${staffList.map(s => `<option value="${s.name}" ${s.name == staffName ? 'selected' : ''}>${s.name}</option>`).join('')}
+        </select>
+        <select name="frame_priority_${frameStaffCount}" required style="width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+          <option value="1" ${priority == 1 ? 'selected' : ''}>優先1</option>
+          <option value="2" ${priority == 2 ? 'selected' : ''}>優先2</option>
+          <option value="3" ${priority == 3 ? 'selected' : ''}>優先3</option>
+        </select>
+        <button type="button" class="remove-frame-staff" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
+      `;
+      container.appendChild(div);
+      div.querySelector('.remove-frame-staff').addEventListener('click', function() {
+        div.remove();
+        frameStaffCount--;
+      });
+    });
+  }
+  {% endif %}
+});
+
 // 現場区分に応じて現場名入力欄を表示/非表示
 document.getElementById('place_type').addEventListener('change', function() {
   const placeType = this.value;

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}日報作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📝 日報作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/staff/daily-report/new" id="daily-report-form" style="max-width: 800px;">
+  <!-- 日報基本情報 -->
+  <div style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">日報情報</h3>
+    
+    <div style="margin-bottom: 20px;">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">スタッフ名</label>
+      <input type="text" value="{{ staff_name }}" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #f5f5f5; color: #666;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
+      <input type="date" name="report_date" id="report_date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日報メモ</label>
+      <textarea name="report_memo" rows="3" placeholder="日報全体のメモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+    </div>
+  </div>
+  
+  <!-- 勤務カード一覧 -->
+  <div style="margin-bottom: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">勤務カード</h3>
+      <button type="button" id="add-work-card-btn" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 16px; font-size: 0.9rem;">➕ 勤務カードを追加</button>
+    </div>
+    
+    <div id="work-cards-container" style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- 勤務カードはJavaScriptで動的に追加 -->
+    </div>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 保存</button>
+    <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← ダッシュボードに戻る</a>
+  </div>
+</form>
+
+<!-- 実働時間表示フッター -->
+<div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">実働時間</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">今週の実働時間</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;" id="weekly-hours">計算中...</div>
+    </div>
+    <div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">目標40hとの差</div>
+      <div style="font-size: 1.2rem; font-weight: 600;" id="target-diff">計算中...</div>
+    </div>
+    <div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">年間累計からの過不足</div>
+      <div style="font-size: 1.2rem; font-weight: 600;" id="yearly-diff">計算中...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 実働時間表示
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('weekly-hours').textContent = '{{ weekly_hours }}時間';
+  
+  const diffHours = {{ diff_hours }};
+  const diffElement = document.getElementById('target-diff');
+  if (diffHours >= 0) {
+    diffElement.textContent = `+${diffHours}時間`;
+    diffElement.style.color = '#4CAF50';
+  } else {
+    diffElement.textContent = `${diffHours}時間`;
+    diffElement.style.color = '#f44336';
+  }
+  
+  const yearlyDiff = {{ yearly_hours_diff }};
+  const yearlyDiffElement = document.getElementById('yearly-diff');
+  const targetYearlyHours = 2080; // 年間目標時間（40h × 52週）
+  if (yearlyDiff >= 0) {
+    yearlyDiffElement.textContent = `+${yearlyDiff}時間`;
+    yearlyDiffElement.style.color = '#4CAF50';
+  } else {
+    yearlyDiffElement.textContent = `${yearlyDiff}時間`;
+    yearlyDiffElement.style.color = '#f44336';
+  }
+});
+</script>
+
+<script>
+let workCardCount = 0;
+
+// 勤務カードを追加
+function addWorkCard() {
+  workCardCount++;
+  const container = document.getElementById('work-cards-container');
+  const card = document.createElement('div');
+  card.className = 'work-card';
+  card.dataset.cardIndex = workCardCount;
+  card.style.cssText = 'padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); position: relative;';
+  
+  card.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">勤務カード ${workCardCount}</h4>
+      <button type="button" class="remove-card-btn" style="padding: 4px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">区分（必須）</label>
+      <select name="work_type_${workCardCount}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <option value="">選択してください</option>
+        <option value="in_house">院内</option>
+        <option value="visit">往診</option>
+        <option value="field">帯同</option>
+      </select>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">開始時刻</label>
+        <input type="time" name="start_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">終了時刻</label>
+        <input type="time" name="end_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">休憩時間（分）</label>
+      <input type="number" name="break_minutes_${workCardCount}" value="0" min="0" max="480" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    </div>
+    
+    <div>
+      <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メモ</label>
+      <textarea name="memo_${workCardCount}" rows="2" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+    </div>
+  `;
+  
+  container.appendChild(card);
+  
+  // 削除ボタンのイベント
+  card.querySelector('.remove-card-btn').addEventListener('click', function() {
+    card.remove();
+    updateCardNumbers();
+  });
+}
+
+// カード番号を更新
+function updateCardNumbers() {
+  const cards = document.querySelectorAll('.work-card');
+  cards.forEach((card, index) => {
+    const title = card.querySelector('h4');
+    if (title) {
+      title.textContent = `勤務カード ${index + 1}`;
+    }
+  });
+}
+
+// フォーム送信時の処理
+document.getElementById('daily-report-form').addEventListener('submit', function(e) {
+  const cards = document.querySelectorAll('.work-card');
+  if (cards.length === 0) {
+    e.preventDefault();
+    alert('少なくとも1つの勤務カードを追加してください');
+    return false;
+  }
+});
+
+// 初期カードを1つ追加
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('add-work-card-btn').addEventListener('click', addWorkCard);
+  addWorkCard(); // 初期カードを1つ追加
+});
+</script>
+{% endblock %}
