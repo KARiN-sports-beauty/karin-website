@@ -1633,6 +1633,30 @@ form .admin-news-btn {
   text-decoration: none;
   color: inherit;
   transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 6px solid transparent;
+}
+
+/* 紹介患者カードの色分け（カルテカードと同じロジック） */
+/* 区分による色分け（優先） */
+.admin-introduced-card.category-artist {
+  border-left-color: #c0a062 !important; /* ゴールド（ブログのアンダーラインと同じ） */
+}
+
+.admin-introduced-card.category-sports {
+  border-left-color: #E8E8E8 !important; /* シルバー（煌びやかな感じ） */
+}
+
+/* 性別による色分け（区分が設定されていない場合のみ） */
+.admin-introduced-card.gender-male:not(.category-artist):not(.category-sports) {
+  border-left-color: #1E3A5F; /* KARiN.カラー（濃紺） */
+}
+
+.admin-introduced-card.gender-female:not(.category-artist):not(.category-sports) {
+  border-left-color: #FFB6C1; /* ピンク（明るめ） */
+}
+
+.admin-introduced-card.gender-other:not(.category-artist):not(.category-sports) {
+  border-left-color: #FFA726; /* オレンジ系 */
 }
 
 .admin-introduced-card:hover {

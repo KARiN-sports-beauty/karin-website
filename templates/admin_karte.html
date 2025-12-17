@@ -69,7 +69,7 @@
   <a href="/admin/karte/{{ patient.id }}" class="admin-karte-card {% if patient.category == 'アーティスト・タレント' or patient.category == 'アーティスト' %}category-artist{% elif patient.category == 'スポーツ選手' %}category-sports{% elif patient.gender == '男性' or patient.gender == 'male' or patient.gender == '男' %}gender-male{% elif patient.gender == '女性' or patient.gender == 'female' or patient.gender == '女' %}gender-female{% else %}gender-other{% endif %}" data-name="{{ patient.name }}" data-kana="{{ patient.kana }}">
     <div class="admin-karte-head">
       <strong class="admin-karte-name">
-        {{ patient.name }}{% if patient.vip_level == 'star' %}⭐️{% elif patient.vip_level == 'clover' %}🍀{% endif %}
+        {{ patient.name }}{% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
       </strong>
     </div>
     

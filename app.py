@@ -1452,6 +1452,13 @@ def admin_karte_new():
         name = f"{last_name} {first_name}".strip()
         kana = f"{last_kana} {first_kana}".strip()
         
+        # VIPフラグ取得（管理者のみ）
+        vip_level = "none"  # デフォルト値
+        if session.get("staff", {}).get("is_admin"):
+            vip_level_str = request.form.get("vip_level", "none").strip()
+            if vip_level_str in ["none", "star", "clover"]:
+                vip_level = vip_level_str
+        
         data = {
             "last_name": last_name,
             "first_name": first_name,
@@ -1464,6 +1471,7 @@ def admin_karte_new():
             "category": request.form.get("category", "").strip(),
             "introducer": request.form.get("introducer", "").strip(),
             "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "vip_level": vip_level,
             "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso()
         }
@@ -1765,7 +1773,7 @@ def admin_karte_detail(patient_id):
             patient["total_reservation_count"] = 0
         
         # この患者が紹介した患者一覧を取得（vip_levelも含む）
-        res_introduced_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, vip_level").eq("introduced_by_patient_id", patient_id).order("created_at", desc=True).execute()
+        res_introduced_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, vip_level, category, gender").eq("introduced_by_patient_id", patient_id).order("created_at", desc=True).execute()
         patient["introduced_patients"] = res_introduced_patients.data or []
         
         # karte_logs取得（IN句で高速化）

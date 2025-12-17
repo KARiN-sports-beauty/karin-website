@@ -101,6 +101,18 @@
     <input type="hidden" name="introduced_by_patient_id" id="introduced_by_patient_id">
   </div>
   
+  {% if session.staff and session.staff.is_admin %}
+  <!-- VIPフラグ（管理者のみ） -->
+  <div class="admin-form-field">
+    <label class="admin-form-label">VIPフラグ</label>
+    <select name="vip_level" class="admin-form-select">
+      <option value="none">なし</option>
+      <option value="star">⭐️</option>
+      <option value="clover">🍀</option>
+    </select>
+  </div>
+  {% endif %}
+  
   <!-- アクションボタン -->
   <div class="admin-form-actions">
     <button type="submit" class="admin-karte-detail-btn-primary">💾 保存</button>
