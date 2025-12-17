@@ -81,17 +81,6 @@
   </div>
   
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">施術時間（分）</label>
-    <select name="duration_minutes" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      <option value="60">60分</option>
-      <option value="90" selected>90分</option>
-      <option value="120">120分</option>
-    </select>
-    <input type="number" name="duration_minutes_custom" placeholder="または手入力（分）" min="15" max="300" step="15" style="width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-    <small style="color: #666; font-size: 0.85rem;">手入力を選択した場合は、上記の選択は無視されます</small>
-  </div>
-  
-  <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">エリア（必須）</label>
     <select name="area" id="area" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択してください</option>
@@ -163,15 +152,9 @@
   </div>
   
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">基本価格（円）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">価格（円）</label>
     <input type="number" name="base_price" id="base_price" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
     <small style="color: #666; font-size: 0.85rem;">メニュー選択で自動入力されます（編集可）</small>
-  </div>
-  
-  <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">確定価格（円）</label>
-    <input type="number" name="final_price" id="final_price" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-    <small style="color: #666; font-size: 0.85rem;">日報で確定（未確定の場合は空欄）</small>
   </div>
   
   <div style="margin-bottom: 20px;">
@@ -323,9 +306,19 @@ const menuPrices = {
 document.getElementById('area').addEventListener('change', function() {
   const area = this.value;
   const menuSelect = document.getElementById('menu');
-  const durationSelect = document.querySelector('select[name="duration_minutes"]');
+  const placeTypeSelect = document.getElementById('place_type');
+  const placeType = placeTypeSelect ? placeTypeSelect.value : '';
   
   menuSelect.innerHTML = '<option value="">エリアを選択してください</option>';
+  
+  // 帯同の場合は「その他」を追加
+  if (placeType === 'field') {
+    const otherOption = document.createElement('option');
+    otherOption.value = 'other';
+    otherOption.textContent = 'その他（帯同）';
+    otherOption.dataset.price = '';
+    menuSelect.appendChild(otherOption);
+  }
   
   if (area && menuPrices[area]) {
     const prices = menuPrices[area];
@@ -344,15 +337,36 @@ document.getElementById('area').addEventListener('change', function() {
 // メニュー選択時に価格を自動入力
 document.getElementById('menu').addEventListener('change', function() {
   updatePrice();
-  // メニュー選択時に施術時間も自動設定
-  const durationSelect = document.querySelector('select[name="duration_minutes"]');
-  if (this.value) {
-    durationSelect.value = this.value;
-  }
 });
 
-// 施術時間変更時に価格を更新
-document.querySelector('select[name="duration_minutes"]').addEventListener('change', function() {
+// 現場区分変更時にメニューを更新（帯同の場合は「その他」を追加）
+document.getElementById('place_type').addEventListener('change', function() {
+  const placeType = this.value;
+  const area = document.getElementById('area').value;
+  const menuSelect = document.getElementById('menu');
+  
+  // 帯同の場合は「その他」を追加
+  if (placeType === 'field') {
+    // 既存の「その他」オプションを削除
+    const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
+    if (existingOther) {
+      existingOther.remove();
+    }
+    
+    // 「その他」を先頭に追加
+    const otherOption = document.createElement('option');
+    otherOption.value = 'other';
+    otherOption.textContent = 'その他（帯同）';
+    otherOption.dataset.price = '';
+    menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
+  } else {
+    // 帯同以外の場合は「その他」を削除
+    const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
+    if (existingOther) {
+      existingOther.remove();
+    }
+  }
+  
   updatePrice();
 });
 
@@ -360,16 +374,17 @@ document.querySelector('select[name="duration_minutes"]').addEventListener('chan
 function updatePrice() {
   const area = document.getElementById('area').value;
   const menuSelect = document.getElementById('menu');
-  const durationSelect = document.querySelector('select[name="duration_minutes"]');
-  const duration = durationSelect.value;
   const basePriceInput = document.getElementById('base_price');
   
-  if (area && duration && menuPrices[area] && menuPrices[area][duration]) {
-    basePriceInput.value = menuPrices[area][duration];
-  } else if (area && menuSelect.value) {
+  if (menuSelect.value) {
     const selectedOption = menuSelect.options[menuSelect.selectedIndex];
     if (selectedOption && selectedOption.dataset.price) {
       basePriceInput.value = selectedOption.dataset.price;
+    } else if (selectedOption && selectedOption.value === 'other') {
+      // 「その他」の場合は価格をクリア（手入力）
+      basePriceInput.value = '';
+    } else {
+      basePriceInput.value = '';
     }
   } else {
     basePriceInput.value = '';
@@ -491,13 +506,6 @@ document.querySelector('form').addEventListener('submit', function(e) {
     e.preventDefault();
     alert('現場区分を選択してください');
     return false;
-  }
-  
-  // 手入力の施術時間が入力されたら、selectの値を上書き
-  const customDuration = document.querySelector('input[name="duration_minutes_custom"]').value;
-  if (customDuration) {
-    const select = document.querySelector('select[name="duration_minutes"]');
-    select.value = customDuration;
   }
   
   console.log('🔍 フォーム送信を許可');

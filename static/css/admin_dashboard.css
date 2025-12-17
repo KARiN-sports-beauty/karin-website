@@ -1842,7 +1842,7 @@ form .admin-news-btn {
   border: 1px solid #e0e0e0;
   border-left: 6px solid transparent;
   border-radius: 12px;
-  background: #fafafa;
+  background: #ffffff;
   margin-bottom: 12px;
   transition: box-shadow 0.2s;
 }
@@ -1894,15 +1894,6 @@ form .admin-news-btn {
 
 .admin-resv-card.place-field:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other) {
   border-left-color: #FFB6C1; /* ピンク（明るめ） */
-}
-
-/* エリア別色分け（予約カードの右側に表示） */
-.admin-resv-card.area-tokyo {
-  border-right: 3px solid #81C784; /* 東京：薄めグリーン */
-}
-
-.admin-resv-card.area-fukuoka {
-  border-right: 3px solid #5C9BD1; /* 福岡：薄めKARiN.カラー */
 }
 
 .admin-resv-status {

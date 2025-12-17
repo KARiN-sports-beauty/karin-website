@@ -3040,14 +3040,19 @@ def admin_reservations_new():
         if area and area not in ["tokyo", "fukuoka"]:
             area = None
         
-        # メニュー取得（施術時間と連動）
+        # メニュー取得（施術時間を決定）
         menu = request.form.get("menu", "").strip()
-        if menu and menu != duration_minutes:
-            # メニューと施術時間が一致しない場合はメニューを優先
-            try:
-                duration_minutes = int(menu)
-            except:
-                pass
+        duration_minutes = 90  # デフォルト値
+        if menu:
+            if menu == "other":
+                # 「その他」の場合はデフォルト90分
+                duration_minutes = 90
+            else:
+                # メニューから施術時間を取得（60/90/120など）
+                try:
+                    duration_minutes = int(menu)
+                except:
+                    duration_minutes = 90
         
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
         nomination_type = request.form.get("nomination_type", "本指名").strip()
@@ -3088,12 +3093,6 @@ def admin_reservations_new():
         except:
             base_price = None
         
-        final_price_str = request.form.get("final_price", "").strip()
-        try:
-            final_price = int(final_price_str) if final_price_str else None
-        except:
-            final_price = None
-        
         # 予約作成
         reservation_data = {
             "patient_id": patient_id,
@@ -3107,7 +3106,6 @@ def admin_reservations_new():
             "nominated_staff_ids": nominated_staff_ids or [],
             "nomination_priority": nomination_priority,
             "base_price": base_price,
-            "final_price": final_price,
             "status": "reserved",
             "memo": memo,
             "created_at": now_iso()
@@ -3455,16 +3453,6 @@ def admin_reservations_edit(reservation_id):
             flash("予約日時の形式が正しくありません", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
-        # 施術時間（手入力があればそれを優先）
-        duration_custom = request.form.get("duration_minutes_custom", "").strip()
-        if duration_custom:
-            try:
-                duration_minutes = int(duration_custom)
-            except:
-                duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
-        else:
-            duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
-        
         place_type = request.form.get("place_type", "").strip()
         if place_type not in ["in_house", "visit", "field"]:
             flash("現場区分を選択してください", "error")
@@ -3478,13 +3466,19 @@ def admin_reservations_edit(reservation_id):
         if area and area not in ["tokyo", "fukuoka"]:
             area = None
         
-        # メニュー取得（施術時間と連動）
+        # メニュー取得（施術時間を決定）
         menu = request.form.get("menu", "").strip()
-        if menu and menu != str(duration_minutes):
-            try:
-                duration_minutes = int(menu)
-            except:
-                pass
+        duration_minutes = existing_reservation.get("duration_minutes", 90)  # 既存値またはデフォルト
+        if menu:
+            if menu == "other":
+                # 「その他」の場合は既存のduration_minutesを維持（またはデフォルト90分）
+                duration_minutes = existing_reservation.get("duration_minutes", 90)
+            else:
+                # メニューから施術時間を取得（60/90/120など）
+                try:
+                    duration_minutes = int(menu)
+                except:
+                    duration_minutes = existing_reservation.get("duration_minutes", 90)
         
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
         nomination_type = request.form.get("nomination_type", "本指名").strip()
@@ -3523,12 +3517,6 @@ def admin_reservations_edit(reservation_id):
             base_price = int(base_price_str) if base_price_str else None
         except:
             base_price = None
-        
-        final_price_str = request.form.get("final_price", "").strip()
-        try:
-            final_price = int(final_price_str) if final_price_str else None
-        except:
-            final_price = None
         
         status = request.form.get("status", "").strip()
         if status not in ["reserved", "visited", "completed", "canceled"]:
@@ -3602,7 +3590,6 @@ def admin_reservations_edit(reservation_id):
             "nominated_staff_ids": nominated_staff_ids or [],
             "nomination_priority": nomination_priority,
             "base_price": base_price,
-            "final_price": final_price,
             "status": status,
             "memo": memo
         }
@@ -3985,10 +3972,10 @@ def admin_daily_reports_patient_amount(patient_report_id):
         # 日報患者の金額を更新
         supabase_admin.table("staff_daily_report_patients").update({"amount": amount}).eq("id", patient_report_id).execute()
         
-        # 予約データにも同期（final_priceを更新）
+        # 予約データにも同期（base_priceを更新）
         if reservation_id:
             try:
-                supabase_admin.table("reservations").update({"final_price": amount}).eq("id", reservation_id).execute()
+                supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
             except Exception as e:
                 print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
                 # 日報更新は成功しているので警告のみ
