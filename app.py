@@ -3953,7 +3953,10 @@ def admin_daily_reports():
             date_from=date_from,
             date_to=date_to
         )
-
+    except Exception as e:
+        print("❌ 日報一覧取得エラー:", e)
+        flash("日報一覧の取得中にエラーが発生しました", "error")
+        return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/daily-reports/patient/<patient_report_id>/amount", methods=["POST"])
 @staff_required
