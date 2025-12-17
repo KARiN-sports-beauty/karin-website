@@ -19,12 +19,12 @@
     <div style="display: flex; gap: 8px; align-items: center;">
       {% if patient.introduced_count and patient.introduced_count > 0 %}
       <span class="admin-karte-detail-badge admin-karte-detail-badge-introducer">
-        紹介 {{ patient.introduced_count }}人
+        {{ patient.introduced_count }}
       </span>
       {% endif %}
       {% if patient.total_reservation_count and patient.total_reservation_count > 0 %}
       <span class="admin-karte-detail-badge admin-karte-detail-badge-reservation">
-        予約 {{ patient.total_reservation_count }}件
+        {{ patient.total_reservation_count }}
       </span>
       {% endif %}
     </div>
@@ -110,6 +110,7 @@
             href="/admin/karte/{{ patient.introducer_info.id }}"
             class="admin-karte-detail-introducer-link"
           >
+            {% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
             （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）
           </a>
@@ -121,6 +122,21 @@
         {% endif %}
       </span>
     </div>
+    
+    {% if is_admin %}
+    <div class="admin-karte-detail-field">
+      <span class="admin-karte-detail-label">VIPフラグ</span>
+      <span class="admin-karte-detail-value">
+        <form action="/admin/karte/{{ patient.id }}/vip" method="POST" style="display: inline;">
+          <select name="vip_level" onchange="this.form.submit()" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: #fff; cursor: pointer;">
+            <option value="none" {% if patient.vip_level == 'none' or not patient.vip_level %}selected{% endif %}>なし</option>
+            <option value="star" {% if patient.vip_level == 'star' %}selected{% endif %}>⭐️</option>
+            <option value="clover" {% if patient.vip_level == 'clover' %}selected{% endif %}>🍀</option>
+          </select>
+        </form>
+      </span>
+    </div>
+    {% endif %}
     
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">11. 主訴</span>
@@ -221,6 +237,7 @@
       <a href="/admin/karte/{{ introduced_patient.id }}" class="admin-introduced-card">
         <div class="admin-introduced-head">
           <strong class="admin-introduced-name">
+            {% if introduced_patient.vip_level == 'star' %}⭐️{% elif introduced_patient.vip_level == 'clover' %}🍀{% endif %}
             {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}
           </strong>
         </div>
