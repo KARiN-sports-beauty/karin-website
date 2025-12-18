@@ -9,25 +9,6 @@
   <a href="/admin/staff-reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px; margin-left: 12px;">← スタッフ一覧に戻る</a>
 </div>
 
-<!-- スタッフ基本情報 -->
-<div style="margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ情報</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-    <div>
-      <span style="font-size: 0.9rem; color: #666;">名前：</span>
-      <span style="font-weight: 500; color: #1E3A5F;">{{ staff_name }}</span>
-    </div>
-    <div>
-      <span style="font-size: 0.9rem; color: #666;">メール：</span>
-      <span style="font-weight: 500; color: #1E3A5F;">{{ staff_email }}</span>
-    </div>
-    <div>
-      <span style="font-size: 0.9rem; color: #666;">電話番号：</span>
-      <span style="font-weight: 500; color: #1E3A5F;">{{ staff_phone }}</span>
-    </div>
-  </div>
-</div>
-
 <!-- フィルタ -->
 <div style="margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <form method="GET" action="/admin/staff-reports/{{ staff_id }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">

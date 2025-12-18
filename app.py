@@ -4040,7 +4040,6 @@ def staff_daily_report_new():
         
         # 日報基本情報
         report_date = request.form.get("report_date", "").strip()
-        report_memo = request.form.get("report_memo", "").strip()
         
         # バリデーション
         if not report_date:
@@ -4054,7 +4053,6 @@ def staff_daily_report_new():
             # 既存の日報を更新
             report_id = res_existing.data[0]["id"]
             supabase_admin.table("staff_daily_reports").update({
-                "memo": report_memo if report_memo else None,
                 "updated_at": now_iso()
             }).eq("id", report_id).execute()
         else:
@@ -4062,7 +4060,6 @@ def staff_daily_report_new():
             report_data = {
                 "staff_name": staff_name,
                 "report_date": report_date,
-                "memo": report_memo if report_memo else None,
                 "created_at": now_iso(),
                 "updated_at": now_iso()
             }
