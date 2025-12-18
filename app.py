@@ -1341,10 +1341,25 @@ def admin_blog_edit(blog_id):
 @app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
 @staff_required
 def admin_blog_delete(blog_id):
-    """ブログ削除"""
+    """ブログ削除（関連するコメントとlikesも削除）"""
     try:
+        # まず、関連するコメントを削除
+        try:
+            supabase_admin.table("comments").delete().eq("blog_id", blog_id).execute()
+            print(f"✅ ブログID {blog_id} のコメントを削除しました")
+        except Exception as e:
+            print(f"⚠️ コメント削除エラー（続行）: {e}")
+        
+        # 関連するlikesも削除
+        try:
+            supabase_admin.table("likes").delete().eq("blog_id", blog_id).execute()
+            print(f"✅ ブログID {blog_id} のいいねを削除しました")
+        except Exception as e:
+            print(f"⚠️ いいね削除エラー（続行）: {e}")
+        
+        # 最後にブログを削除
         supabase_admin.table("blogs").delete().eq("id", blog_id).execute()
-        flash("ブログを削除しました", "success")
+        flash("ブログと関連するコメントを削除しました", "success")
     except Exception as e:
         print("❌ ブログ削除エラー:", e)
         flash(f"ブログの削除に失敗しました: {e}", "error")
@@ -2980,22 +2995,38 @@ def admin_reservations_new():
                 else:
                     patient["introducer_info"] = None
             
-            # スタッフリスト取得
+            # スタッフリスト取得（承認済みスタッフ全員）
             staff = session.get("staff", {})
             staff_name = staff.get("name", "スタッフ")
             staff_list = []
             try:
-                try:
-                    res_staff = supabase_admin.table("staff").select("id, name").execute()
-                    if res_staff.data:
-                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
-                except:
-                    pass
-                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
-                if not current_staff_in_list:
-                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+                # Supabase Authから承認済みスタッフを取得
+                users = supabase_admin.auth.admin.list_users()
+                for u in users:
+                    meta = u.user_metadata or {}
+                    # 承認済みのみ表示
+                    if not meta.get("approved", False):
+                        continue
+                    
+                    # 姓・名から表示名を生成（半角スペース区切り）
+                    last_name = meta.get("last_name", "")
+                    first_name = meta.get("first_name", "")
+                    if last_name and first_name:
+                        display_name = f"{last_name} {first_name}"
+                    else:
+                        # 後方互換性：既存データはnameフィールドを使用
+                        display_name = meta.get("name", "未設定")
+                    
+                    staff_list.append({
+                        "name": display_name,
+                        "id": u.id
+                    })
+                
+                # 名前順でソート
+                staff_list.sort(key=lambda x: x["name"])
             except Exception as e:
                 print("❌ スタッフリスト取得エラー:", e)
+                # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
             return render_template("admin_reservations_new.html", patients=patients, staff_name=staff_name, staff_list=staff_list)
@@ -3516,22 +3547,38 @@ def admin_reservations_edit(reservation_id):
             except:
                 reservation["nominated_staff_ids"] = []
             
-            # スタッフリスト取得
+            # スタッフリスト取得（承認済みスタッフ全員）
             staff = session.get("staff", {})
             staff_name = staff.get("name", "スタッフ")
             staff_list = []
             try:
-                try:
-                    res_staff = supabase_admin.table("staff").select("id, name").execute()
-                    if res_staff.data:
-                        staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
-                except:
-                    pass
-                current_staff_in_list = any(s.get("id") == staff.get("id") for s in staff_list)
-                if not current_staff_in_list:
-                    staff_list.append({"name": staff_name, "id": staff.get("id")})
+                # Supabase Authから承認済みスタッフを取得
+                users = supabase_admin.auth.admin.list_users()
+                for u in users:
+                    meta = u.user_metadata or {}
+                    # 承認済みのみ表示
+                    if not meta.get("approved", False):
+                        continue
+                    
+                    # 姓・名から表示名を生成（半角スペース区切り）
+                    last_name = meta.get("last_name", "")
+                    first_name = meta.get("first_name", "")
+                    if last_name and first_name:
+                        display_name = f"{last_name} {first_name}"
+                    else:
+                        # 後方互換性：既存データはnameフィールドを使用
+                        display_name = meta.get("name", "未設定")
+                    
+                    staff_list.append({
+                        "name": display_name,
+                        "id": u.id
+                    })
+                
+                # 名前順でソート
+                staff_list.sort(key=lambda x: x["name"])
             except Exception as e:
                 print("❌ スタッフリスト取得エラー:", e)
+                # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
             return render_template("admin_reservations_edit.html", reservation=reservation, staff_list=staff_list)
@@ -3746,7 +3793,20 @@ def staff_daily_report_new():
         # ログイン中のスタッフ情報を取得
         staff = session.get("staff", {})
         staff_name = staff.get("name", "スタッフ")
-        today_date = datetime.now(JST).strftime("%Y-%m-%d")
+        today_date = request.args.get("date", datetime.now(JST).strftime("%Y-%m-%d"))
+        
+        # 選択された日付の既存日報を取得
+        existing_report = None
+        existing_items = []
+        try:
+            res_existing = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).eq("report_date", today_date).execute()
+            if res_existing.data:
+                existing_report = res_existing.data[0]
+                report_id = existing_report["id"]
+                res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", report_id).order("created_at", asc=True).execute()
+                existing_items = res_items.data or []
+        except:
+            pass
         
         # 実働時間計算
         now_jst = datetime.now(JST)
@@ -3758,8 +3818,6 @@ def staff_daily_report_new():
         # 今週の実働時間を計算
         weekly_hours = 0
         try:
-            res_weekly = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").eq("report_id", supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", week_start_date.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute())
-            # 簡易版：実際にはJOINが必要
             res_weekly_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", week_start_date.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute()
             report_ids = [r["id"] for r in res_weekly_reports.data] if res_weekly_reports.data else []
             if report_ids:
@@ -3790,16 +3848,24 @@ def staff_daily_report_new():
         target_hours = 40
         diff_hours = target_hours - weekly_hours
         
-        # 年間累計実働時間と過不足
-        year_start = datetime(now_jst.year, 1, 1, tzinfo=JST)
-        yearly_hours = 0
+        # 日報作成初日を取得
+        first_report_date = None
         try:
-            res_yearly_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", year_start.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute()
-            report_ids = [r["id"] for r in res_yearly_reports.data] if res_yearly_reports.data else []
+            res_first = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", asc=True).limit(1).execute()
+            if res_first.data:
+                first_report_date = datetime.strptime(res_first.data[0]["report_date"], "%Y-%m-%d").date()
+        except:
+            pass
+        
+        # 累積実働時間を計算（全期間）
+        total_hours = 0
+        try:
+            res_all_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).execute()
+            report_ids = [r["id"] for r in res_all_reports.data] if res_all_reports.data else []
             if report_ids:
-                res_yearly_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
-                if res_yearly_items.data:
-                    for item in res_yearly_items.data:
+                res_all_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
+                if res_all_items.data:
+                    for item in res_all_items.data:
                         start = item.get("start_time")
                         end = item.get("end_time")
                         break_mins = item.get("break_minutes", 0) or 0
@@ -3813,23 +3879,32 @@ def staff_daily_report_new():
                                     end_dt += timedelta(days=1)
                                 diff = end_dt - start_dt
                                 hours = diff.total_seconds() / 3600 - (break_mins / 60)
-                                yearly_hours += max(0, hours)
+                                total_hours += max(0, hours)
                             except:
                                 pass
         except:
-            yearly_hours = 0
+            total_hours = 0
         
-        # 年間目標時間（40h × 52週 = 2080h）との差
-        target_yearly_hours = 2080
-        yearly_hours_diff = yearly_hours - target_yearly_hours
+        # 過不足計算：日報作成初日から1週間ごとに40時間ずつ
+        if first_report_date:
+            # 初日から今日までの週数を計算
+            days_diff = (now_jst.date() - first_report_date).days
+            weeks_passed = max(0, days_diff // 7)  # 0週から開始
+            target_total_hours = weeks_passed * 40
+            weekly_hours_diff = total_hours - target_total_hours
+        else:
+            # 初日がない場合は0
+            weekly_hours_diff = 0
         
         return render_template(
             "staff_daily_report_new.html",
             staff_name=staff_name,
             today_date=today_date,
+            existing_report=existing_report,
+            existing_items=existing_items,
             weekly_hours=round(weekly_hours, 1),
             diff_hours=round(diff_hours, 1),
-            yearly_hours_diff=round(yearly_hours_diff, 1)
+            weekly_hours_diff=round(weekly_hours_diff, 1)
         )
     
     # POST処理
@@ -3886,6 +3961,7 @@ def staff_daily_report_new():
             start_time = request.form.get(f"start_time_{card_index}", "").strip() or None
             end_time = request.form.get(f"end_time_{card_index}", "").strip() or None
             break_minutes_str = request.form.get(f"break_minutes_{card_index}", "0").strip()
+            session_count_str = request.form.get(f"session_count_{card_index}", "0").strip()
             memo = request.form.get(f"memo_{card_index}", "").strip() or None
             
             try:
@@ -3893,11 +3969,17 @@ def staff_daily_report_new():
             except:
                 break_minutes_int = 0
             
+            try:
+                session_count_int = int(session_count_str) if session_count_str else 0
+            except:
+                session_count_int = 0
+            
             work_cards.append({
                 "work_type": work_type,
                 "start_time": start_time,
                 "end_time": end_time,
                 "break_minutes": break_minutes_int,
+                "session_count": session_count_int,
                 "memo": memo
             })
             card_index += 1
@@ -3917,6 +3999,7 @@ def staff_daily_report_new():
                 "start_time": card["start_time"],
                 "end_time": card["end_time"],
                 "break_minutes": card["break_minutes"],
+                "session_count": card.get("session_count", 0),
                 "memo": card["memo"],
                 "created_at": now_iso()
             }
@@ -3930,6 +4013,192 @@ def staff_daily_report_new():
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash(f"日報の登録に失敗しました: {str(e)}", "error")
         return redirect("/staff/daily-report/new")
+
+
+@app.route("/staff/daily-reports/years")
+@staff_required
+def staff_daily_reports_years():
+    """スタッフ用：年一覧ページ"""
+    try:
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        
+        # 日報が存在する年を取得
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 年を抽出して重複を除去
+        years_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                year = report_date[:4]  # YYYY-MM-DDから年を抽出
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)  # 新しい年から順に
+        
+        return render_template("staff_daily_reports_years.html", years=years_list, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/staff/profile")
+
+
+@app.route("/staff/daily-reports/years/<year>")
+@staff_required
+def staff_daily_reports_months(year):
+    """スタッフ用：月一覧ページ"""
+    try:
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        
+        # 指定年の日報が存在する月を取得
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).gte("report_date", year_start).lte("report_date", year_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 月を抽出して重複を除去
+        months_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                month = report_date[5:7]  # YYYY-MM-DDから月を抽出
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)  # 新しい月から順に
+        
+        # 月の日本語名をマッピング
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("staff_daily_reports_months.html", year=year, months=months_with_names, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect("/staff/daily-reports/years")
+
+
+@app.route("/staff/daily-reports/years/<year>/months/<month>")
+@staff_required
+def staff_daily_reports_list(year, month):
+    """スタッフ用：日報一覧ページ（指定年月）"""
+    try:
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        
+        # 指定年月の日報を取得
+        month_start = f"{year}-{month}-01"
+        # 月末日を計算
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:  # 2月
+            # うるう年判定（簡易版）
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        res_reports = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 各日報の勤務カードを取得
+        report_ids = [r["id"] for r in reports]
+        items_map = {}
+        patients_map = {}
+        
+        if report_ids:
+            # 勤務カードを一括取得
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            items = res_items.data or []
+            
+            # report_idごとにグループ化
+            for item in items:
+                report_id = item.get("report_id")
+                if report_id not in items_map:
+                    items_map[report_id] = []
+                items_map[report_id].append(item)
+            
+            # 患者・売上明細を一括取得
+            item_ids = [item["id"] for item in items]
+            if item_ids:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者情報を一括取得（名前表示用）
+                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                patient_map = {}
+                if patient_ids_from_reports:
+                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                    if res_patient_names.data:
+                        for p in res_patient_names.data:
+                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                            patient_map[p["id"]] = name or p.get("name", "患者不明")
+                
+                # item_idごとにグループ化
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                    patient["patient_name"] = patient_name
+                    patients_map[item_id].append(patient)
+        
+        # 日報に勤務カードと患者情報を結合
+        for report in reports:
+            report_id = report["id"]
+            report["items"] = []
+            
+            if report_id in items_map:
+                for item in items_map[report_id]:
+                    item_id = item["id"]
+                    item["patients"] = patients_map.get(item_id, [])
+                    
+                    # 時間表示用のフォーマット
+                    if item.get("start_time"):
+                        try:
+                            start_time_str = item["start_time"]
+                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
+                                item["start_time_display"] = start_time_str[:5]
+                        except:
+                            item["start_time_display"] = None
+                    else:
+                        item["start_time_display"] = None
+                    
+                    if item.get("end_time"):
+                        try:
+                            end_time_str = item["end_time"]
+                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
+                                item["end_time_display"] = end_time_str[:5]
+                        except:
+                            item["end_time_display"] = None
+                    else:
+                        item["end_time_display"] = None
+                    
+                    report["items"].append(item)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("staff_daily_reports_list.html", year=year, month=month, month_name=month_name, reports=reports, staff_name=staff_name)
+    except Exception as e:
+        import traceback
+        print(f"❌ 日報一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("日報一覧の取得に失敗しました", "error")
+        return redirect(f"/staff/daily-reports/years/{year}")
 
 
 @app.route("/admin/daily-reports", methods=["GET"])
@@ -4326,6 +4595,237 @@ def admin_staff_report_detail(staff_id):
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("スタッフ報告の取得に失敗しました", "error")
         return redirect("/admin/staff-reports")
+
+
+@app.route("/admin/staff-reports/<staff_id>/reports/years")
+@admin_required
+def admin_staff_reports_years(staff_id):
+    """管理者用：年一覧ページ"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 日報が存在する年を取得
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 年を抽出して重複を除去
+        years_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                year = report_date[:4]  # YYYY-MM-DDから年を抽出
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)  # 新しい年から順に
+        
+        return render_template("admin_staff_reports_years.html", years=years_list, staff_id=staff_id, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/menu")
+
+
+@app.route("/admin/staff-reports/<staff_id>/reports/years/<year>")
+@admin_required
+def admin_staff_reports_months(staff_id, year):
+    """管理者用：月一覧ページ"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年の日報が存在する月を取得
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).gte("report_date", year_start).lte("report_date", year_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 月を抽出して重複を除去
+        months_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                month = report_date[5:7]  # YYYY-MM-DDから月を抽出
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)  # 新しい月から順に
+        
+        # 月の日本語名をマッピング
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("admin_staff_reports_months.html", year=year, months=months_with_names, staff_id=staff_id, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/reports/years")
+
+
+@app.route("/admin/staff-reports/<staff_id>/reports/years/<year>/months/<month>")
+@admin_required
+def admin_staff_reports_list(staff_id, year, month):
+    """管理者用：日報一覧ページ（指定年月）"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年月の日報を取得
+        month_start = f"{year}-{month}-01"
+        # 月末日を計算
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:  # 2月
+            # うるう年判定（簡易版）
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        res_reports = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        # 各日報の勤務カードを取得
+        report_ids = [r["id"] for r in reports]
+        items_map = {}
+        patients_map = {}
+        
+        if report_ids:
+            # 勤務カードを一括取得
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            items = res_items.data or []
+            
+            # report_idごとにグループ化
+            for item in items:
+                report_id = item.get("report_id")
+                if report_id not in items_map:
+                    items_map[report_id] = []
+                items_map[report_id].append(item)
+            
+            # 患者・売上明細を一括取得
+            item_ids = [item["id"] for item in items]
+            if item_ids:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者情報を一括取得（名前表示用）
+                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                patient_map = {}
+                if patient_ids_from_reports:
+                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                    if res_patient_names.data:
+                        for p in res_patient_names.data:
+                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                            patient_map[p["id"]] = name or p.get("name", "患者不明")
+                
+                # item_idごとにグループ化
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                    patient["patient_name"] = patient_name
+                    patients_map[item_id].append(patient)
+        
+        # 日報に勤務カードと患者情報を結合
+        for report in reports:
+            report_id = report["id"]
+            report["items"] = []
+            
+            if report_id in items_map:
+                for item in items_map[report_id]:
+                    item_id = item["id"]
+                    item["patients"] = patients_map.get(item_id, [])
+                    
+                    # 時間表示用のフォーマット
+                    if item.get("start_time"):
+                        try:
+                            start_time_str = item["start_time"]
+                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
+                                item["start_time_display"] = start_time_str[:5]
+                        except:
+                            item["start_time_display"] = None
+                    else:
+                        item["start_time_display"] = None
+                    
+                    if item.get("end_time"):
+                        try:
+                            end_time_str = item["end_time"]
+                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
+                                item["end_time_display"] = end_time_str[:5]
+                        except:
+                            item["end_time_display"] = None
+                    else:
+                        item["end_time_display"] = None
+                    
+                    report["items"].append(item)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("admin_staff_reports_list.html", year=year, month=month, month_name=month_name, reports=reports, staff_id=staff_id, staff_name=staff_name, is_admin=True)
+    except Exception as e:
+        import traceback
+        print(f"❌ 日報一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("日報一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/reports/years/{year}")
 
 
 @app.route("/admin/staff-reports/<staff_id>/profile")

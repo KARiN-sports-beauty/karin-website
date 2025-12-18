@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ staff_name }}の過去の日報 - {{ year }}年 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📅 {{ staff_name }}の過去の日報 - {{ year }}年</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/staff-reports/{{ staff_id }}/reports/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 年一覧に戻る</a>
+</div>
+
+{% if months %}
+<div class="admin-karte-grid" style="margin-top: 20px;">
+  {% for month, month_name in months %}
+  <a href="/admin/staff-reports/{{ staff_id }}/reports/years/{{ year }}/months/{{ month }}" class="admin-karte-card">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name">{{ month_name }}</strong>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">{{ year }}年の日報がありません。</p>
+{% endif %}
+
+{% endblock %}

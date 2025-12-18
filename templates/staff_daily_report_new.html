@@ -12,29 +12,30 @@
   {% endfor %}
 {% endif %}
 
-<form method="POST" action="/staff/daily-report/new" id="daily-report-form" style="max-width: 800px;">
+<div style="max-width: 800px; margin: 0 auto;">
+<form method="POST" action="/staff/daily-report/new" id="daily-report-form">
   <!-- 日報基本情報 -->
-  <div style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <div style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); max-width: 800px; margin-left: auto; margin-right: auto;">
     <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">日報情報</h3>
     
     <div style="margin-bottom: 20px;">
       <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">スタッフ名</label>
-      <input type="text" value="{{ staff_name }}" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #f5f5f5; color: #666;">
+      <input type="text" value="{{ staff_name }}" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #f5f5f5; color: #666; box-sizing: border-box;">
     </div>
     
     <div style="margin-bottom: 20px;">
       <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
-      <input type="date" name="report_date" id="report_date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      <input type="date" name="report_date" id="report_date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
     </div>
     
     <div style="margin-bottom: 20px;">
-      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日報メモ</label>
-      <textarea name="report_memo" rows="3" placeholder="日報全体のメモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">本日のシフト</label>
+      <textarea name="report_memo" rows="3" placeholder="本日のシフトを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">{{ existing_report.memo if existing_report else '' }}</textarea>
     </div>
   </div>
   
   <!-- 勤務カード一覧 -->
-  <div style="margin-bottom: 30px;">
+  <div style="margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
       <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">勤務カード</h3>
       <button type="button" id="add-work-card-btn" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 16px; font-size: 0.9rem;">➕ 勤務カードを追加</button>
@@ -52,7 +53,7 @@
 </form>
 
 <!-- 実働時間表示フッター -->
-<div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+<div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); max-width: 800px; margin-left: auto; margin-right: auto;">
   <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">実働時間</h3>
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
     <div>
@@ -64,10 +65,11 @@
       <div style="font-size: 1.2rem; font-weight: 600;" id="target-diff">計算中...</div>
     </div>
     <div>
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">年間累計からの過不足</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">過不足</div>
       <div style="font-size: 1.2rem; font-weight: 600;" id="yearly-diff">計算中...</div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -85,14 +87,13 @@ document.addEventListener('DOMContentLoaded', function() {
     diffElement.style.color = '#f44336';
   }
   
-  const yearlyDiff = {{ yearly_hours_diff }};
+  const weeklyDiff = {{ weekly_hours_diff }};
   const yearlyDiffElement = document.getElementById('yearly-diff');
-  const targetYearlyHours = 2080; // 年間目標時間（40h × 52週）
-  if (yearlyDiff >= 0) {
-    yearlyDiffElement.textContent = `+${yearlyDiff}時間`;
+  if (weeklyDiff >= 0) {
+    yearlyDiffElement.textContent = `+${weeklyDiff}時間`;
     yearlyDiffElement.style.color = '#4CAF50';
   } else {
-    yearlyDiffElement.textContent = `${yearlyDiff}時間`;
+    yearlyDiffElement.textContent = `${weeklyDiff}時間`;
     yearlyDiffElement.style.color = '#f44336';
   }
 });
@@ -126,25 +127,31 @@ function addWorkCard() {
       </select>
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">開始時刻</label>
-        <input type="time" name="start_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <input type="time" name="start_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">終了時刻</label>
-        <input type="time" name="end_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <input type="time" name="end_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
     
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">休憩時間（分）</label>
-      <input type="number" name="break_minutes_${workCardCount}" value="0" min="0" max="480" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">休憩時間（分）</label>
+        <input type="number" name="break_minutes_${workCardCount}" value="0" min="0" max="480" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">本数</label>
+        <input type="number" name="session_count_${workCardCount}" value="0" min="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
     </div>
     
     <div>
       <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メモ</label>
-      <textarea name="memo_${workCardCount}" rows="2" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+      <textarea name="memo_${workCardCount}" rows="2" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;"></textarea>
     </div>
   `;
   
@@ -178,10 +185,51 @@ document.getElementById('daily-report-form').addEventListener('submit', function
   }
 });
 
+// 既存の勤務カードを読み込む関数
+function loadExistingCards(existingItems) {
+  if (existingItems && existingItems.length > 0) {
+    existingItems.forEach((item, index) => {
+      addWorkCard();
+      const cards = document.querySelectorAll('.work-card');
+      const lastCard = cards[cards.length - 1];
+      if (lastCard) {
+        const cardIndex = lastCard.dataset.cardIndex;
+        if (item.work_type) {
+          lastCard.querySelector(`select[name="work_type_${cardIndex}"]`).value = item.work_type;
+        }
+        if (item.start_time) {
+          lastCard.querySelector(`input[name="start_time_${cardIndex}"]`).value = item.start_time;
+        }
+        if (item.end_time) {
+          lastCard.querySelector(`input[name="end_time_${cardIndex}"]`).value = item.end_time;
+        }
+        if (item.break_minutes !== undefined && item.break_minutes !== null) {
+          lastCard.querySelector(`input[name="break_minutes_${cardIndex}"]`).value = item.break_minutes;
+        }
+        if (item.session_count !== undefined && item.session_count !== null) {
+          lastCard.querySelector(`input[name="session_count_${cardIndex}"]`).value = item.session_count;
+        }
+        if (item.memo) {
+          lastCard.querySelector(`textarea[name="memo_${cardIndex}"]`).value = item.memo;
+        }
+      }
+    });
+  } else {
+    // 既存カードがない場合は初期カードを1つ追加
+    addWorkCard();
+  }
+}
+
 // 初期カードを1つ追加
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('add-work-card-btn').addEventListener('click', addWorkCard);
+  
+  // 既存の勤務カードがあれば読み込む
+  {% if existing_items %}
+  loadExistingCards({{ existing_items | tojson }});
+  {% else %}
   addWorkCard(); // 初期カードを1つ追加
+  {% endif %}
 });
 </script>
 {% endblock %}

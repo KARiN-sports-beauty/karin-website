@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}過去の日報 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📅 過去の日報 - {{ year }}年{{ month_name }}</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/staff/daily-reports/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+</div>
+
+{% if reports %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  {% for report in reports %}
+  <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <!-- 日報ヘッダー -->
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;">
+      <div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ report.report_date }}</div>
+        <div style="font-size: 1rem; font-weight: 500; color: #1E3A5F;">{{ staff_name }}</div>
+      </div>
+      <div style="font-size: 0.85rem; color: #999;">
+        登録日時：{{ report.created_at[:16] if report.created_at else '' }}
+      </div>
+    </div>
+    
+    {% if report.memo %}
+    <div style="margin-bottom: 16px; padding: 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.9rem; color: #666;">
+      <strong style="color: #1E3A5F;">本日のシフト：</strong>{{ report.memo }}
+    </div>
+    {% endif %}
+    
+    <!-- 勤務カード一覧 -->
+    {% if report.items %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for item in report.items %}
+      <div class="admin-resv-card {% if item.work_type == 'in_house' %}place-inhouse{% elif item.work_type == 'visit' %}place-visit{% elif item.work_type == 'field' %}place-field{% endif %}">
+        <!-- 勤務区分バッジ（必ず表示） -->
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {% if item.work_type == 'in_house' %}
+            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
+            {% elif item.work_type == 'visit' %}
+            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
+            {% elif item.work_type == 'field' %}
+            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
+            {% endif %}
+            {% if item.start_time_display and item.end_time_display %}
+            <span style="color: #666; font-size: 0.9rem;">{{ item.start_time_display }} ～ {{ item.end_time_display }}</span>
+            {% elif item.start_time_display %}
+            <span style="color: #666; font-size: 0.9rem;">開始：{{ item.start_time_display }}</span>
+            {% elif item.end_time_display %}
+            <span style="color: #666; font-size: 0.9rem;">終了：{{ item.end_time_display }}</span>
+            {% endif %}
+            {% if item.break_minutes and item.break_minutes > 0 %}
+            <span style="color: #666; font-size: 0.9rem;">休憩：{{ item.break_minutes }}分</span>
+            {% endif %}
+            {% if item.session_count and item.session_count > 0 %}
+            <span style="color: #666; font-size: 0.9rem;">本数：{{ item.session_count }}</span>
+            {% endif %}
+          </div>
+        </div>
+        
+        {% if item.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          {{ item.memo }}
+        </div>
+        {% endif %}
+        
+        <!-- 患者・売上明細（金額0円でも必ず表示） -->
+        {% if item.patients %}
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <div style="font-size: 0.85rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">患者・売上明細</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for patient in item.patients %}
+            <div style="padding: 8px; background: #f5f7fb; border-radius: 6px; font-size: 0.85rem;">
+              {% if patient.patient_id %}
+              <a href="/admin/karte/{{ patient.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
+                {% if patient.patient_name %}
+                  {{ patient.patient_name }}
+                {% else %}
+                  患者ID: {{ patient.patient_id[:8] }}...
+                {% endif %}
+              </a>
+              {% else %}
+              <span style="color: #999;">患者情報なし</span>
+              {% endif %}
+              {% if patient.course_name %}
+              <span style="color: #666; font-weight: 500;">｜{{ patient.course_name }}</span>
+              {% else %}
+              <span style="color: #999; font-size: 0.8rem;">｜コース名なし</span>
+              {% endif %}
+              {% if patient.amount is not none %}
+              <span style="color: {% if patient.amount == 0 %}#999{% else %}#4CAF50{% endif %}; font-weight: {% if patient.amount == 0 %}400{% else %}500{% endif %};">
+                ｜¥{{ "{:,}".format(patient.amount) }}
+              </span>
+              {% else %}
+              <span style="color: #999; font-size: 0.8rem;">｜金額未設定</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 20px 0;">勤務カードがありません</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p style="color: #999; text-align: center; padding: 40px 0;">{{ year }}年{{ month_name }}の日報がありません</p>
+{% endif %}
+{% endblock %}
