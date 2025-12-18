@@ -889,29 +889,36 @@ def admin_staff_delete(user_id):
 @app.route("/staff/profile", methods=["GET"])
 @staff_required
 def staff_profile():
+    """スタッフページ（メインページ：カード選択画面）"""
     staff = session.get("staff")
-    
-    # ユーザーメタデータから姓・名を取得
-    try:
-        users = supabase_admin.auth.admin.list_users()
-        user = next((u for u in users if u.id == staff["id"]), None)
-        if user:
-            meta = user.user_metadata or {}
-            staff["last_name"] = meta.get("last_name", "")
-            staff["first_name"] = meta.get("first_name", "")
-    except:
-        pass
-
-    return render_template(
-        "staff_profile.html",
-        staff=staff,
-        message=request.args.get("message")
-    )
+    return render_template("staff_profile_menu.html", staff=staff)
 
 
-@app.route("/staff/profile", methods=["POST"])
+@app.route("/staff/profile/edit", methods=["GET", "POST"])
 @staff_required
-def staff_profile_update():
+def staff_profile_edit():
+    """プロフィール編集画面"""
+    if request.method == "GET":
+        staff = session.get("staff")
+        
+        # ユーザーメタデータから姓・名を取得
+        try:
+            users = supabase_admin.auth.admin.list_users()
+            user = next((u for u in users if u.id == staff["id"]), None)
+            if user:
+                meta = user.user_metadata or {}
+                staff["last_name"] = meta.get("last_name", "")
+                staff["first_name"] = meta.get("first_name", "")
+        except:
+            pass
+
+        return render_template(
+            "staff_profile_edit.html",
+            staff=staff,
+            message=request.args.get("message")
+        )
+    
+    # POST処理（プロフィール更新）
     try:
         staff = session.get("staff")
         user_id = staff["id"]
@@ -921,7 +928,7 @@ def staff_profile_update():
         new_phone = request.form.get("phone", "")
 
         if not last_name or not first_name:
-            return redirect(url_for("staff_profile", message="姓と名を入力してください"))
+            return redirect(url_for("staff_profile_edit", message="姓と名を入力してください"))
 
         # 姓と名を結合してnameを作成（半角スペース区切り）
         new_name = f"{last_name} {first_name}".strip()
@@ -946,13 +953,15 @@ def staff_profile_update():
         session["staff"]["phone"] = new_phone
 
         return redirect(url_for(
-            "staff_profile",
+            "staff_profile_edit",
             message="プロフィールを更新しました"
         ))
 
     except Exception as e:
         print("PROFILE UPDATE ERROR:", e)
         return f"エラーが発生しました: {e}", 500
+
+
 
 
 
@@ -4142,7 +4151,45 @@ def admin_staff_reports():
         return redirect("/admin/dashboard")
 
 
-@app.route("/admin/staff-reports/<staff_id>")
+@app.route("/admin/staff-reports/<staff_id>/menu")
+@admin_required
+def admin_staff_report_menu(staff_id):
+    """スタッフ報告メニューページ（管理者用）"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        return render_template(
+            "admin_staff_report_menu.html",
+            staff_id=staff_id,
+            staff_name=staff_name,
+            staff_email=staff_user.email,
+            staff_phone=meta.get("phone", "未登録")
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ スタッフ報告メニュー取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("スタッフ情報の取得に失敗しました", "error")
+        return redirect("/admin/staff-reports")
+
+
+@app.route("/admin/staff-reports/<staff_id>/reports")
 @admin_required
 def admin_staff_report_detail(staff_id):
     """各スタッフの報告閲覧ページ"""
@@ -4270,13 +4317,60 @@ def admin_staff_report_detail(staff_id):
             reports=reports,
             work_type_filter=work_type_filter,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            is_admin=True  # 管理者は閲覧のみ
         )
     except Exception as e:
         import traceback
         print(f"❌ スタッフ報告詳細取得エラー: {e}")
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("スタッフ報告の取得に失敗しました", "error")
+        return redirect("/admin/staff-reports")
+
+
+@app.route("/admin/staff-reports/<staff_id>/profile")
+@admin_required
+def admin_staff_report_profile(staff_id):
+    """スタッフプロフィール閲覧ページ（管理者用、閲覧のみ）"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        staff_data = {
+            "id": staff_user.id,
+            "email": staff_user.email,
+            "name": staff_name,
+            "last_name": last_name,
+            "first_name": first_name,
+            "phone": meta.get("phone", "未登録"),
+            "created_at": str(staff_user.created_at)[:10] if staff_user.created_at else "不明"
+        }
+        
+        return render_template(
+            "admin_staff_profile_view.html",
+            staff_id=staff_id,
+            staff=staff_data
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ スタッフプロフィール閲覧エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("スタッフ情報の取得に失敗しました", "error")
         return redirect("/admin/staff-reports")
 
 

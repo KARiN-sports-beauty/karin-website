@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ staff.name }}のプロフィール | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">👤 {{ staff.name }}のプロフィール</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← メニューに戻る</a>
+</div>
+
+<!-- プロフィール情報（閲覧のみ） -->
+<div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">プロフィール情報</h3>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+    <div>
+      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">姓（漢字）</span>
+      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.last_name or '未入力' }}</span>
+    </div>
+    
+    <div>
+      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">名（漢字）</span>
+      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.first_name or '未入力' }}</span>
+    </div>
+    
+    <div>
+      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">電話番号</span>
+      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.phone or '未登録' }}</span>
+    </div>
+    
+    <div>
+      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">メールアドレス</span>
+      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.email }}</span>
+    </div>
+    
+    <div>
+      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">登録日</span>
+      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.created_at }}</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -5,7 +5,8 @@
 <h2 class="admin-title">📋 {{ staff_name }}のスタッフ報告</h2>
 
 <div style="margin-bottom: 20px;">
-  <a href="/admin/staff-reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← スタッフ一覧に戻る</a>
+  <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← メニューに戻る</a>
+  <a href="/admin/staff-reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px; margin-left: 12px;">← スタッフ一覧に戻る</a>
 </div>
 
 <!-- スタッフ基本情報 -->
@@ -51,7 +52,7 @@
     </label>
     
     <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">適用</button>
-    <a href="/admin/staff-reports/{{ staff_id }}" style="padding: 8px 16px; background: #999; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">リセット</a>
+    <a href="/admin/staff-reports/{{ staff_id }}/reports" style="padding: 8px 16px; background: #999; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">リセット</a>
   </form>
 </div>
 
@@ -142,10 +143,12 @@
                 <span style="color: #999; font-size: 0.8rem;">｜金額未設定</span>
                 {% endif %}
               </div>
+              {% if is_admin %}
               <form method="POST" action="/admin/daily-reports/patient/{{ patient.id }}/amount" style="display: flex; align-items: center; gap: 4px;" onsubmit="return confirm('金額を更新しますか？予約データにも反映されます。');">
                 <input type="number" name="amount" value="{{ patient.amount if patient.amount is not none else 0 }}" min="0" step="100" style="width: 100px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
                 <button type="submit" style="padding: 4px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">更新</button>
               </form>
+              {% endif %}
             </div>
             {% endfor %}
           </div>

@@ -126,6 +126,8 @@
             </p>
         </a>
 
+        {% if session.staff and session.staff.is_admin == True %}
+        <!-- 🔒 管理者専用：スタッフ一覧（管理） -->
         <a href="/admin/staff" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">スタッフ一覧(管理)</span>
@@ -134,8 +136,6 @@
             ログインできるスタッフのページです。ここで制御を行います。
             </p>
         </a>
-
-        {% if session.staff and session.staff.is_admin == True %}
         <!-- 🔒 管理者専用：スタッフ報告 -->
         <a href="/admin/staff-reports" class="dash-card">
             <div class="dash-card-header">

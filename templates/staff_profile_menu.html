@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}スタッフページ | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">👤 スタッフページ</h2>
+
+<div class="dashboard-grid" style="margin-top: 20px;">
+  <!-- スタッフ日報 -->
+  <a href="/staff/daily-report/new" class="dash-card">
+    <div class="dash-card-header">
+      <span class="dash-card-label">スタッフ日報</span>
+    </div>
+    <p class="dash-card-text">
+      日々の勤務報告を作成・管理します。
+    </p>
+  </a>
+
+  <!-- プロフィール編集 -->
+  <a href="/staff/profile/edit" class="dash-card">
+    <div class="dash-card-header">
+      <span class="dash-card-label">プロフィール編集</span>
+    </div>
+    <p class="dash-card-text">
+      あなたのプロフィール情報を編集します。
+    </p>
+  </a>
+</div>
+
+{% endblock %}
