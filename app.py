@@ -4050,18 +4050,14 @@ def staff_daily_report_new():
         res_existing = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).eq("report_date", report_date).execute()
         
         if res_existing.data:
-            # 既存の日報を更新
+            # 既存の日報を更新（更新処理は不要なため、IDのみ取得）
             report_id = res_existing.data[0]["id"]
-            supabase_admin.table("staff_daily_reports").update({
-                "updated_at": now_iso()
-            }).eq("id", report_id).execute()
         else:
             # 新規日報を作成
             report_data = {
                 "staff_name": staff_name,
                 "report_date": report_date,
-                "created_at": now_iso(),
-                "updated_at": now_iso()
+                "created_at": now_iso()
             }
             res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
             if not res_new_report.data:
