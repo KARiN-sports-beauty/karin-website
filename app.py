@@ -4558,6 +4558,10 @@ def admin_staff_reports():
 def admin_staff_report_menu(staff_id):
     """スタッフ報告メニューページ（管理者用）"""
     try:
+        # 現在ログイン中のスタッフIDを取得
+        current_staff = session.get("staff", {})
+        current_staff_id = current_staff.get("id")
+        
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -4576,13 +4580,22 @@ def admin_staff_report_menu(staff_id):
         else:
             staff_name = meta.get("name", "未設定")
         
-        return render_template(
-            "admin_staff_report_menu.html",
-            staff_id=staff_id,
-            staff_name=staff_name,
-            staff_email=staff_user.email,
-            staff_phone=meta.get("phone", "未登録")
-        )
+        # 現在のログイン中のスタッフが自分のページにアクセスしている場合
+        if current_staff_id == staff_id:
+            # 編集可能なメニューを表示
+            return render_template(
+                "staff_profile_menu.html",
+                staff=current_staff
+            )
+        else:
+            # 他のスタッフの場合は閲覧のみ
+            return render_template(
+                "admin_staff_report_menu.html",
+                staff_id=staff_id,
+                staff_name=staff_name,
+                staff_email=staff_user.email,
+                staff_phone=meta.get("phone", "未登録")
+            )
     except Exception as e:
         import traceback
         print(f"❌ スタッフ報告メニュー取得エラー: {e}")

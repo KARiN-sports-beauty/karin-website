@@ -48,6 +48,14 @@
   letter-spacing: 0.04em;
 }
 
+.admin-logo .sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  font-family: "Noto Sans JP", sans-serif;
+  letter-spacing: 0.05em;
+  margin-left: 8px;
+}
+
 .admin-user {
   display: flex;
   align-items: center;
