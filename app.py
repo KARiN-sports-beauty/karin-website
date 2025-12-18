@@ -691,8 +691,8 @@ def staff_register():
             print("STAFF REGISTER ERROR:", e)
             return render_template("staff_register.html", error="登録に失敗しました。")
 
-        # 成功画面
-        return render_template("staff_register.html", success=True)
+        # 成功時はログイン画面にリダイレクト
+        return redirect(url_for("staff_login_page", success="登録完了しました。管理者の承認後にログインできます。"))
 
     # GETメソッド → 登録画面表示
     return render_template("staff_register.html")
@@ -790,11 +790,25 @@ def admin_staff_approve(user_id):
 
         meta = user.user_metadata or {}
 
-        # 承認処理
+        # 承認処理（既存のメタデータを保持しながらapprovedをTrueに設定）
+        updated_metadata = meta.copy()
+        updated_metadata["approved"] = True
+        
+        print(f"🔍 承認処理 - User ID: {user_id}, 既存メタデータ: {meta}, 更新後メタデータ: {updated_metadata}")
+        
         supabase_admin.auth.admin.update_user_by_id(
             user_id,
-            {"user_metadata": {"approved": True}}
+            {"user_metadata": updated_metadata}
         )
+        
+        # 更新確認（デバッグ用）
+        try:
+            updated_users = supabase_admin.auth.admin.list_users()
+            updated_user = next((u for u in updated_users if u.id == user_id), None)
+            if updated_user:
+                print(f"✅ 承認後確認 - User ID: {user_id}, メタデータ: {updated_user.user_metadata}, Approved: {updated_user.user_metadata.get('approved', False) if updated_user.user_metadata else False}")
+        except Exception as e:
+            print(f"⚠️ 承認後確認エラー: {e}")
 
         # 表示名を生成（姓・名から、半角スペース区切り）
         last_name = meta.get("last_name", "")
@@ -824,11 +838,23 @@ def admin_staff_approve(user_id):
 @admin_required
 def admin_staff_disable(user_id):
     try:
+        # ユーザー情報の取得
+        users = supabase_admin.auth.admin.list_users()
+        user = next((u for u in users if u.id == user_id), None)
+        
+        if not user:
+            flash("ユーザーが見つかりません", "error")
+            return redirect("/admin/staff")
+        
+        meta = user.user_metadata or {}
+        
+        # 既存のメタデータを保持しながらapprovedをFalseに設定
+        updated_metadata = meta.copy()
+        updated_metadata["approved"] = False
+        
         supabase_admin.auth.admin.update_user_by_id(
             user_id,
-            {
-                "user_metadata": { "approved": False }
-            }
+            {"user_metadata": updated_metadata}
         )
 
         flash("スタッフを停止しました。", "success")
@@ -924,7 +950,9 @@ def staff_profile_update():
 
 @app.route("/staff/login", methods=["GET"])
 def staff_login_page():
-    return render_template("stafflogin.html")
+    success = request.args.get("success")
+    error = request.args.get("error")
+    return render_template("stafflogin.html", success=success, error=error)
 
 
 # スタッフログイン処理
@@ -948,9 +976,13 @@ def staff_login():
 
     user = data.user
     metadata = getattr(user, "user_metadata", {}) or {}
+    
+    # デバッグ用：メタデータの内容を確認
+    print(f"🔍 ログイン試行 - Email: {email}, Metadata: {metadata}, Approved: {metadata.get('approved', False)}")
 
     # 🔥 承認チェック（ここが正しい位置）
     if not metadata.get("approved", False):
+        print(f"⚠️ 承認されていないユーザー: {email}")
         return render_template("stafflogin.html", error="まだ管理者の承認が必要です")
 
     # 🔹 表示名を決定（姓・名から生成、半角スペース区切り）

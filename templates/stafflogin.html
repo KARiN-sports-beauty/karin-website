@@ -81,6 +81,10 @@
 <div class="login-wrapper">
   <h1 class="login-title">スタッフログイン</h1>
 
+  {% if success %}
+    <p class="alert-success" style="color: green; margin-bottom: 12px; text-align: center;">{{ success }}</p>
+  {% endif %}
+
   {% if error %}
     <p class="error-msg">{{ error }}</p>
   {% endif %}
