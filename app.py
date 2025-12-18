@@ -4054,9 +4054,15 @@ def staff_daily_report_new():
             report_id = res_existing.data[0]["id"]
         else:
             # 新規日報を作成
+            # week_keyを計算（YYYY-WW形式、ISO週番号を使用）
+            report_date_obj = datetime.strptime(report_date, "%Y-%m-%d")
+            iso_calendar = report_date_obj.isocalendar()
+            week_key = f"{iso_calendar[0]}-{iso_calendar[1]:02d}"
+            
             report_data = {
                 "staff_name": staff_name,
                 "report_date": report_date,
+                "week_key": week_key,
                 "created_at": now_iso()
             }
             res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
