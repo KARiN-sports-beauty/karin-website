@@ -671,12 +671,13 @@ def staff_register():
         # 姓と名を結合してnameを作成（半角スペース区切り）
         name = f"{last_name} {first_name}".strip()
 
-        # Supabase Auth にユーザー作成（未承認）
+        # Supabase Auth にユーザー作成（未承認、メール確認スキップ）
         try:
             user = supabase.auth.sign_up({
                 "email": email,
                 "password": password,
                 "options": {
+                    "email_confirm": True,  # メール確認をスキップ
                     "data": {
                         "last_name": last_name,
                         "first_name": first_name,
@@ -796,9 +797,16 @@ def admin_staff_approve(user_id):
         
         print(f"🔍 承認処理 - User ID: {user_id}, 既存メタデータ: {meta}, 更新後メタデータ: {updated_metadata}")
         
+        # メール確認も完了させる（email_confirmed_atを現在時刻に設定）
+        from datetime import datetime, timezone
+        now_utc = datetime.now(timezone.utc)
+        
         supabase_admin.auth.admin.update_user_by_id(
             user_id,
-            {"user_metadata": updated_metadata}
+            {
+                "user_metadata": updated_metadata,
+                "email_confirmed_at": now_utc.isoformat()  # メール確認を完了
+            }
         )
         
         # 更新確認（デバッグ用）
@@ -4086,6 +4094,190 @@ def admin_daily_reports_patient_amount(patient_report_id):
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("日報一覧の取得に失敗しました", "error")
         return redirect("/admin/dashboard")
+
+
+# ===================================================
+# スタッフ報告（管理者用）
+# ===================================================
+@app.route("/admin/staff-reports")
+@admin_required
+def admin_staff_reports():
+    """スタッフ報告一覧（承認済みスタッフのカード一覧）"""
+    try:
+        # 承認済みスタッフのみ取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        
+        for u in users:
+            meta = u.user_metadata or {}
+            
+            # 承認済みのみ表示
+            if not meta.get("approved", False):
+                continue
+            
+            # 姓・名から表示名を生成（半角スペース区切り）
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            if last_name and first_name:
+                display_name = f"{last_name} {first_name}"
+            else:
+                # 後方互換性：既存データはnameフィールドを使用
+                display_name = meta.get("name", "未設定")
+            
+            staff_list.append({
+                "id": u.id,
+                "email": u.email,
+                "name": display_name,
+                "phone": meta.get("phone", "未登録"),
+                "created_at": str(u.created_at)[:10] if u.created_at else "不明",
+            })
+        
+        # 名前順でソート
+        staff_list.sort(key=lambda x: x["name"])
+        
+        return render_template("admin_staff_reports.html", staff_list=staff_list)
+    except Exception as e:
+        print(f"❌ スタッフ報告一覧取得エラー: {e}")
+        flash("スタッフ一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/staff-reports/<staff_id>")
+@admin_required
+def admin_staff_report_detail(staff_id):
+    """各スタッフの報告閲覧ページ"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        
+        # 姓・名から表示名を生成（半角スペース区切り）
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # クエリパラメータ取得
+        work_type_filter = request.args.get("work_type", "all")
+        date_from = request.args.get("date_from", "")
+        date_to = request.args.get("date_to", "")
+        
+        # 該当スタッフの日報のみ取得
+        query = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).order("report_date", desc=True).order("created_at", desc=True)
+        
+        # フィルタ適用
+        if date_from:
+            query = query.gte("report_date", date_from)
+        if date_to:
+            query = query.lte("report_date", date_to)
+        
+        res_reports = query.execute()
+        reports = res_reports.data or []
+        
+        # 各日報の勤務カードを取得
+        report_ids = [r["id"] for r in reports]
+        items_map = {}
+        patients_map = {}
+        
+        if report_ids:
+            # 勤務カードを一括取得
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            items = res_items.data or []
+            
+            # フィルタ適用（work_type）
+            if work_type_filter != "all":
+                items = [item for item in items if item.get("work_type") == work_type_filter]
+            
+            # report_idごとにグループ化
+            for item in items:
+                report_id = item.get("report_id")
+                if report_id not in items_map:
+                    items_map[report_id] = []
+                items_map[report_id].append(item)
+            
+            # 患者・売上明細を一括取得
+            item_ids = [item["id"] for item in items]
+            if item_ids:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者情報を一括取得（名前表示用）
+                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                patient_map = {}
+                if patient_ids_from_reports:
+                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                    if res_patient_names.data:
+                        for p in res_patient_names.data:
+                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                            patient_map[p["id"]] = name or p.get("name", "患者不明")
+                
+                # item_idごとにグループ化
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                    patient["patient_name"] = patient_name
+                    patients_map[item_id].append(patient)
+        
+        # 日報に勤務カードと患者情報を結合
+        for report in reports:
+            report_id = report["id"]
+            report["items"] = []
+            
+            if report_id in items_map:
+                for item in items_map[report_id]:
+                    item_id = item["id"]
+                    item["patients"] = patients_map.get(item_id, [])
+                    
+                    # 時間表示用のフォーマット
+                    if item.get("start_time"):
+                        try:
+                            start_time_str = item["start_time"]
+                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
+                                item["start_time_display"] = start_time_str[:5]
+                        except:
+                            item["start_time_display"] = None
+                    else:
+                        item["start_time_display"] = None
+                    
+                    if item.get("end_time"):
+                        try:
+                            end_time_str = item["end_time"]
+                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
+                                item["end_time_display"] = end_time_str[:5]
+                        except:
+                            item["end_time_display"] = None
+                    else:
+                        item["end_time_display"] = None
+                    
+                    report["items"].append(item)
+        
+        return render_template(
+            "admin_staff_report_detail.html",
+            staff_id=staff_id,
+            staff_name=staff_name,
+            staff_email=staff_user.email,
+            staff_phone=meta.get("phone", "未登録"),
+            reports=reports,
+            work_type_filter=work_type_filter,
+            date_from=date_from,
+            date_to=date_to
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ スタッフ報告詳細取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("スタッフ報告の取得に失敗しました", "error")
+        return redirect("/admin/staff-reports")
 
 
 @app.errorhandler(404)

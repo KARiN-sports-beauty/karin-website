@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}スタッフ報告一覧 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📋 スタッフ報告一覧</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if staff_list %}
+<div class="admin-karte-grid" style="margin-top: 20px;">
+  {% for staff in staff_list %}
+  <a href="/admin/staff-reports/{{ staff.id }}" class="admin-karte-card">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name">{{ staff.name }}</strong>
+    </div>
+    
+    <div class="admin-karte-info">
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">メール：</span>
+        <span>{{ staff.email }}</span>
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">電話番号：</span>
+        <span>{{ staff.phone }}</span>
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">登録日：</span>
+        <span>{{ staff.created_at }}</span>
+      </p>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">承認済みのスタッフが登録されていません。</p>
+{% endif %}
+
+{% endblock %}
