@@ -1,42 +1,243 @@
 {% extends "base.html" %}
-{% block title %}{{ staff.name }}のプロフィール | KARiN.{% endblock %}
+{% block title %}{{ staff_name }}のスタッフプロフィール | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">👤 {{ staff.name }}のプロフィール</h2>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
 
-<div style="margin-bottom: 20px;">
-  <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← メニューに戻る</a>
-</div>
+<style>
+.profile-wrapper {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
 
-<!-- プロフィール情報（閲覧のみ） -->
-<div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">プロフィール情報</h3>
+.profile-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  color: #1E3A5F;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E3A5F;
+  margin-bottom: 8px;
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.textarea {
+  resize: none;
+  min-height: 100px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f5f7fb;
+  border-radius: 12px;
+}
+
+.photo-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #1E3A5F;
+  background: #fff;
+}
+
+.techniques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.technique-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f7fb;
+  border-radius: 8px;
+}
+
+.technique-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: not-allowed;
+  accent-color: #1E3A5F;
+  pointer-events: none;
+}
+
+.technique-item label {
+  margin: 0;
+  font-weight: 400;
+  flex: 1;
+  color: #1E3A5F;
+}
+
+@media (max-width: 768px) {
+  .profile-wrapper {
+    padding: 20px;
+    margin: 20px;
+  }
   
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-    <div>
-      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">姓（漢字）</span>
-      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.last_name or '未入力' }}</span>
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .techniques-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .photo-upload {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+</style>
+
+<div class="profile-wrapper">
+
+  <h1 class="profile-title">{{ staff_name }}のスタッフプロフィール</h1>
+
+  <div style="margin-bottom: 20px;">
+    <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← メニューに戻る</a>
+  </div>
+
+  <!-- 写真 -->
+  <div class="form-group">
+    <label>写真</label>
+    <div class="photo-upload">
+      {% if staff.profile_image_url %}
+      <img src="{{ staff.profile_image_url }}" alt="プロフィール写真" class="photo-preview">
+      {% else %}
+      <img src="{{ url_for('static', filename='images/default_staff.png') }}" alt="プロフィール写真" class="photo-preview" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'%3E%3Crect width=\'120\' height=\'120\' fill=\'%23f5f5f5\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-size=\'14\'%3E写真なし%3C/text%3E%3C/svg%3E'">
+      {% endif %}
+      <div style="flex: 1;">
+        <p style="font-size: 0.85rem; color: #666; margin: 0;">プロフィール写真</p>
+      </div>
     </div>
-    
+  </div>
+
+  <!-- 姓名（漢字） -->
+  <div class="form-group form-row">
     <div>
-      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">名（漢字）</span>
-      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.first_name or '未入力' }}</span>
+      <label>姓（漢字）</label>
+      <input type="text" class="input" value="{{ staff.last_name or '未入力' }}" readonly>
     </div>
-    
     <div>
-      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">電話番号</span>
-      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.phone or '未登録' }}</span>
+      <label>名（漢字）</label>
+      <input type="text" class="input" value="{{ staff.first_name or '未入力' }}" readonly>
     </div>
-    
+  </div>
+
+  <!-- セイメイ -->
+  <div class="form-group form-row">
     <div>
-      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">メールアドレス</span>
-      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.email }}</span>
+      <label>セイ</label>
+      <input type="text" class="input" value="{{ staff.last_kana or '未入力' }}" readonly>
     </div>
-    
     <div>
-      <span style="font-size: 0.9rem; color: #666; display: block; margin-bottom: 4px;">登録日</span>
-      <span style="font-weight: 500; color: #1E3A5F; font-size: 1rem;">{{ staff.created_at }}</span>
+      <label>メイ</label>
+      <input type="text" class="input" value="{{ staff.first_kana or '未入力' }}" readonly>
     </div>
+  </div>
+
+  <!-- 生年月日 -->
+  <div class="form-group">
+    <label>生年月日</label>
+    <input type="date" class="input" value="{{ staff.birthday or '' }}" readonly>
+  </div>
+
+  <!-- 電話番号 -->
+  <div class="form-group">
+    <label>電話番号</label>
+    <input type="tel" class="input" value="{{ staff.phone or '未登録' }}" readonly>
+  </div>
+
+  <!-- 郵便番号・住所 -->
+  <div class="form-group">
+    <label>郵便番号</label>
+    <input type="text" class="input" value="{{ staff.postal_code or '未入力' }}" readonly>
+  </div>
+
+  <div class="form-group">
+    <label>住所</label>
+    <input type="text" class="input" value="{{ staff.address or '未入力' }}" readonly>
+  </div>
+
+  <!-- メールアドレス -->
+  <div class="form-group">
+    <label>メールアドレス</label>
+    <input type="email" class="input" value="{{ staff.email }}" readonly>
+  </div>
+
+  <!-- 趣味や特技 -->
+  <div class="form-group">
+    <label>趣味や特技</label>
+    <textarea class="textarea" readonly>{{ staff.hobbies_skills or '未入力' }}</textarea>
+  </div>
+
+  <!-- 可能手技選択 -->
+  <div class="form-group">
+    <label>可能手技選択</label>
+    <div class="techniques-grid">
+      {% for technique in treatment_options %}
+      <div class="technique-item">
+        <input type="checkbox" id="technique_{{ loop.index }}" {% if staff.available_techniques and technique in staff.available_techniques %}checked{% endif %} disabled>
+        <label for="technique_{{ loop.index }}">{{ technique }}</label>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 一言 -->
+  <div class="form-group">
+    <label>一言</label>
+    <textarea class="textarea" rows="2" readonly>{{ staff.one_word or '未入力' }}</textarea>
+  </div>
+
+  <!-- ブログ用コメント -->
+  <div class="form-group">
+    <label>ブログ用コメント</label>
+    <textarea class="textarea" rows="4" readonly>{{ staff.blog_comment or '未入力' }}</textarea>
+  </div>
+
+  <div style="margin-top: 24px; text-align: center;">
+    <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block;">← メニューに戻る</a>
   </div>
 </div>
 

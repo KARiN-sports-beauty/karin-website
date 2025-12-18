@@ -1433,25 +1433,61 @@ def admin_blog_edit(blog_id):
 def admin_blog_delete(blog_id):
     """ブログ削除（関連するコメントとlikesも削除）"""
     try:
-        # まず、関連するコメントを削除
+        # blog_idを数値に変換（UUIDの場合はそのまま）
         try:
-            supabase_admin.table("comments").delete().eq("blog_id", blog_id).execute()
-            print(f"✅ ブログID {blog_id} のコメントを削除しました")
+            blog_id_int = int(blog_id)
+        except ValueError:
+            blog_id_int = blog_id  # UUIDの場合は文字列のまま
+        
+        # まず、関連するコメントを削除
+        deleted_comments = 0
+        try:
+            # 削除前にコメント数を確認
+            res_comments = supabase_admin.table("comments").select("id", count="exact").eq("blog_id", blog_id_int).execute()
+            comment_count = res_comments.count or 0
+            
+            if comment_count > 0:
+                # コメントを削除
+                res_delete = supabase_admin.table("comments").delete().eq("blog_id", blog_id_int).execute()
+                deleted_comments = comment_count
+                print(f"✅ ブログID {blog_id_int} のコメント {deleted_comments} 件を削除しました")
+            else:
+                print(f"ℹ️ ブログID {blog_id_int} に関連するコメントはありませんでした")
         except Exception as e:
-            print(f"⚠️ コメント削除エラー（続行）: {e}")
+            import traceback
+            print(f"⚠️ コメント削除エラー: {e}")
+            print(f"⚠️ トレースバック: {traceback.format_exc()}")
         
         # 関連するlikesも削除
+        deleted_likes = 0
         try:
-            supabase_admin.table("likes").delete().eq("blog_id", blog_id).execute()
-            print(f"✅ ブログID {blog_id} のいいねを削除しました")
+            # 削除前にいいね数を確認
+            res_likes = supabase_admin.table("likes").select("id", count="exact").eq("blog_id", blog_id_int).execute()
+            like_count = res_likes.count or 0
+            
+            if like_count > 0:
+                # いいねを削除
+                supabase_admin.table("likes").delete().eq("blog_id", blog_id_int).execute()
+                deleted_likes = like_count
+                print(f"✅ ブログID {blog_id_int} のいいね {deleted_likes} 件を削除しました")
+            else:
+                print(f"ℹ️ ブログID {blog_id_int} に関連するいいねはありませんでした")
         except Exception as e:
-            print(f"⚠️ いいね削除エラー（続行）: {e}")
+            import traceback
+            print(f"⚠️ いいね削除エラー: {e}")
+            print(f"⚠️ トレースバック: {traceback.format_exc()}")
         
         # 最後にブログを削除
-        supabase_admin.table("blogs").delete().eq("id", blog_id).execute()
-        flash("ブログと関連するコメントを削除しました", "success")
+        supabase_admin.table("blogs").delete().eq("id", blog_id_int).execute()
+        
+        if deleted_comments > 0:
+            flash(f"ブログと関連するコメント {deleted_comments} 件を削除しました", "success")
+        else:
+            flash("ブログを削除しました", "success")
     except Exception as e:
+        import traceback
         print("❌ ブログ削除エラー:", e)
+        print(f"❌ トレースバック: {traceback.format_exc()}")
         flash(f"ブログの削除に失敗しました: {e}", "error")
     return redirect("/admin/blogs")
 
@@ -4492,10 +4528,20 @@ def admin_staff_reports():
                 # 後方互換性：既存データはnameフィールドを使用
                 display_name = meta.get("name", "未設定")
             
+            # セイメイを生成
+            last_kana = meta.get("last_kana", "")
+            first_kana = meta.get("first_kana", "")
+            if last_kana and first_kana:
+                kana_name = f"{last_kana} {first_kana}"
+            else:
+                kana_name = meta.get("kana", "未入力")
+            
             staff_list.append({
                 "id": u.id,
                 "email": u.email,
                 "name": display_name,
+                "kana": kana_name,
+                "birthday": meta.get("birthday", "未入力"),
                 "phone": meta.get("phone", "未登録"),
                 "created_at": str(u.created_at)[:10] if u.created_at else "不明",
             })
@@ -4923,6 +4969,22 @@ def admin_staff_reports_list(staff_id, year, month):
 def admin_staff_report_profile(staff_id):
     """スタッフプロフィール閲覧ページ（管理者用、閲覧のみ）"""
     try:
+        # 手技リスト（treatmentページから）
+        treatment_options = [
+            "鍼灸治療",
+            "美容鍼",
+            "整体",
+            "ストレッチ",
+            "リコンディショニング",
+            "トレーニング",
+            "テクニカ・ガビラン",
+            "アクティベーター",
+            "カッピング（吸玉）",
+            "コンプレフロス",
+            "オイルトリートメント",
+            "トレーナー帯同"
+        ]
+        
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -4941,20 +5003,33 @@ def admin_staff_report_profile(staff_id):
         else:
             staff_name = meta.get("name", "未設定")
         
+        # すべてのプロフィール情報を取得
         staff_data = {
             "id": staff_user.id,
             "email": staff_user.email,
             "name": staff_name,
             "last_name": last_name,
             "first_name": first_name,
-            "phone": meta.get("phone", "未登録"),
+            "last_kana": meta.get("last_kana", ""),
+            "first_kana": meta.get("first_kana", ""),
+            "birthday": meta.get("birthday", ""),
+            "phone": meta.get("phone", ""),
+            "postal_code": meta.get("postal_code", ""),
+            "address": meta.get("address", ""),
+            "hobbies_skills": meta.get("hobbies_skills", ""),
+            "available_techniques": meta.get("available_techniques", []),  # リスト
+            "one_word": meta.get("one_word", ""),
+            "blog_comment": meta.get("blog_comment", ""),
+            "profile_image_url": meta.get("profile_image_url", ""),
             "created_at": str(staff_user.created_at)[:10] if staff_user.created_at else "不明"
         }
         
         return render_template(
             "admin_staff_profile_view.html",
             staff_id=staff_id,
-            staff=staff_data
+            staff=staff_data,
+            staff_name=staff_name,
+            treatment_options=treatment_options
         )
     except Exception as e:
         import traceback

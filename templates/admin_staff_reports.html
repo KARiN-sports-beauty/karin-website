@@ -15,20 +15,25 @@
 {% if staff_list %}
 <div class="admin-karte-grid" style="margin-top: 20px;">
   {% for staff in staff_list %}
-  <a href="/admin/staff-reports/{{ staff.id }}/menu" class="admin-karte-card">
+  <a href="/admin/staff-reports/{{ staff.id }}/menu" class="admin-karte-card" style="border-left: 6px solid #1E3A5F;">
     <div class="admin-karte-head">
       <strong class="admin-karte-name">{{ staff.name }}</strong>
     </div>
     
     <div class="admin-karte-info">
       <p class="admin-karte-field">
-        <span class="admin-karte-label">メール：</span>
-        <span>{{ staff.email }}</span>
+        <span class="admin-karte-label">姓名（セイメイ）：</span>
+        <span>{{ staff.name }}（{{ staff.kana }}）</span>
       </p>
       
       <p class="admin-karte-field">
-        <span class="admin-karte-label">電話番号：</span>
-        <span>{{ staff.phone }}</span>
+        <span class="admin-karte-label">生年月日：</span>
+        <span>{{ staff.birthday }}</span>
+      </p>
+      
+      <p class="admin-karte-field">
+        <span class="admin-karte-label">メール：</span>
+        <span>{{ staff.email }}</span>
       </p>
       
       <p class="admin-karte-field">
