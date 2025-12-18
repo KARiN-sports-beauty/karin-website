@@ -898,10 +898,26 @@ def staff_profile():
 @staff_required
 def staff_profile_edit():
     """プロフィール編集画面"""
+    # 手技リスト（treatmentページから）
+    treatment_options = [
+        "鍼灸治療",
+        "美容鍼",
+        "整体",
+        "ストレッチ",
+        "リコンディショニング",
+        "トレーニング",
+        "テクニカ・ガビラン",
+        "アクティベーター",
+        "カッピング（吸玉）",
+        "コンプレフロス",
+        "オイルトリートメント",
+        "トレーナー帯同"
+    ]
+    
     if request.method == "GET":
         staff = session.get("staff")
         
-        # ユーザーメタデータから姓・名を取得
+        # ユーザーメタデータから情報を取得
         try:
             users = supabase_admin.auth.admin.list_users()
             user = next((u for u in users if u.id == staff["id"]), None)
@@ -909,12 +925,25 @@ def staff_profile_edit():
                 meta = user.user_metadata or {}
                 staff["last_name"] = meta.get("last_name", "")
                 staff["first_name"] = meta.get("first_name", "")
+                staff["last_kana"] = meta.get("last_kana", "")
+                staff["first_kana"] = meta.get("first_kana", "")
+                staff["birthday"] = meta.get("birthday", "")
+                # 電話番号は登録時に保存されたものを優先、なければセッションから取得
+                staff["phone"] = meta.get("phone", "") or staff.get("phone", "")
+                staff["postal_code"] = meta.get("postal_code", "")
+                staff["address"] = meta.get("address", "")
+                staff["hobbies_skills"] = meta.get("hobbies_skills", "")
+                staff["available_techniques"] = meta.get("available_techniques", [])  # リスト
+                staff["one_word"] = meta.get("one_word", "")
+                staff["blog_comment"] = meta.get("blog_comment", "")
+                staff["profile_image_url"] = meta.get("profile_image_url", "")
         except:
             pass
 
         return render_template(
             "staff_profile_edit.html",
             staff=staff,
+            treatment_options=treatment_options,
             message=request.args.get("message")
         )
     
@@ -925,7 +954,16 @@ def staff_profile_edit():
 
         last_name = request.form.get("last_name", "").strip()
         first_name = request.form.get("first_name", "").strip()
-        new_phone = request.form.get("phone", "")
+        last_kana = request.form.get("last_kana", "").strip()
+        first_kana = request.form.get("first_kana", "").strip()
+        birthday = request.form.get("birthday", "").strip()
+        new_phone = request.form.get("phone", "").strip()
+        postal_code = request.form.get("postal_code", "").strip()
+        address = request.form.get("address", "").strip()
+        hobbies_skills = request.form.get("hobbies_skills", "").strip()
+        available_techniques = request.form.getlist("available_techniques")  # 複数選択
+        one_word = request.form.get("one_word", "").strip()
+        blog_comment = request.form.get("blog_comment", "").strip()
 
         if not last_name or not first_name:
             return redirect(url_for("staff_profile_edit", message="姓と名を入力してください"))
@@ -933,16 +971,66 @@ def staff_profile_edit():
         # 姓と名を結合してnameを作成（半角スペース区切り）
         new_name = f"{last_name} {first_name}".strip()
 
+        # 写真アップロード処理
+        profile_image_url = None
+        if "profile_image" in request.files:
+            file = request.files["profile_image"]
+            if file and file.filename:
+                # ファイル名を安全に生成
+                import uuid
+                import os
+                from werkzeug.utils import secure_filename
+                
+                filename = secure_filename(file.filename)
+                ext = os.path.splitext(filename)[1]
+                unique_filename = f"{user_id}_{uuid.uuid4().hex[:8]}{ext}"
+                
+                # static/staff_profiles/ ディレクトリに保存
+                static_folder = app.static_folder or os.path.join(os.path.dirname(__file__), "static")
+                upload_dir = os.path.join(static_folder, "staff_profiles")
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                file_path = os.path.join(upload_dir, unique_filename)
+                file.save(file_path)
+                
+                # URLを生成
+                profile_image_url = f"/static/staff_profiles/{unique_filename}"
+
+        # 既存のメタデータを取得してマージ
+        try:
+            users = supabase_admin.auth.admin.list_users()
+            user = next((u for u in users if u.id == user_id), None)
+            existing_meta = user.user_metadata if user else {}
+        except:
+            existing_meta = {}
+
+        # メタデータを更新（既存のデータを保持）
+        updated_metadata = existing_meta.copy()
+        updated_metadata.update({
+            "last_name": last_name,
+            "first_name": first_name,
+            "last_kana": last_kana,
+            "first_kana": first_kana,
+            "name": new_name,  # 後方互換性のため
+            "birthday": birthday if birthday else None,
+            "phone": new_phone,
+            "postal_code": postal_code,
+            "address": address,
+            "hobbies_skills": hobbies_skills,
+            "available_techniques": available_techniques,
+            "one_word": one_word,
+            "blog_comment": blog_comment
+        })
+        
+        # 写真がアップロードされた場合のみ更新
+        if profile_image_url:
+            updated_metadata["profile_image_url"] = profile_image_url
+
         # Supabase Auth メタデータ更新
         result = supabase_admin.auth.admin.update_user_by_id(
             uid=user_id,
             attributes={
-                "user_metadata": {
-                    "last_name": last_name,
-                    "first_name": first_name,
-                    "name": new_name,  # 後方互換性のため
-                    "phone": new_phone
-                }
+                "user_metadata": updated_metadata
             }
         )
 
@@ -958,7 +1046,9 @@ def staff_profile_edit():
         ))
 
     except Exception as e:
+        import traceback
         print("PROFILE UPDATE ERROR:", e)
+        print(traceback.format_exc())
         return f"エラーが発生しました: {e}", 500
 
 
