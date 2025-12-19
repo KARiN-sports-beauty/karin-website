@@ -2106,7 +2106,67 @@ def admin_karte_detail(patient_id):
         staff = session.get("staff", {})
         is_admin = staff.get("is_admin") == True
         
-        return render_template("admin_karte_detail.html", patient=patient, logs=logs, is_admin=is_admin)
+        # 現在の予約状況を取得（キャンセルされていない、未来の予約）
+        current_reservations = []
+        try:
+            now_jst = datetime.now(JST)
+            now_iso = now_jst.isoformat()
+            
+            res_reservations = (
+                supabase_admin.table("reservations")
+                .select("*")
+                .eq("patient_id", patient_id)
+                .neq("status", "canceled")
+                .gte("reserved_at", now_iso)
+                .order("reserved_at", asc=True)
+                .execute()
+            )
+            reservations = res_reservations.data or []
+            
+            # 患者情報を結合（既にpatient変数があるので、予約に追加）
+            for r in reservations:
+                # 名前を結合
+                name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+                if not name:
+                    name = patient.get("name", "不明")
+                r["patient_name"] = name
+                r["patient"] = patient
+                
+                # 時刻をJSTで表示用に変換
+                try:
+                    dt_str = r.get("reserved_at", "")
+                    if dt_str:
+                        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                        dt_jst = dt.astimezone(JST)
+                        r["reserved_at_display"] = dt_jst.strftime("%Y年%m月%d日 %H:%M")
+                    else:
+                        r["reserved_at_display"] = "時刻不明"
+                except:
+                    r["reserved_at_display"] = "時刻不明"
+                
+                # nomination_typeが存在しない場合はデフォルト値'本指名'を設定
+                if "nomination_type" not in r or not r.get("nomination_type"):
+                    r["nomination_type"] = "本指名"
+                
+                # nominated_staff_idsをJSONからパース
+                try:
+                    nominated_staff_ids_str = r.get("nominated_staff_ids")
+                    if nominated_staff_ids_str:
+                        if isinstance(nominated_staff_ids_str, str):
+                            r["nominated_staff_ids"] = json.loads(nominated_staff_ids_str)
+                        else:
+                            r["nominated_staff_ids"] = nominated_staff_ids_str
+                    else:
+                        r["nominated_staff_ids"] = []
+                except:
+                    r["nominated_staff_ids"] = []
+            
+            current_reservations = reservations
+        except Exception as e:
+            print(f"⚠️ WARNING - 予約状況取得エラー: {e}")
+            current_reservations = []
+        
+        return render_template("admin_karte_detail.html", patient=patient, logs=logs, is_admin=is_admin, current_reservations=current_reservations)
     except Exception as e:
         print("❌ カルテ詳細取得エラー:", e)
         flash("カルテ詳細の取得に失敗しました", "error")
