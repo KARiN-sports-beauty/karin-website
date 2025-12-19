@@ -4114,20 +4114,12 @@ def staff_daily_report_new():
             return redirect("/staff/daily-report/new")
         
         # 既存の勤務カードを削除（再作成のため）
-        # カラム名を確認：daily_report_id または report_id
-        try:
-            supabase_admin.table("staff_daily_report_items").delete().eq("daily_report_id", report_id).execute()
-        except:
-            # daily_report_idが存在しない場合はreport_idを試す
-            try:
-                supabase_admin.table("staff_daily_report_items").delete().eq("report_id", report_id).execute()
-            except Exception as e:
-                print(f"⚠️ 既存カード削除エラー（無視）: {e}")
+        supabase_admin.table("staff_daily_report_items").delete().eq("daily_report_id", report_id).execute()
         
         # 勤務カードを挿入
         for card in work_cards:
-            # カラム名を確認：daily_report_id または report_id
             item_data = {
+                "daily_report_id": report_id,
                 "work_type": card["work_type"],
                 "start_time": card["start_time"],
                 "end_time": card["end_time"],
@@ -4136,15 +4128,7 @@ def staff_daily_report_new():
                 "memo": card["memo"],
                 "created_at": now_iso()
             }
-            # まずdaily_report_idを試す
-            try:
-                item_data["daily_report_id"] = report_id
-                supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
-            except:
-                # daily_report_idが存在しない場合はreport_idを試す
-                item_data.pop("daily_report_id", None)
-                item_data["report_id"] = report_id
-                supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+            supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
         
         flash("日報を登録しました", "success")
         return redirect("/staff/daily-report/new")
