@@ -126,14 +126,28 @@
     </div>
         <!-- 👤 著者プロフィール -->
     <div class="author-profile">
-      <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="藤田 幸士" class="author-img">
+      {% if author_info and author_info.profile_image_url %}
+      <img src="{{ author_info.profile_image_url }}" alt="{{ author_info.name }}" class="author-img">
+      {% else %}
+      <div class="author-img" style="width: 90px; height: 90px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.9rem;">写真なし</div>
+      {% endif %}
       <div class="author-info">
         <h3>この記事を書いた人</h3>
+        {% if author_info %}
+        <p><strong>{{ author_info.name }}{% if author_info.kana %}（{{ author_info.kana }}）{% endif %}</strong><br>
+          {% if author_info.blog_comment %}
+          {{ author_info.blog_comment }}
+          {% else %}
+          スタッフプロフィール情報が未設定です。
+          {% endif %}
+        </p>
+        {% else %}
         <p><strong>藤田 幸士（KARiN.代表）</strong><br>
           鍼灸師・スポーツトレーナーとして15年以上の経験を持ち、<br>
           東京（代々木上原）・福岡（薬院）を中心に、出張治療やトレーナー活動を行いながら、<br>
           セルフケア等の情報も発信しています。
         </p>
+        {% endif %}
         <div class="author-links">
           <a href="https://lin.ee/5vv91n2" target="_blank" class="mini-btn line">LINE</a>
           <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="mini-btn insta">Instagram</a>

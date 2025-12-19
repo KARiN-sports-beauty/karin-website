@@ -1276,6 +1276,42 @@ def show_blog(slug):
     comments = comments_res.data or []
 
     print("💬 COMMENTS_DEBUG:", comments)  # ← これ追加
+    
+    # 著者情報を取得
+    author_info = None
+    author_staff_id = blog.get("author_staff_id")
+    if author_staff_id:
+        try:
+            users = supabase_admin.auth.admin.list_users()
+            author_user = next((u for u in users if u.id == author_staff_id), None)
+            if author_user:
+                meta = author_user.user_metadata or {}
+                last_name = meta.get("last_name", "")
+                first_name = meta.get("first_name", "")
+                last_kana = meta.get("last_kana", "")
+                first_kana = meta.get("first_kana", "")
+                
+                # 姓名を生成
+                if last_name and first_name:
+                    author_name = f"{last_name} {first_name}"
+                else:
+                    author_name = meta.get("name", "スタッフ")
+                
+                # セイメイを生成
+                if last_kana and first_kana:
+                    author_kana = f"{last_kana} {first_kana}"
+                else:
+                    author_kana = meta.get("kana", "")
+                
+                author_info = {
+                    "name": author_name,
+                    "kana": author_kana,
+                    "blog_comment": meta.get("blog_comment", ""),
+                    "profile_image_url": meta.get("profile_image_url", "")
+                }
+        except Exception as e:
+            print(f"⚠️ 著者情報取得エラー: {e}")
+            author_info = None
 
     # いいね数取得
     like_res = (
@@ -1292,7 +1328,8 @@ def show_blog(slug):
         "blog_detail.html",
         blog=blog,
         comments=comments,
-        like_count=like_count
+        like_count=like_count,
+        author_info=author_info
     )
 
 
@@ -1340,6 +1377,10 @@ def admin_blog_new():
     body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
     
+    # 現在ログイン中のスタッフIDを取得
+    staff = session.get("staff", {})
+    author_staff_id = staff.get("id")
+    
     insert_data = {
         "title": title,
         "slug": slug,
@@ -1352,6 +1393,7 @@ def admin_blog_new():
         "date": today(),
         "created_at": now_iso(),
         "updated_at": now_iso(),
+        "author_staff_id": author_staff_id,
     }
     
     try:
