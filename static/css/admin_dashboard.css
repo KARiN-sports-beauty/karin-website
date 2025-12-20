@@ -51,8 +51,8 @@
 .admin-logo .sub {
   font-size: 0.9rem;
   font-weight: 400;
-  font-family: "Noto Sans JP", sans-serif;
-  letter-spacing: 0.05em;
+  font-family: "Great Vibes", cursive;
+  letter-spacing: 0.04em;
   margin-left: 8px;
 }
 
@@ -1847,6 +1847,17 @@ form .admin-news-btn {
 .admin-resv-day.today {
   background: #E3F2FD;
   border-color: #2196F3;
+}
+
+.admin-resv-day.off-day {
+  background: #f3f3f3;
+  color: #aaa;
+  border-color: #e0e0e0;
+}
+
+.admin-resv-day.off-day:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
 }
 
 .admin-resv-badge {

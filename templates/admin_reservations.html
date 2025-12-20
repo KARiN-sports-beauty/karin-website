@@ -70,9 +70,11 @@
         {% set count = counts_by_day.get(day_key, 0) %}
         {% set today_str = now_jst.strftime('%Y-%m-%d') %}
         {% set is_today = (day_key == today_str) %}
+        {% set place = schedule_map.get(day_key, '') %}
+        {% set is_off_day = ('休' in place) %}
         
         <a href="/admin/reservations?ym={{ current_ym }}&day={{ day_key }}&place_type={{ place_type_filter }}&staff={{ staff_filter }}" 
-           class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %}">
+           class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %} {% if is_off_day %}off-day{% endif %}">
           <span style="font-size: 1rem; font-weight: 600;">{{ day_num }}</span>
           {% if count > 0 %}
           <span class="admin-resv-badge">{{ count }}</span>
@@ -133,7 +135,7 @@
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（往診）</span>
                 {% elif reservation.place_type == 'field' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
-                {% else %}
+            {% else %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名</span>
                 {% endif %}
               {% elif nom_type == '希望' %}
@@ -146,7 +148,7 @@
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #C8E6C9; color: #2E7D32; border: 1px solid #81C784;">東京</span>
               {% elif reservation.area == 'fukuoka' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #BBDEFB; color: #1565C0; border: 1px solid #5C9BD1;">福岡</span>
-              {% endif %}
+            {% endif %}
             </div>
           </div>
           <span class="admin-resv-status admin-resv-status-{{ reservation.status }}">

@@ -3165,6 +3165,30 @@ def admin_reservations():
             next_month_first = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
         days_in_month = (next_month_first - current_date).days
         
+        # スケジュール読み込み（休日の判定用）
+        schedule_map = {}  # {日付文字列（YYYY-MM-DD）: place}
+        try:
+            with open("static/data/schedule.json", encoding="utf-8") as f:
+                all_schedule = json.load(f)
+            for s in all_schedule:
+                # 日付フォーマットを正規化（"2025-12-1" → "2025-12-01"）
+                date_str = s.get("date", "")
+                if date_str:
+                    try:
+                        # 日付をパースして正規化
+                        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                        normalized_date = date_obj.strftime("%Y-%m-%d")
+                        schedule_map[normalized_date] = s.get("place", "")
+                    except:
+                        # フォーマットが異なる場合（"2025-12-1"など）
+                        parts = date_str.split("-")
+                        if len(parts) == 3:
+                            year, month, day = parts
+                            normalized_date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+                            schedule_map[normalized_date] = s.get("place", "")
+        except Exception as e:
+            print("❌ schedule.json 読み込みエラー:", e)
+        
         return render_template(
             "admin_reservations.html",
             current_date=current_date,
@@ -3180,7 +3204,8 @@ def admin_reservations():
             current_ym=current_date.strftime("%Y-%m"),
             first_weekday=first_weekday,
             days_in_month=days_in_month,
-            now_jst=now_jst
+            now_jst=now_jst,
+            schedule_map=schedule_map
         )
     except Exception as e:
         print("❌ 予約一覧取得エラー:", e)
@@ -4031,7 +4056,7 @@ def staff_daily_report_new():
             if res_existing.data:
                 existing_report = res_existing.data[0]
                 report_id = existing_report["id"]
-                res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", report_id).order("created_at", asc=True).execute()
+                res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("daily_report_id", report_id).order("created_at", desc=False).execute()
                 existing_items = res_items.data or []
         except:
             pass
@@ -4049,7 +4074,7 @@ def staff_daily_report_new():
             res_weekly_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", week_start_date.strftime("%Y-%m-%d")).lte("report_date", now_jst.strftime("%Y-%m-%d")).execute()
             report_ids = [r["id"] for r in res_weekly_reports.data] if res_weekly_reports.data else []
             if report_ids:
-                res_weekly_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
+                res_weekly_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("daily_report_id", report_ids).execute()
                 if res_weekly_items.data:
                     for item in res_weekly_items.data:
                         start = item.get("start_time")
@@ -4079,7 +4104,7 @@ def staff_daily_report_new():
         # 日報作成初日を取得
         first_report_date = None
         try:
-            res_first = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", asc=True).limit(1).execute()
+            res_first = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", desc=False).limit(1).execute()
             if res_first.data:
                 first_report_date = datetime.strptime(res_first.data[0]["report_date"], "%Y-%m-%d").date()
         except:
@@ -4091,7 +4116,7 @@ def staff_daily_report_new():
             res_all_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).execute()
             report_ids = [r["id"] for r in res_all_reports.data] if res_all_reports.data else []
             if report_ids:
-                res_all_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("report_id", report_ids).execute()
+                res_all_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("daily_report_id", report_ids).execute()
                 if res_all_items.data:
                     for item in res_all_items.data:
                         start = item.get("start_time")
@@ -4344,12 +4369,12 @@ def staff_daily_reports_list(year, month):
         
         if report_ids:
             # 勤務カードを一括取得
-            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).order("created_at", desc=False).execute()
             items = res_items.data or []
             
             # report_idごとにグループ化
             for item in items:
-                report_id = item.get("report_id")
+                report_id = item.get("daily_report_id")
                 if report_id not in items_map:
                     items_map[report_id] = []
                 items_map[report_id].append(item)
@@ -4458,7 +4483,7 @@ def admin_daily_reports():
         
         if report_ids:
             # 勤務カードを一括取得
-            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).order("created_at", desc=False).execute()
             items = res_items.data or []
             
             # フィルタ適用（work_type）
@@ -4467,7 +4492,7 @@ def admin_daily_reports():
             
             # report_idごとにグループ化
             for item in items:
-                report_id = item.get("report_id")
+                report_id = item.get("daily_report_id")
                 if report_id not in items_map:
                     items_map[report_id] = []
                 items_map[report_id].append(item)
@@ -4755,7 +4780,7 @@ def admin_staff_report_detail(staff_id):
         
         if report_ids:
             # 勤務カードを一括取得
-            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).order("created_at", desc=False).execute()
             items = res_items.data or []
             
             # フィルタ適用（work_type）
@@ -4764,7 +4789,7 @@ def admin_staff_report_detail(staff_id):
             
             # report_idごとにグループ化
             for item in items:
-                report_id = item.get("report_id")
+                report_id = item.get("daily_report_id")
                 if report_id not in items_map:
                     items_map[report_id] = []
                 items_map[report_id].append(item)
@@ -4994,12 +5019,12 @@ def admin_staff_reports_list(staff_id, year, month):
         
         if report_ids:
             # 勤務カードを一括取得
-            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("report_id", report_ids).order("created_at", asc=True).execute()
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).order("created_at", desc=False).execute()
             items = res_items.data or []
             
             # report_idごとにグループ化
             for item in items:
-                report_id = item.get("report_id")
+                report_id = item.get("daily_report_id")
                 if report_id not in items_map:
                     items_map[report_id] = []
                 items_map[report_id].append(item)
