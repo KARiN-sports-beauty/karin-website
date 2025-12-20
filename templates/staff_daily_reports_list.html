@@ -11,6 +11,7 @@
 {% if reports %}
 <div style="display: flex; flex-direction: column; gap: 20px;">
   {% for report in reports %}
+  {% if report.get("items") %}
   <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
     <!-- 日報ヘッダー -->
     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;">
@@ -35,7 +36,6 @@
     {% endif %}
     
     <!-- 勤務カード一覧 -->
-    {% if report.get("items") %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for item in report.get("items") %}
       <div class="admin-resv-card {% if item.work_type == 'in_house' %}place-inhouse{% elif item.work_type == 'visit' %}place-visit{% elif item.work_type == 'field' %}place-field{% endif %}">
@@ -109,10 +109,8 @@
       </div>
       {% endfor %}
     </div>
-    {% else %}
-    <p style="color: #999; text-align: center; padding: 20px 0;">勤務カードがありません</p>
-    {% endif %}
   </div>
+  {% endif %}
   {% endfor %}
 </div>
 {% else %}

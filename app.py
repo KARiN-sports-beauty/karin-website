@@ -3740,18 +3740,24 @@ def admin_reservations_status(reservation_id):
                                     course_name = f"{nomination_type}（{place_type_label}）"
                             
                             # 患者・売上明細を追加（重複チェック）
-                            res_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", item_id).eq("reservation_id", reservation_id).execute()
-                            if not res_existing.data:
-                                patient_data = {
-                                    "item_id": item_id,
-                                    "patient_id": patient_id,
-                                    "reservation_id": reservation_id,
-                                    "course_name": course_name,
-                                    "amount": amount,  # 基本価格を初期値として設定（日報で編集可能）
-                                    "memo": None,
-                                    "created_at": now_iso()
-                                }
-                                supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
+                            try:
+                                res_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", item_id).eq("reservation_id", reservation_id).execute()
+                                if not res_existing.data:
+                                    patient_data = {
+                                        "item_id": item_id,
+                                        "patient_id": patient_id,
+                                        "reservation_id": reservation_id,
+                                        "course_name": course_name,
+                                        "amount": amount,  # 基本価格を初期値として設定（日報で編集可能）
+                                        "memo": None,
+                                        "created_at": now_iso()
+                                    }
+                                    supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
+                                    print(f"✅ 日報に患者情報を追加しました: staff_name={staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                            except Exception as e:
+                                print(f"❌ 日報への患者情報追加エラー: {e}")
+                                print(f"   スタッフ: {staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
+                                raise  # エラーを上位に伝播
                             
                             # 枠指名スタッフ全員の日報にも反映（対応スタッフ以外）
                             nominated_staff_ids_str = reservation.get("nominated_staff_ids")
@@ -3815,18 +3821,24 @@ def admin_reservations_status(reservation_id):
                                         
                                         if nom_item_id:
                                             # 枠指名（0円）として追加
-                                            res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
-                                            if not res_nom_existing.data:
-                                                nom_patient_data = {
-                                                    "item_id": nom_item_id,
-                                                    "patient_id": patient_id,
-                                                    "reservation_id": reservation_id,
-                                                    "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
-                                                    "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
-                                                    "memo": None,
-                                                    "created_at": now_iso()
-                                                }
-                                                supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
+                                            try:
+                                                res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
+                                                if not res_nom_existing.data:
+                                                    nom_patient_data = {
+                                                        "item_id": nom_item_id,
+                                                        "patient_id": patient_id,
+                                                        "reservation_id": reservation_id,
+                                                        "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
+                                                        "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
+                                                        "memo": None,
+                                                        "created_at": now_iso()
+                                                    }
+                                                    supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
+                                                    print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                                            except Exception as e:
+                                                print(f"❌ 枠指名スタッフの日報への患者情報追加エラー: {e}")
+                                                print(f"   スタッフ: {nominated_staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
+                                                raise  # エラーを上位に伝播
             except Exception as e:
                 print(f"⚠️ WARNING - 日報への自動反映エラー: {e}")
                 # 日報反映エラーは警告のみ（予約ステータス更新は成功）
