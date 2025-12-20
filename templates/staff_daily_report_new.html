@@ -212,6 +212,36 @@ function loadExistingCards(existingItems) {
         if (item.memo) {
           lastCard.querySelector(`textarea[name="memo_${cardIndex}"]`).value = item.memo;
         }
+        
+        // 予約完了時に追加された患者情報を表示
+        if (item.patients && item.patients.length > 0) {
+          const memoTextarea = lastCard.querySelector('textarea[name="memo_' + cardIndex + '"]');
+          const patientsSection = document.createElement('div');
+          patientsSection.style.cssText = 'margin-top: 16px; padding: 12px; background: #f5f7fb; border-radius: 8px; border-top: 2px solid #1E3A5F;';
+          
+          let patientsHtml = '<div style="font-size: 0.85rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">📋 予約完了で追加された患者・売上明細</div>';
+          patientsHtml += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+          
+          for (let i = 0; i < item.patients.length; i++) {
+            const patient = item.patients[i];
+            const courseName = patient.course_name || 'コース名なし';
+            let amount = '金額未設定';
+            if (patient.amount !== null && patient.amount !== undefined) {
+              amount = '¥' + parseInt(patient.amount).toLocaleString();
+            }
+            const amountColor = patient.amount > 0 ? '#4CAF50' : '#999';
+            const amountWeight = patient.amount > 0 ? '500' : '400';
+            
+            patientsHtml += '<div style="padding: 8px; background: #fff; border-radius: 6px; font-size: 0.85rem;">';
+            patientsHtml += '<span style="color: #666;">' + courseName + '</span>';
+            patientsHtml += '<span style="color: ' + amountColor + '; font-weight: ' + amountWeight + '; margin-left: 8px;">' + amount + '</span>';
+            patientsHtml += '</div>';
+          }
+          
+          patientsHtml += '</div>';
+          patientsSection.innerHTML = patientsHtml;
+          memoTextarea.parentNode.insertBefore(patientsSection, memoTextarea.nextSibling);
+        }
       }
     });
   } else {

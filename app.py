@@ -4157,6 +4157,31 @@ def staff_daily_report_new():
                 report_id = existing_report["id"]
                 res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("daily_report_id", report_id).order("created_at", desc=False).execute()
                 existing_items = res_items.data or []
+                
+                # 各勤務カードに紐づく患者情報を取得（予約完了時に追加された患者情報）
+                if existing_items:
+                    item_ids = [item["id"] for item in existing_items]
+                    try:
+                        res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                        patients_data = res_patients.data or []
+                        
+                        # 患者情報をitem_idごとにグループ化
+                        patients_map = {}
+                        for patient in patients_data:
+                            item_id = patient.get("item_id")
+                            if item_id not in patients_map:
+                                patients_map[item_id] = []
+                            patients_map[item_id].append(patient)
+                        
+                        # 各勤務カードに患者情報を追加
+                        for item in existing_items:
+                            item_id = item.get("id")
+                            item["patients"] = patients_map.get(item_id, [])
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+                        # エラーが発生しても処理を続行（患者情報なしとして扱う）
+                        for item in existing_items:
+                            item["patients"] = []
         except:
             pass
         
