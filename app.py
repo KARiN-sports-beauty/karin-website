@@ -2661,18 +2661,41 @@ def index():
     # ----------------------------------------
     # スケジュール読み込み（今日を左端に）
     # ----------------------------------------
-    with open("static/data/schedule.json", encoding="utf-8") as f:
-        schedule = json.load(f)
-
-    today = datetime.now().date()
     upcoming = []
+    try:
+        with open("static/data/schedule.json", encoding="utf-8") as f:
+            schedule = json.load(f)
 
-    for s in schedule:
-        d = datetime.strptime(s["date"], "%Y-%m-%d").date()
-        if d >= today:
-            upcoming.append(s)
+        today = datetime.now().date()
 
-    upcoming = upcoming[:10]
+        for s in schedule:
+            try:
+                # 日付フォーマットを正規化（"2026-1-31" → "2026-01-31"）
+                date_str = s.get("date", "")
+                if date_str:
+                    # 既に正しいフォーマットの場合
+                    try:
+                        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    except:
+                        # ゼロパディングがない場合（"2026-1-31"など）
+                        parts = date_str.split("-")
+                        if len(parts) == 3:
+                            year, month, day = parts
+                            normalized_date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+                            d = datetime.strptime(normalized_date, "%Y-%m-%d").date()
+                        else:
+                            continue
+                    
+                    if d >= today:
+                        upcoming.append(s)
+            except Exception as e:
+                print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
+                continue
+
+        upcoming = upcoming[:10]
+    except Exception as e:
+        print("❌ schedule.json 読み込みエラー:", e)
+        upcoming = []  # エラー時は空リストを返す
 
 
 
