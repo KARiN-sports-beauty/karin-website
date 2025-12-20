@@ -204,7 +204,8 @@
     <p class="success-msg">{{ message }}</p>
   {% endif %}
 
-  <form action="/staff/profile/edit" method="POST" enctype="multipart/form-data">
+  <form action="/staff/profile/edit" method="POST" enctype="multipart/form-data" class="h-adr">
+    <span class="p-country-name" style="display:none;">Japan</span>
     
     <!-- 写真アップロード -->
     <div class="form-group">
@@ -262,12 +263,13 @@
     <!-- 郵便番号・住所 -->
     <div class="form-group">
       <label>郵便番号</label>
-      <input type="text" name="postal_code" class="input" value="{{ staff.postal_code or '' }}" placeholder="123-4567" pattern="[0-9]{3}-[0-9]{4}">
+      <input type="text" name="postal_code" id="postal_code" class="input p-postal-code" value="{{ staff.postal_code or '' }}" placeholder="123-4567 または 1234567" maxlength="8">
+      <p style="font-size: 0.85rem; color: #666; margin: 4px 0 0 0;">郵便番号を入力すると住所が自動入力されます</p>
     </div>
 
     <div class="form-group">
       <label>住所</label>
-      <input type="text" name="address" class="input" value="{{ staff.address or '' }}" placeholder="都道府県 市区町村 番地">
+      <input type="text" name="address" id="address" class="input p-region p-locality p-street-address p-extended-address" value="{{ staff.address or '' }}" placeholder="都道府県 市区町村 番地">
     </div>
 
     <!-- メールアドレス（変更不可） -->
@@ -327,6 +329,9 @@ function previewPhoto(input) {
   }
 }
 </script>
+
+<!-- 郵便番号から住所を自動入力 -->
+<script src="https://yubinbango.github.io/yubinbango/yubinbango.js" charset="UTF-8"></script>
 
 </body>
 </html>
