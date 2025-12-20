@@ -2118,7 +2118,7 @@ def admin_karte_detail(patient_id):
                 .eq("patient_id", patient_id)
                 .neq("status", "canceled")
                 .gte("reserved_at", now_iso)
-                .order("reserved_at", asc=True)
+                .order("reserved_at")
                 .execute()
             )
             reservations = res_reservations.data or []
