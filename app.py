@@ -4165,12 +4165,64 @@ def staff_daily_report_new():
                         res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
                         patients_data = res_patients.data or []
                         
+                        # 患者IDと予約IDを収集
+                        patient_ids = [p.get("patient_id") for p in patients_data if p.get("patient_id")]
+                        reservation_ids = [p.get("reservation_id") for p in patients_data if p.get("reservation_id")]
+                        
+                        # 患者情報を一括取得
+                        patients_info_map = {}
+                        if patient_ids:
+                            try:
+                                res_patients_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                                if res_patients_info.data:
+                                    for p_info in res_patients_info.data:
+                                        p_id = p_info.get("id")
+                                        # 姓名を結合（姓名分離フィールド優先、なければnameフィールド）
+                                        last_name = p_info.get("last_name", "")
+                                        first_name = p_info.get("first_name", "")
+                                        if last_name or first_name:
+                                            patients_info_map[p_id] = f"{last_name} {first_name}".strip()
+                                        else:
+                                            patients_info_map[p_id] = p_info.get("name", "患者不明")
+                            except Exception as e:
+                                print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+                        
+                        # 予約情報を一括取得（duration_minutesを取得するため）
+                        reservations_info_map = {}
+                        if reservation_ids:
+                            try:
+                                res_reservations_info = supabase_admin.table("reservations").select("id, duration_minutes").in_("id", reservation_ids).execute()
+                                if res_reservations_info.data:
+                                    for r_info in res_reservations_info.data:
+                                        r_id = r_info.get("id")
+                                        reservations_info_map[r_id] = r_info.get("duration_minutes")
+                            except Exception as e:
+                                print(f"⚠️ WARNING - 予約情報取得エラー: {e}")
+                        
                         # 患者情報をitem_idごとにグループ化
                         patients_map = {}
                         for patient in patients_data:
                             item_id = patient.get("item_id")
                             if item_id not in patients_map:
                                 patients_map[item_id] = []
+                            # 患者姓名を追加
+                            patient_id = patient.get("patient_id")
+                            patient["patient_name"] = patients_info_map.get(patient_id, "患者不明")
+                            
+                            # コース名に時間を追加（duration_minutesがある場合）
+                            reservation_id = patient.get("reservation_id")
+                            duration = reservations_info_map.get(reservation_id)
+                            course_name = patient.get("course_name", "")
+                            if duration and course_name:
+                                # コース名の形式を変更（例：「60分　本指名（往診）」）
+                                if "（" in course_name:
+                                    # 既に括弧がある場合は、時間を前に追加
+                                    patient["course_name_display"] = f"{duration}分　{course_name}"
+                                else:
+                                    patient["course_name_display"] = f"{duration}分　{course_name}"
+                            else:
+                                patient["course_name_display"] = course_name
+                            
                             patients_map[item_id].append(patient)
                         
                         # 各勤務カードに患者情報を追加
@@ -4393,6 +4445,34 @@ def staff_daily_report_new():
                 "created_at": now_iso()
             }
             supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+        
+        # 患者の金額を更新（patient_amount_で始まるフィールドを処理）
+        for key, value in request.form.items():
+            if key.startswith("patient_amount_"):
+                patient_report_id = key.replace("patient_amount_", "")
+                try:
+                    amount_str = value.strip()
+                    amount = int(amount_str) if amount_str else None
+                    
+                    if amount is not None and amount >= 0:
+                        # 日報患者情報を取得（予約IDも取得）
+                        res_patient = supabase_admin.table("staff_daily_report_patients").select("id, reservation_id, amount").eq("id", patient_report_id).execute()
+                        if res_patient.data:
+                            patient_report = res_patient.data[0]
+                            reservation_id = patient_report.get("reservation_id")
+                            
+                            # 日報患者の金額を更新
+                            supabase_admin.table("staff_daily_report_patients").update({"amount": amount}).eq("id", patient_report_id).execute()
+                            
+                            # 予約データにも同期（base_priceを更新）
+                            if reservation_id:
+                                try:
+                                    supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
+                                    print(f"✅ 日報患者と予約データの金額を更新しました: patient_report_id={patient_report_id}, reservation_id={reservation_id}, amount={amount}")
+                                except Exception as e:
+                                    print(f"⚠️ WARNING - 予約データの金額更新エラー: {e}")
+                except Exception as e:
+                    print(f"⚠️ WARNING - 患者金額更新エラー: {e}")
         
         flash("日報を登録しました", "success")
         return redirect("/staff/daily-report/new")

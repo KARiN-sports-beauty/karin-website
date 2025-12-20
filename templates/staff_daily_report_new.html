@@ -219,22 +219,24 @@ function loadExistingCards(existingItems) {
           const patientsSection = document.createElement('div');
           patientsSection.style.cssText = 'margin-top: 16px; padding: 12px; background: #f5f7fb; border-radius: 8px; border-top: 2px solid #1E3A5F;';
           
-          let patientsHtml = '<div style="font-size: 0.85rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">📋 予約完了で追加された患者・売上明細</div>';
-          patientsHtml += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+          let patientsHtml = '<div style="font-size: 0.9rem; font-weight: 600; color: #1E3A5F; margin-bottom: 12px;">本日の売上明細</div>';
+          patientsHtml += '<div style="display: flex; flex-direction: column; gap: 12px;">';
           
           for (let i = 0; i < item.patients.length; i++) {
             const patient = item.patients[i];
-            const courseName = patient.course_name || 'コース名なし';
-            let amount = '金額未設定';
-            if (patient.amount !== null && patient.amount !== undefined) {
-              amount = '¥' + parseInt(patient.amount).toLocaleString();
-            }
-            const amountColor = patient.amount > 0 ? '#4CAF50' : '#999';
-            const amountWeight = patient.amount > 0 ? '500' : '400';
+            const patientName = patient.patient_name || '患者不明';
+            const courseName = patient.course_name_display || patient.course_name || 'コース名なし';
+            const patientReportId = patient.id;
+            const currentAmount = patient.amount !== null && patient.amount !== undefined ? patient.amount : 0;
             
-            patientsHtml += '<div style="padding: 8px; background: #fff; border-radius: 6px; font-size: 0.85rem;">';
-            patientsHtml += '<span style="color: #666;">' + courseName + '</span>';
-            patientsHtml += '<span style="color: ' + amountColor + '; font-weight: ' + amountWeight + '; margin-left: 8px;">' + amount + '</span>';
+            patientsHtml += '<div style="padding: 12px; background: #fff; border-radius: 8px; font-size: 0.9rem;">';
+            patientsHtml += '<div style="margin-bottom: 8px; font-weight: 500; color: #1E3A5F;">' + patientName + '</div>';
+            patientsHtml += '<div style="margin-bottom: 8px; color: #666;">' + courseName + '</div>';
+            patientsHtml += '<div style="display: flex; align-items: center; gap: 8px;">';
+            patientsHtml += '<label style="font-size: 0.85rem; color: #666;">金額：</label>';
+            patientsHtml += '<input type="number" name="patient_amount_' + patientReportId + '" value="' + currentAmount + '" min="0" step="100" style="width: 120px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+            patientsHtml += '<span style="color: #666; font-size: 0.85rem;">円</span>';
+            patientsHtml += '</div>';
             patientsHtml += '</div>';
           }
           
