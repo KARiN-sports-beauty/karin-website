@@ -30,9 +30,9 @@
     {% endif %}
     
     <!-- 勤務カード一覧 -->
-    {% if report.items %}
+    {% if report.get("items") %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
-      {% for item in report.items %}
+      {% for item in report.get("items") %}
       <div class="admin-resv-card {% if item.work_type == 'in_house' %}place-inhouse{% elif item.work_type == 'visit' %}place-visit{% elif item.work_type == 'field' %}place-field{% endif %}">
         <!-- 勤務区分バッジ（必ず表示） -->
         <div style="margin-bottom: 12px;">

@@ -4120,9 +4120,10 @@ def staff_daily_report_new():
         except:
             weekly_hours = 0
         
-        # 目標との差
+        # 週目標時間40h（その週の実働時間 - 40h）
+        # 例：42h実働した場合は +2時間
         target_hours = 40
-        diff_hours = target_hours - weekly_hours
+        diff_hours = weekly_hours - target_hours
         
         # 日報作成初日を取得
         first_report_date = None
@@ -4161,11 +4162,23 @@ def staff_daily_report_new():
         except:
             total_hours = 0
         
-        # 過不足計算：日報作成初日から1週間ごとに40時間ずつ
+        # 過不足計算：日報作成初日の週から今日の週まで、毎週40hずつ目標とする
+        # 累計実働時間 - (週数 × 40h)
+        # 例：4週間経ったタイミングで、ノルマは160h。本人が154h実働していたとしたら-6時間
         if first_report_date:
-            # 初日から今日までの週数を計算
-            days_diff = (now_jst.date() - first_report_date).days
-            weeks_passed = max(0, days_diff // 7)  # 0週から開始
+            # 初日の週の月曜日を取得
+            first_report_datetime = datetime.combine(first_report_date, datetime.min.time())
+            first_weekday = first_report_datetime.weekday()  # 0=月曜日
+            first_week_monday = first_report_datetime - timedelta(days=first_weekday)
+            
+            # 今日の週の月曜日を取得
+            today_weekday = now_jst.weekday()  # 0=月曜日
+            today_week_monday = now_jst - timedelta(days=today_weekday)
+            
+            # 週数を計算（初日の週から今日の週まで、今日の週も含む）
+            days_diff = (today_week_monday.date() - first_week_monday.date()).days
+            weeks_passed = max(1, (days_diff // 7) + 1)  # 最低1週（初日の週）
+            
             target_total_hours = weeks_passed * 40
             weekly_hours_diff = total_hours - target_total_hours
         else:
