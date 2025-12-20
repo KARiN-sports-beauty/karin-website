@@ -4404,28 +4404,34 @@ def staff_daily_reports_list(year, month):
             
             # 患者・売上明細を一括取得
             item_ids = [item["id"] for item in items]
+            patients = []
+            patient_map = {}
             if item_ids:
-                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
-                patients = res_patients.data or []
-                
-                # 患者情報を一括取得（名前表示用）
-                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
-                patient_map = {}
-                if patient_ids_from_reports:
-                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
-                    if res_patient_names.data:
-                        for p in res_patient_names.data:
-                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
-                            patient_map[p["id"]] = name or p.get("name", "患者不明")
-                
-                # item_idごとにグループ化
-                for patient in patients:
-                    item_id = patient.get("item_id")
-                    if item_id not in patients_map:
-                        patients_map[item_id] = []
-                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
-                    patient["patient_name"] = patient_name
-                    patients_map[item_id].append(patient)
+                try:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                    patients = res_patients.data or []
+                    
+                    # 患者情報を一括取得（名前表示用）
+                    patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                    if patient_ids_from_reports:
+                        res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                        if res_patient_names.data:
+                            for p in res_patient_names.data:
+                                name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                                patient_map[p["id"]] = name or p.get("name", "患者不明")
+                    
+                    # item_idごとにグループ化
+                    for patient in patients:
+                        item_id = patient.get("item_id")
+                        if item_id not in patients_map:
+                            patients_map[item_id] = []
+                        patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                        patient["patient_name"] = patient_name
+                        patients_map[item_id].append(patient)
+                except Exception as e:
+                    print(f"⚠️ WARNING - 日報患者情報取得エラー（テーブルが存在しない可能性）: {e}")
+                    patients = []
+                    patient_map = {}
         
         # 日報に勤務カードと患者情報を結合
         for report in reports:
@@ -4522,28 +4528,34 @@ def admin_daily_reports():
             
             # 患者・売上明細を一括取得
             item_ids = [item["id"] for item in items]
+            patients = []
+            patient_info_map = {}
             if item_ids:
-                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
-                patients = res_patients.data or []
-                
-                # 患者情報を一括取得（名前表示用）
-                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
-                patient_info_map = {}
-                if patient_ids_from_reports:
-                    res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
-                    if res_patient_info.data:
-                        for p in res_patient_info.data:
-                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
-                            patient_info_map[p["id"]] = name or p.get("name", "患者不明")
-                
-                # item_idごとにグループ化し、患者名を追加
-                for patient in patients:
-                    item_id = patient.get("item_id")
-                    patient_id = patient.get("patient_id")
-                    if patient_id and patient_id in patient_info_map:
-                        patient["patient_name"] = patient_info_map[patient_id]
-                    else:
-                        patient["patient_name"] = None
+                try:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                    patients = res_patients.data or []
+                    
+                    # 患者情報を一括取得（名前表示用）
+                    patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                    if patient_ids_from_reports:
+                        res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                        if res_patient_info.data:
+                            for p in res_patient_info.data:
+                                name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                                patient_info_map[p["id"]] = name or p.get("name", "患者不明")
+                    
+                    # item_idごとにグループ化し、患者名を追加
+                    for patient in patients:
+                        item_id = patient.get("item_id")
+                        patient_id = patient.get("patient_id")
+                        if patient_id and patient_id in patient_info_map:
+                            patient["patient_name"] = patient_info_map[patient_id]
+                        else:
+                            patient["patient_name"] = None
+                except Exception as e:
+                    print(f"⚠️ WARNING - 日報患者情報取得エラー（テーブルが存在しない可能性）: {e}")
+                    patients = []
+                    patient_info_map = {}
                     
                     if item_id not in patients_map:
                         patients_map[item_id] = []
@@ -4819,28 +4831,34 @@ def admin_staff_report_detail(staff_id):
             
             # 患者・売上明細を一括取得
             item_ids = [item["id"] for item in items]
+            patients = []
+            patient_map = {}
             if item_ids:
-                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
-                patients = res_patients.data or []
-                
-                # 患者情報を一括取得（名前表示用）
-                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
-                patient_map = {}
-                if patient_ids_from_reports:
-                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
-                    if res_patient_names.data:
-                        for p in res_patient_names.data:
-                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
-                            patient_map[p["id"]] = name or p.get("name", "患者不明")
-                
-                # item_idごとにグループ化
-                for patient in patients:
-                    item_id = patient.get("item_id")
-                    if item_id not in patients_map:
-                        patients_map[item_id] = []
-                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
-                    patient["patient_name"] = patient_name
-                    patients_map[item_id].append(patient)
+                try:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                    patients = res_patients.data or []
+                    
+                    # 患者情報を一括取得（名前表示用）
+                    patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                    if patient_ids_from_reports:
+                        res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                        if res_patient_names.data:
+                            for p in res_patient_names.data:
+                                name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                                patient_map[p["id"]] = name or p.get("name", "患者不明")
+                    
+                    # item_idごとにグループ化
+                    for patient in patients:
+                        item_id = patient.get("item_id")
+                        if item_id not in patients_map:
+                            patients_map[item_id] = []
+                        patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                        patient["patient_name"] = patient_name
+                        patients_map[item_id].append(patient)
+                except Exception as e:
+                    print(f"⚠️ WARNING - 日報患者情報取得エラー（テーブルが存在しない可能性）: {e}")
+                    patients = []
+                    patient_map = {}
         
         # 日報に勤務カードと患者情報を結合
         for report in reports:
@@ -5054,28 +5072,34 @@ def admin_staff_reports_list(staff_id, year, month):
             
             # 患者・売上明細を一括取得
             item_ids = [item["id"] for item in items]
+            patients = []
+            patient_map = {}
             if item_ids:
-                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
-                patients = res_patients.data or []
-                
-                # 患者情報を一括取得（名前表示用）
-                patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
-                patient_map = {}
-                if patient_ids_from_reports:
-                    res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
-                    if res_patient_names.data:
-                        for p in res_patient_names.data:
-                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
-                            patient_map[p["id"]] = name or p.get("name", "患者不明")
-                
-                # item_idごとにグループ化
-                for patient in patients:
-                    item_id = patient.get("item_id")
-                    if item_id not in patients_map:
-                        patients_map[item_id] = []
-                    patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
-                    patient["patient_name"] = patient_name
-                    patients_map[item_id].append(patient)
+                try:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                    patients = res_patients.data or []
+                    
+                    # 患者情報を一括取得（名前表示用）
+                    patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                    if patient_ids_from_reports:
+                        res_patient_names = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
+                        if res_patient_names.data:
+                            for p in res_patient_names.data:
+                                name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                                patient_map[p["id"]] = name or p.get("name", "患者不明")
+                    
+                    # item_idごとにグループ化
+                    for patient in patients:
+                        item_id = patient.get("item_id")
+                        if item_id not in patients_map:
+                            patients_map[item_id] = []
+                        patient_name = patient_map.get(patient.get("patient_id"), "患者不明")
+                        patient["patient_name"] = patient_name
+                        patients_map[item_id].append(patient)
+                except Exception as e:
+                    print(f"⚠️ WARNING - 日報患者情報取得エラー（テーブルが存在しない可能性）: {e}")
+                    patients = []
+                    patient_map = {}
         
         # 日報に勤務カードと患者情報を結合
         for report in reports:
