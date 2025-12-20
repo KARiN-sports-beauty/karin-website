@@ -127,9 +127,9 @@
         <!-- 👤 著者プロフィール -->
     <div class="author-profile">
       {% if author_info and author_info.profile_image_url %}
-      <img src="{{ author_info.profile_image_url }}" alt="{{ author_info.name }}" class="author-img">
+      <img src="{{ author_info.profile_image_url }}" alt="{{ author_info.name }}" class="author-img" onerror="this.onerror=null; this.src='{{ url_for(\"static\", filename=\"images/relogo.png\") }}'; this.style.width='90px'; this.style.height='90px'; this.style.borderRadius='50%'; this.style.objectFit='cover';">
       {% else %}
-      <div class="author-img" style="width: 90px; height: 90px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.9rem;">写真なし</div>
+      <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="デフォルト画像" class="author-img" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover;">
       {% endif %}
       <div class="author-info">
         <h3>この記事を書いた人</h3>

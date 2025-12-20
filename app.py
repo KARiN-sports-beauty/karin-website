@@ -1307,15 +1307,21 @@ def show_blog(slug):
                     author_kana = meta.get("kana", "")
                 
                 profile_image_url = meta.get("profile_image_url", "")
-                print(f"🔍 著者プロフィール画像URL: {profile_image_url}")
+                print(f"🔍 著者プロフィール画像URL（取得時）: {profile_image_url}")
                 
                 # profile_image_urlが相対パスの場合、url_forで解決
                 if profile_image_url and not profile_image_url.startswith("http"):
                     # /static/staff_profiles/... の形式の場合
                     if profile_image_url.startswith("/static/"):
-                        profile_image_url = url_for("static", filename=profile_image_url.replace("/static/", ""))
+                        filename = profile_image_url.replace("/static/", "")
+                        profile_image_url = url_for("static", filename=filename)
                     elif profile_image_url.startswith("static/"):
-                        profile_image_url = url_for("static", filename=profile_image_url.replace("static/", ""))
+                        filename = profile_image_url.replace("static/", "")
+                        profile_image_url = url_for("static", filename=filename)
+                    else:
+                        # パスが指定されていない場合はそのまま使用（相対パスの場合）
+                        pass
+                print(f"🔍 著者プロフィール画像URL（処理後）: {profile_image_url}")
                 
                 author_info = {
                     "name": author_name,
@@ -1362,11 +1368,15 @@ def show_blog(slug):
                         author_kana = meta.get("kana", "")
                     
                     profile_image_url = meta.get("profile_image_url", "")
+                    print(f"🔍 フォールバック: 著者プロフィール画像URL（取得時）: {profile_image_url}")
                     if profile_image_url and not profile_image_url.startswith("http"):
                         if profile_image_url.startswith("/static/"):
-                            profile_image_url = url_for("static", filename=profile_image_url.replace("/static/", ""))
+                            filename = profile_image_url.replace("/static/", "")
+                            profile_image_url = url_for("static", filename=filename)
                         elif profile_image_url.startswith("static/"):
-                            profile_image_url = url_for("static", filename=profile_image_url.replace("static/", ""))
+                            filename = profile_image_url.replace("static/", "")
+                            profile_image_url = url_for("static", filename=filename)
+                    print(f"🔍 フォールバック: 著者プロフィール画像URL（処理後）: {profile_image_url}")
                     
                     author_info = {
                         "name": author_name,
