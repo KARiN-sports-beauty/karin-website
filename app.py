@@ -3679,7 +3679,7 @@ def admin_reservations_status(reservation_id):
                     
                     if report_id:
                         # 該当区分の勤務カードを取得または作成
-                        res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", report_id).eq("work_type", place_type).execute()
+                        res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("daily_report_id", report_id).eq("work_type", place_type).execute()
                         
                         if res_items.data:
                             # 既存のカードがあれば最初の1つを使用
@@ -3687,7 +3687,7 @@ def admin_reservations_status(reservation_id):
                         else:
                             # カードが存在しない場合は作成
                             item_data = {
-                                "report_id": report_id,
+                                "daily_report_id": report_id,
                                 "work_type": place_type,
                                 "start_time": None,
                                 "end_time": None,
@@ -3799,13 +3799,13 @@ def admin_reservations_status(reservation_id):
                                     
                                     if nom_report_id:
                                         # 該当区分の勤務カードを取得または作成
-                                        res_nom_items = supabase_admin.table("staff_daily_report_items").select("*").eq("report_id", nom_report_id).eq("work_type", place_type).execute()
+                                        res_nom_items = supabase_admin.table("staff_daily_report_items").select("*").eq("daily_report_id", nom_report_id).eq("work_type", place_type).execute()
                                         
                                         if res_nom_items.data:
                                             nom_item_id = res_nom_items.data[0]["id"]
                                         else:
                                             nom_item_data = {
-                                                "report_id": nom_report_id,
+                                                "daily_report_id": nom_report_id,
                                                 "work_type": place_type,
                                                 "start_time": None,
                                                 "end_time": None,
