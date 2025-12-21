@@ -2240,7 +2240,68 @@ def admin_karte_detail(patient_id):
             print(f"⚠️ WARNING - 予約状況取得エラー: {e}")
             current_reservations = []
         
-        return render_template("admin_karte_detail.html", patient=patient, logs=logs, is_admin=is_admin, current_reservations=current_reservations)
+        # 過去の利用状況を取得（完了した予約、直近3回）
+        past_reservations = []
+        try:
+            now_jst = datetime.now(JST)
+            now_iso = now_jst.isoformat()
+            
+            res_past_reservations = (
+                supabase_admin.table("reservations")
+                .select("*")
+                .eq("patient_id", patient_id)
+                .eq("status", "completed")
+                .lt("reserved_at", now_iso)
+                .order("reserved_at", desc=True)
+                .limit(3)
+                .execute()
+            )
+            past_reservations_data = res_past_reservations.data or []
+            
+            # 患者情報を結合（既にpatient変数があるので、予約に追加）
+            for r in past_reservations_data:
+                # 名前を結合
+                name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+                if not name:
+                    name = patient.get("name", "不明")
+                r["patient_name"] = name
+                r["patient"] = patient
+                
+                # 時刻をJSTで表示用に変換
+                try:
+                    dt_str = r.get("reserved_at", "")
+                    if dt_str:
+                        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                        dt_jst = dt.astimezone(JST)
+                        r["reserved_at_display"] = dt_jst.strftime("%Y年%m月%d日 %H:%M")
+                    else:
+                        r["reserved_at_display"] = "時刻不明"
+                except:
+                    r["reserved_at_display"] = "時刻不明"
+                
+                # nomination_typeが存在しない場合はデフォルト値'本指名'を設定
+                if "nomination_type" not in r or not r.get("nomination_type"):
+                    r["nomination_type"] = "本指名"
+                
+                # nominated_staff_idsをJSONからパース
+                try:
+                    nominated_staff_ids_str = r.get("nominated_staff_ids")
+                    if nominated_staff_ids_str:
+                        if isinstance(nominated_staff_ids_str, str):
+                            r["nominated_staff_ids"] = json.loads(nominated_staff_ids_str)
+                        else:
+                            r["nominated_staff_ids"] = nominated_staff_ids_str
+                    else:
+                        r["nominated_staff_ids"] = []
+                except:
+                    r["nominated_staff_ids"] = []
+            
+            past_reservations = past_reservations_data
+        except Exception as e:
+            print(f"⚠️ WARNING - 過去の利用状況取得エラー: {e}")
+            past_reservations = []
+        
+        return render_template("admin_karte_detail.html", patient=patient, logs=logs, is_admin=is_admin, current_reservations=current_reservations, past_reservations=past_reservations)
     except Exception as e:
         print("❌ カルテ詳細取得エラー:", e)
         flash("カルテ詳細の取得に失敗しました", "error")
@@ -4451,10 +4512,34 @@ def staff_daily_report_new():
             flash("少なくとも1つの勤務カードを追加してください", "error")
             return redirect("/staff/daily-report/new")
         
-        # 既存の勤務カードを削除（再作成のため）
+        # 既存の勤務カードと患者情報を取得（削除前に保存）
+        existing_patients_data = []
+        try:
+            # 既存の勤務カードを取得
+            res_existing_items = supabase_admin.table("staff_daily_report_items").select("*").eq("daily_report_id", report_id).order("created_at", desc=False).execute()
+            existing_items = res_existing_items.data or []
+            
+            if existing_items:
+                existing_item_ids = [item["id"] for item in existing_items]
+                # 既存の患者情報を取得
+                res_existing_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", existing_item_ids).execute()
+                existing_patients_data = res_existing_patients.data or []
+                
+                # 既存のitem_idとインデックスのマッピングを作成（順序を保持）
+                existing_item_id_to_index = {item["id"]: idx for idx, item in enumerate(existing_items)}
+                # 患者情報にインデックスを追加
+                for patient_data in existing_patients_data:
+                    old_item_id = patient_data.get("item_id")
+                    patient_data["_old_item_index"] = existing_item_id_to_index.get(old_item_id, -1)
+        except Exception as e:
+            print(f"⚠️ WARNING - 既存患者情報取得エラー: {e}")
+            existing_patients_data = []
+        
+        # 既存の勤務カードを削除（再作成のため、CASCADEで患者情報も削除される）
         supabase_admin.table("staff_daily_report_items").delete().eq("daily_report_id", report_id).execute()
         
         # 勤務カードを挿入
+        new_item_ids = []
         for card in work_cards:
             item_data = {
                 "daily_report_id": report_id,
@@ -4466,7 +4551,31 @@ def staff_daily_report_new():
                 "memo": card["memo"],
                 "created_at": now_iso()
             }
-            supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+            res_new_item = supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
+            if res_new_item.data:
+                new_item_ids.append(res_new_item.data[0]["id"])
+        
+        # 既存の患者情報を新しいitem_idに再マッピング（インデックス順で対応）
+        if existing_patients_data and new_item_ids:
+            for patient_data in existing_patients_data:
+                old_index = patient_data.get("_old_item_index", -1)
+                # インデックスが有効で、新しいitem_idが存在する場合
+                if 0 <= old_index < len(new_item_ids):
+                    new_item_id = new_item_ids[old_index]
+                    # 新しいitem_idで患者情報を再作成
+                    patient_insert_data = {
+                        "item_id": new_item_id,
+                        "patient_id": patient_data.get("patient_id"),
+                        "reservation_id": patient_data.get("reservation_id"),
+                        "course_name": patient_data.get("course_name"),
+                        "amount": patient_data.get("amount"),
+                        "memo": patient_data.get("memo"),
+                        "created_at": now_iso()  # 新しい作成日時を設定
+                    }
+                    try:
+                        supabase_admin.table("staff_daily_report_patients").insert(patient_insert_data).execute()
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 患者情報再作成エラー: {e}")
         
         flash("日報を登録しました", "success")
         return redirect("/staff/daily-report/new")
