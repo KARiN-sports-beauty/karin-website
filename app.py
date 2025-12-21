@@ -3674,9 +3674,15 @@ def admin_reservations_status(reservation_id):
                         report_id = res_report.data[0]["id"]
                     else:
                         # 日報が存在しない場合は作成
+                        # week_keyを計算（YYYY-WW形式、ISO週番号を使用）
+                        report_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                        iso_calendar = report_date_obj.isocalendar()
+                        week_key = f"{iso_calendar[0]}-{iso_calendar[1]:02d}"
+                        
                         report_data = {
                             "staff_name": staff_name,
                             "report_date": date_str,
+                            "week_key": week_key,
                             "memo": None,
                             "created_at": now_iso(),
                             "updated_at": now_iso()
@@ -3794,9 +3800,15 @@ def admin_reservations_status(reservation_id):
                                     if res_nom_report.data:
                                         nom_report_id = res_nom_report.data[0]["id"]
                                     else:
+                                        # week_keyを計算（YYYY-WW形式、ISO週番号を使用）
+                                        report_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                                        iso_calendar = report_date_obj.isocalendar()
+                                        week_key = f"{iso_calendar[0]}-{iso_calendar[1]:02d}"
+                                        
                                         nom_report_data = {
                                             "staff_name": nominated_staff_name,
                                             "report_date": date_str,
+                                            "week_key": week_key,
                                             "memo": None,
                                             "created_at": now_iso(),
                                             "updated_at": now_iso()
