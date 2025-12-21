@@ -936,7 +936,16 @@ def staff_profile_edit():
                 staff["available_techniques"] = meta.get("available_techniques", [])  # リスト
                 staff["one_word"] = meta.get("one_word", "")
                 staff["blog_comment"] = meta.get("blog_comment", "")
-                staff["profile_image_url"] = meta.get("profile_image_url", "")
+                profile_image_url = meta.get("profile_image_url", "")
+                # プロフィール画像URLが相対パスの場合はurl_forで解決
+                if profile_image_url and not profile_image_url.startswith("http"):
+                    if profile_image_url.startswith("/static/"):
+                        filename = profile_image_url.replace("/static/", "")
+                        profile_image_url = url_for("static", filename=filename)
+                    elif profile_image_url.startswith("static/"):
+                        filename = profile_image_url.replace("static/", "")
+                        profile_image_url = url_for("static", filename=filename)
+                staff["profile_image_url"] = profile_image_url
         except:
             pass
 
@@ -5579,6 +5588,17 @@ def admin_staff_report_profile(staff_id):
         else:
             staff_name = meta.get("name", "未設定")
         
+        # プロフィール画像URLを取得し、相対パスの場合は解決
+        profile_image_url = meta.get("profile_image_url", "")
+        if profile_image_url and not profile_image_url.startswith("http"):
+            # 相対パスの場合はurl_forで解決
+            if profile_image_url.startswith("/static/"):
+                filename = profile_image_url.replace("/static/", "")
+                profile_image_url = url_for("static", filename=filename)
+            elif profile_image_url.startswith("static/"):
+                filename = profile_image_url.replace("static/", "")
+                profile_image_url = url_for("static", filename=filename)
+        
         # すべてのプロフィール情報を取得
         staff_data = {
             "id": staff_user.id,
@@ -5596,7 +5616,7 @@ def admin_staff_report_profile(staff_id):
             "available_techniques": meta.get("available_techniques", []),  # リスト
             "one_word": meta.get("one_word", ""),
             "blog_comment": meta.get("blog_comment", ""),
-            "profile_image_url": meta.get("profile_image_url", ""),
+            "profile_image_url": profile_image_url,
             "created_at": str(staff_user.created_at)[:10] if staff_user.created_at else "不明"
         }
         

@@ -218,6 +218,7 @@
         {% endif %}
         <div class="photo-upload-info">
           <input type="file" name="profile_image" id="profile_image" accept="image/*" style="margin-bottom: 8px;" onchange="previewPhoto(this)">
+          <p id="file-selected-message" style="font-size: 0.85rem; color: #4CAF50; margin: 4px 0; font-weight: 500; display: none;">✓ 画像が選択されました</p>
           <p style="font-size: 0.85rem; color: #666; margin: 0;">推奨サイズ: 正方形（400×400px以上）</p>
           <p style="font-size: 0.85rem; color: #666; margin: 0;">対応形式: JPG, PNG</p>
         </div>
@@ -320,12 +321,20 @@
 
 <script>
 function previewPhoto(input) {
+  const fileSelectedMessage = document.getElementById('file-selected-message');
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = function(e) {
       document.getElementById('photo-preview').src = e.target.result;
+      if (fileSelectedMessage) {
+        fileSelectedMessage.style.display = 'block';
+      }
     };
     reader.readAsDataURL(input.files[0]);
+  } else {
+    if (fileSelectedMessage) {
+      fileSelectedMessage.style.display = 'none';
+    }
   }
 }
 </script>
