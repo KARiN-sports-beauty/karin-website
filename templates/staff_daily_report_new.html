@@ -228,14 +228,19 @@ function loadExistingCards(existingItems) {
             const courseName = patient.course_name_display || patient.course_name || 'コース名なし';
             const patientReportId = patient.id;
             const currentAmount = patient.amount !== null && patient.amount !== undefined ? patient.amount : 0;
+            const formattedAmount = currentAmount > 0 ? currentAmount.toLocaleString() : '0';
             
-            patientsHtml += '<div style="padding: 12px; background: #fff; border-radius: 8px; font-size: 0.9rem;">';
-            patientsHtml += '<div style="margin-bottom: 8px; font-weight: 500; color: #1E3A5F;">' + patientName + '</div>';
-            patientsHtml += '<div style="margin-bottom: 8px; color: #666;">' + courseName + '</div>';
+            patientsHtml += '<div style="padding: 12px; background: #fff; border-radius: 8px; font-size: 0.9rem;" data-patient-report-id="' + patientReportId + '">';
+            patientsHtml += '<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">';
+            patientsHtml += '<span style="font-weight: 500; color: #1E3A5F; min-width: 100px;">' + patientName + '</span>';
+            patientsHtml += '<span class="patient-course-display" style="color: #666; flex: 1; min-width: 150px;">' + courseName + '</span>';
+            patientsHtml += '<input type="text" class="patient-course-input" data-patient-report-id="' + patientReportId + '" value="' + courseName.replace(/"/g, '&quot;') + '" style="display: none; flex: 1; min-width: 150px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
             patientsHtml += '<div style="display: flex; align-items: center; gap: 8px;">';
-            patientsHtml += '<label style="font-size: 0.85rem; color: #666;">金額：</label>';
-            patientsHtml += '<input type="number" name="patient_amount_' + patientReportId + '" value="' + currentAmount + '" min="0" step="100" style="width: 120px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
-            patientsHtml += '<span style="color: #666; font-size: 0.85rem;">円</span>';
+            patientsHtml += '<span class="patient-amount-display" style="color: #666; font-size: 0.9rem; min-width: 100px; text-align: right;">¥' + formattedAmount + '</span>';
+            patientsHtml += '<input type="number" class="patient-amount-input" data-patient-report-id="' + patientReportId + '" value="' + currentAmount + '" min="0" step="100" style="display: none; width: 120px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+            patientsHtml += '<button type="button" class="patient-edit-btn" data-patient-report-id="' + patientReportId + '" style="padding: 4px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">編集</button>';
+            patientsHtml += '<button type="button" class="patient-update-btn" data-patient-report-id="' + patientReportId + '" style="display: none; padding: 4px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">更新</button>';
+            patientsHtml += '</div>';
             patientsHtml += '</div>';
             patientsHtml += '</div>';
           }
@@ -243,6 +248,82 @@ function loadExistingCards(existingItems) {
           patientsHtml += '</div>';
           patientsSection.innerHTML = patientsHtml;
           memoTextarea.parentNode.insertBefore(patientsSection, memoTextarea.nextSibling);
+          
+          // 編集ボタンと更新ボタンのイベントリスナーを追加
+          const editButtons = patientsSection.querySelectorAll('.patient-edit-btn');
+          editButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              const patientReportId = btn.dataset.patientReportId;
+              const container = btn.closest('[data-patient-report-id="' + patientReportId + '"]');
+              const courseDisplaySpan = container.querySelector('.patient-course-display');
+              const courseInputField = container.querySelector('.patient-course-input[data-patient-report-id="' + patientReportId + '"]');
+              const amountDisplaySpan = container.querySelector('.patient-amount-display');
+              const amountInputField = container.querySelector('.patient-amount-input[data-patient-report-id="' + patientReportId + '"]');
+              const editBtn = container.querySelector('.patient-edit-btn[data-patient-report-id="' + patientReportId + '"]');
+              const updateBtn = container.querySelector('.patient-update-btn[data-patient-report-id="' + patientReportId + '"]');
+              
+              // 表示を非表示にして、入力フィールドを表示
+              courseDisplaySpan.style.display = 'none';
+              courseInputField.style.display = 'block';
+              amountDisplaySpan.style.display = 'none';
+              amountInputField.style.display = 'block';
+              editBtn.style.display = 'none';
+              updateBtn.style.display = 'block';
+              courseInputField.focus();
+            });
+          });
+          
+          const updateButtons = patientsSection.querySelectorAll('.patient-update-btn');
+          updateButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              const patientReportId = btn.dataset.patientReportId;
+              const container = btn.closest('[data-patient-report-id="' + patientReportId + '"]');
+              const courseDisplaySpan = container.querySelector('.patient-course-display');
+              const courseInputField = container.querySelector('.patient-course-input[data-patient-report-id="' + patientReportId + '"]');
+              const amountDisplaySpan = container.querySelector('.patient-amount-display');
+              const amountInputField = container.querySelector('.patient-amount-input[data-patient-report-id="' + patientReportId + '"]');
+              const editBtn = container.querySelector('.patient-edit-btn[data-patient-report-id="' + patientReportId + '"]');
+              const updateBtn = container.querySelector('.patient-update-btn[data-patient-report-id="' + patientReportId + '"]');
+              
+              const courseName = courseInputField.value.trim();
+              const amount = parseInt(amountInputField.value) || 0;
+              
+              // APIを呼び出して更新
+              fetch('/staff/daily-report/patient/' + patientReportId + '/update', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                  amount: amount,
+                  course_name: courseName
+                })
+              })
+              .then(function(response) {
+                return response.json();
+              })
+              .then(function(data) {
+                if (data.success) {
+                  // 成功時：表示を更新
+                  courseDisplaySpan.textContent = courseName;
+                  courseDisplaySpan.style.display = 'inline-block';
+                  courseInputField.style.display = 'none';
+                  amountDisplaySpan.textContent = '¥' + amount.toLocaleString();
+                  amountDisplaySpan.style.display = 'inline-block';
+                  amountInputField.style.display = 'none';
+                  editBtn.style.display = 'block';
+                  updateBtn.style.display = 'none';
+                  alert('金額とコース名を更新しました（金額は予約データにも反映済み）');
+                } else {
+                  alert('エラー: ' + (data.message || '更新に失敗しました'));
+                }
+              })
+              .catch(function(error) {
+                console.error('Error:', error);
+                alert('更新に失敗しました');
+              });
+            });
+          });
         }
       }
     });

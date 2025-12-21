@@ -4456,34 +4456,6 @@ def staff_daily_report_new():
             }
             supabase_admin.table("staff_daily_report_items").insert(item_data).execute()
         
-        # 患者の金額を更新（patient_amount_で始まるフィールドを処理）
-        for key, value in request.form.items():
-            if key.startswith("patient_amount_"):
-                patient_report_id = key.replace("patient_amount_", "")
-                try:
-                    amount_str = value.strip()
-                    amount = int(amount_str) if amount_str else None
-                    
-                    if amount is not None and amount >= 0:
-                        # 日報患者情報を取得（予約IDも取得）
-                        res_patient = supabase_admin.table("staff_daily_report_patients").select("id, reservation_id, amount").eq("id", patient_report_id).execute()
-                        if res_patient.data:
-                            patient_report = res_patient.data[0]
-                            reservation_id = patient_report.get("reservation_id")
-                            
-                            # 日報患者の金額を更新
-                            supabase_admin.table("staff_daily_report_patients").update({"amount": amount}).eq("id", patient_report_id).execute()
-                            
-                            # 予約データにも同期（base_priceを更新）
-                            if reservation_id:
-                                try:
-                                    supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
-                                    print(f"✅ 日報患者と予約データの金額を更新しました: patient_report_id={patient_report_id}, reservation_id={reservation_id}, amount={amount}")
-                                except Exception as e:
-                                    print(f"⚠️ WARNING - 予約データの金額更新エラー: {e}")
-                except Exception as e:
-                    print(f"⚠️ WARNING - 患者金額更新エラー: {e}")
-        
         flash("日報を登録しました", "success")
         return redirect("/staff/daily-report/new")
     except Exception as e:
@@ -4868,6 +4840,58 @@ def admin_daily_reports_patient_amount(patient_report_id):
 # ===================================================
 # スタッフ報告（管理者用）
 # ===================================================
+@app.route("/staff/daily-report/patient/<patient_report_id>/update", methods=["POST"])
+@staff_required
+def staff_daily_report_patient_update(patient_report_id):
+    """スタッフ用：日報患者の金額とコース名を更新（金額は予約データにも同期）"""
+    try:
+        data = request.get_json()
+        amount_str = data.get("amount", "") if data else request.form.get("amount", "").strip()
+        course_name = data.get("course_name", "") if data else request.form.get("course_name", "").strip()
+        
+        try:
+            amount = int(amount_str) if amount_str else None
+        except:
+            amount = None
+        
+        if amount is None or amount < 0:
+            return jsonify({"success": False, "message": "有効な金額を入力してください"}), 400
+        
+        # 日報患者情報を取得
+        res_patient = supabase_admin.table("staff_daily_report_patients").select("id, reservation_id, amount, course_name").eq("id", patient_report_id).execute()
+        if not res_patient.data:
+            return jsonify({"success": False, "message": "日報患者情報が見つかりません"}), 404
+        
+        patient_report = res_patient.data[0]
+        reservation_id = patient_report.get("reservation_id")
+        
+        # 更新データを準備
+        update_data = {
+            "amount": amount
+        }
+        if course_name:
+            update_data["course_name"] = course_name
+        
+        # 日報患者の金額とコース名を更新
+        supabase_admin.table("staff_daily_report_patients").update(update_data).eq("id", patient_report_id).execute()
+        
+        # 予約データにも同期（base_priceを更新）
+        if reservation_id:
+            try:
+                supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
+                print(f"✅ 日報患者と予約データを更新しました: patient_report_id={patient_report_id}, reservation_id={reservation_id}, amount={amount}, course_name={course_name}")
+            except Exception as e:
+                print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
+                # 日報更新は成功しているので警告のみ
+        
+        return jsonify({"success": True, "message": "金額とコース名を更新しました（金額は予約データにも反映済み）"}), 200
+    except Exception as e:
+        print(f"❌ 日報患者更新エラー: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"success": False, "message": "更新に失敗しました"}), 500
+
+
 @app.route("/admin/staff-reports")
 @admin_required
 def admin_staff_reports():
