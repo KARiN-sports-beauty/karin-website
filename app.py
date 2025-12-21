@@ -4208,6 +4208,18 @@ def admin_reservations_edit(reservation_id):
 def admin_reservations_delete(reservation_id):
     """予約削除"""
     try:
+        # 日報からも削除（予約削除前に関連する日報患者情報を削除）
+        try:
+            res_patients = supabase_admin.table("staff_daily_report_patients").select("*").eq("reservation_id", reservation_id).execute()
+            if res_patients.data:
+                # 関連する日報患者情報を削除
+                supabase_admin.table("staff_daily_report_patients").delete().eq("reservation_id", reservation_id).execute()
+                print(f"✅ 日報から予約ID {reservation_id} に関連する患者情報を削除しました")
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報患者情報削除エラー: {e}")
+            # エラーが発生しても予約削除は続行
+        
+        # 予約を削除
         supabase_admin.table("reservations").delete().eq("id", reservation_id).execute()
         flash("予約を削除しました", "success")
         return redirect(request.referrer or "/admin/reservations")
@@ -4270,17 +4282,41 @@ def staff_daily_report_new():
                             except Exception as e:
                                 print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
                         
-                        # 予約情報を一括取得（duration_minutesを取得するため）
+                        # 予約情報を一括取得（duration_minutesとstatusを取得するため）
                         reservations_info_map = {}
+                        reservations_status_map = {}
+                        invalid_reservation_ids = []
                         if reservation_ids:
                             try:
-                                res_reservations_info = supabase_admin.table("reservations").select("id, duration_minutes").in_("id", reservation_ids).execute()
+                                res_reservations_info = supabase_admin.table("reservations").select("id, duration_minutes, status").in_("id", reservation_ids).execute()
                                 if res_reservations_info.data:
                                     for r_info in res_reservations_info.data:
                                         r_id = r_info.get("id")
                                         reservations_info_map[r_id] = r_info.get("duration_minutes")
+                                        reservations_status_map[r_id] = r_info.get("status")
+                                # 存在しない予約IDを収集（予約が削除された場合）
+                                found_reservation_ids = {r_info.get("id") for r_info in res_reservations_info.data}
+                                invalid_reservation_ids = [rid for rid in reservation_ids if rid not in found_reservation_ids]
                             except Exception as e:
                                 print(f"⚠️ WARNING - 予約情報取得エラー: {e}")
+                        
+                        # 予約が存在しない、または完了状態でない場合は日報から削除
+                        if reservation_ids:
+                            try:
+                                # 完了状態でない予約IDを収集
+                                invalid_reservation_ids.extend([
+                                    rid for rid in reservation_ids 
+                                    if rid in reservations_status_map and reservations_status_map[rid] != "completed"
+                                ])
+                                
+                                # 無効な予約に関連する日報患者情報を削除
+                                if invalid_reservation_ids:
+                                    supabase_admin.table("staff_daily_report_patients").delete().in_("reservation_id", invalid_reservation_ids).execute()
+                                    print(f"✅ 無効な予約に関連する日報患者情報を削除しました: {len(invalid_reservation_ids)}件")
+                                    # 削除後、患者データからも除外
+                                    patients_data = [p for p in patients_data if p.get("reservation_id") not in invalid_reservation_ids]
+                            except Exception as e:
+                                print(f"⚠️ WARNING - 無効な予約の日報患者情報削除エラー: {e}")
                         
                         # 患者情報をitem_idごとにグループ化
                         patients_map = {}
@@ -4421,6 +4457,10 @@ def staff_daily_report_new():
             # 初日がない場合は0
             weekly_hours_diff = 0
         
+        # 管理者チェック
+        staff = session.get("staff", {})
+        is_admin = staff.get("is_admin") == True
+        
         return render_template(
             "staff_daily_report_new.html",
             staff_name=staff_name,
@@ -4429,7 +4469,8 @@ def staff_daily_report_new():
             existing_items=existing_items,
             weekly_hours=round(weekly_hours, 1),
             diff_hours=round(diff_hours, 1),
-            weekly_hours_diff=round(weekly_hours_diff, 1)
+            weekly_hours_diff=round(weekly_hours_diff, 1),
+            is_admin=is_admin
         )
     
     # POST処理

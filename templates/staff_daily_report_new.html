@@ -48,7 +48,11 @@
   
   <div style="display: flex; gap: 12px; margin-top: 30px;">
     <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 保存</button>
-    <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← ダッシュボードに戻る</a>
+    {% if is_admin %}
+    <a href="/admin/staff-reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← スタッフ報告一覧に戻る</a>
+    {% else %}
+    <a href="/staff/profile" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← スタッフページに戻る</a>
+    {% endif %}
   </div>
 </form>
 
