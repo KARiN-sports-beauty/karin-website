@@ -4495,12 +4495,19 @@ def staff_daily_report_new():
             flash("日付を入力してください", "error")
             return redirect("/staff/daily-report/new")
         
+        # 本日のシフト（memo）を取得
+        report_memo = request.form.get("report_memo", "").strip() or None
+        
         # 当日の日報が既に存在するかチェック
         res_existing = supabase_admin.table("staff_daily_reports").select("*").eq("staff_name", staff_name).eq("report_date", report_date).execute()
         
         if res_existing.data:
-            # 既存の日報を更新（更新処理は不要なため、IDのみ取得）
+            # 既存の日報を更新（memoとupdated_atを更新）
             report_id = res_existing.data[0]["id"]
+            supabase_admin.table("staff_daily_reports").update({
+                "memo": report_memo,
+                "updated_at": now_iso()
+            }).eq("id", report_id).execute()
         else:
             # 新規日報を作成
             # week_keyを計算（YYYY-WW形式、ISO週番号を使用）
@@ -4512,7 +4519,9 @@ def staff_daily_report_new():
                 "staff_name": staff_name,
                 "report_date": report_date,
                 "week_key": week_key,
-                "created_at": now_iso()
+                "memo": report_memo,
+                "created_at": now_iso(),
+                "updated_at": now_iso()
             }
             res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
             if not res_new_report.data:

@@ -56,6 +56,7 @@
   </div>
 </form>
 
+{% if not is_admin %}
 <!-- 実働時間表示フッター -->
 <div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); max-width: 800px; margin-left: auto; margin-right: auto;">
   <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">実働時間</h3>
@@ -73,7 +74,6 @@
       <div style="font-size: 1.2rem; font-weight: 600;" id="yearly-diff">計算中...</div>
     </div>
   </div>
-</div>
 </div>
 
 <script>
@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+{% endif %}
+</div>
 
 <script>
 let workCardCount = 0;
