@@ -343,6 +343,18 @@ function loadExistingCards(existingItems) {
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('add-work-card-btn').addEventListener('click', addWorkCard);
   
+  // 日付変更時に自動的にリロード
+  const dateInput = document.getElementById('report_date');
+  let currentDate = dateInput.value;
+  
+  dateInput.addEventListener('change', function() {
+    const selectedDate = dateInput.value;
+    if (selectedDate && selectedDate !== currentDate) {
+      // 日付が変更されたら自動的にリロード
+      window.location.href = '/staff/daily-report/new?date=' + selectedDate;
+    }
+  });
+  
   // 既存の勤務カードがあれば読み込む
   {% if existing_items %}
   loadExistingCards({{ existing_items | tojson }});

@@ -4198,7 +4198,47 @@ def admin_reservations_edit(reservation_id):
         
         supabase_admin.table("reservations").update(update_data).eq("id", reservation_id).execute()
         
-        flash("予約を更新しました", "success")
+        # 予約更新時に日報データも連動更新（base_price、course_name、nomination_type）
+        try:
+            # この予約に関連する日報患者情報を取得
+            res_patients = supabase_admin.table("staff_daily_report_patients").select("*").eq("reservation_id", reservation_id).execute()
+            if res_patients.data:
+                # コース名を生成（予約完了時と同じロジック）
+                course_name = None
+                place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
+                
+                # 表記ルール：本指名（院内）、枠指名（帯同）の形式
+                if nomination_type in ["本指名", "枠指名"]:
+                    course_name = f"{nomination_type}（{place_type_label}）"
+                else:
+                    # 希望/フリーの場合はエリア＋時間
+                    if area and duration_minutes:
+                        area_label = "東京" if area == "tokyo" else "福岡" if area == "fukuoka" else ""
+                        course_name = f"{area_label} {duration_minutes}分コース"
+                    else:
+                        course_name = f"{nomination_type}（{place_type_label}）"
+                
+                # 日報患者情報を更新
+                for patient_report in res_patients.data:
+                    patient_update_data = {}
+                    
+                    # base_priceが変更された場合は金額を更新
+                    if base_price is not None:
+                        patient_update_data["amount"] = base_price
+                    
+                    # コース名を更新
+                    if course_name:
+                        patient_update_data["course_name"] = course_name
+                    
+                    if patient_update_data:
+                        supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report["id"]).execute()
+                
+                print(f"✅ 予約更新に伴い、日報データも更新しました: reservation_id={reservation_id}, base_price={base_price}, course_name={course_name}")
+        except Exception as e:
+            print(f"⚠️ WARNING - 予約更新時の日報データ同期エラー: {e}")
+            # エラーが発生しても予約更新は成功しているので警告のみ
+        
+        flash("予約を更新しました（日報データにも反映済み）", "success")
         
         # 予約日付にリダイレクト
         day_str = dt_jst.strftime("%Y-%m-%d")
@@ -4217,20 +4257,26 @@ def admin_reservations_edit(reservation_id):
 def admin_reservations_delete(reservation_id):
     """予約削除"""
     try:
-        # 日報からも削除（予約削除前に関連する日報患者情報を削除）
+        # 予約を削除
+        # 注意: データベースのCASCADE設定により、staff_daily_report_patientsからも自動的に削除される
+        # 現在の設定が ON DELETE SET NULL の場合は、明示的に削除する必要がある
+        # ON DELETE CASCADE に変更した場合は、以下の明示的な削除処理は不要（データベースが自動削除）
         try:
-            res_patients = supabase_admin.table("staff_daily_report_patients").select("*").eq("reservation_id", reservation_id).execute()
-            if res_patients.data:
-                # 関連する日報患者情報を削除
+            # 念のため、削除前に確認（ログ用）
+            res_patients = supabase_admin.table("staff_daily_report_patients").select("id", count="exact").eq("reservation_id", reservation_id).execute()
+            patient_count = res_patients.count or 0
+            if patient_count > 0:
+                # データベースが ON DELETE SET NULL の場合、明示的に削除
+                # ON DELETE CASCADE の場合は、予約削除時に自動的に削除されるため不要
                 supabase_admin.table("staff_daily_report_patients").delete().eq("reservation_id", reservation_id).execute()
-                print(f"✅ 日報から予約ID {reservation_id} に関連する患者情報を削除しました")
+                print(f"✅ 日報から予約ID {reservation_id} に関連する患者情報 {patient_count} 件を削除しました")
         except Exception as e:
             print(f"⚠️ WARNING - 日報患者情報削除エラー: {e}")
-            # エラーが発生しても予約削除は続行
+            # エラーが発生しても予約削除は続行（CASCADE設定があれば自動削除される）
         
-        # 予約を削除
+        # 予約を削除（CASCADE設定により、staff_daily_report_patientsからも自動削除される）
         supabase_admin.table("reservations").delete().eq("id", reservation_id).execute()
-        flash("予約を削除しました", "success")
+        flash("予約を削除しました（日報からも削除済み）", "success")
         return redirect(request.referrer or "/admin/reservations")
     except Exception as e:
         print("❌ 予約削除エラー:", e)
@@ -4493,7 +4539,7 @@ def staff_daily_report_new():
         # バリデーション
         if not report_date:
             flash("日付を入力してください", "error")
-            return redirect("/staff/daily-report/new")
+            return redirect(f"/staff/daily-report/new?date={report_date}")
         
         # 本日のシフト（memo）を取得
         report_memo = request.form.get("report_memo", "").strip() or None
@@ -4526,7 +4572,7 @@ def staff_daily_report_new():
             res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
             if not res_new_report.data:
                 flash("日報の作成に失敗しました", "error")
-                return redirect("/staff/daily-report/new")
+                return redirect(f"/staff/daily-report/new?date={report_date}")
             report_id = res_new_report.data[0]["id"]
         
         # 勤務カードを取得（work_type_1, start_time_1, ... の形式）
@@ -4567,10 +4613,7 @@ def staff_daily_report_new():
             })
             card_index += 1
         
-        if not work_cards:
-            flash("少なくとも1つの勤務カードを追加してください", "error")
-            return redirect("/staff/daily-report/new")
-        
+        # 勤務カードが0枚でも保存可能（勤務していない日の場合）
         # 既存の勤務カードと患者情報を取得（削除前に保存）
         existing_patients_data = []
         try:
@@ -4597,7 +4640,7 @@ def staff_daily_report_new():
         # 既存の勤務カードを削除（再作成のため、CASCADEで患者情報も削除される）
         supabase_admin.table("staff_daily_report_items").delete().eq("daily_report_id", report_id).execute()
         
-        # 勤務カードを挿入
+        # 勤務カードを挿入（勤務カードが0枚の場合は何も挿入しない）
         new_item_ids = []
         for card in work_cards:
             item_data = {
@@ -4637,13 +4680,18 @@ def staff_daily_report_new():
                         print(f"⚠️ WARNING - 患者情報再作成エラー: {e}")
         
         flash("日報を登録しました", "success")
-        return redirect("/staff/daily-report/new")
+        return redirect(f"/staff/daily-report/new?date={report_date}")
     except Exception as e:
         import traceback
         print(f"❌ 日報作成エラー: {e}")
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash(f"日報の登録に失敗しました: {str(e)}", "error")
-        return redirect("/staff/daily-report/new")
+        # エラー時も日付パラメータを保持
+        report_date = request.form.get("report_date", "").strip()
+        if report_date:
+            return redirect(f"/staff/daily-report/new?date={report_date}")
+        else:
+            return redirect("/staff/daily-report/new")
 
 
 @app.route("/staff/daily-reports/years")
@@ -4952,6 +5000,44 @@ def admin_daily_reports():
                         patient["vip_level"] = None
                     
                     patients_map[item_id].append(patient)
+                
+                # 予約情報を取得して、存在しない、または完了状態でない予約をフィルタリング
+                reservation_ids = [p.get("reservation_id") for p in patients if p.get("reservation_id")]
+                invalid_reservation_ids = []
+                if reservation_ids:
+                    try:
+                        res_reservations_info = supabase_admin.table("reservations").select("id, status").in_("id", reservation_ids).execute()
+                        found_reservation_ids = {r.get("id") for r in res_reservations_info.data} if res_reservations_info.data else set()
+                        # 存在しない予約IDを収集
+                        invalid_reservation_ids.extend([rid for rid in reservation_ids if rid not in found_reservation_ids])
+                        # 完了状態でない予約IDを収集
+                        if res_reservations_info.data:
+                            for r_info in res_reservations_info.data:
+                                if r_info.get("status") != "completed":
+                                    invalid_reservation_ids.append(r_info.get("id"))
+                        
+                        # 無効な予約に関連する日報患者情報を削除
+                        if invalid_reservation_ids:
+                            supabase_admin.table("staff_daily_report_patients").delete().in_("reservation_id", invalid_reservation_ids).execute()
+                            print(f"✅ 全体の日報から無効な予約に関連する患者情報を削除しました: {len(invalid_reservation_ids)}件")
+                            # 削除後、患者データからも除外
+                            patients = [p for p in patients if p.get("reservation_id") not in invalid_reservation_ids]
+                            # patients_mapも再構築
+                            patients_map = {}
+                            for patient in patients:
+                                item_id = patient.get("item_id")
+                                patient_id = patient.get("patient_id")
+                                if item_id not in patients_map:
+                                    patients_map[item_id] = []
+                                if patient_id and patient_id in patient_info_map:
+                                    patient["patient_name"] = patient_info_map[patient_id]["name"]
+                                    patient["vip_level"] = patient_info_map[patient_id]["vip_level"]
+                                else:
+                                    patient["patient_name"] = None
+                                    patient["vip_level"] = None
+                                patients_map[item_id].append(patient)
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 予約情報チェックエラー: {e}")
             except Exception as e:
                 print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
         
