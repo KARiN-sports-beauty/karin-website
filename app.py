@@ -4839,132 +4839,211 @@ def staff_daily_reports_list(year, month):
 
 
 @app.route("/admin/daily-reports", methods=["GET"])
-@admin_required
+@staff_required
 def admin_daily_reports():
-    """管理者用日報一覧（1日1枚＋複数勤務カード表示）"""
+    """
+    会社の公式日報一覧（1日1画面、全スタッフ統合表示）
+    - スタッフ：自分の分のみ編集可能
+    - 管理者：全て編集可能
+    """
     try:
-        # クエリパラメータ取得
-        work_type_filter = request.args.get("work_type", "all")  # all/in_house/visit/field
-        date_from = request.args.get("date_from", "")  # YYYY-MM-DD
-        date_to = request.args.get("date_to", "")  # YYYY-MM-DD
+        # 日付パラメータ取得（デフォルトは今日）
+        selected_date = request.args.get("date", datetime.now(JST).strftime("%Y-%m-%d"))
         
-        # 日報取得
-        query = supabase_admin.table("staff_daily_reports").select("*").order("report_date", desc=True).order("created_at", desc=True)
+        # ログイン中のスタッフ情報を取得
+        staff = session.get("staff", {})
+        staff_id = staff.get("id")
+        staff_name = staff.get("name", "スタッフ")
+        is_admin = staff.get("is_admin", False)
         
-        # フィルタ適用
-        if date_from:
-            query = query.gte("report_date", date_from)
-        
-        if date_to:
-            query = query.lte("report_date", date_to)
-        
-        res_reports = query.execute()
+        # 指定日の全スタッフの日報を取得
+        res_reports = supabase_admin.table("staff_daily_reports").select("*").eq("report_date", selected_date).execute()
         reports = res_reports.data or []
         
-        # 各日報の勤務カードを取得
+        # 日報IDを収集
         report_ids = [r["id"] for r in reports]
-        items_map = {}  # {report_id: [items]}
-        patients_map = {}  # {item_id: [patients]}
         
+        # 指定日の全勤務カードを取得
+        items = []
         if report_ids:
-            # 勤務カードを一括取得
-            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).order("created_at", desc=False).execute()
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).execute()
             items = res_items.data or []
-            
-            # フィルタ適用（work_type）
-            if work_type_filter != "all":
-                items = [item for item in items if item.get("work_type") == work_type_filter]
-            
-            # report_idごとにグループ化
-            for item in items:
-                report_id = item.get("daily_report_id")
-                if report_id not in items_map:
-                    items_map[report_id] = []
-                items_map[report_id].append(item)
-            
-            # 患者・売上明細を一括取得
-            item_ids = [item["id"] for item in items]
-            patients = []
-            patient_info_map = {}
-            if item_ids:
+        
+        # スタッフ名マップを作成（report_id -> staff_name）
+        staff_name_map = {}
+        for report in reports:
+            staff_name_map[report["id"]] = report.get("staff_name", "スタッフ不明")
+        
+        # 各勤務カードにスタッフ名を追加
+        for item in items:
+            report_id = item.get("daily_report_id")
+            item["staff_name"] = staff_name_map.get(report_id, "スタッフ不明")
+            # 編集権限を判定（スタッフは自分の分のみ、管理者は全て）
+            item["can_edit"] = is_admin or (item["staff_name"] == staff_name)
+        
+        # work_typeで分類（院内・往診・帯同）
+        in_house_items = []
+        visit_items = []
+        field_items = []
+        
+        for item in items:
+            work_type = item.get("work_type")
+            if work_type == "in_house":
+                in_house_items.append(item)
+            elif work_type == "visit":
+                visit_items.append(item)
+            elif work_type == "field":
+                field_items.append(item)
+        
+        # 開始時間順でソート
+        def sort_by_start_time(item):
+            start_time = item.get("start_time", "")
+            if isinstance(start_time, str):
                 try:
-                    res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
-                    patients = res_patients.data or []
-                    
-                    # 患者情報を一括取得（名前表示用）
-                    patient_ids_from_reports = [p.get("patient_id") for p in patients if p.get("patient_id")]
-                    if patient_ids_from_reports:
-                        res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids_from_reports).execute()
-                        if res_patient_info.data:
-                            for p in res_patient_info.data:
-                                name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
-                                patient_info_map[p["id"]] = name or p.get("name", "患者不明")
-                    
-                    # item_idごとにグループ化し、患者名を追加
-                    for patient in patients:
-                        item_id = patient.get("item_id")
-                        patient_id = patient.get("patient_id")
-                        if patient_id and patient_id in patient_info_map:
-                            patient["patient_name"] = patient_info_map[patient_id]
-                        else:
-                            patient["patient_name"] = None
-                except Exception as e:
-                    print(f"⚠️ WARNING - 日報患者情報取得エラー（テーブルが存在しない可能性）: {e}")
-                    patients = []
-                    patient_info_map = {}
+                    parts = start_time.split(":")
+                    return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+                except:
+                    return (99, 99)  # 時間が無効な場合は最後に
+            return (99, 99)
+        
+        in_house_items.sort(key=sort_by_start_time)
+        visit_items.sort(key=sort_by_start_time)
+        field_items.sort(key=sort_by_start_time)
+        
+        # 患者情報を取得
+        item_ids = [item["id"] for item in items]
+        patients_map = {}  # {item_id: [patients]}
+        patient_info_map = {}  # {patient_id: {name, vip_level}}
+        
+        if item_ids:
+            try:
+                # 患者紐付け情報を取得
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者IDを収集
+                patient_ids = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                
+                # 患者情報を一括取得（名前・VIPフラグ）
+                if patient_ids:
+                    res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name, vip_level").in_("id", patient_ids).execute()
+                    if res_patient_info.data:
+                        for p in res_patient_info.data:
+                            name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                            patient_info_map[p["id"]] = {
+                                "name": name or p.get("name", "患者不明"),
+                                "vip_level": p.get("vip_level")
+                            }
+                
+                # item_idごとにグループ化
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    patient_id = patient.get("patient_id")
                     
                     if item_id not in patients_map:
                         patients_map[item_id] = []
+                    
+                    # 患者名とVIPフラグを追加
+                    if patient_id and patient_id in patient_info_map:
+                        patient["patient_name"] = patient_info_map[patient_id]["name"]
+                        patient["vip_level"] = patient_info_map[patient_id]["vip_level"]
+                    else:
+                        patient["patient_name"] = None
+                        patient["vip_level"] = None
+                    
                     patients_map[item_id].append(patient)
+            except Exception as e:
+                print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
         
-        # 日報に勤務カードと患者情報を結合
-        for report in reports:
-            report_id = report.get("id")
-            report["items"] = items_map.get(report_id, [])
+        # 各勤務カードに患者情報を結合
+        for item in items:
+            item_id = item.get("id")
+            item["patients"] = patients_map.get(item_id, [])
             
-            # 各勤務カードに患者情報を結合
-            for item in report["items"]:
-                item_id = item.get("id")
-                item["patients"] = patients_map.get(item_id, [])
-                
-                # 時刻表示用に整形
-                if item.get("start_time"):
-                    try:
-                        if isinstance(item["start_time"], str):
-                            time_parts = item["start_time"].split(":")
-                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["start_time_display"] = str(item["start_time"])[:5]
-                    except:
-                        item["start_time_display"] = item.get("start_time", "")
-                else:
-                    item["start_time_display"] = ""
-                
-                if item.get("end_time"):
-                    try:
-                        if isinstance(item["end_time"], str):
-                            time_parts = item["end_time"].split(":")
-                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["end_time_display"] = str(item["end_time"])[:5]
-                    except:
-                        item["end_time_display"] = item.get("end_time", "")
-                else:
-                    item["end_time_display"] = ""
+            # 時刻表示用に整形
+            if item.get("start_time"):
+                try:
+                    if isinstance(item["start_time"], str):
+                        time_parts = item["start_time"].split(":")
+                        item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                    else:
+                        item["start_time_display"] = str(item["start_time"])[:5]
+                except:
+                    item["start_time_display"] = item.get("start_time", "")
+            else:
+                item["start_time_display"] = ""
+            
+            if item.get("end_time"):
+                try:
+                    if isinstance(item["end_time"], str):
+                        time_parts = item["end_time"].split(":")
+                        item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                    else:
+                        item["end_time_display"] = str(item["end_time"])[:5]
+                except:
+                    item["end_time_display"] = item.get("end_time", "")
+            else:
+                item["end_time_display"] = ""
         
-        # フィルタ適用後、勤務カードが0件の日報を除外
-        if work_type_filter != "all":
-            reports = [r for r in reports if r.get("items")]
+        # 当日小計・当月累計を計算
+        # 当日小計
+        in_house_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in in_house_items)
+        visit_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in visit_items)
+        field_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in field_items)
+        
+        # 当月累計（指定日の月の1日から指定日まで）
+        month_start = selected_date[:7] + "-01"  # YYYY-MM-01
+        res_month_reports = supabase_admin.table("staff_daily_reports").select("id").gte("report_date", month_start).lte("report_date", selected_date).execute()
+        month_report_ids = [r["id"] for r in res_month_reports.data] if res_month_reports.data else []
+        
+        in_house_month_total = 0
+        visit_month_total = 0
+        field_month_total = 0
+        
+        if month_report_ids:
+            res_month_items = supabase_admin.table("staff_daily_report_items").select("id, work_type").in_("daily_report_id", month_report_ids).execute()
+            month_items = res_month_items.data or []
+            month_item_ids = [item["id"] for item in month_items]
+            
+            if month_item_ids:
+                try:
+                    res_month_patients = supabase_admin.table("staff_daily_report_patients").select("item_id, amount").in_("item_id", month_item_ids).execute()
+                    month_patients = res_month_patients.data or []
+                    
+                    # work_typeごとに集計
+                    for item in month_items:
+                        item_id = item.get("id")
+                        work_type = item.get("work_type")
+                        item_total = sum(p.get("amount", 0) for p in month_patients if p.get("item_id") == item_id)
+                        
+                        if work_type == "in_house":
+                            in_house_month_total += item_total
+                        elif work_type == "visit":
+                            visit_month_total += item_total
+                        elif work_type == "field":
+                            field_month_total += item_total
+                except Exception as e:
+                    print(f"⚠️ WARNING - 当月累計計算エラー: {e}")
         
         return render_template(
             "admin_daily_reports.html",
-            reports=reports,
-            work_type_filter=work_type_filter,
-            date_from=date_from,
-            date_to=date_to
+            selected_date=selected_date,
+            in_house_items=in_house_items,
+            visit_items=visit_items,
+            field_items=field_items,
+            in_house_day_total=in_house_day_total,
+            visit_day_total=visit_day_total,
+            field_day_total=field_day_total,
+            in_house_month_total=in_house_month_total,
+            visit_month_total=visit_month_total,
+            field_month_total=field_month_total,
+            is_admin=is_admin,
+            staff_name=staff_name
         )
     except Exception as e:
-        print("❌ 日報一覧取得エラー:", e)
+        import traceback
+        print(f"❌ 日報一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("日報一覧の取得中にエラーが発生しました", "error")
         return redirect(url_for("admin_dashboard"))
 
@@ -5015,6 +5094,106 @@ def admin_daily_reports_patient_amount(patient_report_id):
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("日報一覧の取得に失敗しました", "error")
         return redirect("/admin/dashboard")
+
+
+@app.route("/admin/daily-reports/item/<item_id>/update", methods=["POST"])
+@staff_required
+def admin_daily_reports_item_update(item_id):
+    """日報勤務カードの更新（既存レコードを更新）"""
+    try:
+        # ログイン中のスタッフ情報を取得
+        staff = session.get("staff", {})
+        staff_name = staff.get("name", "スタッフ")
+        is_admin = staff.get("is_admin", False)
+        
+        # 勤務カード情報を取得
+        res_item = supabase_admin.table("staff_daily_report_items").select("*, daily_report_id").eq("id", item_id).execute()
+        if not res_item.data:
+            flash("勤務カードが見つかりません", "error")
+            return redirect("/admin/daily-reports")
+        
+        item = res_item.data[0]
+        daily_report_id = item.get("daily_report_id")
+        
+        # 日報情報を取得してスタッフ名を確認
+        res_report = supabase_admin.table("staff_daily_reports").select("staff_name").eq("id", daily_report_id).execute()
+        if not res_report.data:
+            flash("日報が見つかりません", "error")
+            return redirect("/admin/daily-reports")
+        
+        report_staff_name = res_report.data[0].get("staff_name", "")
+        
+        # 編集権限チェック（スタッフは自分の分のみ、管理者は全て）
+        if not is_admin and report_staff_name != staff_name:
+            flash("編集権限がありません", "error")
+            return redirect("/admin/daily-reports")
+        
+        # フォームデータを取得
+        start_time = request.form.get("start_time", "").strip() or None
+        end_time = request.form.get("end_time", "").strip() or None
+        break_minutes_str = request.form.get("break_minutes", "").strip()
+        break_minutes = int(break_minutes_str) if break_minutes_str and break_minutes_str.isdigit() else 0
+        session_count_str = request.form.get("session_count", "").strip()
+        session_count = int(session_count_str) if session_count_str and session_count_str.isdigit() else None
+        memo = request.form.get("memo", "").strip() or None
+        nomination_type = request.form.get("nomination_type", "").strip() or None
+        
+        # 勤務カードを更新
+        update_data = {
+            "start_time": start_time,
+            "end_time": end_time,
+            "break_minutes": break_minutes,
+            "memo": memo,
+            "nomination_type": nomination_type
+        }
+        if session_count is not None:
+            update_data["session_count"] = session_count
+        
+        supabase_admin.table("staff_daily_report_items").update(update_data).eq("id", item_id).execute()
+        
+        # 患者情報の更新（複数患者に対応）
+        patient_ids = request.form.getlist("patient_id[]")
+        patient_amounts = request.form.getlist("patient_amount[]")
+        patient_course_names = request.form.getlist("patient_course_name[]")
+        patient_report_ids = request.form.getlist("patient_report_id[]")
+        
+        # 既存の患者情報を取得
+        res_patients = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", item_id).execute()
+        existing_patients = res_patients.data or []
+        existing_patient_report_ids = {p.get("id") for p in existing_patients}
+        
+        # 患者情報を更新
+        for i, patient_report_id in enumerate(patient_report_ids):
+            if patient_report_id and patient_report_id in existing_patient_report_ids:
+                # 既存の患者情報を更新
+                patient_amount = int(patient_amounts[i]) if i < len(patient_amounts) and patient_amounts[i] and patient_amounts[i].isdigit() else 0
+                patient_course_name = patient_course_names[i] if i < len(patient_course_names) else None
+                
+                patient_update_data = {
+                    "amount": patient_amount,
+                    "course_name": patient_course_name
+                }
+                
+                # reservation_idがある場合は予約データも更新
+                patient_data = next((p for p in existing_patients if p.get("id") == patient_report_id), None)
+                if patient_data:
+                    reservation_id = patient_data.get("reservation_id")
+                    if reservation_id:
+                        try:
+                            supabase_admin.table("reservations").update({"base_price": patient_amount}).eq("id", reservation_id).execute()
+                        except Exception as e:
+                            print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
+                
+                supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report_id).execute()
+        
+        flash("日報を更新しました", "success")
+        return redirect(request.referrer or "/admin/daily-reports")
+    except Exception as e:
+        import traceback
+        print(f"❌ 日報更新エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("日報の更新に失敗しました", "error")
+        return redirect("/admin/daily-reports")
 
 
 # ===================================================

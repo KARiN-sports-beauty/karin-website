@@ -2,141 +2,516 @@
 {% block title %}日報一覧 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">📝 スタッフ日報一覧</h2>
+<h2 class="admin-title">📝 会社の公式日報</h2>
 
-<!-- フィルタ -->
+<!-- 日付選択 -->
 <div style="margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <form method="GET" action="/admin/daily-reports" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
     <label style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-weight: 500; color: #1E3A5F;">区分：</span>
-      <select name="work_type" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
-        <option value="all" {% if work_type_filter == 'all' %}selected{% endif %}>すべて</option>
-        <option value="in_house" {% if work_type_filter == 'in_house' %}selected{% endif %}>院内</option>
-        <option value="visit" {% if work_type_filter == 'visit' %}selected{% endif %}>往診</option>
-        <option value="field" {% if work_type_filter == 'field' %}selected{% endif %}>帯同</option>
-      </select>
+      <span style="font-weight: 500; color: #1E3A5F;">日付：</span>
+      <input type="date" name="date" value="{{ selected_date }}" required style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
     </label>
-    
-    <label style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-weight: 500; color: #1E3A5F;">開始日：</span>
-      <input type="date" name="date_from" value="{{ date_from }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
-    </label>
-    
-    <label style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-weight: 500; color: #1E3A5F;">終了日：</span>
-      <input type="date" name="date_to" value="{{ date_to }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
-    </label>
-    
-    <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">適用</button>
-    <a href="/admin/daily-reports" style="padding: 8px 16px; background: #999; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">リセット</a>
+    <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">表示</button>
+    <a href="/admin/daily-reports?date={{ selected_date }}" style="padding: 8px 16px; background: #999; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">今日</a>
   </form>
 </div>
 
-<!-- 日報一覧 -->
-{% if reports %}
-<div style="display: flex; flex-direction: column; gap: 20px;">
-  {% for report in reports %}
-  {% if report.get("items") %}
-  <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-    <!-- 日報ヘッダー -->
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;">
-      <div>
-        <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ report.report_date }}</div>
-        <div style="font-size: 1rem; font-weight: 500; color: #1E3A5F;">{{ report.staff_name }}</div>
-      </div>
-      <div style="font-size: 0.85rem; color: #999;">
-        登録日時：{{ report.created_at[:16] if report.created_at else '' }}
-      </div>
-    </div>
+<!-- 日報表示 -->
+<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto;">
+  
+  <!-- 🏥 院内カード -->
+  {% if in_house_items %}
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+      🏥 院内
+    </h3>
     
-    {% if report.memo %}
-    <div style="margin-bottom: 16px; padding: 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.9rem; color: #666;">
-      <strong style="color: #1E3A5F;">日報メモ：</strong>{{ report.memo }}
-    </div>
-    {% endif %}
-    
-    <!-- 勤務カード一覧 -->
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-      {% for item in report.get("items") %}
-      <div class="admin-resv-card {% if item.work_type == 'in_house' %}place-inhouse{% elif item.work_type == 'visit' %}place-visit{% elif item.work_type == 'field' %}place-field{% endif %}">
-        <!-- 勤務区分バッジ（必ず表示） -->
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            {% if item.work_type == 'in_house' %}
-            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
-            {% elif item.work_type == 'visit' %}
-            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
-            {% elif item.work_type == 'field' %}
-            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
-            {% endif %}
-            {% if item.start_time_display and item.end_time_display %}
-            <span style="color: #666; font-size: 0.9rem;">{{ item.start_time_display }} ～ {{ item.end_time_display }}</span>
-            {% elif item.start_time_display %}
-            <span style="color: #666; font-size: 0.9rem;">開始：{{ item.start_time_display }}</span>
-            {% elif item.end_time_display %}
-            <span style="color: #666; font-size: 0.9rem;">終了：{{ item.end_time_display }}</span>
-            {% endif %}
-            {% if item.break_minutes and item.break_minutes > 0 %}
-            <span style="color: #666; font-size: 0.9rem;">休憩：{{ item.break_minutes }}分</span>
-            {% endif %}
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for item in in_house_items %}
+      <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;" 
+           data-start-time="{{ item.start_time or '' }}" 
+           data-end-time="{{ item.end_time or '' }}" 
+           data-break-minutes="{{ item.break_minutes or 0 }}" 
+           data-session-count="{{ item.session_count or '' }}" 
+           data-nomination-type="{{ item.nomination_type or '' }}" 
+           data-memo="{{ item.memo or '' }}"
+           data-patients="{{ item.patients | tojson | safe }}">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
+          <!-- 開始時間 -->
+          <div style="font-size: 1rem; font-weight: 600; color: #1E3A5F; min-width: 80px;">
+            {{ item.start_time_display or '時間未設定' }}
           </div>
-        </div>
-        
-        {% if item.memo %}
-        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
-          {{ item.memo }}
-        </div>
-        {% endif %}
-        
-        <!-- 患者・売上明細（金額0円でも必ず表示） -->
-        {% if item.patients %}
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-          <div style="font-size: 0.85rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">患者・売上明細</div>
+          
+          <!-- メイン情報 -->
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            {% for patient in item.patients %}
-            <div style="padding: 8px; background: #f5f7fb; border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <div style="flex: 1;">
-                {% if patient.patient_id %}
-                <a href="/admin/karte/{{ patient.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
-                  {% if patient.patient_name %}
-                    {{ patient.patient_name }}
+            <!-- 患者名（VIPフラグ付き） -->
+            {% if item.patients %}
+              {% for patient in item.patients %}
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-weight: 500; color: #1E3A5F;">
+                  {% if patient.patient_id %}
+                  <a href="/admin/karte/{{ patient.patient_id }}" style="color: #1E3A5F; text-decoration: none;">
+                    {{ patient.patient_name or '患者不明' }}
+                  </a>
                   {% else %}
-                    患者ID: {{ patient.patient_id[:8] }}...
+                  {{ patient.patient_name or '患者不明' }}
                   {% endif %}
-                </a>
-                {% else %}
-                <span style="color: #999;">患者情報なし</span>
-                {% endif %}
-                {% if patient.course_name %}
-                <span style="color: #666; font-weight: 500;">｜{{ patient.course_name }}</span>
-                {% else %}
-                <span style="color: #999; font-size: 0.8rem;">｜コース名なし</span>
-                {% endif %}
-                {% if patient.amount is not none %}
-                <span style="color: {% if patient.amount == 0 %}#999{% else %}#4CAF50{% endif %}; font-weight: {% if patient.amount == 0 %}400{% else %}500{% endif %};">
-                  ｜¥{{ "{:,}".format(patient.amount) }}
+                  {% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
                 </span>
-                {% else %}
-                <span style="color: #999; font-size: 0.8rem;">｜金額未設定</span>
+                <!-- コース名 -->
+                {% if patient.course_name %}
+                <span style="color: #666; font-size: 0.9rem;">{{ patient.course_name }}</span>
+                {% endif %}
+                <!-- 指名種別 -->
+                {% if item.nomination_type %}
+                  {% set nom_type = item.nomination_type %}
+                  {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+                  {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+                  {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+                  {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+                <span style="padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; background: #e0e0e0; color: #666;">{{ nom_type }}</span>
                 {% endif %}
               </div>
-              <form method="POST" action="/admin/daily-reports/patient/{{ patient.id }}/amount" style="display: flex; align-items: center; gap: 4px;" onsubmit="return confirm('金額を更新しますか？予約データにも反映されます。');">
-                <input type="number" name="amount" value="{{ patient.amount if patient.amount is not none else 0 }}" min="0" step="100" style="width: 100px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
-                <button type="submit" style="padding: 4px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">更新</button>
-              </form>
+              {% endfor %}
+            {% else %}
+              <span style="color: #999;">患者情報なし</span>
+            {% endif %}
+            
+            <!-- 対応スタッフ名 -->
+            <div style="font-size: 0.9rem; color: #666;">
+              対応スタッフ：{{ item.staff_name }}
             </div>
-            {% endfor %}
+            
+            <!-- 金額 -->
+            {% if item.patients %}
+              {% set item_total = 0 %}
+              {% for patient in item.patients %}
+                {% set item_total = item_total + (patient.amount or 0) %}
+              {% endfor %}
+              {% if item_total > 0 %}
+              <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
+                ¥{{ "{:,}".format(item_total) }}
+              </div>
+              {% endif %}
+            {% endif %}
+            
+            <!-- メモ -->
+            {% if item.memo %}
+            <div style="font-size: 0.85rem; color: #666; padding: 8px; background: #fff; border-radius: 6px; margin-top: 4px;">
+              {{ item.memo }}
+            </div>
+            {% endif %}
           </div>
+          
+          <!-- 編集ボタン（権限チェック） -->
+          {% if item.can_edit %}
+          <div>
+            <button type="button" class="edit-item-btn" data-item-id="{{ item.id }}" style="padding: 6px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">編集</button>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
       {% endfor %}
     </div>
+    
+    <!-- 当日小計・当月累計 -->
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当日小計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_day_total) }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当月累計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_month_total) }}</div>
+      </div>
+    </div>
   </div>
   {% endif %}
-  {% endfor %}
+  
+  <!-- 🚗 往診カード -->
+  {% if visit_items %}
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #4CAF50; display: flex; align-items: center; gap: 8px;">
+      🚗 往診
+    </h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for item in visit_items %}
+      <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #4CAF50;" 
+           data-start-time="{{ item.start_time or '' }}" 
+           data-end-time="{{ item.end_time or '' }}" 
+           data-break-minutes="{{ item.break_minutes or 0 }}" 
+           data-session-count="{{ item.session_count or '' }}" 
+           data-nomination-type="{{ item.nomination_type or '' }}" 
+           data-memo="{{ item.memo or '' }}"
+           data-patients="{{ item.patients | tojson | safe }}">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
+          <!-- 開始時間 -->
+          <div style="font-size: 1rem; font-weight: 600; color: #4CAF50; min-width: 80px;">
+            {{ item.start_time_display or '時間未設定' }}
+          </div>
+          
+          <!-- メイン情報 -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 患者名（VIPフラグ付き） -->
+            {% if item.patients %}
+              {% for patient in item.patients %}
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-weight: 500; color: #1E3A5F;">
+                  {% if patient.patient_id %}
+                  <a href="/admin/karte/{{ patient.patient_id }}" style="color: #1E3A5F; text-decoration: none;">
+                    {{ patient.patient_name or '患者不明' }}
+                  </a>
+                  {% else %}
+                  {{ patient.patient_name or '患者不明' }}
+                  {% endif %}
+                  {% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
+                </span>
+                <!-- コース名 -->
+                {% if patient.course_name %}
+                <span style="color: #666; font-size: 0.9rem;">{{ patient.course_name }}</span>
+                {% endif %}
+                <!-- 指名種別 -->
+                {% if item.nomination_type %}
+                  {% set nom_type = item.nomination_type %}
+                  {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+                  {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+                  {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+                  {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+                <span style="padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; background: #e0e0e0; color: #666;">{{ nom_type }}</span>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% else %}
+              <span style="color: #999;">患者情報なし</span>
+            {% endif %}
+            
+            <!-- 対応スタッフ名 -->
+            <div style="font-size: 0.9rem; color: #666;">
+              対応スタッフ：{{ item.staff_name }}
+            </div>
+            
+            <!-- 金額 -->
+            {% if item.patients %}
+              {% set item_total = 0 %}
+              {% for patient in item.patients %}
+                {% set item_total = item_total + (patient.amount or 0) %}
+              {% endfor %}
+              {% if item_total > 0 %}
+              <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
+                ¥{{ "{:,}".format(item_total) }}
+              </div>
+              {% endif %}
+            {% endif %}
+            
+            <!-- メモ -->
+            {% if item.memo %}
+            <div style="font-size: 0.85rem; color: #666; padding: 8px; background: #fff; border-radius: 6px; margin-top: 4px;">
+              {{ item.memo }}
+            </div>
+            {% endif %}
+          </div>
+          
+          <!-- 編集ボタン（権限チェック） -->
+          {% if item.can_edit %}
+          <div>
+            <button type="button" class="edit-item-btn" data-item-id="{{ item.id }}" style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">編集</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- 当日小計・当月累計 -->
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #4CAF50; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当日小計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_day_total) }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当月累計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_month_total) }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- 🎒 帯同カード -->
+  {% if field_items %}
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #FFB6C1; display: flex; align-items: center; gap: 8px;">
+      🎒 帯同
+    </h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for item in field_items %}
+      <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #FFB6C1;" 
+           data-start-time="{{ item.start_time or '' }}" 
+           data-end-time="{{ item.end_time or '' }}" 
+           data-break-minutes="{{ item.break_minutes or 0 }}" 
+           data-session-count="{{ item.session_count or '' }}" 
+           data-nomination-type="{{ item.nomination_type or '' }}" 
+           data-memo="{{ item.memo or '' }}"
+           data-patients="{{ item.patients | tojson | safe }}">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
+          <!-- 開始時間 -->
+          <div style="font-size: 1rem; font-weight: 600; color: #FFB6C1; min-width: 80px;">
+            {{ item.start_time_display or '時間未設定' }}
+          </div>
+          
+          <!-- メイン情報（帯同は順番が異なる） -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 現場名 -->
+            {% if item.patient_name %}
+            <div style="font-weight: 500; color: #1E3A5F;">
+              現場名：{{ item.patient_name }}
+            </div>
+            {% endif %}
+            
+            <!-- 指名種別 -->
+            {% if item.nomination_type %}
+              {% set nom_type = item.nomination_type %}
+              {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+              {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+              {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+              {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+            <div style="font-size: 0.9rem; color: #666;">
+              指名種別：<span style="padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; background: #e0e0e0; color: #666;">{{ nom_type }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- 帯同スタッフ -->
+            <div style="font-size: 0.9rem; color: #666;">
+              帯同スタッフ：{{ item.staff_name }}
+            </div>
+            
+            <!-- 金額 -->
+            {% if item.patients %}
+              {% set item_total = 0 %}
+              {% for patient in item.patients %}
+                {% set item_total = item_total + (patient.amount or 0) %}
+              {% endfor %}
+              {% if item_total > 0 %}
+              <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
+                ¥{{ "{:,}".format(item_total) }}
+              </div>
+              {% endif %}
+            {% endif %}
+            
+            <!-- メモ -->
+            {% if item.memo %}
+            <div style="font-size: 0.85rem; color: #666; padding: 8px; background: #fff; border-radius: 6px; margin-top: 4px;">
+              {{ item.memo }}
+            </div>
+            {% endif %}
+          </div>
+          
+          <!-- 編集ボタン（権限チェック） -->
+          {% if item.can_edit %}
+          <div>
+            <button type="button" class="edit-item-btn" data-item-id="{{ item.id }}" style="padding: 6px 12px; background: #FFB6C1; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">編集</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- 当日小計・当月累計 -->
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #FFB6C1; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当日小計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_day_total) }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.9rem; color: #666;">当月累計</div>
+        <div style="font-size: 1.2rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_month_total) }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- データがない場合 -->
+  {% if not in_house_items and not visit_items and not field_items %}
+  <div style="padding: 40px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); text-align: center;">
+    <p style="color: #999; font-size: 1.1rem;">{{ selected_date }}の日報データがありません</p>
+  </div>
+  {% endif %}
 </div>
-{% else %}
-<p style="color: #999; text-align: center; padding: 40px 0;">日報がありません</p>
-{% endif %}
+
+<!-- 編集モーダル -->
+<div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="max-width: 800px; margin: 40px auto; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h3 style="margin: 0; font-size: 1.3rem; font-weight: 600; color: #1E3A5F;">日報編集</h3>
+      <button type="button" id="close-modal-btn" style="background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+    </div>
+    
+    <form id="edit-form" method="POST" action="">
+      <input type="hidden" id="edit-item-id" name="item_id" value="">
+      
+      <!-- 基本情報 -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始時間</label>
+        <input type="time" id="edit-start-time" name="start_time" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">終了時間</label>
+        <input type="time" id="edit-end-time" name="end_time" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">休憩時間（分）</label>
+        <input type="number" id="edit-break-minutes" name="break_minutes" min="0" value="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">セッション数</label>
+        <input type="number" id="edit-session-count" name="session_count" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名種別</label>
+        <select id="edit-nomination-type" name="nomination_type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          <option value="">選択してください</option>
+          <option value="main">本指名</option>
+          <option value="frame">枠指名</option>
+          <option value="hope">希望</option>
+          <option value="free">フリー</option>
+        </select>
+      </div>
+      
+      <!-- 患者情報（動的に追加） -->
+      <div id="edit-patients-container" style="margin-bottom: 20px;">
+        <!-- 患者情報はJavaScriptで動的に追加 -->
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
+        <textarea id="edit-memo" name="memo" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+      </div>
+      
+      <div style="display: flex; gap: 12px; margin-top: 30px;">
+        <button type="submit" style="flex: 1; padding: 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500;">💾 保存</button>
+        <button type="button" id="cancel-edit-btn" style="flex: 1; padding: 12px; background: #999; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500;">キャンセル</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// 編集モーダルのデータを保持
+let editModalData = {};
+
+// 編集ボタンのイベントリスナー
+document.addEventListener('DOMContentLoaded', function() {
+  const editButtons = document.querySelectorAll('.edit-item-btn');
+  const modal = document.getElementById('edit-modal');
+  const closeBtn = document.getElementById('close-modal-btn');
+  const cancelBtn = document.getElementById('cancel-edit-btn');
+  const editForm = document.getElementById('edit-form');
+  
+  // モーダルを閉じる関数
+  function closeModal() {
+    modal.style.display = 'none';
+    editModalData = {};
+  }
+  
+  // 閉じるボタン
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  
+  // モーダル外をクリックで閉じる
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+  
+      // 編集ボタンクリック
+      editButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const itemId = btn.dataset.itemId;
+          
+          // アイテムカードを取得
+          const itemCard = document.querySelector('.work-item-card[data-item-id="' + itemId + '"]');
+          if (!itemCard) {
+            alert('アイテムが見つかりません');
+            return;
+          }
+          
+          // データ属性から値を取得
+          const startTime = itemCard.dataset.startTime || '';
+          const endTime = itemCard.dataset.endTime || '';
+          const breakMinutes = itemCard.dataset.breakMinutes || '0';
+          const sessionCount = itemCard.dataset.sessionCount || '';
+          const nominationType = itemCard.dataset.nominationType || '';
+          const memo = itemCard.dataset.memo || '';
+          const patientsJson = itemCard.dataset.patients || '[]';
+          
+          // 患者情報をパース
+          let patients = [];
+          try {
+            patients = JSON.parse(patientsJson);
+          } catch (e) {
+            console.error('患者情報のパースエラー:', e);
+            patients = [];
+          }
+          
+          // フォームに値を設定
+          document.getElementById('edit-item-id').value = itemId;
+          document.getElementById('edit-start-time').value = startTime;
+          document.getElementById('edit-end-time').value = endTime;
+          document.getElementById('edit-break-minutes').value = breakMinutes;
+          document.getElementById('edit-session-count').value = sessionCount;
+          document.getElementById('edit-nomination-type').value = nominationType;
+          document.getElementById('edit-memo').value = memo;
+          
+          // フォームのactionを設定
+          editForm.action = '/admin/daily-reports/item/' + itemId + '/update';
+          
+          // 患者情報を表示
+          const patientsContainer = document.getElementById('edit-patients-container');
+          if (patients && patients.length > 0) {
+            let patientsHtml = '<div style="margin-bottom: 16px;"><strong style="color: #1E3A5F; font-size: 1rem;">患者情報</strong></div>';
+            patients.forEach(function(patient, index) {
+              const patientId = patient.patient_id || '';
+              const patientReportId = patient.id || '';
+              const patientName = patient.patient_name || '患者不明';
+              const courseName = patient.course_name || '';
+              const amount = patient.amount || 0;
+              
+              patientsHtml += '<div style="padding: 12px; background: #f5f7fb; border-radius: 8px; margin-bottom: 12px;">';
+              patientsHtml += '<input type="hidden" name="patient_id[]" value="' + patientId + '">';
+              patientsHtml += '<input type="hidden" name="patient_report_id[]" value="' + patientReportId + '">';
+              patientsHtml += '<div style="margin-bottom: 8px;"><strong style="color: #1E3A5F;">' + patientName;
+              if (patient.vip_level === 'star') {
+                patientsHtml += ' ⭐️';
+              } else if (patient.vip_level === 'clover') {
+                patientsHtml += ' 🍀';
+              }
+              patientsHtml += '</strong></div>';
+              patientsHtml += '<div style="margin-bottom: 8px;">';
+              patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">コース名</label>';
+              patientsHtml += '<input type="text" name="patient_course_name[]" value="' + (courseName.replace(/"/g, '&quot;')) + '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+              patientsHtml += '</div>';
+              patientsHtml += '<div>';
+              patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">金額</label>';
+              patientsHtml += '<input type="number" name="patient_amount[]" value="' + amount + '" min="0" step="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+              patientsHtml += '</div>';
+              patientsHtml += '</div>';
+            });
+            patientsContainer.innerHTML = patientsHtml;
+          } else {
+            patientsContainer.innerHTML = '<p style="color: #666; font-size: 0.9rem;">患者情報がありません</p>';
+          }
+          
+          // モーダルを表示
+          modal.style.display = 'block';
+        });
+      });
+});
+</script>
 {% endblock %}
