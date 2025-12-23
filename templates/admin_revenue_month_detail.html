@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}スタッフ別月次売上一覧 - {{ staff_name }} {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 スタッフ別月次売上一覧 - {{ staff_name }} {{ year }}年{{ month_name }}</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/revenue/staff/{{ staff_id }}/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 年一覧に戻る</a>
+</div>
+
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">月次売上サマリー</h3>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #1E3A5F;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">院内売上</div>
+      <div style="font-size: 1.5rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue) }}</div>
+      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ in_house_hours }}h</div>
+    </div>
+    
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #4CAF50;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">往診売上</div>
+      <div style="font-size: 1.5rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_revenue) }}</div>
+      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ visit_hours }}h</div>
+    </div>
+    
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #FFB6C1;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">帯同売上</div>
+      <div style="font-size: 1.5rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_revenue) }}</div>
+      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ field_hours }}h</div>
+    </div>
+    
+    <div style="padding: 16px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">合計売上</div>
+      <div style="font-size: 1.5rem; font-weight: 600; color: #856404;">¥{{ "{:,}".format(total_revenue) }}</div>
+      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ total_hours }}h</div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

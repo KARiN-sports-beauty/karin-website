@@ -34,6 +34,51 @@
     </div>
   </div>
   
+  <!-- 交通費入力 -->
+  <div style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); max-width: 800px; margin-left: auto; margin-right: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">交通費</h3>
+      <button type="button" id="add-transportation-btn" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 16px; font-size: 0.9rem;">➕ 交通費を追加</button>
+    </div>
+    
+    <div id="transportations-container" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 交通費はJavaScriptで動的に追加 -->
+      {% if transportations %}
+        {% for trans in transportations %}
+        <div class="transportation-card" data-transportation-index="{{ loop.index }}" style="padding: 12px; background: #f5f7fb; border-radius: 8px; border: 1px solid #ddd;">
+          <input type="hidden" name="transportation_id[]" value="{{ trans.id }}">
+          <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 12px; align-items: start;">
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">交通手段</label>
+              <select name="transport_type_{{ loop.index }}" class="transport-type-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+                <option value="電車" {% if trans.transport_type == '電車' %}selected{% endif %}>電車</option>
+                <option value="バス" {% if trans.transport_type == 'バス' %}selected{% endif %}>バス</option>
+                <option value="タクシー" {% if trans.transport_type == 'タクシー' %}selected{% endif %}>タクシー</option>
+                <option value="その他" {% if trans.transport_type == 'その他' %}selected{% endif %}>その他</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">区間</label>
+              <input type="text" name="route_{{ loop.index }}" value="{{ trans.route or '' }}" placeholder="例：東京駅→代々木上原" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">金額</label>
+              <input type="number" name="amount_{{ loop.index }}" value="{{ trans.amount or 0 }}" min="0" step="1" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+              <button type="button" class="remove-transportation-btn" style="padding: 8px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
+            </div>
+          </div>
+          <div style="margin-top: 8px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">メモ</label>
+            <input type="text" name="memo_{{ loop.index }}" value="{{ trans.memo or '' }}" placeholder="メモ（任意）" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  
   <!-- 勤務カード一覧 -->
   <div style="margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -361,6 +406,65 @@ document.addEventListener('DOMContentLoaded', function() {
   {% else %}
   addWorkCard(); // 初期カードを1つ追加
   {% endif %}
+  
+  // 交通費カード関連
+  let transportationCount = {{ transportations | length }};
+  
+  // 交通費カードを追加
+  function addTransportationCard() {
+    transportationCount++;
+    const container = document.getElementById('transportations-container');
+    const card = document.createElement('div');
+    card.className = 'transportation-card';
+    card.dataset.transportationIndex = transportationCount;
+    card.style.cssText = 'padding: 12px; background: #f5f7fb; border-radius: 8px; border: 1px solid #ddd;';
+    
+    card.innerHTML = `
+      <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 12px; align-items: start;">
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">交通手段</label>
+          <select name="transport_type_${transportationCount}" class="transport-type-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+            <option value="電車">電車</option>
+            <option value="バス">バス</option>
+            <option value="タクシー">タクシー</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">区間</label>
+          <input type="text" name="route_${transportationCount}" placeholder="例：東京駅→代々木上原" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">金額</label>
+          <input type="number" name="amount_${transportationCount}" value="0" min="0" step="1" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+          <button type="button" class="remove-transportation-btn" style="padding: 8px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
+        </div>
+      </div>
+      <div style="margin-top: 8px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666;">メモ</label>
+        <input type="text" name="memo_${transportationCount}" placeholder="メモ（任意）" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+      </div>
+    `;
+    
+    container.appendChild(card);
+    
+    // 削除ボタンのイベントリスナー
+    card.querySelector('.remove-transportation-btn').addEventListener('click', function() {
+      card.remove();
+    });
+  }
+  
+  // 交通費追加ボタン
+  document.getElementById('add-transportation-btn').addEventListener('click', addTransportationCard);
+  
+  // 既存の交通費カードの削除ボタンにイベントリスナーを追加
+  document.querySelectorAll('.remove-transportation-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      this.closest('.transportation-card').remove();
+    });
+  });
 });
 </script>
 {% endblock %}

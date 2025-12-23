@@ -2,7 +2,16 @@
 {% block title %}日報一覧 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">📝 会社の公式日報</h2>
+<h2 class="admin-title">📝 KARiN.日報</h2>
+
+<!-- Flashメッセージ表示 -->
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
 
 <!-- 日付選択 -->
 <div style="margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
@@ -83,16 +92,10 @@
             </div>
             
             <!-- 金額 -->
-            {% if item.patients %}
-              {% set item_total = 0 %}
-              {% for patient in item.patients %}
-                {% set item_total = item_total + (patient.amount or 0) %}
-              {% endfor %}
-              {% if item_total > 0 %}
+            {% if item.total_amount and item.total_amount > 0 %}
               <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
-                ¥{{ "{:,}".format(item_total) }}
+                ¥{{ "{:,}".format(item.total_amount) }}
               </div>
-              {% endif %}
             {% endif %}
             
             <!-- メモ -->
@@ -192,16 +195,10 @@
             </div>
             
             <!-- 金額 -->
-            {% if item.patients %}
-              {% set item_total = 0 %}
-              {% for patient in item.patients %}
-                {% set item_total = item_total + (patient.amount or 0) %}
-              {% endfor %}
-              {% if item_total > 0 %}
+            {% if item.total_amount and item.total_amount > 0 %}
               <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
-                ¥{{ "{:,}".format(item_total) }}
+                ¥{{ "{:,}".format(item.total_amount) }}
               </div>
-              {% endif %}
             {% endif %}
             
             <!-- メモ -->
@@ -237,8 +234,8 @@
   </div>
   {% endif %}
   
-  <!-- 🎒 帯同カード -->
-  {% if field_items %}
+  <!-- 🎒 帯同カード（adminのみ閲覧可能） -->
+  {% if field_items and is_admin %}
   <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
     <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #FFB6C1; display: flex; align-items: center; gap: 8px;">
       🎒 帯同
@@ -254,12 +251,7 @@
            data-nomination-type="{{ item.nomination_type or '' }}" 
            data-memo="{{ item.memo or '' }}"
            data-patients="{{ item.patients | tojson | safe }}">
-        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
-          <!-- 開始時間 -->
-          <div style="font-size: 1rem; font-weight: 600; color: #FFB6C1; min-width: 80px;">
-            {{ item.start_time_display or '時間未設定' }}
-          </div>
-          
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start;">
           <!-- メイン情報（帯同は順番が異なる） -->
           <div style="display: flex; flex-direction: column; gap: 8px;">
             <!-- 現場名 -->
@@ -287,16 +279,10 @@
             </div>
             
             <!-- 金額 -->
-            {% if item.patients %}
-              {% set item_total = 0 %}
-              {% for patient in item.patients %}
-                {% set item_total = item_total + (patient.amount or 0) %}
-              {% endfor %}
-              {% if item_total > 0 %}
+            {% if item.total_amount and item.total_amount > 0 %}
               <div style="font-size: 0.9rem; color: #4CAF50; font-weight: 500;">
-                ¥{{ "{:,}".format(item_total) }}
+                ¥{{ "{:,}".format(item.total_amount) }}
               </div>
-              {% endif %}
             {% endif %}
             
             <!-- メモ -->
@@ -333,7 +319,7 @@
   {% endif %}
   
   <!-- データがない場合 -->
-  {% if not in_house_items and not visit_items and not field_items %}
+  {% if not in_house_items and not visit_items and not (field_items and is_admin) %}
   <div style="padding: 40px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); text-align: center;">
     <p style="color: #999; font-size: 1.1rem;">{{ selected_date }}の日報データがありません</p>
   </div>

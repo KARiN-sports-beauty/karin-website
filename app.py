@@ -4516,12 +4516,23 @@ def staff_daily_report_new():
         staff = session.get("staff", {})
         is_admin = staff.get("is_admin") == True
         
+        # 交通費情報を取得（既存の日報がある場合）
+        transportations = []
+        if existing_report:
+            try:
+                res_transportations = supabase_admin.table("staff_daily_report_transportations").select("*").eq("daily_report_id", existing_report["id"]).execute()
+                transportations = res_transportations.data or []
+            except Exception as e:
+                print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+                transportations = []
+        
         return render_template(
             "staff_daily_report_new.html",
             staff_name=staff_name,
             today_date=today_date,
             existing_report=existing_report,
             existing_items=existing_items,
+            transportations=transportations,
             weekly_hours=round(weekly_hours, 1),
             diff_hours=round(diff_hours, 1),
             weekly_hours_diff=round(weekly_hours_diff, 1),
@@ -4678,6 +4689,47 @@ def staff_daily_report_new():
                         supabase_admin.table("staff_daily_report_patients").insert(patient_insert_data).execute()
                     except Exception as e:
                         print(f"⚠️ WARNING - 患者情報再作成エラー: {e}")
+        
+        # 交通費情報を保存
+        staff_id = staff.get("id")
+        if staff_id:
+            try:
+                # 既存の交通費を削除（再作成のため）
+                if res_existing.data:
+                    supabase_admin.table("staff_daily_report_transportations").delete().eq("daily_report_id", report_id).execute()
+                
+                # 交通費を取得（transport_type_1, route_1, amount_1, memo_1 の形式）
+                transport_index = 1
+                while True:
+                    transport_type = request.form.get(f"transport_type_{transport_index}", "").strip()
+                    if not transport_type:
+                        break
+                    
+                    route = request.form.get(f"route_{transport_index}", "").strip() or None
+                    amount_str = request.form.get(f"amount_{transport_index}", "0").strip()
+                    memo = request.form.get(f"memo_{transport_index}", "").strip() or None
+                    
+                    try:
+                        amount_int = int(amount_str) if amount_str else 0
+                    except:
+                        amount_int = 0
+                    
+                    if amount_int > 0:
+                        transportation_data = {
+                            "daily_report_id": report_id,
+                            "staff_id": staff_id,
+                            "date": report_date,
+                            "transport_type": transport_type,
+                            "route": route,
+                            "amount": amount_int,
+                            "memo": memo,
+                            "created_at": now_iso()
+                        }
+                        supabase_admin.table("staff_daily_report_transportations").insert(transportation_data).execute()
+                    
+                    transport_index += 1
+            except Exception as e:
+                print(f"⚠️ WARNING - 交通費保存エラー: {e}")
         
         flash("日報を登録しました", "success")
         return redirect(f"/staff/daily-report/new?date={report_date}")
@@ -4886,6 +4938,404 @@ def staff_daily_reports_list(year, month):
         return redirect(f"/staff/daily-reports/years/{year}")
 
 
+@app.route("/staff/transportations/years")
+@staff_required
+def staff_transportations_years():
+    """スタッフ用：交通費申請 - 年一覧ページ"""
+    try:
+        staff = session.get("staff", {})
+        staff_id = staff.get("id")
+        
+        # 交通費が存在する年を取得
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("date").eq("staff_id", staff_id).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 年を抽出して重複を除去
+        years_set = set()
+        for trans in transportations:
+            date = trans.get("date")
+            if date:
+                year = date[:4]  # YYYY-MM-DDから年を抽出
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)  # 新しい年から順に
+        
+        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff.get("name", "スタッフ"))
+    except Exception as e:
+        print(f"❌ 交通費年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/staff/profile")
+
+
+@app.route("/staff/transportations/years/<year>")
+@staff_required
+def staff_transportations_months(year):
+    """スタッフ用：交通費申請 - 月一覧ページ"""
+    try:
+        staff = session.get("staff", {})
+        staff_id = staff.get("id")
+        
+        # 指定年の交通費が存在する月を取得
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("date").eq("staff_id", staff_id).gte("date", year_start).lte("date", year_end).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 月を抽出して重複を除去
+        months_set = set()
+        for trans in transportations:
+            date = trans.get("date")
+            if date:
+                month = date[5:7]  # YYYY-MM-DDから月を抽出
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)  # 新しい月から順に
+        
+        # 月の日本語名をマッピング
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff.get("name", "スタッフ"))
+    except Exception as e:
+        print(f"❌ 交通費月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect("/staff/transportations/years")
+
+
+@app.route("/staff/transportations/years/<year>/months/<month>")
+@staff_required
+def staff_transportations_list(year, month):
+    """スタッフ用：交通費申請 - 一覧ページ（指定年月）"""
+    try:
+        staff = session.get("staff", {})
+        staff_id = staff.get("id")
+        
+        # 指定年月の交通費を取得
+        month_start = f"{year}-{month}-01"
+        # 月末日を計算
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:  # 2月
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("*").eq("staff_id", staff_id).gte("date", month_start).lte("date", month_end).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 各交通費に対応する日報のmemo（本日のシフト）を取得
+        daily_report_ids = list(set(t.get("daily_report_id") for t in transportations if t.get("daily_report_id")))
+        daily_reports_map = {}
+        if daily_report_ids:
+            try:
+                res_reports = supabase_admin.table("staff_daily_reports").select("id, memo").in_("id", daily_report_ids).execute()
+                if res_reports.data:
+                    for report in res_reports.data:
+                        daily_reports_map[report["id"]] = report.get("memo") or ""
+            except Exception as e:
+                print(f"⚠️ WARNING - 日報情報取得エラー: {e}")
+        
+        # 交通費データに本日のシフトを追加
+        for trans in transportations:
+            daily_report_id = trans.get("daily_report_id")
+            trans["shift_memo"] = daily_reports_map.get(daily_report_id, "") if daily_report_id else ""
+        
+        # 月合計を計算（Python側で集計）
+        month_total = sum(t.get("amount", 0) or 0 for t in transportations)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff.get("name", "スタッフ"))
+    except Exception as e:
+        import traceback
+        print(f"❌ 交通費一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("交通費一覧の取得に失敗しました", "error")
+        return redirect(f"/staff/transportations/years/{year}")
+
+
+# ===================================================
+# スタッフ別月次売上一覧（管理者）
+# ===================================================
+@app.route("/admin/revenue/staff")
+@admin_required
+def admin_revenue_staff():
+    """スタッフ別月次売上一覧 - スタッフ選択"""
+    try:
+        # 承認済みスタッフのみ取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        
+        for u in users:
+            meta = u.user_metadata or {}
+            if not meta.get("approved", False):
+                continue
+            
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            if last_name and first_name:
+                display_name = f"{last_name} {first_name}"
+            else:
+                display_name = meta.get("name", "未設定")
+            
+            staff_list.append({
+                "id": u.id,
+                "name": display_name
+            })
+        
+        staff_list.sort(key=lambda x: x["name"])
+        
+        return render_template("admin_revenue_staff.html", staff_list=staff_list)
+    except Exception as e:
+        print(f"❌ スタッフ一覧取得エラー: {e}")
+        flash("スタッフ一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/revenue/staff/<staff_id>/years")
+@admin_required
+def admin_revenue_years(staff_id):
+    """スタッフ別月次売上一覧 - 年選択"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/revenue/staff")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 日報が存在する年を取得
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        years_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                year = report_date[:4]
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)
+        
+        return render_template("admin_revenue_years.html", years=years_list, staff_id=staff_id, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/revenue/staff")
+
+
+@app.route("/admin/revenue/staff/<staff_id>/years/<year>")
+@admin_required
+def admin_revenue_months(staff_id, year):
+    """スタッフ別月次売上一覧 - 月選択"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/revenue/staff")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年の日報が存在する月を取得
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").eq("staff_name", staff_name).gte("report_date", year_start).lte("report_date", year_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        months_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                month = report_date[5:7]
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("admin_revenue_months.html", year=year, months=months_with_names, staff_id=staff_id, staff_name=staff_name)
+    except Exception as e:
+        print(f"❌ 月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/revenue/staff/{staff_id}/years")
+
+
+@app.route("/admin/revenue/staff/<staff_id>/years/<year>/months/<month>")
+@admin_required
+def admin_revenue_month_detail(staff_id, year, month):
+    """スタッフ別月次売上一覧 - 月詳細（Python側で集計）"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/revenue/staff")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年月の日報を取得
+        month_start = f"{year}-{month}-01"
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        res_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
+        report_ids = [r["id"] for r in (res_reports.data or [])]
+        
+        # 勤務カードを取得
+        items = []
+        if report_ids:
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).execute()
+            items = res_items.data or []
+        
+        # 患者情報を取得
+        item_ids = [item["id"] for item in items]
+        patients_map = {}
+        if item_ids:
+            try:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patients_map[item_id].append(patient)
+            except Exception as e:
+                print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+        
+        # 各itemに患者情報と金額を追加（Python側で集計）
+        for item in items:
+            item_id = item.get("id")
+            item["patients"] = patients_map.get(item_id, [])
+            item["total_amount"] = sum(p.get("amount", 0) or 0 for p in item["patients"])
+            
+            # 実働時間を計算（start_time, end_time, break_minutesから）
+            working_minutes = 0
+            if item.get("start_time") and item.get("end_time"):
+                try:
+                    start_parts = item["start_time"].split(":")
+                    end_parts = item["end_time"].split(":")
+                    start_minutes = int(start_parts[0]) * 60 + int(start_parts[1])
+                    end_minutes = int(end_parts[0]) * 60 + int(end_parts[1])
+                    break_minutes = item.get("break_minutes", 0) or 0
+                    working_minutes = end_minutes - start_minutes - break_minutes
+                    if working_minutes < 0:
+                        working_minutes = 0
+                except:
+                    working_minutes = 0
+            item["working_hours"] = round(working_minutes / 60, 1) if working_minutes > 0 else 0
+        
+        # work_typeごとに集計（Python側で集計）
+        in_house_items = [item for item in items if item.get("work_type") == "in_house"]
+        visit_items = [item for item in items if item.get("work_type") == "visit"]
+        field_items = [item for item in items if item.get("work_type") == "field"]
+        
+        in_house_revenue = sum(item.get("total_amount", 0) for item in in_house_items)
+        visit_revenue = sum(item.get("total_amount", 0) for item in visit_items)
+        field_revenue = sum(item.get("total_amount", 0) for item in field_items)
+        total_revenue = in_house_revenue + visit_revenue + field_revenue
+        
+        in_house_hours = sum(item.get("working_hours", 0) for item in in_house_items)
+        visit_hours = sum(item.get("working_hours", 0) for item in visit_items)
+        field_hours = sum(item.get("working_hours", 0) for item in field_items)
+        total_hours = in_house_hours + visit_hours + field_hours
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template(
+            "admin_revenue_month_detail.html",
+            year=year,
+            month=month,
+            month_name=month_name,
+            staff_id=staff_id,
+            staff_name=staff_name,
+            in_house_revenue=in_house_revenue,
+            visit_revenue=visit_revenue,
+            field_revenue=field_revenue,
+            total_revenue=total_revenue,
+            in_house_hours=round(in_house_hours, 1),
+            visit_hours=round(visit_hours, 1),
+            field_hours=round(field_hours, 1),
+            total_hours=round(total_hours, 1)
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 月次売上取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("月次売上の取得に失敗しました", "error")
+        return redirect(f"/admin/revenue/staff/{staff_id}/years")
+
+
 @app.route("/admin/daily-reports", methods=["GET"])
 @staff_required
 def admin_daily_reports():
@@ -5046,6 +5496,10 @@ def admin_daily_reports():
             item_id = item.get("id")
             item["patients"] = patients_map.get(item_id, [])
             
+            # 金額を計算（Python側で集計）
+            patients = item["patients"]
+            item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
+            
             # 時刻表示用に整形
             if item.get("start_time"):
                 try:
@@ -5071,11 +5525,11 @@ def admin_daily_reports():
             else:
                 item["end_time_display"] = ""
         
-        # 当日小計・当月累計を計算
-        # 当日小計
-        in_house_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in in_house_items)
-        visit_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in visit_items)
-        field_day_total = sum(sum(p.get("amount", 0) for p in patients_map.get(item.get("id"), [])) for item in field_items)
+        # 当日小計・当月累計を計算（Python側で集計）
+        # 当日小計（各itemのtotal_amountを使用）
+        in_house_day_total = sum(item.get("total_amount", 0) for item in in_house_items)
+        visit_day_total = sum(item.get("total_amount", 0) for item in visit_items)
+        field_day_total = sum(item.get("total_amount", 0) for item in field_items)
         
         # 当月累計（指定日の月の1日から指定日まで）
         month_start = selected_date[:7] + "-01"  # YYYY-MM-01
@@ -5096,11 +5550,12 @@ def admin_daily_reports():
                     res_month_patients = supabase_admin.table("staff_daily_report_patients").select("item_id, amount").in_("item_id", month_item_ids).execute()
                     month_patients = res_month_patients.data or []
                     
-                    # work_typeごとに集計
+                    # work_typeごとに集計（Python側で集計）
                     for item in month_items:
                         item_id = item.get("id")
                         work_type = item.get("work_type")
-                        item_total = sum(p.get("amount", 0) for p in month_patients if p.get("item_id") == item_id)
+                        # 当月の患者情報からitem_idに紐づく金額を集計
+                        item_total = sum(p.get("amount", 0) or 0 for p in month_patients if p.get("item_id") == item_id)
                         
                         if work_type == "in_house":
                             in_house_month_total += item_total
@@ -5272,12 +5727,33 @@ def admin_daily_reports_item_update(item_id):
                 
                 supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report_id).execute()
         
+        # 日報の日付を取得して適切にredirect
+        res_report_for_date = supabase_admin.table("staff_daily_reports").select("report_date").eq("id", daily_report_id).execute()
+        selected_date = res_report_for_date.data[0].get("report_date") if res_report_for_date.data else None
+        
         flash("日報を更新しました", "success")
-        return redirect(request.referrer or "/admin/daily-reports")
+        if selected_date:
+            return redirect(url_for("admin_daily_reports", date=selected_date))
+        else:
+            return redirect("/admin/daily-reports")
     except Exception as e:
         import traceback
         print(f"❌ 日報更新エラー: {e}")
         print(f"❌ トレースバック: {traceback.format_exc()}")
+        
+        # エラー時も日付を取得して適切にredirect
+        try:
+            res_item_error = supabase_admin.table("staff_daily_report_items").select("daily_report_id").eq("id", item_id).execute()
+            if res_item_error.data:
+                daily_report_id_error = res_item_error.data[0].get("daily_report_id")
+                res_report_error = supabase_admin.table("staff_daily_reports").select("report_date").eq("id", daily_report_id_error).execute()
+                selected_date_error = res_report_error.data[0].get("report_date") if res_report_error.data else None
+                if selected_date_error:
+                    flash("日報の更新に失敗しました", "error")
+                    return redirect(url_for("admin_daily_reports", date=selected_date_error))
+        except:
+            pass
+        
         flash("日報の更新に失敗しました", "error")
         return redirect("/admin/daily-reports")
 

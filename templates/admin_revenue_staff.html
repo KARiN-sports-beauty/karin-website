@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}スタッフ別月次売上一覧 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 スタッフ別月次売上一覧</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← ダッシュボードに戻る</a>
+</div>
+
+{% if staff_list %}
+<div class="admin-karte-grid" style="margin-top: 20px;">
+  {% for staff in staff_list %}
+  <a href="/admin/revenue/staff/{{ staff.id }}/years" class="admin-karte-card">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name">{{ staff.name }}</strong>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">スタッフがありません。</p>
+{% endif %}
+
+{% endblock %}
+

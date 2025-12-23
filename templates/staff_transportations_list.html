@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}交通費申請 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🚗 交通費申請 - {{ year }}年{{ month_name }}</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/staff/transportations/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+</div>
+
+{% if transportations %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">交通費一覧</h3>
+  
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid #1E3A5F;">
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F;">日付</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F;">本日のシフト</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F;">交通手段</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F;">区間</th>
+          <th style="padding: 12px; text-align: right; font-weight: 600; color: #1E3A5F;">金額</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F;">メモ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trans in transportations %}
+        <tr style="border-bottom: 1px solid #e0e0e0;">
+          <td style="padding: 12px;">{{ trans.date }}</td>
+          <td style="padding: 12px;">{{ trans.shift_memo or '-' }}</td>
+          <td style="padding: 12px;">{{ trans.transport_type }}</td>
+          <td style="padding: 12px;">{{ trans.route or '-' }}</td>
+          <td style="padding: 12px; text-align: right;">¥{{ "{:,}".format(trans.amount) }}</td>
+          <td style="padding: 12px;">{{ trans.memo or '-' }}</td>
+        </tr>
+        {% endfor %}
+        <tr style="border-top: 2px solid #1E3A5F; font-weight: 600;">
+          <td colspan="4" style="padding: 12px; text-align: right;">月合計</td>
+          <td style="padding: 12px; text-align: right; color: #1E3A5F;">¥{{ "{:,}".format(month_total) }}</td>
+          <td style="padding: 12px;"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">{{ year }}年{{ month_name }}の交通費申請がありません。</p>
+{% endif %}
+
+{% endblock %}
+
