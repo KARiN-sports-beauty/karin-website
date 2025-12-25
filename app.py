@@ -6448,6 +6448,281 @@ def admin_staff_report_profile(staff_id):
         return redirect("/admin/staff-reports")
 
 
+# ===================================================
+# ✅ 報告書管理（/admin/reports）
+# ===================================================
+@app.route("/admin/reports")
+@staff_required
+def admin_reports():
+    """報告書一覧"""
+    try:
+        res = supabase_admin.table("field_reports").select("*").order("report_date", desc=True).order("created_at", desc=True).execute()
+        reports = res.data or []
+        return render_template("admin_reports.html", reports=reports)
+    except Exception as e:
+        print(f"❌ 報告書一覧取得エラー: {e}")
+        flash("報告書一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/reports/new", methods=["GET", "POST"])
+@staff_required
+def admin_reports_new():
+    """新規報告書作成"""
+    if request.method == "GET":
+        try:
+            # スタッフリスト取得
+            staff = session.get("staff", {})
+            staff_name = staff.get("name", "スタッフ")
+            staff_list = []
+            try:
+                users = supabase_admin.auth.admin.list_users()
+                for u in users:
+                    meta = u.user_metadata or {}
+                    if not meta.get("approved", False):
+                        continue
+                    last_name = meta.get("last_name", "")
+                    first_name = meta.get("first_name", "")
+                    if last_name and first_name:
+                        display_name = f"{last_name} {first_name}"
+                    else:
+                        display_name = meta.get("name", "未設定")
+                    staff_list.append({"name": display_name, "id": u.id})
+                staff_list.sort(key=lambda x: x["name"])
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            return render_template("admin_reports_new.html", staff_list=staff_list, staff_name=staff_name)
+        except Exception as e:
+            print(f"❌ 報告書作成画面取得エラー: {e}")
+            flash("報告書作成画面の取得に失敗しました", "error")
+            return redirect("/admin/reports")
+    
+    # POST処理
+    try:
+        field_name = request.form.get("field_name", "").strip()
+        report_date = request.form.get("report_date", "").strip()
+        place = request.form.get("place", "").strip() or None
+        staff_names_raw = request.form.getlist("staff_names")
+        staff_names = [s.strip() for s in staff_names_raw if s.strip()]
+        column_count = int(request.form.get("column_count", "3"))
+        special_notes = request.form.get("special_notes", "").strip() or None
+        
+        if not field_name or not report_date:
+            flash("現場名と日付は必須です", "error")
+            return redirect("/admin/reports/new")
+        
+        # 報告書を作成
+        report_data = {
+            "field_name": field_name,
+            "report_date": report_date,
+            "place": place,
+            "staff_names": staff_names,
+            "column_count": column_count,
+            "special_notes": special_notes,
+            "created_at": now_iso(),
+            "updated_at": now_iso()
+        }
+        
+        res = supabase_admin.table("field_reports").insert(report_data).execute()
+        report_id = res.data[0]["id"] if res.data else None
+        
+        if not report_id:
+            flash("報告書の作成に失敗しました", "error")
+            return redirect("/admin/reports/new")
+        
+        # 時間スロットを初期化（7時〜26時、各列）
+        time_slots = []
+        for hour in range(7, 27):
+            for col_idx in range(column_count):
+                time_slots.append({
+                    "report_id": report_id,
+                    "time": str(hour),
+                    "column_index": col_idx,
+                    "content": None,
+                    "created_at": now_iso()
+                })
+        
+        if time_slots:
+            supabase_admin.table("field_report_time_slots").insert(time_slots).execute()
+        
+        # スタッフ詳細を初期化
+        staff_details = []
+        for staff_name in staff_names:
+            # 施術ログから自動反映（現場名（place_name）と日付が一致するもの）
+            treatment_content = None
+            status = None
+            try:
+                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state").eq("date", report_date).eq("place_name", field_name).eq("staff_name", staff_name).execute()
+                if res_logs.data:
+                    log = res_logs.data[0]
+                    treatment_content = log.get("treatment")
+                    status = log.get("body_state")
+            except Exception as e:
+                print(f"⚠️ WARNING - 施術ログ自動反映エラー: {e}")
+                pass
+            
+            staff_details.append({
+                "report_id": report_id,
+                "staff_name": staff_name,
+                "status": status,
+                "treatment_content": treatment_content,
+                "created_at": now_iso()
+            })
+        
+        if staff_details:
+            supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+        
+        flash("報告書を作成しました", "success")
+        return redirect(f"/admin/reports/{report_id}/edit")
+    except Exception as e:
+        import traceback
+        print(f"❌ 報告書作成エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"報告書の作成に失敗しました: {e}", "error")
+        return redirect("/admin/reports/new")
+
+
+@app.route("/admin/reports/<report_id>/edit", methods=["GET", "POST"])
+@staff_required
+def admin_reports_edit(report_id):
+    """報告書編集"""
+    if request.method == "GET":
+        try:
+            res = supabase_admin.table("field_reports").select("*").eq("id", report_id).execute()
+            if not res.data:
+                flash("報告書が見つかりません", "error")
+                return redirect("/admin/reports")
+            report = res.data[0]
+            
+            # 時間スロットを取得
+            res_slots = supabase_admin.table("field_report_time_slots").select("*").eq("report_id", report_id).order("time").order("column_index").execute()
+            time_slots = res_slots.data or []
+            
+            # スタッフ詳細を取得
+            res_staff = supabase_admin.table("field_report_staff_details").select("*").eq("report_id", report_id).execute()
+            staff_details = res_staff.data or []
+            
+            # スタッフリスト取得
+            staff = session.get("staff", {})
+            staff_name = staff.get("name", "スタッフ")
+            staff_list = []
+            try:
+                users = supabase_admin.auth.admin.list_users()
+                for u in users:
+                    meta = u.user_metadata or {}
+                    if not meta.get("approved", False):
+                        continue
+                    last_name = meta.get("last_name", "")
+                    first_name = meta.get("first_name", "")
+                    if last_name and first_name:
+                        display_name = f"{last_name} {first_name}"
+                    else:
+                        display_name = meta.get("name", "未設定")
+                    staff_list.append({"name": display_name, "id": u.id})
+                staff_list.sort(key=lambda x: x["name"])
+            except Exception as e:
+                print("❌ スタッフリスト取得エラー:", e)
+                staff_list = [{"name": staff_name, "id": staff.get("id")}]
+            
+            return render_template("admin_reports_edit.html", report=report, time_slots=time_slots, staff_details=staff_details, staff_list=staff_list, staff_name=staff_name)
+        except Exception as e:
+            print(f"❌ 報告書取得エラー: {e}")
+            flash("報告書の取得に失敗しました", "error")
+            return redirect("/admin/reports")
+    
+    # POST処理
+    try:
+        field_name = request.form.get("field_name", "").strip()
+        report_date = request.form.get("report_date", "").strip()
+        place = request.form.get("place", "").strip() or None
+        staff_names_raw = request.form.getlist("staff_names")
+        staff_names = [s.strip() for s in staff_names_raw if s.strip()]
+        column_count = int(request.form.get("column_count", "3"))
+        special_notes = request.form.get("special_notes", "").strip() or None
+        
+        if not field_name or not report_date:
+            flash("現場名と日付は必須です", "error")
+            return redirect(f"/admin/reports/{report_id}/edit")
+        
+        # 報告書を更新
+        update_data = {
+            "field_name": field_name,
+            "report_date": report_date,
+            "place": place,
+            "staff_names": staff_names,
+            "column_count": column_count,
+            "special_notes": special_notes,
+            "updated_at": now_iso()
+        }
+        
+        supabase_admin.table("field_reports").update(update_data).eq("id", report_id).execute()
+        
+        # 時間スロットを更新
+        # 既存のスロットを削除して再作成（簡易実装）
+        supabase_admin.table("field_report_time_slots").delete().eq("report_id", report_id).execute()
+        
+        time_slots = []
+        for hour in range(7, 27):
+            for col_idx in range(column_count):
+                content_key = f"time_slot_{hour}_{col_idx}"
+                content = request.form.get(content_key, "").strip() or None
+                time_slots.append({
+                    "report_id": report_id,
+                    "time": str(hour),
+                    "column_index": col_idx,
+                    "content": content,
+                    "created_at": now_iso()
+                })
+        
+        if time_slots:
+            supabase_admin.table("field_report_time_slots").insert(time_slots).execute()
+        
+        # スタッフ詳細を更新
+        supabase_admin.table("field_report_staff_details").delete().eq("report_id", report_id).execute()
+        
+        staff_details = []
+        for staff_name in staff_names:
+            status_key = f"staff_status_{staff_name}"
+            treatment_key = f"staff_treatment_{staff_name}"
+            status = request.form.get(status_key, "").strip() or None
+            treatment_content = request.form.get(treatment_key, "").strip() or None
+            
+            staff_details.append({
+                "report_id": report_id,
+                "staff_name": staff_name,
+                "status": status,
+                "treatment_content": treatment_content,
+                "created_at": now_iso()
+            })
+        
+        if staff_details:
+            supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+        
+        flash("報告書を更新しました", "success")
+        return redirect(f"/admin/reports/{report_id}/edit")
+    except Exception as e:
+        import traceback
+        print(f"❌ 報告書更新エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"報告書の更新に失敗しました: {e}", "error")
+        return redirect(f"/admin/reports/{report_id}/edit")
+
+
+@app.route("/admin/reports/<report_id>/delete", methods=["POST"])
+@staff_required
+def admin_reports_delete(report_id):
+    """報告書削除"""
+    try:
+        supabase_admin.table("field_reports").delete().eq("id", report_id).execute()
+        flash("報告書を削除しました", "success")
+    except Exception as e:
+        print(f"❌ 報告書削除エラー: {e}")
+        flash("報告書の削除に失敗しました", "error")
+    return redirect("/admin/reports")
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404

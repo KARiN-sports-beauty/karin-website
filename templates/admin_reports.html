@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}報告書一覧 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📋 報告書一覧</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/reports/new" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; text-align: center;">🆕 新規報告書作成</a>
+</div>
+
+{% if reports %}
+<div style="display: flex; flex-direction: column; gap: 16px;">
+  {% for report in reports %}
+  <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ report.field_name }}</h3>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: #666;">
+          <span>📅 {{ report.report_date }}</span>
+          {% if report.place %}
+          <span>📍 {{ report.place }}</span>
+          {% endif %}
+          {% if report.staff_names %}
+          <span>👥 {{ report.staff_names | join(', ') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="/admin/reports/{{ report.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">✏ 編集</a>
+        <form action="/admin/reports/{{ report.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この報告書を削除しますか？');">
+          <button type="submit" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">🗑 削除</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p style="color: #999; text-align: center; padding: 40px 0;">報告書がありません</p>
+{% endif %}
+
+{% endblock %}

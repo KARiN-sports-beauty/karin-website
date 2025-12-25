@@ -37,9 +37,14 @@
               <div style="font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">{{ item.report_date }}</div>
               {% if item.patients %}
                 {% for patient in item.patients %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
-                  <span style="color: #333;">{{ patient.patient_name or '患者不明' }}</span>
-                  <span style="font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                <div style="padding: 8px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="color: #333; font-weight: 500;">{{ patient.patient_name or '患者不明' }}</span>
+                    <span style="font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                  </div>
+                  {% if patient.course_name %}
+                  <div style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">コース：{{ patient.course_name }}</div>
+                  {% endif %}
                 </div>
                 {% endfor %}
               {% else %}
@@ -80,9 +85,14 @@
               <div style="font-weight: 600; color: #4CAF50; margin-bottom: 8px;">{{ item.report_date }}</div>
               {% if item.patients %}
                 {% for patient in item.patients %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
-                  <span style="color: #333;">{{ patient.patient_name or '患者不明' }}</span>
-                  <span style="font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                <div style="padding: 8px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="color: #333; font-weight: 500;">{{ patient.patient_name or '患者不明' }}</span>
+                    <span style="font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                  </div>
+                  {% if patient.course_name %}
+                  <div style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">コース：{{ patient.course_name }}</div>
+                  {% endif %}
                 </div>
                 {% endfor %}
               {% else %}

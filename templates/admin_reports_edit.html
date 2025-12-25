@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}報告書編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏ 報告書編集</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/reports/{{ report.id }}/edit" style="max-width: 1400px;">
+  <!-- ヘッダー -->
+  <div style="margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名（必須）</label>
+        <input type="text" name="field_name" value="{{ report.field_name }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
+        <input type="date" name="report_date" value="{{ report.report_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
+        <input type="text" name="place" value="{{ report.place or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">列数（3〜5列）</label>
+        <select name="column_count" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <option value="3" {% if report.column_count == 3 %}selected{% endif %}>3列</option>
+          <option value="4" {% if report.column_count == 4 %}selected{% endif %}>4列</option>
+          <option value="5" {% if report.column_count == 5 %}selected{% endif %}>5列</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">対応スタッフ（複数選択可）</label>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        {% for staff in staff_list %}
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" name="staff_names" value="{{ staff.name }}" {% if report.staff_names and staff.name in report.staff_names %}checked{% endif %}>
+          <span>{{ staff.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- メインコンテンツ -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- 左側：時間軸表 -->
+    <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+      <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F; text-align: center; padding: 12px; background: #1E3A5F; color: #fff; border-radius: 8px;">
+        <span style="display: inline-block; width: 50%;">Time</span>
+        <span style="display: inline-block; width: 50%;">スケジュール</span>
+      </h3>
+      <div style="max-height: 600px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f5f7fb;">
+              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 60px;">時間</th>
+              {% for col_idx in range(report.column_count) %}
+              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">列{{ col_idx + 1 }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for hour in range(7, 27) %}
+            <tr>
+              <td style="padding: 8px; text-align: center; border: 1px solid #ddd; background: #f5f7fb; font-weight: 600; color: #1E3A5F;">{{ hour }}</td>
+              {% for col_idx in range(report.column_count) %}
+              {% set slot_key = (hour, col_idx) %}
+              {% set slot_content = '' %}
+              {% for slot in time_slots %}
+                {% if slot.time == hour|string and slot.column_index == col_idx %}
+                  {% set slot_content = slot.content or '' %}
+                {% endif %}
+              {% endfor %}
+              <td style="padding: 4px; border: 1px solid #ddd; background: #e3f2fd;">
+                <textarea name="time_slot_{{ hour }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px;">{{ slot_content }}</textarea>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- 右側：対応者情報 -->
+    <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+      <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">対応者情報</h3>
+      <div style="display: flex; flex-direction: column; gap: 16px; max-height: 600px; overflow-y: auto;">
+        {% for staff_name in (report.staff_names or []) %}
+        {% set staff_detail = None %}
+        {% for detail in staff_details %}
+          {% if detail.staff_name == staff_name %}
+            {% set staff_detail = detail %}
+          {% endif %}
+        {% endfor %}
+        <div style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;">
+          <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ staff_name }}</h4>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #666; font-size: 0.9rem;">今日の状態</label>
+            <input type="text" name="staff_status_{{ staff_name }}" value="{{ staff_detail.status if staff_detail else '' }}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #666; font-size: 0.9rem;">施術内容</label>
+            <textarea name="staff_treatment_{{ staff_name }}" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: vertical;">{{ staff_detail.treatment_content if staff_detail else '' }}</textarea>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- 特記事項 -->
+  <div style="margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #1E3A5F; font-size: 1.1rem;">特記事項</label>
+    <textarea name="special_notes" rows="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; resize: vertical;">{{ report.special_notes or '' }}</textarea>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 保存</button>
+    <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+{% endblock %}
+

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}新規報告書作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🆕 新規報告書作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" action="/admin/reports/new" style="max-width: 1200px;">
+  <div style="margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名（必須）</label>
+        <input type="text" name="field_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
+        <input type="date" name="report_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
+        <input type="text" name="place" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">列数（3〜5列）</label>
+        <select name="column_count" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <option value="3" selected>3列</option>
+          <option value="4">4列</option>
+          <option value="5">5列</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">対応スタッフ（複数選択可）</label>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        {% for staff in staff_list %}
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" name="staff_names" value="{{ staff.name }}">
+          <span>{{ staff.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 30px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 作成</button>
+    <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
+  </div>
+</form>
+
+{% endblock %}
+
