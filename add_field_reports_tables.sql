@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS public.field_reports (
   place text, -- 場所（任意）
   staff_names text[], -- 対応スタッフ（配列）
   column_count int4 NOT NULL DEFAULT 3 CHECK (column_count >= 3 AND column_count <= 5), -- 時間軸表の列数（3〜5列）
+  start_time time, -- 開始時間（例：07:00）
+  end_time time, -- 終了時間（例：26:00）
   special_notes text, -- 特記事項
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -24,6 +26,7 @@ CREATE TABLE IF NOT EXISTS public.field_report_time_slots (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   report_id uuid NOT NULL REFERENCES public.field_reports(id) ON DELETE CASCADE,
   time text NOT NULL, -- "7", "8", "9" などの時間（7時〜26時）
+  time_minute text, -- "00", "30" （30分単位）
   column_index int4 NOT NULL CHECK (column_index >= 0 AND column_index < 5), -- 列インデックス（0〜4）
   content text, -- スケジュール内容
   created_at timestamptz NOT NULL DEFAULT now()

@@ -13,42 +13,56 @@
 {% endif %}
 
 <form method="POST" action="/admin/reports/new" style="max-width: 1200px;">
-  <div style="margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-      <div>
-        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名（必須）</label>
-        <input type="text" name="field_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  <div style="margin-bottom: 20px; padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <!-- 左列 -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">現場名（必須）</label>
+          <input type="text" name="field_name" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">場所</label>
+          <input type="text" name="place" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">対応スタッフ（複数選択可）</label>
+          <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #f5f7fb; border-radius: 8px; border: 1px solid #e0e0e0;">
+            {% for staff in staff_list %}
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 0;">
+              <input type="checkbox" name="staff_names" value="{{ staff.name }}" style="width: 18px; height: 18px; cursor: pointer;">
+              <span style="font-size: 0.95rem; color: #333;">{{ staff.name }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      <div>
-        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
-        <input type="date" name="report_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      </div>
-    </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-      <div>
-        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
-        <input type="text" name="place" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      </div>
-      <div>
-        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">列数（3〜5列）</label>
-        <select name="column_count" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-          <option value="3" selected>3列</option>
-          <option value="4">4列</option>
-          <option value="5">5列</option>
-        </select>
-      </div>
-    </div>
-    
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">対応スタッフ（複数選択可）</label>
-      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-        {% for staff in staff_list %}
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" name="staff_names" value="{{ staff.name }}">
-          <span>{{ staff.name }}</span>
-        </label>
-        {% endfor %}
+      
+      <!-- 右列 -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">日付（必須）</label>
+          <input type="date" name="report_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">開始時間</label>
+            <input type="time" name="start_time" value="07:00" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">終了時間</label>
+            <input type="time" name="end_time" value="22:00" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          </div>
+        </div>
+        <div style="padding: 12px; background: #f0f7ff; border-radius: 8px; border: 1px solid #b3d9ff;">
+          <p style="margin: 0; font-size: 0.9rem; color: #1E3A5F;">
+            <strong>列数について：</strong><br>
+            対応スタッフの人数に応じて自動的に列数が設定されます。<br>
+            1名の場合は2列（スタッフ名・施術内容）、2名以上の場合はスタッフ名の列が作成されます。
+          </p>
+        </div>
       </div>
     </div>
   </div>

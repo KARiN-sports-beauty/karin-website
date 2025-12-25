@@ -6506,12 +6506,25 @@ def admin_reports_new():
         place = request.form.get("place", "").strip() or None
         staff_names_raw = request.form.getlist("staff_names")
         staff_names = [s.strip() for s in staff_names_raw if s.strip()]
-        column_count = int(request.form.get("column_count", "3"))
         special_notes = request.form.get("special_notes", "").strip() or None
         
         if not field_name or not report_date:
             flash("現場名と日付は必須です", "error")
             return redirect("/admin/reports/new")
+        
+        if not staff_names:
+            flash("対応スタッフを1名以上選択してください", "error")
+            return redirect("/admin/reports/new")
+        
+        # 列数を対応スタッフの人数に合わせて設定（1名の場合は2列、それ以上はスタッフ数）
+        if len(staff_names) == 1:
+            column_count = 2  # 列1：スタッフ名、列2：施術内容
+        else:
+            column_count = len(staff_names)  # 各スタッフ名
+        
+        # 開始時間・終了時間（デフォルト値）
+        start_time = request.form.get("start_time", "07:00").strip() or "07:00"
+        end_time = request.form.get("end_time", "22:00").strip() or "22:00"
         
         # 報告書を作成
         report_data = {
@@ -6520,6 +6533,8 @@ def admin_reports_new():
             "place": place,
             "staff_names": staff_names,
             "column_count": column_count,
+            "start_time": start_time,
+            "end_time": end_time,
             "special_notes": special_notes,
             "created_at": now_iso(),
             "updated_at": now_iso()
@@ -6532,33 +6547,80 @@ def admin_reports_new():
             flash("報告書の作成に失敗しました", "error")
             return redirect("/admin/reports/new")
         
-        # 時間スロットを初期化（7時〜26時、各列）
+        # 時間スロットを初期化（開始時間〜終了時間、30分単位、各列）
         time_slots = []
-        for hour in range(7, 27):
-            for col_idx in range(column_count):
-                time_slots.append({
-                    "report_id": report_id,
-                    "time": str(hour),
-                    "column_index": col_idx,
-                    "content": None,
-                    "created_at": now_iso()
-                })
+        try:
+            start_hour, start_min = map(int, start_time.split(':'))
+            end_hour, end_min = map(int, end_time.split(':'))
+            
+            # 開始時間から終了時間まで30分刻みで生成
+            current_hour = start_hour
+            current_min = start_min
+            while current_hour < end_hour or (current_hour == end_hour and current_min <= end_min):
+                minute_str = f"{current_min:02d}"
+                for col_idx in range(column_count):
+                    time_slots.append({
+                        "report_id": report_id,
+                        "time": str(current_hour),
+                        "time_minute": minute_str,
+                        "column_index": col_idx,
+                        "content": None,
+                        "created_at": now_iso()
+                    })
+                
+                # 30分進める
+                current_min += 30
+                if current_min >= 60:
+                    current_hour += 1
+                    current_min = 0
+        except Exception as e:
+            print(f"⚠️ WARNING - 時間スロット生成エラー: {e}")
+            # エラー時はデフォルト値（7時〜22時、30分単位）
+            for hour in range(7, 23):
+                for minute in ['00', '30']:
+                    for col_idx in range(column_count):
+                        time_slots.append({
+                            "report_id": report_id,
+                            "time": str(hour),
+                            "time_minute": minute,
+                            "column_index": col_idx,
+                            "content": None,
+                            "created_at": now_iso()
+                        })
         
         if time_slots:
             supabase_admin.table("field_report_time_slots").insert(time_slots).execute()
         
-        # スタッフ詳細を初期化
+        # スタッフ詳細を初期化（患者情報を取得）
         staff_details = []
         for staff_name in staff_names:
             # 施術ログから自動反映（現場名（place_name）と日付が一致するもの）
             treatment_content = None
             status = None
+            patient_id = None
+            patient_name = None
             try:
-                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state").eq("date", report_date).eq("place_name", field_name).eq("staff_name", staff_name).execute()
+                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date).eq("place_name", field_name).eq("staff_name", staff_name).execute()
                 if res_logs.data:
                     log = res_logs.data[0]
                     treatment_content = log.get("treatment")
                     status = log.get("body_state")
+                    patient_id = log.get("patient_id")
+                    
+                    # 患者名を取得
+                    if patient_id:
+                        try:
+                            res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
+                            if res_patient.data:
+                                p = res_patient.data[0]
+                                last_name = p.get("last_name", "")
+                                first_name = p.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_name = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_name = p.get("name", "患者不明")
+                        except:
+                            pass
             except Exception as e:
                 print(f"⚠️ WARNING - 施術ログ自動反映エラー: {e}")
                 pass
@@ -6568,6 +6630,7 @@ def admin_reports_new():
                 "staff_name": staff_name,
                 "status": status,
                 "treatment_content": treatment_content,
+                "patient_name": patient_name,
                 "created_at": now_iso()
             })
         
@@ -6596,13 +6659,79 @@ def admin_reports_edit(report_id):
                 return redirect("/admin/reports")
             report = res.data[0]
             
+            # デフォルト値設定
+            start_time = report.get("start_time", "07:00")
+            end_time = report.get("end_time", "22:00")
+            if not start_time:
+                start_time = "07:00"
+            if not end_time:
+                end_time = "22:00"
+            report["start_time"] = start_time
+            report["end_time"] = end_time
+            
+            # 時間範囲を計算（テンプレート用、30分単位）
+            time_ranges = []
+            try:
+                start_hour, start_min = map(int, start_time.split(':'))
+                end_hour, end_min = map(int, end_time.split(':'))
+                
+                current_hour = start_hour
+                current_min = start_min
+                # 終了時間まで30分刻みで生成
+                while current_hour < end_hour or (current_hour == end_hour and current_min <= end_min):
+                    time_ranges.append({
+                        "hour": current_hour,
+                        "minute": current_min
+                    })
+                    current_min += 30
+                    if current_min >= 60:
+                        current_hour += 1
+                        current_min = 0
+            except Exception as e:
+                print(f"⚠️ WARNING - 時間範囲計算エラー: {e}")
+                # エラー時はデフォルト（7時〜22時、30分単位）
+                for hour in range(7, 23):
+                    time_ranges.append({"hour": hour, "minute": 0})
+                    time_ranges.append({"hour": hour, "minute": 30})
+            
             # 時間スロットを取得
-            res_slots = supabase_admin.table("field_report_time_slots").select("*").eq("report_id", report_id).order("time").order("column_index").execute()
+            res_slots = supabase_admin.table("field_report_time_slots").select("*").eq("report_id", report_id).order("time").order("time_minute").order("column_index").execute()
             time_slots = res_slots.data or []
+            
+            # 時間スロットをマップに変換（高速検索用）
+            time_slots_map = {}
+            for slot in time_slots:
+                slot_time = slot.get('time', '')
+                slot_minute = slot.get('time_minute', '00')
+                slot_col = slot.get('column_index', 0)
+                key = f"{slot_time}_{slot_minute}_{slot_col}"
+                time_slots_map[key] = slot.get("content", "")
             
             # スタッフ詳細を取得
             res_staff = supabase_admin.table("field_report_staff_details").select("*").eq("report_id", report_id).execute()
             staff_details = res_staff.data or []
+            
+            # 各スタッフ詳細に患者名を追加（施術ログから取得）
+            for detail in staff_details:
+                staff_name = detail.get("staff_name")
+                patient_name = None
+                try:
+                    res_logs = supabase_admin.table("karte_logs").select("patient_id").eq("date", report["report_date"]).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
+                    if res_logs.data:
+                        patient_id = res_logs.data[0].get("patient_id")
+                        if patient_id:
+                            res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
+                            if res_patient.data:
+                                p = res_patient.data[0]
+                                last_name = p.get("last_name", "")
+                                first_name = p.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_name = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_name = p.get("name", "患者不明")
+                except Exception as e:
+                    print(f"⚠️ WARNING - 患者名取得エラー: {e}")
+                detail["patient_name"] = patient_name
             
             # スタッフリスト取得
             staff = session.get("staff", {})
@@ -6626,7 +6755,7 @@ def admin_reports_edit(report_id):
                 print("❌ スタッフリスト取得エラー:", e)
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            return render_template("admin_reports_edit.html", report=report, time_slots=time_slots, staff_details=staff_details, staff_list=staff_list, staff_name=staff_name)
+            return render_template("admin_reports_edit.html", report=report, time_slots=time_slots, time_slots_map=time_slots_map, time_ranges=time_ranges, staff_details=staff_details, staff_list=staff_list, staff_name=staff_name)
         except Exception as e:
             print(f"❌ 報告書取得エラー: {e}")
             flash("報告書の取得に失敗しました", "error")
@@ -6639,12 +6768,25 @@ def admin_reports_edit(report_id):
         place = request.form.get("place", "").strip() or None
         staff_names_raw = request.form.getlist("staff_names")
         staff_names = [s.strip() for s in staff_names_raw if s.strip()]
-        column_count = int(request.form.get("column_count", "3"))
         special_notes = request.form.get("special_notes", "").strip() or None
         
         if not field_name or not report_date:
             flash("現場名と日付は必須です", "error")
             return redirect(f"/admin/reports/{report_id}/edit")
+        
+        if not staff_names:
+            flash("対応スタッフを1名以上選択してください", "error")
+            return redirect(f"/admin/reports/{report_id}/edit")
+        
+        # 列数を対応スタッフの人数に合わせて設定（1名の場合は2列、それ以上はスタッフ数）
+        if len(staff_names) == 1:
+            column_count = 2  # 列1：スタッフ名、列2：施術内容
+        else:
+            column_count = len(staff_names)  # 各スタッフ名
+        
+        # 開始時間・終了時間
+        start_time = request.form.get("start_time", "07:00").strip() or "07:00"
+        end_time = request.form.get("end_time", "22:00").strip() or "22:00"
         
         # 報告書を更新
         update_data = {
@@ -6653,6 +6795,8 @@ def admin_reports_edit(report_id):
             "place": place,
             "staff_names": staff_names,
             "column_count": column_count,
+            "start_time": start_time,
+            "end_time": end_time,
             "special_notes": special_notes,
             "updated_at": now_iso()
         }
@@ -6660,40 +6804,96 @@ def admin_reports_edit(report_id):
         supabase_admin.table("field_reports").update(update_data).eq("id", report_id).execute()
         
         # 時間スロットを更新
-        # 既存のスロットを削除して再作成（簡易実装）
+        # 既存のスロットを削除して再作成
         supabase_admin.table("field_report_time_slots").delete().eq("report_id", report_id).execute()
         
         time_slots = []
-        for hour in range(7, 27):
-            for col_idx in range(column_count):
-                content_key = f"time_slot_{hour}_{col_idx}"
-                content = request.form.get(content_key, "").strip() or None
-                time_slots.append({
-                    "report_id": report_id,
-                    "time": str(hour),
-                    "column_index": col_idx,
-                    "content": content,
-                    "created_at": now_iso()
-                })
+        try:
+            start_hour, start_min = map(int, start_time.split(':'))
+            end_hour, end_min = map(int, end_time.split(':'))
+            
+            # 開始時間から終了時間まで30分刻みで生成
+            current_hour = start_hour
+            current_min = start_min
+            while current_hour < end_hour or (current_hour == end_hour and current_min <= end_min):
+                minute_str = f"{current_min:02d}"
+                for col_idx in range(column_count):
+                    content_key = f"time_slot_{current_hour}_{minute_str}_{col_idx}"
+                    content = request.form.get(content_key, "").strip() or None
+                    time_slots.append({
+                        "report_id": report_id,
+                        "time": str(current_hour),
+                        "time_minute": minute_str,
+                        "column_index": col_idx,
+                        "content": content,
+                        "created_at": now_iso()
+                    })
+                
+                # 30分進める
+                current_min += 30
+                if current_min >= 60:
+                    current_hour += 1
+                    current_min = 0
+        except Exception as e:
+            print(f"⚠️ WARNING - 時間スロット生成エラー: {e}")
+            # エラー時はデフォルト値（7時〜26時）
+            for hour in range(7, 27):
+                for minute in ['00', '30']:
+                    for col_idx in range(column_count):
+                        content_key = f"time_slot_{hour}_{minute}_{col_idx}"
+                        content = request.form.get(content_key, "").strip() or None
+                        time_slots.append({
+                            "report_id": report_id,
+                            "time": str(hour),
+                            "time_minute": minute,
+                            "column_index": col_idx,
+                            "content": content,
+                            "created_at": now_iso()
+                        })
         
         if time_slots:
             supabase_admin.table("field_report_time_slots").insert(time_slots).execute()
         
-        # スタッフ詳細を更新
+        # スタッフ詳細を更新（施術ログから自動反映）
         supabase_admin.table("field_report_staff_details").delete().eq("report_id", report_id).execute()
         
         staff_details = []
         for staff_name in staff_names:
-            status_key = f"staff_status_{staff_name}"
-            treatment_key = f"staff_treatment_{staff_name}"
-            status = request.form.get(status_key, "").strip() or None
-            treatment_content = request.form.get(treatment_key, "").strip() or None
+            # 施術ログから自動反映（現場名（place_name）と日付が一致するもの）
+            treatment_content = None
+            status = None
+            patient_name = None
+            try:
+                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date).eq("place_name", field_name).eq("staff_name", staff_name).execute()
+                if res_logs.data:
+                    log = res_logs.data[0]
+                    treatment_content = log.get("treatment")
+                    status = log.get("body_state")
+                    patient_id = log.get("patient_id")
+                    
+                    # 患者名を取得
+                    if patient_id:
+                        try:
+                            res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
+                            if res_patient.data:
+                                p = res_patient.data[0]
+                                last_name = p.get("last_name", "")
+                                first_name = p.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_name = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_name = p.get("name", "患者不明")
+                        except Exception as e:
+                            print(f"⚠️ WARNING - 患者名取得エラー: {e}")
+            except Exception as e:
+                print(f"⚠️ WARNING - 施術ログ自動反映エラー: {e}")
             
             staff_details.append({
                 "report_id": report_id,
                 "staff_name": staff_name,
                 "status": status,
                 "treatment_content": treatment_content,
+                "patient_name": patient_name,
                 "created_at": now_iso()
             })
         

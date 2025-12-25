@@ -31,13 +31,15 @@
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
         <input type="text" name="place" value="{{ report.place or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       </div>
-      <div>
-        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">列数（3〜5列）</label>
-        <select name="column_count" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-          <option value="3" {% if report.column_count == 3 %}selected{% endif %}>3列</option>
-          <option value="4" {% if report.column_count == 4 %}selected{% endif %}>4列</option>
-          <option value="5" {% if report.column_count == 5 %}selected{% endif %}>5列</option>
-        </select>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始時間</label>
+          <input type="time" name="start_time" value="{{ report.start_time or '07:00' }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">終了時間</label>
+          <input type="time" name="end_time" value="{{ report.end_time or '22:00' }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        </div>
       </div>
     </div>
     
@@ -52,6 +54,14 @@
         {% endfor %}
       </div>
     </div>
+    
+    <div style="padding: 12px; background: #f0f7ff; border-radius: 8px; border: 1px solid #b3d9ff; margin-bottom: 16px;">
+      <p style="margin: 0; font-size: 0.9rem; color: #1E3A5F;">
+        <strong>列数について：</strong><br>
+        対応スタッフの人数に応じて自動的に列数が設定されます。<br>
+        1名の場合は2列（スタッフ名・施術内容）、2名以上の場合はスタッフ名の列が作成されます。
+      </p>
+    </div>
   </div>
   
   <!-- メインコンテンツ -->
@@ -62,40 +72,69 @@
         <span style="display: inline-block; width: 50%;">Time</span>
         <span style="display: inline-block; width: 50%;">スケジュール</span>
       </h3>
-      <div style="max-height: 600px; overflow-y: auto;">
+      
+      <div style="overflow: visible;">
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr style="background: #f5f7fb;">
-              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 60px;">時間</th>
-              {% for col_idx in range(report.column_count) %}
-              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">列{{ col_idx + 1 }}</th>
-              {% endfor %}
+              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 80px;">時間</th>
+              {% if report.staff_names|length == 1 %}
+                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; border-left: 2px solid #1E3A5F;">{{ report.staff_names[0] }}</th>
+                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">施術内容</th>
+              {% else %}
+                {% for staff_name in (report.staff_names or []) %}
+                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; {% if loop.index == 1 %}border-left: 2px solid #1E3A5F;{% endif %}">{{ staff_name }}</th>
+                {% endfor %}
+              {% endif %}
             </tr>
           </thead>
           <tbody>
-            {% for hour in range(7, 27) %}
+            {% if report.staff_names|length == 1 %}
+              {% set actual_column_count = 2 %}
+            {% else %}
+              {% set actual_column_count = report.staff_names|length %}
+            {% endif %}
+            {% set current_hour = None %}
+            {% for time_range in time_ranges %}
+              {% if time_range.minute == 0 %}
+                {% if current_hour != time_range.hour %}
+                  {% set current_hour = time_range.hour %}
+                  {% if not loop.first %}
+            </tr>
+                  {% endif %}
             <tr>
-              <td style="padding: 8px; text-align: center; border: 1px solid #ddd; background: #f5f7fb; font-weight: 600; color: #1E3A5F;">{{ hour }}</td>
-              {% for col_idx in range(report.column_count) %}
-              {% set slot_key = (hour, col_idx) %}
-              {% set slot_content = '' %}
-              {% for slot in time_slots %}
-                {% if slot.time == hour|string and slot.column_index == col_idx %}
-                  {% set slot_content = slot.content or '' %}
+              <td rowspan="2" style="padding: 8px; text-align: center; border: 1px solid #ddd; background: #f5f7fb; font-weight: 600; color: #1E3A5F; vertical-align: middle; width: 80px;">{{ time_range.hour }}</td>
+                {% endif %}
+              {% endif %}
+              {% for col_idx in range(actual_column_count) %}
+                {% set slot_key = f"{time_range.hour}_{time_range.minute:02d}_{col_idx}" %}
+                {% set slot_content = time_slots_map.get(slot_key, '') %}
+                {% if time_range.minute == 0 %}
+              <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
+                <textarea name="time_slot_{{ time_range.hour }}_{{ time_range.minute:02d }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+              </td>
+                {% else %}
+                  {% if loop.first %}
+            <tr>
+                  {% endif %}
+              <td style="padding: 4px; border: 1px solid #ddd; border-top: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
+                <textarea name="time_slot_{{ time_range.hour }}_{{ time_range.minute:02d }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+              </td>
                 {% endif %}
               {% endfor %}
-              <td style="padding: 4px; border: 1px solid #ddd; background: #e3f2fd;">
-                <textarea name="time_slot_{{ hour }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px;">{{ slot_content }}</textarea>
-              </td>
-              {% endfor %}
+              {% if time_range.minute == 30 %}
             </tr>
+              {% endif %}
             {% endfor %}
+            {% if time_ranges and time_ranges[-1].minute == 0 %}
+            </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
     </div>
     
-    <!-- 右側：対応者情報 -->
+    <!-- 右側：対応者情報（患者情報） -->
     <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
       <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">対応者情報</h3>
       <div style="display: flex; flex-direction: column; gap: 16px; max-height: 600px; overflow-y: auto;">
@@ -107,14 +146,19 @@
           {% endif %}
         {% endfor %}
         <div style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;">
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ staff_name }}</h4>
-          <div style="margin-bottom: 12px;">
-            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #666; font-size: 0.9rem;">今日の状態</label>
-            <input type="text" name="staff_status_{{ staff_name }}" value="{{ staff_detail.status if staff_detail else '' }}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #666; font-size: 0.9rem;">施術内容</label>
-            <textarea name="staff_treatment_{{ staff_name }}" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: vertical;">{{ staff_detail.treatment_content if staff_detail else '' }}</textarea>
+          <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ staff_detail.patient_name if staff_detail and staff_detail.patient_name else '（患者名未取得）' }}</h4>
+          <div style="padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; color: #333; white-space: pre-wrap; min-height: 60px;">
+            {% if staff_detail and staff_detail.status %}
+            {{ staff_detail.status }}
+            {% if staff_detail.treatment_content %}
+
+            {{ staff_detail.treatment_content }}
+            {% endif %}
+            {% elif staff_detail and staff_detail.treatment_content %}
+            {{ staff_detail.treatment_content }}
+            {% else %}
+            （内容なし）
+            {% endif %}
           </div>
         </div>
         {% endfor %}
