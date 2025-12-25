@@ -149,13 +149,22 @@
             各スタッフの情報、シフト、勤務報告などを確認・管理します。
             </p>
         </a>
-        <!-- 🔒 管理者専用：スタッフ別月次売上一覧 -->
+        <!-- 🔒 管理者専用：売上一覧 -->
         <a href="/admin/revenue/staff" class="dash-card">
             <div class="dash-card-header">
-            <span class="dash-card-label">スタッフ別月次売上一覧</span>
+            <span class="dash-card-label">売上一覧</span>
             </div>
             <p class="dash-card-text">
             各スタッフの月次売上と実働時間を確認します（日報データから集計）。
+            </p>
+        </a>
+        <!-- 🔒 管理者専用：収支管理 -->
+        <a href="/admin/revenue" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">収支管理</span>
+            </div>
+            <p class="dash-card-text">
+            売上や経費を計上・分析します。
             </p>
         </a>
         {% else %}

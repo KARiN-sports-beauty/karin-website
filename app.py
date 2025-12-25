@@ -3386,6 +3386,17 @@ def admin_reservations_new():
     """新規予約作成"""
     if request.method == "GET":
         try:
+            # 日付パラメータを取得（初期値として使用）
+            date_param = request.args.get("date", "")
+            initial_date = None
+            if date_param:
+                try:
+                    # YYYY-MM-DD形式をdatetime-local形式に変換（時刻は9:00をデフォルト）
+                    date_obj = datetime.strptime(date_param, "%Y-%m-%d")
+                    initial_date = date_obj.strftime("%Y-%m-%dT09:00")
+                except:
+                    pass
+            
             # 患者一覧取得（autocomplete用に姓名分離フィールド・生年月日・紹介者も取得）
             res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id").order("created_at", desc=True).execute()
             patients = res_patients.data or []
@@ -3449,7 +3460,7 @@ def admin_reservations_new():
                 # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            return render_template("admin_reservations_new.html", patients=patients, staff_name=staff_name, staff_list=staff_list)
+            return render_template("admin_reservations_new.html", patients=patients, staff_name=staff_name, staff_list=staff_list, initial_date=initial_date)
         except Exception as e:
             print("❌ 予約作成画面取得エラー:", e)
             flash("予約作成画面の取得に失敗しました", "error")
@@ -5243,8 +5254,12 @@ def admin_revenue_month_detail(staff_id, year, month):
             else:
                 month_end = f"{year}-{month}-28"
         
-        res_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
-        report_ids = [r["id"] for r in (res_reports.data or [])]
+        res_reports = supabase_admin.table("staff_daily_reports").select("id, report_date").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
+        reports_data = res_reports.data or []
+        report_ids = [r["id"] for r in reports_data]
+        
+        # 日報IDと日付のマッピングを作成
+        report_date_map = {r["id"]: r.get("report_date") for r in reports_data}
         
         # 勤務カードを取得
         items = []
@@ -5255,15 +5270,41 @@ def admin_revenue_month_detail(staff_id, year, month):
         # 患者情報を取得
         item_ids = [item["id"] for item in items]
         patients_map = {}
+        patient_info_map = {}  # 患者ID -> 患者名のマッピング
         if item_ids:
             try:
                 res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
                 patients = res_patients.data or []
                 
+                # 患者IDを収集
+                patient_ids = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                
+                # 患者情報を一括取得（名前表示用）
+                if patient_ids:
+                    try:
+                        res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                        if res_patient_info.data:
+                            for p_info in res_patient_info.data:
+                                p_id = p_info.get("id")
+                                last_name = p_info.get("last_name", "")
+                                first_name = p_info.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_info_map[p_id] = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_info_map[p_id] = p_info.get("name", "患者不明")
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+                
                 for patient in patients:
                     item_id = patient.get("item_id")
                     if item_id not in patients_map:
                         patients_map[item_id] = []
+                    # 患者名を追加
+                    patient_id = patient.get("patient_id")
+                    if patient_id and patient_id in patient_info_map:
+                        patient["patient_name"] = patient_info_map[patient_id]
+                    else:
+                        patient["patient_name"] = None
                     patients_map[item_id].append(patient)
             except Exception as e:
                 print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
@@ -5271,6 +5312,11 @@ def admin_revenue_month_detail(staff_id, year, month):
         # 各itemに患者情報と金額を追加（Python側で集計）
         for item in items:
             item_id = item.get("id")
+            daily_report_id = item.get("daily_report_id")
+            
+            # 日報の日付を追加
+            item["report_date"] = report_date_map.get(daily_report_id, "")
+            
             item["patients"] = patients_map.get(item_id, [])
             item["total_amount"] = sum(p.get("amount", 0) or 0 for p in item["patients"])
             
@@ -5294,6 +5340,20 @@ def admin_revenue_month_detail(staff_id, year, month):
         in_house_items = [item for item in items if item.get("work_type") == "in_house"]
         visit_items = [item for item in items if item.get("work_type") == "visit"]
         field_items = [item for item in items if item.get("work_type") == "field"]
+        
+        # 日付順でソート（新しい日付から）
+        def sort_by_date(item):
+            date_str = item.get("report_date", "")
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, "%Y-%m-%d")
+                except:
+                    return datetime.min
+            return datetime.min
+        
+        in_house_items.sort(key=sort_by_date, reverse=True)
+        visit_items.sort(key=sort_by_date, reverse=True)
+        field_items.sort(key=sort_by_date, reverse=True)
         
         in_house_revenue = sum(item.get("total_amount", 0) for item in in_house_items)
         visit_revenue = sum(item.get("total_amount", 0) for item in visit_items)
@@ -5326,7 +5386,10 @@ def admin_revenue_month_detail(staff_id, year, month):
             in_house_hours=round(in_house_hours, 1),
             visit_hours=round(visit_hours, 1),
             field_hours=round(field_hours, 1),
-            total_hours=round(total_hours, 1)
+            total_hours=round(total_hours, 1),
+            in_house_items=in_house_items,
+            visit_items=visit_items,
+            field_items=field_items
         )
     except Exception as e:
         import traceback

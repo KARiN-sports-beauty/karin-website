@@ -38,7 +38,7 @@
     </label>
     
     <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">適用</button>
-    <a href="/admin/reservations/new" style="padding: 8px 16px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">➕ 新規予約</a>
+    <a href="/admin/reservations/new?date={{ selected_day.strftime('%Y-%m-%d') }}" style="padding: 8px 16px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">➕ 新規予約</a>
   </form>
 </div>
 

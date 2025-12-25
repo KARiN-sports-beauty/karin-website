@@ -11,32 +11,176 @@
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">月次売上サマリー</h3>
   
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
-    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #1E3A5F;">
-      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">院内売上</div>
-      <div style="font-size: 1.5rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue) }}</div>
-      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ in_house_hours }}h</div>
+  <!-- 院内 -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #1E3A5F;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="flex: 1;">
+        <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">院内</div>
+        <div style="display: flex; gap: 24px; align-items: baseline;">
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">売上: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue) }}</span>
+          </div>
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">実働時間: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #1E3A5F;">{{ in_house_hours }}h</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="detail-toggle-btn" data-category="in_house" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">詳細</button>
     </div>
-    
-    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #4CAF50;">
-      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">往診売上</div>
-      <div style="font-size: 1.5rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_revenue) }}</div>
-      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ visit_hours }}h</div>
+    <div id="detail-in_house" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ddd;">
+      {% if in_house_items %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for item in in_house_items %}
+            <div style="padding: 12px; background: #fff; border-radius: 6px;">
+              <div style="font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">{{ item.report_date }}</div>
+              {% if item.patients %}
+                {% for patient in item.patients %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
+                  <span style="color: #333;">{{ patient.patient_name or '患者不明' }}</span>
+                  <span style="font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div style="color: #999; font-size: 0.9rem;">患者情報なし</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="color: #999; font-size: 0.9rem;">データがありません</div>
+      {% endif %}
     </div>
-    
-    <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #FFB6C1;">
-      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">帯同売上</div>
-      <div style="font-size: 1.5rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_revenue) }}</div>
-      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ field_hours }}h</div>
+  </div>
+  
+  <!-- 往診 -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #4CAF50;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="flex: 1;">
+        <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">往診</div>
+        <div style="display: flex; gap: 24px; align-items: baseline;">
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">売上: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_revenue) }}</span>
+          </div>
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">実働時間: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #4CAF50;">{{ visit_hours }}h</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="detail-toggle-btn" data-category="visit" style="padding: 8px 16px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">詳細</button>
     </div>
-    
-    <div style="padding: 16px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">合計売上</div>
-      <div style="font-size: 1.5rem; font-weight: 600; color: #856404;">¥{{ "{:,}".format(total_revenue) }}</div>
-      <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">実働時間: {{ total_hours }}h</div>
+    <div id="detail-visit" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ddd;">
+      {% if visit_items %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for item in visit_items %}
+            <div style="padding: 12px; background: #fff; border-radius: 6px;">
+              <div style="font-weight: 600; color: #4CAF50; margin-bottom: 8px;">{{ item.report_date }}</div>
+              {% if item.patients %}
+                {% for patient in item.patients %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="color: #333;">{{ patient.patient_name or '患者不明' }}</span>
+                  <span style="font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div style="color: #999; font-size: 0.9rem;">患者情報なし</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="color: #999; font-size: 0.9rem;">データがありません</div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- 帯同 -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f7fb; border-radius: 8px; border-left: 4px solid #FFB6C1;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="flex: 1;">
+        <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">帯同</div>
+        <div style="display: flex; gap: 24px; align-items: baseline;">
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">売上: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_revenue) }}</span>
+          </div>
+          <div>
+            <span style="font-size: 0.85rem; color: #666;">実働時間: </span>
+            <span style="font-size: 1.3rem; font-weight: 600; color: #FFB6C1;">{{ field_hours }}h</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="detail-toggle-btn" data-category="field" style="padding: 8px 16px; background: #FFB6C1; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">詳細</button>
+    </div>
+    <div id="detail-field" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ddd;">
+      {% if field_items %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for item in field_items %}
+            <div style="padding: 12px; background: #fff; border-radius: 6px;">
+              <div style="font-weight: 600; color: #FFB6C1; margin-bottom: 8px;">{{ item.report_date }}</div>
+              {% if item.patients %}
+                {% for patient in item.patients %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 1px solid #f0f0f0;{% endif %}">
+                  <span style="color: #333;">{{ patient.patient_name or item.patient_name or '現場名不明' }}</span>
+                  <span style="font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(patient.amount or 0) }}</span>
+                </div>
+                {% endfor %}
+              {% elif item.patient_name %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                  <span style="color: #333;">{{ item.patient_name }}</span>
+                  <span style="font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(item.total_amount) }}</span>
+                </div>
+              {% else %}
+                <div style="color: #999; font-size: 0.9rem;">現場情報なし</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="color: #999; font-size: 0.9rem;">データがありません</div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- 合計 -->
+  <div style="padding: 16px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">合計</div>
+    <div style="display: flex; gap: 24px; align-items: baseline;">
+      <div>
+        <span style="font-size: 0.85rem; color: #666;">売上: </span>
+        <span style="font-size: 1.3rem; font-weight: 600; color: #856404;">¥{{ "{:,}".format(total_revenue) }}</span>
+      </div>
+      <div>
+        <span style="font-size: 0.85rem; color: #666;">実働時間: </span>
+        <span style="font-size: 1.3rem; font-weight: 600; color: #856404;">{{ total_hours }}h</span>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButtons = document.querySelectorAll('.detail-toggle-btn');
+  
+  toggleButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const category = btn.dataset.category;
+      const detailDiv = document.getElementById('detail-' + category);
+      
+      if (detailDiv.style.display === 'none') {
+        detailDiv.style.display = 'block';
+        btn.textContent = '閉じる';
+      } else {
+        detailDiv.style.display = 'none';
+        btn.textContent = '詳細';
+      }
+    });
+  });
+});
+</script>
 
 {% endblock %}
 

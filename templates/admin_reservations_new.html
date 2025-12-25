@@ -77,7 +77,7 @@
   
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <input type="datetime-local" name="reserved_at" id="reserved_at" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
   </div>
   
   <div style="margin-bottom: 20px;">
