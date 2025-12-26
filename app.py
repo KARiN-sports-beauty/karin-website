@@ -6454,11 +6454,34 @@ def admin_staff_report_profile(staff_id):
 @app.route("/admin/reports")
 @staff_required
 def admin_reports():
-    """報告書一覧"""
+    """報告書一覧（現場別）"""
     try:
-        res = supabase_admin.table("field_reports").select("*").order("report_date", desc=True).order("created_at", desc=True).execute()
-        reports = res.data or []
-        return render_template("admin_reports.html", reports=reports)
+        field_name_param = request.args.get("field_name", "").strip()
+        
+        if field_name_param:
+            # 特定現場の報告書一覧を表示
+            res = supabase_admin.table("field_reports").select("*").eq("field_name", field_name_param).order("report_date", desc=True).order("created_at", desc=True).execute()
+            reports = res.data or []
+            return render_template("admin_reports.html", reports=reports, selected_field_name=field_name_param, show_reports=True)
+        else:
+            # 現場ごとのカードを表示
+            res = supabase_admin.table("field_reports").select("field_name").execute()
+            all_reports = res.data or []
+            
+            # 現場名の一意なリストを取得（重複排除）
+            field_names = list(set([r.get("field_name") for r in all_reports if r.get("field_name")]))
+            field_names.sort()  # アルファベット順にソート
+            
+            # 各現場の報告書数を取得
+            field_counts = {}
+            for field_name in field_names:
+                try:
+                    count_res = supabase_admin.table("field_reports").select("id", count="exact").eq("field_name", field_name).execute()
+                    field_counts[field_name] = count_res.count or 0
+                except:
+                    field_counts[field_name] = 0
+            
+            return render_template("admin_reports.html", field_names=field_names, field_counts=field_counts, show_reports=False)
     except Exception as e:
         print(f"❌ 報告書一覧取得エラー: {e}")
         flash("報告書一覧の取得に失敗しました", "error")

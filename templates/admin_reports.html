@@ -14,37 +14,64 @@
 
 <div style="margin-bottom: 20px;">
   <a href="/admin/reports/new" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; text-align: center;">🆕 新規報告書作成</a>
+  {% if show_reports and selected_field_name %}
+  <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-left: 12px;">← 現場一覧に戻る</a>
+  {% endif %}
 </div>
 
-{% if reports %}
-<div style="display: flex; flex-direction: column; gap: 16px;">
-  {% for report in reports %}
-  <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ report.field_name }}</h3>
-        <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: #666;">
-          <span>📅 {{ report.report_date }}</span>
-          {% if report.place %}
-          <span>📍 {{ report.place }}</span>
-          {% endif %}
-          {% if report.staff_names %}
-          <span>👥 {{ report.staff_names | join(', ') }}</span>
-          {% endif %}
+{% if show_reports %}
+  <!-- 特定現場の報告書一覧表示 -->
+  {% if selected_field_name %}
+  <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #1E3A5F;">{{ selected_field_name }}の報告書</h3>
+  {% endif %}
+  
+  {% if reports %}
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    {% for report in reports %}
+    <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+        <div style="flex: 1;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+            <span>📅 {{ report.report_date }}</span>
+            {% if report.place %}
+            <span>📍 {{ report.place }}</span>
+            {% endif %}
+            {% if report.staff_names %}
+            <span>👥 {{ report.staff_names | join(', ') }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="/admin/reports/{{ report.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">✏ 編集</a>
+          <form action="/admin/reports/{{ report.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この報告書を削除しますか？');">
+            <button type="submit" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">🗑 削除</button>
+          </form>
         </div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <a href="/admin/reports/{{ report.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">✏ 編集</a>
-        <form action="/admin/reports/{{ report.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この報告書を削除しますか？');">
-          <button type="submit" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">🗑 削除</button>
-        </form>
-      </div>
     </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
+  {% else %}
+  <p style="color: #999; text-align: center; padding: 40px 0;">この現場の報告書がありません</p>
+  {% endif %}
 {% else %}
-<p style="color: #999; text-align: center; padding: 40px 0;">報告書がありません</p>
+  <!-- 現場ごとのカード表示 -->
+  {% if field_names %}
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+    {% for field_name in field_names %}
+    <a href="/admin/reports?field_name={{ field_name | urlencode }}" style="text-decoration: none; display: block;">
+      <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)';">
+        <h3 style="margin: 0 0 12px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ field_name }}</h3>
+        <div style="font-size: 0.9rem; color: #666;">
+          <span>報告書数: {{ field_counts.get(field_name, 0) }}件</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color: #999; text-align: center; padding: 40px 0;">報告書がありません</p>
+  {% endif %}
 {% endif %}
 
 {% endblock %}
