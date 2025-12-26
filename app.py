@@ -4975,7 +4975,7 @@ def staff_transportations_years():
         
         years_list = sorted(years_set, reverse=True)  # 新しい年から順に
         
-        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff.get("name", "スタッフ"))
+        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff.get("name", "スタッフ"), staff_id=staff_id, is_admin=False)
     except Exception as e:
         print(f"❌ 交通費年一覧取得エラー: {e}")
         flash("年一覧の取得に失敗しました", "error")
@@ -5019,7 +5019,7 @@ def staff_transportations_months(year):
         
         months_with_names = [(m, month_names.get(m, m)) for m in months_list]
         
-        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff.get("name", "スタッフ"))
+        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff.get("name", "スタッフ"), staff_id=staff_id, is_admin=False)
     except Exception as e:
         print(f"❌ 交通費月一覧取得エラー: {e}")
         flash("月一覧の取得に失敗しました", "error")
@@ -5082,13 +5082,197 @@ def staff_transportations_list(year, month):
         }
         month_name = month_names.get(month, month)
         
-        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff.get("name", "スタッフ"))
+        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff.get("name", "スタッフ"), staff_id=staff_id, is_admin=False)
     except Exception as e:
         import traceback
         print(f"❌ 交通費一覧取得エラー: {e}")
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash("交通費一覧の取得に失敗しました", "error")
         return redirect(f"/staff/transportations/years/{year}")
+
+
+# ===================================================
+# 管理者用：スタッフの交通費申請閲覧
+# ===================================================
+@app.route("/admin/staff-reports/<staff_id>/transportations/years")
+@admin_required
+def admin_staff_transportations_years(staff_id):
+    """管理者用：スタッフの交通費申請 - 年一覧ページ"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 交通費が存在する年を取得
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("date").eq("staff_id", staff_id).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 年を抽出して重複を除去
+        years_set = set()
+        for trans in transportations:
+            date = trans.get("date")
+            if date:
+                year = date[:4]  # YYYY-MM-DDから年を抽出
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)  # 新しい年から順に
+        
+        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+    except Exception as e:
+        print(f"❌ 交通費年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/menu")
+
+
+@app.route("/admin/staff-reports/<staff_id>/transportations/years/<year>")
+@admin_required
+def admin_staff_transportations_months(staff_id, year):
+    """管理者用：スタッフの交通費申請 - 月一覧ページ"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年の交通費が存在する月を取得
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("date").eq("staff_id", staff_id).gte("date", year_start).lte("date", year_end).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 月を抽出して重複を除去
+        months_set = set()
+        for trans in transportations:
+            date = trans.get("date")
+            if date:
+                month = date[5:7]  # YYYY-MM-DDから月を抽出
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)  # 新しい月から順に
+        
+        # 月の日本語名をマッピング
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+    except Exception as e:
+        print(f"❌ 交通費月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/transportations/years")
+
+
+@app.route("/admin/staff-reports/<staff_id>/transportations/years/<year>/months/<month>")
+@admin_required
+def admin_staff_transportations_list(staff_id, year, month):
+    """管理者用：スタッフの交通費申請 - 一覧ページ（指定年月）"""
+    try:
+        # スタッフ情報を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_user = next((u for u in users if u.id == staff_id), None)
+        
+        if not staff_user:
+            flash("スタッフが見つかりません", "error")
+            return redirect("/admin/staff-reports")
+        
+        meta = staff_user.user_metadata or {}
+        last_name = meta.get("last_name", "")
+        first_name = meta.get("first_name", "")
+        if last_name and first_name:
+            staff_name = f"{last_name} {first_name}"
+        else:
+            staff_name = meta.get("name", "未設定")
+        
+        # 指定年月の交通費を取得
+        month_start = f"{year}-{month}-01"
+        # 月末日を計算
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:  # 2月
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("*").eq("staff_id", staff_id).gte("date", month_start).lte("date", month_end).order("date", desc=True).execute()
+            transportations = res_transportations.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
+            transportations = []
+        
+        # 各交通費に対応する日報のmemo（本日のシフト）を取得
+        daily_report_ids = list(set(t.get("daily_report_id") for t in transportations if t.get("daily_report_id")))
+        daily_reports_map = {}
+        if daily_report_ids:
+            try:
+                res_reports = supabase_admin.table("staff_daily_reports").select("id, memo").in_("id", daily_report_ids).execute()
+                if res_reports.data:
+                    for report in res_reports.data:
+                        daily_reports_map[report["id"]] = report.get("memo") or ""
+            except Exception as e:
+                print(f"⚠️ WARNING - 日報情報取得エラー: {e}")
+        
+        # 交通費データに本日のシフトを追加
+        for trans in transportations:
+            daily_report_id = trans.get("daily_report_id")
+            trans["shift_memo"] = daily_reports_map.get(daily_report_id, "") if daily_report_id else ""
+        
+        # 月合計を計算（Python側で集計）
+        month_total = sum(t.get("amount", 0) or 0 for t in transportations)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+    except Exception as e:
+        import traceback
+        print(f"❌ 交通費一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("交通費一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/staff-reports/{staff_id}/transportations/years/{year}")
 
 
 # ===================================================

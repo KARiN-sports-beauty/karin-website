@@ -2,10 +2,14 @@
 {% block title %}交通費申請 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">🚗 交通費申請 - {{ year }}年{{ month_name }}</h2>
+<h2 class="admin-title">🚗 交通費申請 - {{ year }}年{{ month_name }}{% if is_admin %}（{{ staff_name }}）{% endif %}</h2>
 
 <div style="margin-bottom: 20px;">
+  {% if is_admin %}
+  <a href="/admin/staff-reports/{{ staff_id }}/transportations/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+  {% else %}
   <a href="/staff/transportations/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+  {% endif %}
 </div>
 
 {% if transportations %}

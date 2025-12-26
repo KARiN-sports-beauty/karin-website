@@ -2,16 +2,20 @@
 {% block title %}交通費申請 - 年一覧 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">🚗 交通費申請 - 年一覧</h2>
+<h2 class="admin-title">🚗 交通費申請 - 年一覧{% if is_admin %}（{{ staff_name }}）{% endif %}</h2>
 
 <div style="margin-bottom: 20px;">
+  {% if is_admin %}
+  <a href="/admin/staff-reports/{{ staff_id }}/menu" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← スタッフ報告メニューに戻る</a>
+  {% else %}
   <a href="/staff/profile" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← スタッフページに戻る</a>
+  {% endif %}
 </div>
 
 {% if years %}
 <div class="admin-karte-grid" style="margin-top: 20px;">
   {% for year in years %}
-  <a href="/staff/transportations/years/{{ year }}" class="admin-karte-card">
+  <a href="{% if is_admin %}/admin/staff-reports/{{ staff_id }}/transportations/years/{{ year }}{% else %}/staff/transportations/years/{{ year }}{% endif %}" class="admin-karte-card">
     <div class="admin-karte-head">
       <strong class="admin-karte-name">{{ year }}年</strong>
     </div>
