@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.field_reports (
   staff_names text[], -- 対応スタッフ（配列）
   column_count int4 NOT NULL DEFAULT 3 CHECK (column_count >= 3 AND column_count <= 5), -- 時間軸表の列数（3〜5列）
   start_time time, -- 開始時間（例：07:00）
-  end_time time, -- 終了時間（例：26:00）
+  end_time time, -- 終了時間（例：22:00）
   special_notes text, -- 特記事項
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

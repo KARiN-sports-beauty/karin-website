@@ -15,16 +15,25 @@
 <form method="POST" action="/admin/reports/new" style="max-width: 1200px;">
   <div style="margin-bottom: 20px; padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      {% if copy_from_report %}
+      <div style="margin-bottom: 20px; padding: 12px; background: #e3f2fd; border-radius: 8px; border: 1px solid #90caf9;">
+        <p style="margin: 0; font-size: 0.9rem; color: #1565c0;">
+          <strong>📋 既存の報告書から複製しています</strong><br>
+          現場「{{ copy_from_report.field_name }}」の最新報告書の情報を初期値として設定しています。必要に応じて編集してください。
+        </p>
+      </div>
+      {% endif %}
+      
       <!-- 左列 -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">現場名（必須）</label>
-          <input type="text" name="field_name" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          <input type="text" name="field_name" value="{% if copy_from_report %}{{ copy_from_report.field_name }}{% endif %}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
         </div>
         
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">場所</label>
-          <input type="text" name="place" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          <input type="text" name="place" value="{% if copy_from_report and copy_from_report.place %}{{ copy_from_report.place }}{% endif %}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
         </div>
         
         <div>
@@ -32,7 +41,7 @@
           <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #f5f7fb; border-radius: 8px; border: 1px solid #e0e0e0;">
             {% for staff in staff_list %}
             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 0;">
-              <input type="checkbox" name="staff_names" value="{{ staff.name }}" style="width: 18px; height: 18px; cursor: pointer;">
+              <input type="checkbox" name="staff_names" value="{{ staff.name }}" {% if copy_from_report and copy_from_report.staff_names and staff.name in copy_from_report.staff_names %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
               <span style="font-size: 0.95rem; color: #333;">{{ staff.name }}</span>
             </label>
             {% endfor %}
@@ -49,11 +58,11 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">開始時間</label>
-            <input type="time" name="start_time" value="07:00" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+            <input type="time" name="start_time" value="{% if copy_from_report and copy_from_report.start_time %}{{ copy_from_report.start_time }}{% else %}07:00{% endif %}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
           </div>
           <div>
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">終了時間</label>
-            <input type="time" name="end_time" value="22:00" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+            <input type="time" name="end_time" value="{% if copy_from_report and copy_from_report.end_time %}{{ copy_from_report.end_time }}{% else %}22:00{% endif %}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
           </div>
         </div>
         <div style="padding: 12px; background: #f0f7ff; border-radius: 8px; border: 1px solid #b3d9ff;">

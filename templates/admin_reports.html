@@ -59,14 +59,17 @@
   {% if field_names %}
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
     {% for field_name in field_names %}
-    <a href="/admin/reports?field_name={{ field_name | urlencode }}" style="text-decoration: none; display: block;">
-      <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)';">
-        <h3 style="margin: 0 0 12px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ field_name }}</h3>
-        <div style="font-size: 0.9rem; color: #666;">
-          <span>報告書数: {{ field_counts.get(field_name, 0) }}件</span>
+    <div style="position: relative;">
+      <a href="/admin/reports?field_name={{ field_name | urlencode }}" style="text-decoration: none; display: block;">
+        <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)';">
+          <h3 style="margin: 0 0 12px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ field_name }}</h3>
+          <div style="font-size: 0.9rem; color: #666;">
+            <span>報告書数: {{ field_counts.get(field_name, 0) }}件</span>
+          </div>
         </div>
-      </div>
-    </a>
+      </a>
+      <a href="/admin/reports/new?copy_from_field={{ field_name | urlencode }}" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; margin-top: 8px; padding: 8px 16px; font-size: 0.85rem; width: 100%; text-align: center; box-sizing: border-box;">📋 複製して新規作成</a>
+    </div>
     {% endfor %}
   </div>
   {% else %}

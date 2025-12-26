@@ -3928,16 +3928,16 @@ def admin_reservations_status(reservation_id):
                                                 res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
                                                 if not res_nom_existing.data:
                                                     nom_patient_data = {
-                                                        "item_id": nom_item_id,
-                                                        "patient_id": patient_id,
-                                                        "reservation_id": reservation_id,
-                                                        "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
-                                                        "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
-                                                        "memo": None,
-                                                        "created_at": now_iso()
-                                                    }
-                                                    supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
-                                                    print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                                                    "item_id": nom_item_id,
+                                                    "patient_id": patient_id,
+                                                    "reservation_id": reservation_id,
+                                                    "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
+                                                    "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
+                                                    "memo": None,
+                                                    "created_at": now_iso()
+                                                }
+                                                supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
+                                                print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
                                             except Exception as e:
                                                 print(f"❌ 枠指名スタッフの日報への患者情報追加エラー: {e}")
                                                 print(f"   スタッフ: {nominated_staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -5429,15 +5429,15 @@ def admin_daily_reports():
         if report_ids:
             res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).execute()
             items = res_items.data or []
-        
+            
         # スタッフ名マップを作成（report_id -> staff_name）
         staff_name_map = {}
         for report in reports:
             staff_name_map[report["id"]] = report.get("staff_name", "スタッフ不明")
         
         # 各勤務カードにスタッフ名を追加
-        for item in items:
-            report_id = item.get("daily_report_id")
+            for item in items:
+                report_id = item.get("daily_report_id")
             item["staff_name"] = staff_name_map.get(report_id, "スタッフ不明")
             # 編集権限を判定（スタッフは自分の分のみ、管理者は全て）
             item["can_edit"] = is_admin or (item["staff_name"] == staff_name)
@@ -5553,8 +5553,8 @@ def admin_daily_reports():
                         print(f"⚠️ WARNING - 予約情報チェックエラー: {e}")
             except Exception as e:
                 print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
-        
-        # 各勤務カードに患者情報を結合
+            
+            # 各勤務カードに患者情報を結合
         for item in items:
             item_id = item.get("id")
             item["patients"] = patients_map.get(item_id, [])
@@ -6516,7 +6516,18 @@ def admin_reports_new():
                 print("❌ スタッフリスト取得エラー:", e)
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            return render_template("admin_reports_new.html", staff_list=staff_list, staff_name=staff_name)
+            # 複製元の報告書を取得（copy_from_fieldパラメータがある場合）
+            copy_from_field = request.args.get("copy_from_field", "").strip()
+            copy_from_report = None
+            if copy_from_field:
+                try:
+                    res = supabase_admin.table("field_reports").select("*").eq("field_name", copy_from_field).order("report_date", desc=True).order("created_at", desc=True).limit(1).execute()
+                    if res.data:
+                        copy_from_report = res.data[0]
+                except Exception as e:
+                    print(f"⚠️ WARNING - 複製元報告書取得エラー: {e}")
+            
+            return render_template("admin_reports_new.html", staff_list=staff_list, staff_name=staff_name, copy_from_report=copy_from_report)
         except Exception as e:
             print(f"❌ 報告書作成画面取得エラー: {e}")
             flash("報告書作成画面の取得に失敗しました", "error")
@@ -6556,14 +6567,37 @@ def admin_reports_new():
             "place": place,
             "staff_names": staff_names,
             "column_count": column_count,
-            "start_time": start_time,
-            "end_time": end_time,
             "special_notes": special_notes,
             "created_at": now_iso(),
             "updated_at": now_iso()
         }
         
-        res = supabase_admin.table("field_reports").insert(report_data).execute()
+        # start_timeとend_timeを追加（カラムが存在しない場合に備えてエラーハンドリング）
+        try:
+            report_data["start_time"] = start_time
+            report_data["end_time"] = end_time
+            res = supabase_admin.table("field_reports").insert(report_data).execute()
+        except Exception as e:
+            error_str = str(e)
+            # end_timeカラムが存在しない場合
+            if "end_time" in error_str:
+                try:
+                    # start_timeのみで再試行
+                    report_data_no_end = report_data.copy()
+                    if "end_time" in report_data_no_end:
+                        del report_data_no_end["end_time"]
+                    report_data_no_end["start_time"] = start_time
+                    res = supabase_admin.table("field_reports").insert(report_data_no_end).execute()
+                except Exception as e2:
+                    # start_timeも存在しない場合は、カラムなしで挿入
+                    report_data_no_time = report_data.copy()
+                    if "start_time" in report_data_no_time:
+                        del report_data_no_time["start_time"]
+                    if "end_time" in report_data_no_time:
+                        del report_data_no_time["end_time"]
+                    res = supabase_admin.table("field_reports").insert(report_data_no_time).execute()
+            else:
+                raise
         report_id = res.data[0]["id"] if res.data else None
         
         if not report_id:
