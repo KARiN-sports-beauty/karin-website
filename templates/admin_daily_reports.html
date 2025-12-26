@@ -15,13 +15,37 @@
 
 <!-- 日付選択 -->
 <div style="margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+  {% if year and month %}
+  <div style="margin-bottom: 12px;">
+    <h3 style="margin: 0 0 12px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">{{ year }}年{{ month_name }} - 日付選択</h3>
+    {% if month_dates %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      {% for date in month_dates %}
+      <a href="/admin/daily-reports?year={{ year }}&month={{ month }}&date={{ date }}" 
+         style="padding: 8px 16px; background: {% if date == selected_date %}#1E3A5F{% else %}#f5f7fb{% endif %}; color: {% if date == selected_date %}#fff{% else %}#1E3A5F{% endif %}; border: 1px solid {% if date == selected_date %}#1E3A5F{% else %}#ddd{% endif %}; border-radius: 8px; text-decoration: none; font-weight: {% if date == selected_date %}600{% else %}500{% endif %}; font-size: 0.9rem; transition: all 0.2s;">
+        {{ date[8:10] }}日
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; font-size: 0.9rem;">この月の日報がありません</p>
+    {% endif %}
+  </div>
+  {% endif %}
   <form method="GET" action="/admin/daily-reports" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
     <label style="display: flex; align-items: center; gap: 8px;">
       <span style="font-weight: 500; color: #1E3A5F;">日付：</span>
       <input type="date" name="date" value="{{ selected_date }}" required style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+      {% if year and month %}
+      <input type="hidden" name="year" value="{{ year }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      {% endif %}
     </label>
     <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">表示</button>
     <a href="/admin/daily-reports?date={{ selected_date }}" style="padding: 8px 16px; background: #999; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">今日</a>
+    {% if year %}
+    <a href="/admin/daily-reports/years/{{ year }}" style="padding: 8px 16px; background: #666; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">← {{ year }}年に戻る</a>
+    {% endif %}
   </form>
 </div>
 
@@ -38,6 +62,7 @@
     <div style="display: flex; flex-direction: column; gap: 16px;">
       {% for item in in_house_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;" 
+           data-work-type="{{ item.work_type or 'in_house' }}"
            data-start-time="{{ item.start_time or '' }}" 
            data-end-time="{{ item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
@@ -141,6 +166,7 @@
     <div style="display: flex; flex-direction: column; gap: 16px;">
       {% for item in visit_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #4CAF50;" 
+           data-work-type="{{ item.work_type or 'visit' }}"
            data-start-time="{{ item.start_time or '' }}" 
            data-end-time="{{ item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
@@ -244,6 +270,7 @@
     <div style="display: flex; flex-direction: column; gap: 16px;">
       {% for item in field_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #FFB6C1;" 
+           data-work-type="{{ item.work_type or 'field' }}"
            data-start-time="{{ item.start_time or '' }}" 
            data-end-time="{{ item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
@@ -390,6 +417,7 @@
 <script>
 // 編集モーダルのデータを保持
 let editModalData = {};
+const isAdmin = {% if is_admin %}true{% else %}false{% endif %};
 
 // 編集ボタンのイベントリスナー
 document.addEventListener('DOMContentLoaded', function() {
@@ -429,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           // データ属性から値を取得
+          const workType = itemCard.dataset.workType || '';
           const startTime = itemCard.dataset.startTime || '';
           const endTime = itemCard.dataset.endTime || '';
           const breakMinutes = itemCard.dataset.breakMinutes || '0';
@@ -460,12 +489,13 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // 患者情報を表示
           const patientsContainer = document.getElementById('edit-patients-container');
+          const isField = workType === 'field';
           if (patients && patients.length > 0) {
-            let patientsHtml = '<div style="margin-bottom: 16px;"><strong style="color: #1E3A5F; font-size: 1rem;">患者情報</strong></div>';
+            let patientsHtml = '<div style="margin-bottom: 16px;"><strong style="color: #1E3A5F; font-size: 1rem;">' + (isField ? '現場情報' : '患者情報') + '</strong></div>';
             patients.forEach(function(patient, index) {
               const patientId = patient.patient_id || '';
               const patientReportId = patient.id || '';
-              const patientName = patient.patient_name || '患者不明';
+              const patientName = patient.patient_name || (isField ? '現場名不明' : '患者不明');
               const courseName = patient.course_name || '';
               const amount = patient.amount || 0;
               
@@ -473,25 +503,40 @@ document.addEventListener('DOMContentLoaded', function() {
               patientsHtml += '<input type="hidden" name="patient_id[]" value="' + patientId + '">';
               patientsHtml += '<input type="hidden" name="patient_report_id[]" value="' + patientReportId + '">';
               patientsHtml += '<div style="margin-bottom: 8px;"><strong style="color: #1E3A5F;">' + patientName;
-              if (patient.vip_level === 'star') {
+              if (!isField && patient.vip_level === 'star') {
                 patientsHtml += ' ⭐️';
-              } else if (patient.vip_level === 'clover') {
+              } else if (!isField && patient.vip_level === 'clover') {
                 patientsHtml += ' 🍀';
               }
               patientsHtml += '</strong></div>';
-              patientsHtml += '<div style="margin-bottom: 8px;">';
-              patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">コース名</label>';
-              patientsHtml += '<input type="text" name="patient_course_name[]" value="' + (courseName.replace(/"/g, '&quot;')) + '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
-              patientsHtml += '</div>';
-              patientsHtml += '<div>';
-              patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">金額</label>';
-              patientsHtml += '<input type="number" name="patient_amount[]" value="' + amount + '" min="0" step="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
-              patientsHtml += '</div>';
+              // 院内・往診の場合のみコース名を表示
+              if (!isField) {
+                patientsHtml += '<div style="margin-bottom: 8px;">';
+                patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">コース名</label>';
+                patientsHtml += '<input type="text" name="patient_course_name[]" value="' + (courseName.replace(/"/g, '&quot;')) + '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+                patientsHtml += '</div>';
+              }
+              // 金額編集
+              if (isField) {
+                // 帯同の場合はadminのみ金額編集を表示
+                if (isAdmin) {
+                  patientsHtml += '<div style="margin-bottom: 8px;">';
+                  patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">金額（管理者のみ編集可能）</label>';
+                  patientsHtml += '<input type="number" name="patient_amount[]" value="' + amount + '" min="0" step="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+                  patientsHtml += '</div>';
+                }
+              } else {
+                // 院内・往診は常に金額編集を表示
+                patientsHtml += '<div style="margin-bottom: 8px;">';
+                patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">金額</label>';
+                patientsHtml += '<input type="number" name="patient_amount[]" value="' + amount + '" min="0" step="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';
+                patientsHtml += '</div>';
+              }
               patientsHtml += '</div>';
             });
             patientsContainer.innerHTML = patientsHtml;
           } else {
-            patientsContainer.innerHTML = '<p style="color: #666; font-size: 0.9rem;">患者情報がありません</p>';
+            patientsContainer.innerHTML = '<p style="color: #666; font-size: 0.9rem;">' + (isField ? '現場情報がありません' : '患者情報がありません') + '</p>';
           }
           
           // モーダルを表示

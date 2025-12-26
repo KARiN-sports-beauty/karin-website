@@ -5585,15 +5585,163 @@ def admin_revenue_month_detail(staff_id, year, month):
 
 @app.route("/admin/daily-reports", methods=["GET"])
 @staff_required
-def admin_daily_reports():
+def admin_daily_reports_index():
+    """日報一覧のインデックス（年一覧にリダイレクト）"""
+    return redirect("/admin/daily-reports/years")
+
+
+@app.route("/admin/daily-reports/years", methods=["GET"])
+@staff_required
+def admin_daily_reports_years():
+    """日報一覧 - 年一覧"""
+    try:
+        # 日報が存在する年を取得（全スタッフ）
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        years_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                year = report_date[:4]
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)
+        
+        return render_template("admin_daily_reports_years.html", years=years_list)
+    except Exception as e:
+        import traceback
+        print(f"❌ 年一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/daily-reports/years/<year>", methods=["GET"])
+@staff_required
+def admin_daily_reports_months(year):
+    """日報一覧 - 月一覧"""
+    try:
+        # 指定年の日報が存在する月を取得（全スタッフ）
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", year_start).lte("report_date", year_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        months_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                month = report_date[5:7]
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("admin_daily_reports_months.html", year=year, months=months_with_names)
+    except Exception as e:
+        import traceback
+        print(f"❌ 月一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect("/admin/daily-reports/years")
+
+
+@app.route("/admin/daily-reports/years/<year>/months/<month>", methods=["GET"])
+@staff_required
+def admin_daily_reports_dates(year, month):
+    """日報一覧 - 日付一覧（シート選択）"""
+    try:
+        # 指定年月の日報が存在する日付を取得（全スタッフ）
+        month_start = f"{year}-{month}-01"
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", month_start).lte("report_date", month_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        dates_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                dates_set.add(report_date)
+        
+        dates_list = sorted(dates_set, reverse=True)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("admin_daily_reports_dates.html", year=year, month=month, month_name=month_name, dates=dates_list)
+    except Exception as e:
+        import traceback
+        print(f"❌ 日付一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("日付一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/daily-reports/years/{year}")
+
+
+@app.route("/admin/daily-reports/years/<year>/months/<month>/dates/<date>", methods=["GET"])
+@app.route("/admin/daily-reports", methods=["GET"])
+@staff_required
+def admin_daily_reports(year=None, month=None, date=None):
     """
     会社の公式日報一覧（1日1画面、全スタッフ統合表示）
     - スタッフ：自分の分のみ編集可能
     - 管理者：全て編集可能
     """
     try:
-        # 日付パラメータ取得（デフォルトは今日）
-        selected_date = request.args.get("date", datetime.now(JST).strftime("%Y-%m-%d"))
+        # 日付パラメータ取得（URLパスから、またはクエリパラメータから、デフォルトは今日）
+        if date:
+            selected_date = date
+        else:
+            selected_date = request.args.get("date")
+            if not selected_date:
+                # yearとmonthが指定されている場合は、その月の最初の日付を取得
+                year = request.args.get("year")
+                month = request.args.get("month")
+                if year and month:
+                    # その月に日報が存在する最初の日付を取得
+                    month_start = f"{year}-{month}-01"
+                    if month in ["01", "03", "05", "07", "08", "10", "12"]:
+                        month_end = f"{year}-{month}-31"
+                    elif month in ["04", "06", "09", "11"]:
+                        month_end = f"{year}-{month}-30"
+                    else:
+                        year_int = int(year)
+                        if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                            month_end = f"{year}-{month}-29"
+                        else:
+                            month_end = f"{year}-{month}-28"
+                    
+                    try:
+                        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", month_start).lte("report_date", month_end).order("report_date", desc=True).execute()
+                        if res_reports.data and len(res_reports.data) > 0:
+                            selected_date = res_reports.data[0].get("report_date")
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 月の最初の日付取得エラー: {e}")
+                
+                # デフォルトは今日
+                if not selected_date:
+                    selected_date = datetime.now(JST).strftime("%Y-%m-%d")
         
         # ログイン中のスタッフ情報を取得
         staff = session.get("staff", {})
@@ -5680,10 +5828,39 @@ def admin_daily_reports():
                                 "vip_level": p.get("vip_level")
                             }
                 
+                # 予約情報を先に取得して、コース名マップを作成（院内・往診用）
+                reservation_ids = [p.get("reservation_id") for p in patients if p.get("reservation_id")]
+                invalid_reservation_ids = []
+                reservation_course_map = {}  # {reservation_id: course_name}
+                if reservation_ids:
+                    try:
+                        res_reservations_info = supabase_admin.table("reservations").select("id, status, course_name").in_("id", reservation_ids).execute()
+                        found_reservation_ids = {r.get("id") for r in res_reservations_info.data} if res_reservations_info.data else set()
+                        # 存在しない予約IDを収集
+                        invalid_reservation_ids.extend([rid for rid in reservation_ids if rid not in found_reservation_ids])
+                        # 完了状態でない予約IDを収集、コース名をマップに追加
+                        if res_reservations_info.data:
+                            for r_info in res_reservations_info.data:
+                                if r_info.get("status") != "completed":
+                                    invalid_reservation_ids.append(r_info.get("id"))
+                                else:
+                                    # 完了状態の予約からコース名を取得
+                                    reservation_course_map[r_info.get("id")] = r_info.get("course_name", "")
+                        
+                        # 無効な予約に関連する日報患者情報を削除
+                        if invalid_reservation_ids:
+                            supabase_admin.table("staff_daily_report_patients").delete().in_("reservation_id", invalid_reservation_ids).execute()
+                            print(f"✅ 全体の日報から無効な予約に関連する患者情報を削除しました: {len(invalid_reservation_ids)}件")
+                            # 削除後、患者データからも除外
+                            patients = [p for p in patients if p.get("reservation_id") not in invalid_reservation_ids]
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 予約情報チェックエラー: {e}")
+                
                 # item_idごとにグループ化
                 for patient in patients:
                     item_id = patient.get("item_id")
                     patient_id = patient.get("patient_id")
+                    reservation_id = patient.get("reservation_id")
                     
                     if item_id not in patients_map:
                         patients_map[item_id] = []
@@ -5696,45 +5873,20 @@ def admin_daily_reports():
                         patient["patient_name"] = None
                         patient["vip_level"] = None
                     
+                    # コース名を予約データから取得して反映（院内・往診用、編集時の反映のため）
+                    # 予約データのコース名を優先（staff_daily_report_patientsのcourse_nameが空の場合、予約データから取得）
+                    if reservation_id and reservation_id in reservation_course_map:
+                        reservation_course = reservation_course_map[reservation_id]
+                        # 既存のcourse_nameが空の場合は予約データのcourse_nameを使用
+                        if not patient.get("course_name") and reservation_course:
+                            patient["course_name"] = reservation_course
+                            # staff_daily_report_patientsテーブルにも反映（既存レコードを更新）
+                            try:
+                                supabase_admin.table("staff_daily_report_patients").update({"course_name": reservation_course}).eq("id", patient.get("id")).execute()
+                            except Exception as e:
+                                print(f"⚠️ WARNING - コース名更新エラー: {e}")
+                    
                     patients_map[item_id].append(patient)
-                
-                # 予約情報を取得して、存在しない、または完了状態でない予約をフィルタリング
-                reservation_ids = [p.get("reservation_id") for p in patients if p.get("reservation_id")]
-                invalid_reservation_ids = []
-                if reservation_ids:
-                    try:
-                        res_reservations_info = supabase_admin.table("reservations").select("id, status").in_("id", reservation_ids).execute()
-                        found_reservation_ids = {r.get("id") for r in res_reservations_info.data} if res_reservations_info.data else set()
-                        # 存在しない予約IDを収集
-                        invalid_reservation_ids.extend([rid for rid in reservation_ids if rid not in found_reservation_ids])
-                        # 完了状態でない予約IDを収集
-                        if res_reservations_info.data:
-                            for r_info in res_reservations_info.data:
-                                if r_info.get("status") != "completed":
-                                    invalid_reservation_ids.append(r_info.get("id"))
-                        
-                        # 無効な予約に関連する日報患者情報を削除
-                        if invalid_reservation_ids:
-                            supabase_admin.table("staff_daily_report_patients").delete().in_("reservation_id", invalid_reservation_ids).execute()
-                            print(f"✅ 全体の日報から無効な予約に関連する患者情報を削除しました: {len(invalid_reservation_ids)}件")
-                            # 削除後、患者データからも除外
-                            patients = [p for p in patients if p.get("reservation_id") not in invalid_reservation_ids]
-                            # patients_mapも再構築
-                            patients_map = {}
-                            for patient in patients:
-                                item_id = patient.get("item_id")
-                                patient_id = patient.get("patient_id")
-                                if item_id not in patients_map:
-                                    patients_map[item_id] = []
-                                if patient_id and patient_id in patient_info_map:
-                                    patient["patient_name"] = patient_info_map[patient_id]["name"]
-                                    patient["vip_level"] = patient_info_map[patient_id]["vip_level"]
-                                else:
-                                    patient["patient_name"] = None
-                                    patient["vip_level"] = None
-                                patients_map[item_id].append(patient)
-                    except Exception as e:
-                        print(f"⚠️ WARNING - 予約情報チェックエラー: {e}")
             except Exception as e:
                 print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
             
@@ -5813,9 +5965,54 @@ def admin_daily_reports():
                 except Exception as e:
                     print(f"⚠️ WARNING - 当月累計計算エラー: {e}")
         
+        # その月の全日付を取得（日付ボタン用）
+        month_dates = []
+        year_param = request.args.get("year")
+        month_param = request.args.get("month")
+        if not year_param or not month_param:
+            # selected_dateから年と月を抽出
+            year_param = selected_date[:4]
+            month_param = selected_date[5:7]
+        
+        if year_param and month_param:
+            month_start = f"{year_param}-{month_param}-01"
+            if month_param in ["01", "03", "05", "07", "08", "10", "12"]:
+                month_end = f"{year_param}-{month_param}-31"
+            elif month_param in ["04", "06", "09", "11"]:
+                month_end = f"{year_param}-{month_param}-30"
+            else:
+                year_int = int(year_param)
+                if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                    month_end = f"{year_param}-{month_param}-29"
+                else:
+                    month_end = f"{year_param}-{month_param}-28"
+            
+            try:
+                res_month_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", month_start).lte("report_date", month_end).order("report_date", desc=True).execute()
+                if res_month_reports.data:
+                    dates_set = set()
+                    for report in res_month_reports.data:
+                        report_date = report.get("report_date")
+                        if report_date:
+                            dates_set.add(report_date)
+                    month_dates = sorted(list(dates_set), reverse=True)
+            except Exception as e:
+                print(f"⚠️ WARNING - 月の日付一覧取得エラー: {e}")
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month_param, month_param) if month_param else ""
+        
         return render_template(
             "admin_daily_reports.html",
             selected_date=selected_date,
+            year=year_param,
+            month=month_param,
+            month_name=month_name,
+            month_dates=month_dates,
             in_house_items=in_house_items,
             visit_items=visit_items,
             field_items=field_items,
@@ -5902,6 +6099,7 @@ def admin_daily_reports_item_update(item_id):
         
         item = res_item.data[0]
         daily_report_id = item.get("daily_report_id")
+        work_type = item.get("work_type")  # 勤務カードのwork_typeを取得
         
         # 日報情報を取得してスタッフ名を確認
         res_report = supabase_admin.table("staff_daily_reports").select("staff_name").eq("id", daily_report_id).execute()
@@ -5950,6 +6148,24 @@ def admin_daily_reports_item_update(item_id):
         existing_patients = res_patients.data or []
         existing_patient_report_ids = {p.get("id") for p in existing_patients}
         
+        # 予約IDを収集してコース名を取得（院内・往診用）
+        reservation_ids_for_course = []
+        for p in existing_patients:
+            reservation_id = p.get("reservation_id")
+            if reservation_id:
+                reservation_ids_for_course.append(reservation_id)
+        
+        reservation_course_map = {}
+        if reservation_ids_for_course:
+            try:
+                res_reservations = supabase_admin.table("reservations").select("id, course_name, status").in_("id", reservation_ids_for_course).execute()
+                if res_reservations.data:
+                    for r in res_reservations.data:
+                        if r.get("status") == "completed":
+                            reservation_course_map[r.get("id")] = r.get("course_name", "")
+            except Exception as e:
+                print(f"⚠️ WARNING - 予約コース名取得エラー: {e}")
+        
         # 患者情報を更新
         for i, patient_report_id in enumerate(patient_report_ids):
             if patient_report_id and patient_report_id in existing_patient_report_ids:
@@ -5957,22 +6173,49 @@ def admin_daily_reports_item_update(item_id):
                 patient_amount = int(patient_amounts[i]) if i < len(patient_amounts) and patient_amounts[i] and patient_amounts[i].isdigit() else 0
                 patient_course_name = patient_course_names[i] if i < len(patient_course_names) else None
                 
-                patient_update_data = {
-                    "amount": patient_amount,
-                    "course_name": patient_course_name
-                }
-                
-                # reservation_idがある場合は予約データも更新
+                # 予約データからコース名を取得（院内・往診用、編集時に反映）
                 patient_data = next((p for p in existing_patients if p.get("id") == patient_report_id), None)
                 if patient_data:
                     reservation_id = patient_data.get("reservation_id")
-                    if reservation_id:
+                    
+                    # 院内・往診の場合、予約データからコース名を取得して反映（編集時に予約データの最新値を反映）
+                    if work_type in ["in_house", "visit"] and reservation_id and reservation_id in reservation_course_map:
+                        # 予約データからコース名を取得（入力値が空の場合は予約データの値を使用、入力値がある場合は入力値を優先）
+                        reservation_course_name = reservation_course_map[reservation_id]
+                        if reservation_course_name:
+                            # 入力値が空の場合は予約データの値を使用、入力値がある場合は入力値を優先
+                            if not patient_course_name or patient_course_name.strip() == "":
+                                patient_course_name = reservation_course_name
+                    
+                    patient_update_data = {
+                        "amount": patient_amount,
+                        "course_name": patient_course_name if work_type in ["in_house", "visit"] else None
+                    }
+                    
+                    # reservation_idがある場合は予約データも更新（院内・往診のみ）
+                    if reservation_id and work_type in ["in_house", "visit"]:
                         try:
+                            # 予約データのbase_priceを更新
                             supabase_admin.table("reservations").update({"base_price": patient_amount}).eq("id", reservation_id).execute()
+                            # 予約データのcourse_nameを更新（編集時に変更があった場合）
+                            if patient_course_name:
+                                supabase_admin.table("reservations").update({"course_name": patient_course_name}).eq("id", reservation_id).execute()
                         except Exception as e:
                             print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
-                
-                supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report_id).execute()
+                    elif work_type == "field":
+                        # 帯同の場合、adminのみ金額編集可能（既に権限チェック済み）
+                        # 帯同の金額はstaff_daily_report_patientsにのみ保存（予約データへの同期は不要）
+                        pass
+                    
+                    # staff_daily_report_patientsを更新
+                    supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report_id).execute()
+                else:
+                    # patient_dataが見つからない場合でも更新を試みる
+                    patient_update_data = {
+                        "amount": patient_amount,
+                        "course_name": patient_course_name if work_type in ["in_house", "visit"] else None
+                    }
+                    supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report_id).execute()
         
         # 日報の日付を取得して適切にredirect
         res_report_for_date = supabase_admin.table("staff_daily_reports").select("report_date").eq("id", daily_report_id).execute()

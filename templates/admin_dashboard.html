@@ -130,6 +130,15 @@
             </p>
         </a>
 
+        <a href="/admin/equipment" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">備品管理</span>
+            </div>
+            <p class="dash-card-text">
+            備品の管理を行います。
+            </p>
+        </a>
+
         {% if session.staff and session.staff.is_admin == True %}
         <!-- 🔒 管理者専用：スタッフ一覧（管理） -->
         <a href="/admin/staff" class="dash-card">
