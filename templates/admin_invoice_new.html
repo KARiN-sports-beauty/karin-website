@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}新規請求書作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🆕 新規請求書作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/invoices/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-right: 12px;">← 請求書一覧に戻る</a>
+</div>
+
+<form method="POST" action="/admin/invoices/new" style="max-width: 1000px;">
+  <!-- 基本情報 -->
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">基本情報</h3>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求先（現場名）<span style="color: #f44336;">*</span></label>
+      <input type="text" name="place_name" id="place_name" required placeholder="現場名を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      {% if existing_places %}
+      <select id="existing_place_select" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; margin-top: 8px;" onchange="fillExistingPlace()">
+        <option value="">既存の請求先から選択（選択すると自動入力されます）</option>
+        {% for place in existing_places %}
+        <option value="{{ place.place_name }}" data-address="{{ place.address or '' }}" data-phone="{{ place.phone or '' }}" data-contact="{{ place.contact_person or '' }}">{{ place.place_name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求先住所</label>
+      <input type="text" name="place_address" id="place_address" placeholder="請求先の住所を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求先電話番号</label>
+      <input type="text" name="place_phone" id="place_phone" placeholder="請求先の電話番号を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">担当者名</label>
+      <input type="text" name="place_contact_person" id="place_contact_person" placeholder="担当者名を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象年<span style="color: #f44336;">*</span></label>
+        <input type="number" name="year" required min="2020" max="2100" value="{{ current_year or '' }}" placeholder="例：2025" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象月<span style="color: #f44336;">*</span></label>
+        <select name="month" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          <option value="">選択してください</option>
+          <option value="01">1月</option>
+          <option value="02">2月</option>
+          <option value="03">3月</option>
+          <option value="04">4月</option>
+          <option value="05">5月</option>
+          <option value="06">6月</option>
+          <option value="07">7月</option>
+          <option value="08">8月</option>
+          <option value="09">9月</option>
+          <option value="10">10月</option>
+          <option value="11">11月</option>
+          <option value="12">12月</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">発行日<span style="color: #f44336;">*</span></label>
+        <input type="date" name="issue_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">支払期限<span style="color: #f44336;">*</span></label>
+        <input type="date" name="due_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">備考</label>
+      <textarea name="notes" rows="3" placeholder="備考を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+    </div>
+  </div>
+  
+  <!-- 明細 -->
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">請求明細</h3>
+      <button type="button" onclick="addItemRow()" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 16px; font-size: 0.9rem;">+ 明細を追加</button>
+    </div>
+    
+    <div id="items_container">
+      <div class="item-row" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">日付<span style="color: #f44336;">*</span></label>
+          <input type="date" name="item_date" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">内容</label>
+          <input type="text" name="item_description" placeholder="例：トレーナー帯同" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">金額<span style="color: #f44336;">*</span></label>
+          <input type="number" name="item_amount" required min="0" placeholder="例：11000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+        </div>
+        <div>
+          <button type="button" onclick="removeItemRow(this)" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">削除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: flex; gap: 12px;">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 作成</button>
+    <a href="/admin/invoices/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">キャンセル</a>
+  </div>
+</form>
+
+<script>
+function addItemRow() {
+  const container = document.getElementById('items_container');
+  const newRow = document.createElement('div');
+  newRow.className = 'item-row';
+  newRow.style.cssText = 'display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;';
+  newRow.innerHTML = `
+    <div>
+      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">日付<span style="color: #f44336;">*</span></label>
+      <input type="date" name="item_date" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">内容</label>
+      <input type="text" name="item_description" placeholder="例：トレーナー帯同" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">金額<span style="color: #f44336;">*</span></label>
+      <input type="number" name="item_amount" required min="0" placeholder="例：11000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <button type="button" onclick="removeItemRow(this)" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">削除</button>
+    </div>
+  `;
+  container.appendChild(newRow);
+}
+
+function removeItemRow(button) {
+  const container = document.getElementById('items_container');
+  if (container.children.length > 1) {
+    button.closest('.item-row').remove();
+  } else {
+    alert('明細は最低1件必要です');
+  }
+}
+
+function fillExistingPlace() {
+  const select = document.getElementById('existing_place_select');
+  const option = select.options[select.selectedIndex];
+  if (option.value) {
+    document.getElementById('place_name').value = option.value;
+    document.getElementById('place_address').value = option.dataset.address || '';
+    document.getElementById('place_phone').value = option.dataset.phone || '';
+    document.getElementById('place_contact_person').value = option.dataset.contact || '';
+  }
+}
+
+// 今日の日付をデフォルト値に設定
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  
+  // 発行日のデフォルトを今日に設定
+  const issueDateInput = document.querySelector('input[name="issue_date"]');
+  if (issueDateInput && !issueDateInput.value) {
+    issueDateInput.value = `${year}-${month}-${day}`;
+  }
+  
+  // 年フィールドのデフォルトを今年に設定
+  const yearInput = document.querySelector('input[name="year"]');
+  if (yearInput && !yearInput.value) {
+    yearInput.value = year;
+  }
+});
+</script>
+
+{% endblock %}
+

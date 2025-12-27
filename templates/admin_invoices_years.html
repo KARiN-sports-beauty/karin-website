@@ -4,8 +4,9 @@
 {% block content %}
 <h2 class="admin-title">🧾 請求書一覧 - 年選択</h2>
 
-<div style="margin-bottom: 20px;">
-  <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← ダッシュボードに戻る</a>
+<div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
+  <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none;">← ダッシュボードに戻る</a>
+  <a href="/admin/invoices/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">🆕 新規請求書作成</a>
 </div>
 
 {% if years %}

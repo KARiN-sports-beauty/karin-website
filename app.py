@@ -2830,8 +2830,8 @@ def index():
                         else:
                             continue
                     
-                    if d >= today:
-                        upcoming.append(s)
+                if d >= today:
+                    upcoming.append(s)
             except Exception as e:
                 print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
                 continue
@@ -3928,16 +3928,16 @@ def admin_reservations_status(reservation_id):
                                                 res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
                                                 if not res_nom_existing.data:
                                                     nom_patient_data = {
-                                                    "item_id": nom_item_id,
-                                                    "patient_id": patient_id,
-                                                    "reservation_id": reservation_id,
-                                                    "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
-                                                    "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
-                                                    "memo": None,
-                                                    "created_at": now_iso()
-                                                }
-                                                supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
-                                                print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                                                        "item_id": nom_item_id,
+                                                        "patient_id": patient_id,
+                                                        "reservation_id": reservation_id,
+                                                        "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
+                                                        "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
+                                                        "memo": None,
+                                                        "created_at": now_iso()
+                                                    }
+                                                    supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
+                                                    print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
                                             except Exception as e:
                                                 print(f"❌ 枠指名スタッフの日報への患者情報追加エラー: {e}")
                                                 print(f"   スタッフ: {nominated_staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -5417,7 +5417,7 @@ def admin_revenue_month_all(year, month):
         if report_ids:
             res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).execute()
             items = res_items.data or []
-        
+            
         # 患者情報を取得
         item_ids = [item["id"] for item in items]
         patients_map = {}
@@ -6749,38 +6749,38 @@ def admin_daily_reports(year=None, month=None, date=None):
                 print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
             
             # 各勤務カードに患者情報を結合
-        for item in items:
-            item_id = item.get("id")
-            item["patients"] = patients_map.get(item_id, [])
-            
-            # 金額を計算（Python側で集計）
-            patients = item["patients"]
-            item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
-            
-            # 時刻表示用に整形
-            if item.get("start_time"):
-                try:
-                    if isinstance(item["start_time"], str):
-                        time_parts = item["start_time"].split(":")
-                        item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                    else:
-                        item["start_time_display"] = str(item["start_time"])[:5]
-                except:
-                    item["start_time_display"] = item.get("start_time", "")
-            else:
-                item["start_time_display"] = ""
-            
-            if item.get("end_time"):
-                try:
-                    if isinstance(item["end_time"], str):
-                        time_parts = item["end_time"].split(":")
-                        item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                    else:
-                        item["end_time_display"] = str(item["end_time"])[:5]
-                except:
-                    item["end_time_display"] = item.get("end_time", "")
-            else:
-                item["end_time_display"] = ""
+            for item in items:
+                item_id = item.get("id")
+                item["patients"] = patients_map.get(item_id, [])
+                
+                # 金額を計算（Python側で集計）
+                patients = item["patients"]
+                item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
+                
+                # 時刻表示用に整形
+                if item.get("start_time"):
+                    try:
+                        if isinstance(item["start_time"], str):
+                            time_parts = item["start_time"].split(":")
+                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["start_time_display"] = str(item["start_time"])[:5]
+                    except:
+                        item["start_time_display"] = item.get("start_time", "")
+                else:
+                    item["start_time_display"] = ""
+                
+                if item.get("end_time"):
+                    try:
+                        if isinstance(item["end_time"], str):
+                            time_parts = item["end_time"].split(":")
+                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["end_time_display"] = str(item["end_time"])[:5]
+                    except:
+                        item["end_time_display"] = item.get("end_time", "")
+                else:
+                    item["end_time_display"] = ""
         
         # 当日小計・当月累計を計算（Python側で集計）
         # 当日小計（各itemのtotal_amountを使用）
