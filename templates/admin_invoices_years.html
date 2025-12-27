@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}請求書一覧 - 年選択 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🧾 請求書一覧 - 年選択</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← ダッシュボードに戻る</a>
+</div>
+
+{% if years %}
+<div class="admin-karte-grid" style="margin-top: 20px;">
+  {% for year in years %}
+  <a href="/admin/invoices/years/{{ year }}/months" class="admin-karte-card">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name">{{ year }}年</strong>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">請求書データがありません。</p>
+{% endif %}
+
+{% endblock %}
+

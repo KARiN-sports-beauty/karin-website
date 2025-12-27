@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}請求書詳細 - {{ invoice.invoice_number }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🧾 請求書詳細</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/invoices/years/{{ invoice.year }}/months/{{ '%02d' | format(invoice.month) }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-right: 12px;">← 請求書一覧に戻る</a>
+  <a href="/admin/invoices/{{ invoice.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; text-align: center;">✏ 編集</a>
+</div>
+
+<!-- 請求書フォーマット -->
+<div style="padding: 40px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-top: 20px;">
+  <!-- ヘッダー -->
+  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px;">
+    <div>
+      <div style="font-size: 1.5rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">{{ company_info.name }}</div>
+      <div style="font-size: 0.9rem; color: #666; line-height: 1.6;">
+        〒{{ company_info.address }}<br>
+        TEL: {{ company_info.phone }}
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-size: 1.3rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">請求書</div>
+      <div style="font-size: 0.9rem; color: #666;">
+        請求書番号：{{ invoice.invoice_number }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- 請求先 -->
+  <div style="margin-bottom: 30px;">
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">請求先</div>
+    <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ invoice.place_name }}</div>
+    {% if invoice.place_address %}
+    <div style="font-size: 0.95rem; color: #333; margin-bottom: 2px;">{{ invoice.place_address }}</div>
+    {% endif %}
+    {% if invoice.place_phone %}
+    <div style="font-size: 0.95rem; color: #333; margin-bottom: 2px;">TEL: {{ invoice.place_phone }}</div>
+    {% endif %}
+    {% if invoice.place_contact_person %}
+    <div style="font-size: 0.95rem; color: #333;">担当者：{{ invoice.place_contact_person }}</div>
+    {% endif %}
+  </div>
+  
+  <!-- 請求期間・支払期限 -->
+  <div style="margin-bottom: 30px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
+    <div style="display: flex; gap: 24px; font-size: 0.95rem; color: #333;">
+      <div>
+        <span style="color: #666;">請求期間：</span>
+        <span style="font-weight: 600;">{{ invoice.year }}年{{ month_name }}（{{ invoice.issue_date }} 発行）</span>
+      </div>
+      <div>
+        <span style="color: #666;">支払期限：</span>
+        <span style="font-weight: 600;">{{ invoice.due_date }}</span>
+      </div>
+      <div>
+        <span style="color: #666;">状態：</span>
+        {% if invoice.status == 'draft' %}
+        <span style="font-weight: 600; color: #856404;">未作成</span>
+        {% elif invoice.status == 'sent' %}
+        <span style="font-weight: 600; color: #0c5460;">発送済み（{{ invoice.sent_at }}）</span>
+        {% elif invoice.status == 'paid' %}
+        <span style="font-weight: 600; color: #155724;">入金済み（{{ invoice.paid_at }}）</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- 明細表 -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+    <thead>
+      <tr style="background: #f5f7fb; border-bottom: 2px solid #1E3A5F;">
+        <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F; border-right: 1px solid #ddd;">日付</th>
+        <th style="padding: 12px; text-align: left; font-weight: 600; color: #1E3A5F; border-right: 1px solid #ddd;">内容</th>
+        <th style="padding: 12px; text-align: right; font-weight: 600; color: #1E3A5F;">金額</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 12px; border-right: 1px solid #ddd;">{{ item.report_date }}</td>
+        <td style="padding: 12px; border-right: 1px solid #ddd;">{{ item.description or 'トレーナー帯同' }}</td>
+        <td style="padding: 12px; text-align: right; font-weight: 600;">¥{{ "{:,}".format(item.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <!-- 合計 -->
+  <div style="margin-left: auto; width: 300px; margin-bottom: 30px;">
+    <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ddd;">
+      <span style="font-weight: 600; color: #333;">小計（税抜）</span>
+      <span style="font-weight: 600; color: #333;">¥{{ "{:,}".format(invoice.subtotal_amount) }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ddd;">
+      <span style="font-weight: 600; color: #333;">消費税（10%）</span>
+      <span style="font-weight: 600; color: #333;">¥{{ "{:,}".format(invoice.tax_amount) }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #1E3A5F; border-bottom: 2px solid #1E3A5F; margin-top: 8px;">
+      <span style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">合計（税込）</span>
+      <span style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(invoice.total_amount) }}</span>
+    </div>
+  </div>
+  
+  <!-- 振込先情報 -->
+  <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; margin-bottom: 20px;">
+    <div style="font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">振込先情報</div>
+    <div style="font-size: 0.95rem; color: #333; line-height: 1.6;">
+      {{ company_info.bank }} {{ company_info.branch }} {{ company_info.account_type }}<br>
+      口座番号：{{ company_info.account_number }}<br>
+      口座名義：{{ company_info.account_name }}
+    </div>
+  </div>
+  
+  <!-- 備考 -->
+  {% if invoice.notes %}
+  <div style="padding: 16px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+    <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">備考</div>
+    <div style="font-size: 0.95rem; color: #856404; white-space: pre-wrap;">{{ invoice.notes }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+

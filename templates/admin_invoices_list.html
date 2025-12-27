@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}請求書一覧 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🧾 請求書一覧 - {{ year }}年{{ month_name }}</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/invoices/years/{{ year }}/months" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+  {% if has_field_data %}
+  <form method="POST" action="/admin/invoices/years/{{ year }}/months/{{ month }}/auto-create" style="display: inline-block; margin-left: 12px;" onsubmit="return confirm('{{ year }}年{{ month_name }}の帯同データから請求書を自動作成しますか？');">
+    <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">🔄 請求書を自動作成</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if invoices %}
+<div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;">
+  {% for invoice in invoices %}
+  <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+      <div style="flex: 1;">
+        <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">
+          {{ invoice.place_name }}
+        </div>
+        <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">
+          請求書番号：{{ invoice.invoice_number }}
+        </div>
+        <div style="font-size: 0.9rem; color: #666;">
+          請求期間：{{ year }}年{{ month_name }}（{{ invoice.issue_date }} 発行、支払期限：{{ invoice.due_date }}）
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: end; gap: 8px;">
+        <div>
+          {% if invoice.status == 'draft' %}
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: #ffc107; color: #856404;">未作成</span>
+          {% elif invoice.status == 'sent' %}
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: #17a2b8; color: #fff;">発送済み</span>
+          {% elif invoice.status == 'paid' %}
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: #28a745; color: #fff;">入金済み</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">
+          ¥{{ "{:,}".format(invoice.total_amount) }}
+        </div>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 8px; margin-top: 12px;">
+      <a href="/admin/invoices/{{ invoice.id }}" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">詳細</a>
+      <a href="/admin/invoices/{{ invoice.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">編集</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 40px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); text-align: center; color: #999;">
+  {{ year }}年{{ month_name }}の請求書がありません。
+  {% if has_field_data %}
+  <br>「請求書を自動作成」ボタンから作成できます。
+  {% endif %}
+</p>
+{% endif %}
+
+{% endblock %}
+

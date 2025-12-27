@@ -5276,7 +5276,865 @@ def admin_staff_transportations_list(staff_id, year, month):
 
 
 # ===================================================
-# スタッフ別月次売上一覧（管理者）
+# 月次売上一覧（管理者）
+# ===================================================
+@app.route("/admin/revenue")
+@admin_required
+def admin_revenue_index():
+    """月次売上一覧のインデックス（年一覧にリダイレクト）"""
+    return redirect("/admin/revenue/years")
+
+
+@app.route("/admin/revenue/years")
+@admin_required
+def admin_revenue_years():
+    """月次売上一覧 - 年選択"""
+    try:
+        # 日報が存在する年を取得（全スタッフ）
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        years_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                year = report_date[:4]
+                years_set.add(year)
+        
+        years_list = sorted(years_set, reverse=True)
+        
+        return render_template("admin_revenue_years_new.html", years=years_list)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/revenue/years/<year>/months")
+@admin_required
+def admin_revenue_months(year):
+    """月次売上一覧 - 月選択"""
+    try:
+        # 指定年の日報が存在する月を取得（全スタッフ）
+        year_start = f"{year}-01-01"
+        year_end = f"{year}-12-31"
+        res_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", year_start).lte("report_date", year_end).order("report_date", desc=True).execute()
+        reports = res_reports.data or []
+        
+        months_set = set()
+        for report in reports:
+            report_date = report.get("report_date")
+            if report_date:
+                month = report_date[5:7]
+                months_set.add(month)
+        
+        months_list = sorted(months_set, reverse=True)
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("admin_revenue_months_new.html", year=year, months=months_with_names)
+    except Exception as e:
+        print(f"❌ 月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect("/admin/revenue/years")
+
+
+@app.route("/admin/revenue/years/<year>/months/<month>")
+@admin_required
+def admin_revenue_month_selection(year, month):
+    """月次売上一覧 - 「全体」と「各スタッフ」の選択"""
+    try:
+        # スタッフ一覧を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        
+        for u in users:
+            meta = u.user_metadata or {}
+            if not meta.get("approved", False):
+                continue
+            
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            if last_name and first_name:
+                display_name = f"{last_name} {first_name}"
+            else:
+                display_name = meta.get("name", "未設定")
+            
+            staff_list.append({
+                "id": u.id,
+                "name": display_name
+            })
+        
+        staff_list.sort(key=lambda x: x["name"])
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template("admin_revenue_month_selection.html", year=year, month=month, month_name=month_name, staff_list=staff_list)
+    except Exception as e:
+        print(f"❌ 選択ページ取得エラー: {e}")
+        flash("選択ページの取得に失敗しました", "error")
+        return redirect(f"/admin/revenue/years/{year}/months")
+
+
+@app.route("/admin/revenue/years/<year>/months/<month>/all")
+@admin_required
+def admin_revenue_month_all(year, month):
+    """月次売上一覧 - 全体の月次詳細（全スタッフ合計、帯同は現場ごとに分ける）"""
+    try:
+        # 指定年月の日報を取得（全スタッフ）
+        month_start = f"{year}-{month}-01"
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        res_reports = supabase_admin.table("staff_daily_reports").select("id, report_date").gte("report_date", month_start).lte("report_date", month_end).execute()
+        reports_data = res_reports.data or []
+        report_ids = [r["id"] for r in reports_data]
+        
+        # 日報IDと日付のマッピングを作成
+        report_date_map = {r["id"]: r.get("report_date") for r in reports_data}
+        
+        # 勤務カードを取得
+        items = []
+        if report_ids:
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").in_("daily_report_id", report_ids).execute()
+            items = res_items.data or []
+        
+        # 患者情報を取得
+        item_ids = [item["id"] for item in items]
+        patients_map = {}
+        patient_info_map = {}
+        if item_ids:
+            try:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                patient_ids = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                
+                if patient_ids:
+                    try:
+                        res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                        if res_patient_info.data:
+                            for p_info in res_patient_info.data:
+                                p_id = p_info.get("id")
+                                last_name = p_info.get("last_name", "")
+                                first_name = p_info.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_info_map[p_id] = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_info_map[p_id] = p_info.get("name", "患者不明")
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+                
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patient_id = patient.get("patient_id")
+                    if patient_id and patient_id in patient_info_map:
+                        patient["patient_name"] = patient_info_map[patient_id]
+                    else:
+                        patient["patient_name"] = None
+                    patients_map[item_id].append(patient)
+            except Exception as e:
+                print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+        
+        # 各itemに患者情報と金額を追加
+        for item in items:
+            item_id = item.get("id")
+            daily_report_id = item.get("daily_report_id")
+            item["report_date"] = report_date_map.get(daily_report_id, "")
+            item["patients"] = patients_map.get(item_id, [])
+            item["total_amount"] = sum(p.get("amount", 0) or 0 for p in item["patients"])
+            
+            # 実働時間を計算
+            working_minutes = 0
+            if item.get("start_time") and item.get("end_time"):
+                try:
+                    start_parts = item["start_time"].split(":")
+                    end_parts = item["end_time"].split(":")
+                    start_minutes = int(start_parts[0]) * 60 + int(start_parts[1])
+                    end_minutes = int(end_parts[0]) * 60 + int(end_parts[1])
+                    break_minutes = item.get("break_minutes", 0) or 0
+                    working_minutes = end_minutes - start_minutes - break_minutes
+                    if working_minutes < 0:
+                        working_minutes = 0
+                except:
+                    working_minutes = 0
+            item["working_hours"] = round(working_minutes / 60, 1) if working_minutes > 0 else 0
+        
+        # work_typeごとに集計
+        in_house_items = [item for item in items if item.get("work_type") == "in_house"]
+        visit_items = [item for item in items if item.get("work_type") == "visit"]
+        field_items = [item for item in items if item.get("work_type") == "field"]
+        
+        # 帯同は現場ごとに分ける
+        field_by_place = {}  # {place_name: [items]}
+        for item in field_items:
+            place_name = None
+            if item.get("patients"):
+                # 帯同の場合、patient_nameが現場名として使われる
+                place_name = item["patients"][0].get("patient_name") if item["patients"] else None
+            if not place_name:
+                place_name = "現場名不明"
+            
+            if place_name not in field_by_place:
+                field_by_place[place_name] = []
+            field_by_place[place_name].append(item)
+        
+        # 日付順でソート
+        def sort_by_date(item):
+            date_str = item.get("report_date", "")
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, "%Y-%m-%d")
+                except:
+                    return datetime.min
+            return datetime.min
+        
+        in_house_items.sort(key=sort_by_date, reverse=True)
+        visit_items.sort(key=sort_by_date, reverse=True)
+        for place_name in field_by_place:
+            field_by_place[place_name].sort(key=sort_by_date, reverse=True)
+        
+        # 集計
+        in_house_revenue = sum(item.get("total_amount", 0) for item in in_house_items)
+        visit_revenue = sum(item.get("total_amount", 0) for item in visit_items)
+        field_revenue = sum(item.get("total_amount", 0) for item in field_items)
+        total_revenue = in_house_revenue + visit_revenue + field_revenue
+        
+        in_house_hours = sum(item.get("working_hours", 0) for item in in_house_items)
+        visit_hours = sum(item.get("working_hours", 0) for item in visit_items)
+        field_hours = sum(item.get("working_hours", 0) for item in field_items)
+        total_hours = in_house_hours + visit_hours + field_hours
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template(
+            "admin_revenue_month_all.html",
+            year=year,
+            month=month,
+            month_name=month_name,
+            in_house_revenue=in_house_revenue,
+            visit_revenue=visit_revenue,
+            field_revenue=field_revenue,
+            total_revenue=total_revenue,
+            in_house_hours=round(in_house_hours, 1),
+            visit_hours=round(visit_hours, 1),
+            field_hours=round(field_hours, 1),
+            total_hours=round(total_hours, 1),
+            in_house_items=in_house_items,
+            visit_items=visit_items,
+            field_by_place=field_by_place
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 全体月次売上取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("全体月次売上の取得に失敗しました", "error")
+        return redirect(f"/admin/revenue/years/{year}/months/{month}")
+
+
+# ===================================================
+# 請求書一覧（管理者）
+# ===================================================
+@app.route("/admin/invoices")
+@admin_required
+def admin_invoices_index():
+    """請求書一覧のインデックス（年一覧にリダイレクト）"""
+    return redirect("/admin/invoices/years")
+
+
+@app.route("/admin/invoices/years")
+@admin_required
+def admin_invoices_years():
+    """請求書一覧 - 年選択"""
+    try:
+        # 請求書が存在する年を取得
+        try:
+            res_invoices = supabase_admin.table("invoices").select("year").order("year", desc=True).execute()
+            invoices = res_invoices.data or []
+            
+            years_set = set()
+            for invoice in invoices:
+                year = invoice.get("year")
+                if year:
+                    years_set.add(str(year))
+            
+            years_list = sorted([int(y) for y in years_set], reverse=True)
+            years_list = [str(y) for y in years_list]
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書年一覧取得エラー: {e}")
+            years_list = []
+        
+        # 日報が存在する年も取得（請求書がなくても選択できるように）
+        try:
+            res_reports = supabase_admin.table("staff_daily_reports").select("report_date").order("report_date", desc=True).execute()
+            reports = res_reports.data or []
+            
+            report_years_set = set()
+            for report in reports:
+                report_date = report.get("report_date")
+                if report_date:
+                    year = report_date[:4]
+                    report_years_set.add(year)
+            
+            # 両方の年を結合
+            all_years = sorted(set(years_list + list(report_years_set)), reverse=True, key=int)
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報年一覧取得エラー: {e}")
+            all_years = years_list
+        
+        return render_template("admin_invoices_years.html", years=all_years)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/invoices/years/<year>/months")
+@admin_required
+def admin_invoices_months(year):
+    """請求書一覧 - 月選択"""
+    try:
+        # 指定年の請求書が存在する月を取得
+        months_set = set()
+        try:
+            res_invoices = supabase_admin.table("invoices").select("month").eq("year", int(year)).execute()
+            invoices = res_invoices.data or []
+            for invoice in invoices:
+                month = invoice.get("month")
+                if month:
+                    months_set.add(str(month).zfill(2))
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書月一覧取得エラー: {e}")
+        
+        # 日報が存在する月も取得
+        try:
+            year_start = f"{year}-01-01"
+            year_end = f"{year}-12-31"
+            res_reports = supabase_admin.table("staff_daily_reports").select("report_date").gte("report_date", year_start).lte("report_date", year_end).execute()
+            reports = res_reports.data or []
+            for report in reports:
+                report_date = report.get("report_date")
+                if report_date:
+                    month = report_date[5:7]
+                    months_set.add(month)
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報月一覧取得エラー: {e}")
+        
+        months_list = sorted([int(m) for m in months_set], reverse=True)
+        months_list = [str(m).zfill(2) for m in months_list]
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        
+        months_with_names = [(m, month_names.get(m, m)) for m in months_list]
+        
+        return render_template("admin_invoices_months.html", year=year, months=months_with_names)
+    except Exception as e:
+        print(f"❌ 月一覧取得エラー: {e}")
+        flash("月一覧の取得に失敗しました", "error")
+        return redirect("/admin/invoices/years")
+
+
+@app.route("/admin/invoices/years/<year>/months/<month>/auto-create", methods=["POST"])
+@admin_required
+def admin_invoices_auto_create(year, month):
+    """請求書の自動作成（その月の帯同データから現場ごとに作成）"""
+    try:
+        # 指定年月の帯同データを取得
+        month_start = f"{year}-{month}-01"
+        if month in ["01", "03", "05", "07", "08", "10", "12"]:
+            month_end = f"{year}-{month}-31"
+        elif month in ["04", "06", "09", "11"]:
+            month_end = f"{year}-{month}-30"
+        else:
+            year_int = int(year)
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year}-{month}-29"
+            else:
+                month_end = f"{year}-{month}-28"
+        
+        # 日報を取得
+        res_reports = supabase_admin.table("staff_daily_reports").select("id, report_date").gte("report_date", month_start).lte("report_date", month_end).execute()
+        reports_data = res_reports.data or []
+        report_ids = [r["id"] for r in reports_data]
+        report_date_map = {r["id"]: r.get("report_date") for r in reports_data}
+        
+        # 帯同の勤務カードを取得
+        field_items = []
+        if report_ids:
+            res_items = supabase_admin.table("staff_daily_report_items").select("*").eq("work_type", "field").in_("daily_report_id", report_ids).execute()
+            field_items = res_items.data or []
+        
+        # 患者情報を取得
+        item_ids = [item["id"] for item in field_items]
+        patients_map = {}
+        if item_ids:
+            try:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("*").in_("item_id", item_ids).execute()
+                patients = res_patients.data or []
+                
+                # 患者IDを収集
+                patient_ids = [p.get("patient_id") for p in patients if p.get("patient_id")]
+                patient_info_map = {}
+                if patient_ids:
+                    try:
+                        res_patient_info = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                        if res_patient_info.data:
+                            for p_info in res_patient_info.data:
+                                p_id = p_info.get("id")
+                                last_name = p_info.get("last_name", "")
+                                first_name = p_info.get("first_name", "")
+                                if last_name or first_name:
+                                    patient_info_map[p_id] = f"{last_name} {first_name}".strip()
+                                else:
+                                    patient_info_map[p_id] = p_info.get("name", "患者不明")
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+                
+                for patient in patients:
+                    item_id = patient.get("item_id")
+                    if item_id not in patients_map:
+                        patients_map[item_id] = []
+                    patient_id = patient.get("patient_id")
+                    if patient_id and patient_id in patient_info_map:
+                        patient["patient_name"] = patient_info_map[patient_id]
+                    else:
+                        patient["patient_name"] = None
+                    patients_map[item_id].append(patient)
+            except Exception as e:
+                print(f"⚠️ WARNING - 患者情報取得エラー: {e}")
+        
+        # 現場ごとにグループ化
+        field_by_place = {}
+        for item in field_items:
+            item_id = item.get("id")
+            daily_report_id = item.get("daily_report_id")
+            item["report_date"] = report_date_map.get(daily_report_id, "")
+            item["patients"] = patients_map.get(item_id, [])
+            
+            place_name = None
+            if item.get("patients"):
+                place_name = item["patients"][0].get("patient_name") if item["patients"] else None
+            if not place_name:
+                place_name = "現場名不明"
+            
+            if place_name not in field_by_place:
+                field_by_place[place_name] = []
+            field_by_place[place_name].append(item)
+        
+        # 既存の請求書をチェック（重複作成を防ぐ）
+        existing_invoices = {}
+        try:
+            res_existing = supabase_admin.table("invoices").select("id, place_name").eq("year", int(year)).eq("month", int(month)).execute()
+            if res_existing.data:
+                for inv in res_existing.data:
+                    existing_invoices[inv.get("place_name")] = inv.get("id")
+        except Exception as e:
+            print(f"⚠️ WARNING - 既存請求書チェックエラー: {e}")
+        
+        # 各現場ごとに請求書を作成
+        created_count = 0
+        skipped_count = 0
+        
+        for place_name, items in field_by_place.items():
+            # 既存の請求書がある場合はスキップ
+            if place_name in existing_invoices:
+                skipped_count += 1
+                continue
+            
+            # 合計金額を計算
+            total_amount = 0
+            for item in items:
+                for patient in item.get("patients", []):
+                    total_amount += patient.get("amount", 0) or 0
+            
+            if total_amount == 0:
+                continue  # 金額が0の場合はスキップ
+            
+            # 請求書番号を生成（INV-YYYY-MM-XXX形式）
+            try:
+                # その月の請求書数を取得して連番を決める
+                res_count = supabase_admin.table("invoices").select("id", count="exact").eq("year", int(year)).eq("month", int(month)).execute()
+                existing_count = res_count.count or 0
+                invoice_number = f"INV-{year}-{month}-{str(existing_count + 1).zfill(3)}"
+            except Exception as e:
+                print(f"⚠️ WARNING - 請求書番号生成エラー: {e}")
+                invoice_number = f"INV-{year}-{month}-001"
+            
+            # 発行日（月末）と支払期限（翌月末）を計算
+            if month in ["01", "03", "05", "07", "08", "10", "12"]:
+                issue_date = f"{year}-{month}-31"
+            elif month in ["04", "06", "09", "11"]:
+                issue_date = f"{year}-{month}-30"
+            else:
+                year_int = int(year)
+                if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                    issue_date = f"{year}-{month}-29"
+                else:
+                    issue_date = f"{year}-{month}-28"
+            
+            # 翌月末を計算
+            next_month = int(month) + 1
+            next_year = int(year)
+            if next_month > 12:
+                next_month = 1
+                next_year += 1
+            
+            if next_month in [1, 3, 5, 7, 8, 10, 12]:
+                due_date = f"{next_year}-{str(next_month).zfill(2)}-31"
+            elif next_month in [4, 6, 9, 11]:
+                due_date = f"{next_year}-{str(next_month).zfill(2)}-30"
+            else:
+                if (next_year % 4 == 0 and next_year % 100 != 0) or (next_year % 400 == 0):
+                    due_date = f"{next_year}-{str(next_month).zfill(2)}-29"
+                else:
+                    due_date = f"{next_year}-{str(next_month).zfill(2)}-28"
+            
+            # 消費税計算（外税、税率10%）
+            subtotal_amount = total_amount
+            tax_amount = int(subtotal_amount * 0.1)
+            total_with_tax = subtotal_amount + tax_amount
+            
+            # 請求先情報を取得（既存の情報があれば）
+            place_address = None
+            place_phone = None
+            place_contact_person = None
+            try:
+                res_place = supabase_admin.table("invoice_places").select("*").eq("place_name", place_name).execute()
+                if res_place.data:
+                    place_info = res_place.data[0]
+                    place_address = place_info.get("address")
+                    place_phone = place_info.get("phone")
+                    place_contact_person = place_info.get("contact_person")
+            except Exception as e:
+                print(f"⚠️ WARNING - 請求先情報取得エラー: {e}")
+            
+            # 請求書を作成
+            try:
+                invoice_data = {
+                    "invoice_number": invoice_number,
+                    "place_name": place_name,
+                    "place_address": place_address,
+                    "place_phone": place_phone,
+                    "place_contact_person": place_contact_person,
+                    "year": int(year),
+                    "month": int(month),
+                    "issue_date": issue_date,
+                    "due_date": due_date,
+                    "subtotal_amount": subtotal_amount,
+                    "tax_amount": tax_amount,
+                    "total_amount": total_with_tax,
+                    "status": "draft"
+                }
+                
+                res_invoice = supabase_admin.table("invoices").insert(invoice_data).execute()
+                invoice_id = res_invoice.data[0]["id"]
+                
+                # 請求書明細を作成
+                invoice_items = []
+                for item in items:
+                    for patient in item.get("patients", []):
+                        amount = patient.get("amount", 0) or 0
+                        if amount > 0:
+                            item_data = {
+                                "invoice_id": invoice_id,
+                                "daily_report_item_id": item.get("id"),
+                                "report_date": item.get("report_date"),
+                                "description": f"トレーナー帯同",
+                                "amount": amount
+                            }
+                            invoice_items.append(item_data)
+                
+                if invoice_items:
+                    supabase_admin.table("invoice_items").insert(invoice_items).execute()
+                
+                created_count += 1
+            except Exception as e:
+                print(f"⚠️ WARNING - 請求書作成エラー ({place_name}): {e}")
+                continue
+        
+        if created_count > 0:
+            flash(f"{created_count}件の請求書を作成しました。", "success")
+        if skipped_count > 0:
+            flash(f"{skipped_count}件の請求書は既に存在するためスキップしました。", "warning")
+        if created_count == 0 and skipped_count == 0:
+            flash("作成できる請求書がありませんでした。", "warning")
+        
+        return redirect(f"/admin/invoices/years/{year}/months/{month}")
+    except Exception as e:
+        import traceback
+        print(f"❌ 請求書自動作成エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("請求書の自動作成に失敗しました", "error")
+        return redirect(f"/admin/invoices/years/{year}/months/{month}")
+
+
+@app.route("/admin/invoices/<invoice_id>")
+@admin_required
+def admin_invoice_detail(invoice_id):
+    """請求書詳細"""
+    try:
+        # 請求書を取得
+        res_invoice = supabase_admin.table("invoices").select("*").eq("id", invoice_id).execute()
+        if not res_invoice.data:
+            flash("請求書が見つかりません", "error")
+            return redirect("/admin/invoices/years")
+        
+        invoice = res_invoice.data[0]
+        
+        # 請求書明細を取得
+        res_items = supabase_admin.table("invoice_items").select("*").eq("invoice_id", invoice_id).order("report_date").execute()
+        items = res_items.data or []
+        
+        # 自社情報
+        company_info = {
+            "name": "KARiN.",
+            "address": "福岡県福岡市中央区小笹1-5-11-803",
+            "phone": "09050886993",
+            "bank": "三井住友銀行",
+            "branch": "神田駅前支店",
+            "account_type": "普通",
+            "account_number": "1741051",
+            "account_name": "藤田幸士"
+        }
+        
+        month_names = {
+            1: "1月", 2: "2月", 3: "3月", 4: "4月",
+            5: "5月", 6: "6月", 7: "7月", 8: "8月",
+            9: "9月", 10: "10月", 11: "11月", 12: "12月"
+        }
+        month_name = month_names.get(invoice.get("month"), str(invoice.get("month")))
+        
+        return render_template(
+            "admin_invoice_detail.html",
+            invoice=invoice,
+            items=items,
+            company_info=company_info,
+            month_name=month_name
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 請求書詳細取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("請求書詳細の取得に失敗しました", "error")
+        return redirect("/admin/invoices/years")
+
+
+@app.route("/admin/invoices/<invoice_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_invoice_edit(invoice_id):
+    """請求書編集"""
+    try:
+        # 請求書を取得
+        res_invoice = supabase_admin.table("invoices").select("*").eq("id", invoice_id).execute()
+        if not res_invoice.data:
+            flash("請求書が見つかりません", "error")
+            return redirect("/admin/invoices/years")
+        
+        invoice = res_invoice.data[0]
+        
+        if request.method == "GET":
+            # 請求書明細を取得
+            res_items = supabase_admin.table("invoice_items").select("*").eq("invoice_id", invoice_id).order("report_date").execute()
+            items = res_items.data or []
+            
+            # 請求先情報を取得（既存の情報があれば）
+            place_info = None
+            try:
+                res_place = supabase_admin.table("invoice_places").select("*").eq("place_name", invoice.get("place_name")).execute()
+                if res_place.data:
+                    place_info = res_place.data[0]
+            except Exception as e:
+                print(f"⚠️ WARNING - 請求先情報取得エラー: {e}")
+            
+            month_names = {
+                1: "1月", 2: "2月", 3: "3月", 4: "4月",
+                5: "5月", 6: "6月", 7: "7月", 8: "8月",
+                9: "9月", 10: "10月", 11: "11月", 12: "12月"
+            }
+            month_name = month_names.get(invoice.get("month"), str(invoice.get("month")))
+            
+            return render_template(
+                "admin_invoice_edit.html",
+                invoice=invoice,
+                items=items,
+                place_info=place_info,
+                month_name=month_name
+            )
+        
+        # POST処理
+        place_address = request.form.get("place_address", "").strip()
+        place_phone = request.form.get("place_phone", "").strip()
+        place_contact_person = request.form.get("place_contact_person", "").strip()
+        issue_date = request.form.get("issue_date", "").strip()
+        due_date = request.form.get("due_date", "").strip()
+        status = request.form.get("status", "draft").strip()
+        sent_at = request.form.get("sent_at", "").strip() or None
+        paid_at = request.form.get("paid_at", "").strip() or None
+        notes = request.form.get("notes", "").strip()
+        
+        # 請求先情報を保存（invoice_placesテーブル）
+        place_name = invoice.get("place_name")
+        try:
+            # 既存の情報があるかチェック
+            res_existing = supabase_admin.table("invoice_places").select("id").eq("place_name", place_name).execute()
+            if res_existing.data:
+                # 更新
+                supabase_admin.table("invoice_places").update({
+                    "address": place_address or None,
+                    "phone": place_phone or None,
+                    "contact_person": place_contact_person or None,
+                    "updated_at": datetime.now(JST).isoformat()
+                }).eq("id", res_existing.data[0]["id"]).execute()
+            else:
+                # 新規作成
+                supabase_admin.table("invoice_places").insert({
+                    "place_name": place_name,
+                    "address": place_address or None,
+                    "phone": place_phone or None,
+                    "contact_person": place_contact_person or None
+                }).execute()
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求先情報保存エラー: {e}")
+        
+        # 請求書を更新
+        update_data = {
+            "place_address": place_address or None,
+            "place_phone": place_phone or None,
+            "place_contact_person": place_contact_person or None,
+            "issue_date": issue_date or invoice.get("issue_date"),
+            "due_date": due_date or invoice.get("due_date"),
+            "status": status,
+            "sent_at": sent_at,
+            "paid_at": paid_at,
+            "notes": notes or None,
+            "updated_at": datetime.now(JST).isoformat()
+        }
+        
+        supabase_admin.table("invoices").update(update_data).eq("id", invoice_id).execute()
+        
+        flash("請求書を更新しました", "success")
+        return redirect(f"/admin/invoices/{invoice_id}")
+    except Exception as e:
+        import traceback
+        print(f"❌ 請求書編集エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("請求書の更新に失敗しました", "error")
+        return redirect(f"/admin/invoices/{invoice_id}/edit")
+
+
+@app.route("/admin/invoices/years/<year>/months/<month>")
+@admin_required
+def admin_invoices_list(year, month):
+    """請求書一覧 - その月の請求書一覧"""
+    try:
+        # 指定年月の請求書を取得
+        try:
+            res_invoices = supabase_admin.table("invoices").select("*").eq("year", int(year)).eq("month", int(month)).order("created_at", desc=True).execute()
+            invoices = res_invoices.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書一覧取得エラー: {e}")
+            invoices = []
+        
+        # 請求書明細も取得
+        invoice_items_map = {}
+        if invoices:
+            invoice_ids = [inv["id"] for inv in invoices]
+            try:
+                res_items = supabase_admin.table("invoice_items").select("*").in_("invoice_id", invoice_ids).execute()
+                items = res_items.data or []
+                for item in items:
+                    invoice_id = item.get("invoice_id")
+                    if invoice_id not in invoice_items_map:
+                        invoice_items_map[invoice_id] = []
+                    invoice_items_map[invoice_id].append(item)
+            except Exception as e:
+                print(f"⚠️ WARNING - 請求書明細取得エラー: {e}")
+        
+        # 各請求書に明細を追加
+        for invoice in invoices:
+            invoice_id = invoice.get("id")
+            invoice["items"] = invoice_items_map.get(invoice_id, [])
+        
+        # その月に帯同データがあるかチェック（自動作成ボタン表示用）
+        has_field_data = False
+        try:
+            month_start = f"{year}-{month}-01"
+            if month in ["01", "03", "05", "07", "08", "10", "12"]:
+                month_end = f"{year}-{month}-31"
+            elif month in ["04", "06", "09", "11"]:
+                month_end = f"{year}-{month}-30"
+            else:
+                year_int = int(year)
+                if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                    month_end = f"{year}-{month}-29"
+                else:
+                    month_end = f"{year}-{month}-28"
+            
+            res_reports = supabase_admin.table("staff_daily_reports").select("id").gte("report_date", month_start).lte("report_date", month_end).execute()
+            report_ids = [r["id"] for r in res_reports.data] if res_reports.data else []
+            
+            if report_ids:
+                res_items = supabase_admin.table("staff_daily_report_items").select("id").eq("work_type", "field").in_("daily_report_id", report_ids).limit(1).execute()
+                if res_items.data:
+                    has_field_data = True
+        except Exception as e:
+            print(f"⚠️ WARNING - 帯同データチェックエラー: {e}")
+        
+        month_names = {
+            "01": "1月", "02": "2月", "03": "3月", "04": "4月",
+            "05": "5月", "06": "6月", "07": "7月", "08": "8月",
+            "09": "9月", "10": "10月", "11": "11月", "12": "12月"
+        }
+        month_name = month_names.get(month, month)
+        
+        return render_template(
+            "admin_invoices_list.html",
+            year=year,
+            month=month,
+            month_name=month_name,
+            invoices=invoices,
+            has_field_data=has_field_data
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 請求書一覧取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash("請求書一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/invoices/years/{year}/months")
+
+
+# ===================================================
+# スタッフ別月次売上一覧（管理者） - 既存ルートを維持
 # ===================================================
 @app.route("/admin/revenue/staff")
 @admin_required

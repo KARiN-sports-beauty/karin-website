@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}月次売上一覧 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 月次売上一覧 - {{ year }}年{{ month_name }}</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/revenue/years/{{ year }}/months" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 月一覧に戻る</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+  <!-- 全体カード -->
+  <a href="/admin/revenue/years/{{ year }}/months/{{ month }}/all" class="admin-karte-card" style="padding: 24px;">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name" style="font-size: 1.2rem;">📊 全体</strong>
+    </div>
+    <p style="margin-top: 12px; color: #666; font-size: 0.9rem;">全スタッフの合計売上</p>
+  </a>
+  
+  <!-- 各スタッフカード -->
+  {% for staff in staff_list %}
+  <a href="/admin/revenue/staff/{{ staff.id }}/years/{{ year }}/months/{{ month }}" class="admin-karte-card" style="padding: 24px;">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name" style="font-size: 1.1rem;">{{ staff.name }}</strong>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
