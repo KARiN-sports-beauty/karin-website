@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}備品管理 - {{ year }}年 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📦 備品管理 - {{ year }}年</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+  <a href="/admin/equipment" class="admin-karte-detail-btn-back" style="text-decoration: none;">← 年選択に戻る</a>
+  <a href="/admin/equipment/years/{{ year }}/initial-stock/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">➕ 年初在庫追加</a>
+  <a href="/admin/equipment/years/{{ year }}/takeouts/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">📤 持ち出し登録</a>
+  <a href="/admin/equipment/years/{{ year }}/orders/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">📦 発注登録</a>
+  {% set prev_year = year|int - 1 %}
+  <form method="POST" action="/admin/equipment/years/{{ year }}/copy-from-previous" style="display: inline;" onsubmit="return confirm('{{ prev_year }}年の現在庫数を{{ year }}年の年初在庫数として引き継ぎますか？');">
+    <button type="submit" class="admin-karte-detail-btn-secondary" style="border: none; cursor: pointer; padding: 10px 20px; font-size: 0.9rem;">📋 前年から引き継ぐ</button>
+  </form>
+</div>
+
+<!-- 備品一覧テーブル -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">備品一覧</h3>
+  
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">備品名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">年初在庫数</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">現在庫数</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in equipment_items %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {{ item.name }}{% if item.unit %}（{{ item.unit }}）{% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            {% set initial = initial_stock_map.get(item.id, 0) %}
+            {% if initial > 0 %}
+              {{ initial }}{% if item.unit %}{{ item.unit }}{% endif %}
+              {% for stock in initial_stocks %}
+                {% if stock.equipment_item_id == item.id %}
+                  <a href="/admin/equipment/years/{{ year }}/initial-stock/{{ stock.id }}/edit" style="margin-left: 8px; color: #1E3A5F; text-decoration: none;">✏️</a>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              <a href="/admin/equipment/years/{{ year }}/initial-stock/new?equipment_item_id={{ item.id }}" style="color: #1E3A5F; text-decoration: none;">未登録</a>
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600; color: {% if current_stock_map.get(item.id, 0) < 0 %}#f44336{% else %}#1E3A5F{% endif %};">
+            {{ current_stock_map.get(item.id, 0) }}{% if item.unit %}{{ item.unit }}{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 持ち出し備品一覧 -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">持ち出し備品</h3>
+  
+  {% if takeouts %}
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">日付</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">備品名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">数量</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">メモ</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for takeout in takeouts %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ takeout.takeout_date }}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {% if takeout.equipment_items %}
+              {{ takeout.equipment_items.name }}{% if takeout.equipment_items.unit %}（{{ takeout.equipment_items.unit }}）{% endif %}
+            {% else %}
+              不明
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">{{ takeout.quantity }}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ takeout.memo or '' }}</td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <a href="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
+            <form method="POST" action="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+              <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="padding: 20px; color: #666;">持ち出し備品はありません。</p>
+  {% endif %}
+</div>
+
+<!-- 発注備品一覧 -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">発注備品</h3>
+  
+  {% if orders %}
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">発注日</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">備品名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">数量</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">金額</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">ステータス</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">到着日</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ order.order_date }}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {% if order.equipment_items %}
+              {{ order.equipment_items.name }}{% if order.equipment_items.unit %}（{{ order.equipment_items.unit }}）{% endif %}
+            {% else %}
+              不明
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">{{ order.quantity }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            {% if order.amount %}
+              ¥{{ "{:,}".format(order.amount|int) }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            {% if order.status == 'pending' %}
+              <span style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">未発注</span>
+            {% elif order.status == 'ordered' %}
+              <span style="background: #2196F3; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">発注済み</span>
+            {% elif order.status == 'arrived' %}
+              <span style="background: #4CAF50; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">到着済み</span>
+            {% endif %}
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ order.arrival_date or '-' }}</td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <a href="/admin/equipment/years/{{ year }}/orders/{{ order.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
+            <form method="POST" action="/admin/equipment/years/{{ year }}/orders/{{ order.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+              <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="padding: 20px; color: #666;">発注備品はありません。</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+

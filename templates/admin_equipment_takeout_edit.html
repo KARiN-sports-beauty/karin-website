@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}持ち出し備品 - 編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">📤 持ち出し備品 - 編集（{{ year }}年）</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/equipment/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年の備品管理に戻る</a>
+</div>
+
+<form method="POST" action="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/edit" style="max-width: 800px;">
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">持ち出し日<span style="color: #f44336;">*</span></label>
+      <input type="date" name="takeout_date" required value="{{ takeout.takeout_date }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">備品<span style="color: #f44336;">*</span></label>
+      <select name="equipment_item_id" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <option value="">選択してください</option>
+        {% for item in equipment_items %}
+        <option value="{{ item.id }}" {% if item.id == takeout.equipment_item_id %}selected{% endif %}>{{ item.name }}{% if item.unit %}（{{ item.unit }}）{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">数量<span style="color: #f44336;">*</span></label>
+      <input type="number" name="quantity" required min="1" value="{{ takeout.quantity }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">メモ</label>
+      <textarea name="memo" rows="3" placeholder="どこに持ち出したかなど" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;">{{ takeout.memo or '' }}</textarea>
+    </div>
+    
+    <div style="margin-top: 24px;">
+      <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 12px 24px; font-size: 1rem;">更新</button>
+      <a href="/admin/equipment/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; margin-left: 12px; padding: 12px 24px; display: inline-block;">キャンセル</a>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+

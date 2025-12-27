@@ -5898,6 +5898,114 @@ def admin_invoices_auto_create(year, month):
         return redirect(f"/admin/invoices/years/{year}/months/{month}")
 
 
+@app.route("/admin/invoices/new", methods=["GET", "POST"])
+@admin_required
+def admin_invoice_new():
+    """請求書 - 新規作成"""
+    if request.method == "POST":
+        try:
+            # フォームデータを取得
+            place_name = request.form.get("place_name", "").strip()
+            place_address = request.form.get("place_address", "").strip()
+            place_phone = request.form.get("place_phone", "").strip()
+            place_contact_person = request.form.get("place_contact_person", "").strip()
+            year = int(request.form.get("year"))
+            month = int(request.form.get("month"))
+            issue_date = request.form.get("issue_date")
+            due_date = request.form.get("due_date")
+            notes = request.form.get("notes", "").strip()
+            
+            # 請求書を作成
+            invoice_data = {
+                "place_name": place_name,
+                "address": place_address,
+                "phone": place_phone,
+                "contact_person": place_contact_person,
+                "year": year,
+                "month": month,
+                "issue_date": issue_date,
+                "due_date": due_date,
+                "notes": notes,
+                "total_amount": 0,
+                "created_at": now_iso()
+            }
+            
+            res_invoice = supabase_admin.table("invoices").insert(invoice_data).execute()
+            invoice_id = res_invoice.data[0]["id"]
+            
+            # 明細を追加
+            item_count = int(request.form.get("item_count", 0))
+            items = []
+            for i in range(item_count):
+                description = request.form.get(f"item_description_{i}", "").strip()
+                quantity = request.form.get(f"item_quantity_{i}", "0").strip()
+                unit_price = request.form.get(f"item_unit_price_{i}", "0").strip()
+                report_date = request.form.get(f"item_report_date_{i}", "").strip()
+                
+                if description:
+                    try:
+                        qty = int(quantity) if quantity else 0
+                        price = float(unit_price) if unit_price else 0
+                        amount = qty * price
+                        
+                        items.append({
+                            "invoice_id": invoice_id,
+                            "description": description,
+                            "quantity": qty,
+                            "unit_price": price,
+                            "amount": amount,
+                            "report_date": report_date if report_date else None,
+                            "created_at": now_iso()
+                        })
+                    except:
+                        continue
+            
+            if items:
+                supabase_admin.table("invoice_items").insert(items).execute()
+                
+                # 合計金額を計算
+                total_amount = sum(item["amount"] for item in items)
+                supabase_admin.table("invoices").update({"total_amount": total_amount}).eq("id", invoice_id).execute()
+            
+            flash("請求書を作成しました", "success")
+            return redirect(f"/admin/invoices/{invoice_id}")
+        except Exception as e:
+            import traceback
+            print(f"❌ 請求書作成エラー: {e}")
+            print(f"❌ トレースバック: {traceback.format_exc()}")
+            flash(f"請求書の作成に失敗しました: {e}", "error")
+            return redirect("/admin/invoices/years")
+    
+    # GET: 新規作成フォーム
+    try:
+        # 既存の請求先を取得（選択肢として）
+        res_existing = supabase_admin.table("invoices").select("place_name, address, phone, contact_person").order("created_at", desc=True).limit(50).execute()
+        existing_places = []
+        seen_places = set()
+        for inv in (res_existing.data or []):
+            place = inv.get("place_name")
+            if place and place not in seen_places:
+                existing_places.append({
+                    "place_name": place,
+                    "address": inv.get("address", ""),
+                    "phone": inv.get("phone", ""),
+                    "contact_person": inv.get("contact_person", "")
+                })
+                seen_places.add(place)
+        
+        current_year = datetime.now().year
+        
+        return render_template(
+            "admin_invoice_new.html",
+            existing_places=existing_places,
+            current_year=current_year
+        )
+    except Exception as e:
+        print(f"❌ 請求書新規作成フォーム取得エラー: {e}")
+        flash("フォームの取得に失敗しました", "error")
+        return redirect("/admin/invoices/years")
+
+
 @app.route("/admin/invoices/<invoice_id>")
 @admin_required
 def admin_invoice_detail(invoice_id):
@@ -8263,6 +8371,521 @@ def admin_reports_delete(report_id):
         print(f"❌ 報告書削除エラー: {e}")
         flash("報告書の削除に失敗しました", "error")
     return redirect("/admin/reports")
+
+
+# ===================================================
+# ✅ 備品管理
+# ===================================================
+@app.route("/admin/equipment")
+@admin_required
+def admin_equipment_years():
+    """備品管理 - 年選択"""
+    try:
+        # 年初備品在庫が存在する年を取得
+        try:
+            res_initial = supabase_admin.table("equipment_initial_stock").select("year").order("year", desc=True).execute()
+            initial_years = res_initial.data or []
+            years_set = set()
+            for item in initial_years:
+                year = item.get("year")
+                if year:
+                    years_set.add(str(year))
+            
+            years_list = sorted([int(y) for y in years_set], reverse=True)
+            years_list = [str(y) for y in years_list]
+        except Exception as e:
+            print(f"⚠️ WARNING - 備品年一覧取得エラー: {e}")
+            years_list = []
+        
+        # 現在の年も追加（データがなくても選択できるように）
+        current_year = str(datetime.now().year)
+        if current_year not in years_list:
+            years_list.insert(0, current_year)
+        
+        return render_template("admin_equipment_years.html", years=years_list)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/equipment/years/<year>")
+@admin_required
+def admin_equipment_year_detail(year):
+    """備品管理 - 指定年の詳細"""
+    try:
+        year_int = int(year)
+        
+        # 備品マスタを取得
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        # 年初備品在庫数を取得
+        res_initial = supabase_admin.table("equipment_initial_stock").select("*, equipment_items(name, unit)").eq("year", year_int).execute()
+        initial_stocks = res_initial.data or []
+        initial_stock_map = {item["equipment_item_id"]: item["quantity"] for item in initial_stocks}
+        
+        # 持ち出し備品を取得
+        res_takeouts = supabase_admin.table("equipment_takeouts").select("*, equipment_items(name, unit)").gte("takeout_date", f"{year_int}-01-01").lte("takeout_date", f"{year_int}-12-31").order("takeout_date", desc=True).execute()
+        takeouts = res_takeouts.data or []
+        
+        # 発注備品を取得
+        res_orders = supabase_admin.table("equipment_orders").select("*, equipment_items(name, unit)").gte("order_date", f"{year_int}-01-01").lte("order_date", f"{year_int}-12-31").order("order_date", desc=True).execute()
+        orders = res_orders.data or []
+        
+        # 現在庫数を計算
+        current_stock_map = {}
+        for item in equipment_items:
+            item_id = item["id"]
+            initial_qty = initial_stock_map.get(item_id, 0)
+            
+            # 持ち出し数を集計
+            takeout_qty = sum(t.get("quantity", 0) for t in takeouts if t.get("equipment_item_id") == item_id)
+            
+            # 到着済み発注数を集計
+            arrived_qty = sum(o.get("quantity", 0) for o in orders if o.get("equipment_item_id") == item_id and o.get("status") == "arrived")
+            
+            current_stock = initial_qty - takeout_qty + arrived_qty
+            current_stock_map[item_id] = current_stock
+        
+        return render_template(
+            "admin_equipment_year_detail.html",
+            year=year,
+            equipment_items=equipment_items,
+            initial_stocks=initial_stocks,
+            initial_stock_map=initial_stock_map,
+            takeouts=takeouts,
+            orders=orders,
+            current_stock_map=current_stock_map
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 備品管理詳細取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"備品管理詳細の取得に失敗しました: {e}", "error")
+        return redirect("/admin/equipment")
+
+
+@app.route("/admin/equipment/years/<year>/initial-stock/new", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_initial_stock_new(year):
+    """年初備品在庫数 - 新規作成"""
+    if request.method == "POST":
+        try:
+            equipment_item_id = request.form.get("equipment_item_id")
+            quantity = int(request.form.get("quantity", 0))
+            
+            # 既存データをチェック
+            res_existing = supabase_admin.table("equipment_initial_stock").select("*").eq("year", int(year)).eq("equipment_item_id", equipment_item_id).execute()
+            if res_existing.data:
+                flash("この備品の年初在庫数は既に登録されています", "error")
+                return redirect(f"/admin/equipment/years/{year}")
+            
+            # 新規作成
+            supabase_admin.table("equipment_initial_stock").insert({
+                "year": int(year),
+                "equipment_item_id": equipment_item_id,
+                "quantity": quantity
+            }).execute()
+            
+            flash("年初備品在庫数を登録しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 年初備品在庫数登録エラー: {e}")
+            flash(f"年初備品在庫数の登録に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 新規作成フォーム
+    try:
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        # 既に登録されている備品IDを取得
+        res_initial = supabase_admin.table("equipment_initial_stock").select("equipment_item_id").eq("year", int(year)).execute()
+        registered_ids = {item["equipment_item_id"] for item in (res_initial.data or [])}
+        
+        # 未登録の備品のみ表示
+        available_items = [item for item in equipment_items if item["id"] not in registered_ids]
+        
+        # URLパラメータで備品IDが指定されている場合
+        selected_item_id = request.args.get("equipment_item_id")
+        
+        return render_template(
+            "admin_equipment_initial_stock_new.html",
+            year=year,
+            equipment_items=available_items,
+            selected_item_id=selected_item_id
+        )
+    except Exception as e:
+        print(f"❌ 備品一覧取得エラー: {e}")
+        flash("備品一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/initial-stock/<stock_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_initial_stock_edit(year, stock_id):
+    """年初備品在庫数 - 編集"""
+    if request.method == "POST":
+        try:
+            quantity = int(request.form.get("quantity", 0))
+            
+            supabase_admin.table("equipment_initial_stock").update({
+                "quantity": quantity
+            }).eq("id", stock_id).execute()
+            
+            flash("年初備品在庫数を更新しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 年初備品在庫数更新エラー: {e}")
+            flash(f"年初備品在庫数の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 編集フォーム
+    try:
+        res_stock = supabase_admin.table("equipment_initial_stock").select("*, equipment_items(name, unit)").eq("id", stock_id).execute()
+        if not res_stock.data:
+            flash("年初備品在庫数が見つかりません", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+        
+        stock = res_stock.data[0]
+        return render_template(
+            "admin_equipment_initial_stock_edit.html",
+            year=year,
+            stock=stock
+        )
+    except Exception as e:
+        print(f"❌ 年初備品在庫数取得エラー: {e}")
+        flash("年初備品在庫数の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/takeouts/new", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_takeout_new(year):
+    """持ち出し備品 - 新規作成"""
+    if request.method == "POST":
+        try:
+            takeout_date = request.form.get("takeout_date")
+            equipment_item_id = request.form.get("equipment_item_id")
+            quantity = int(request.form.get("quantity", 0))
+            memo = request.form.get("memo", "").strip()
+            
+            supabase_admin.table("equipment_takeouts").insert({
+                "takeout_date": takeout_date,
+                "equipment_item_id": equipment_item_id,
+                "quantity": quantity,
+                "memo": memo
+            }).execute()
+            
+            flash("持ち出し備品を登録しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 持ち出し備品登録エラー: {e}")
+            flash(f"持ち出し備品の登録に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 新規作成フォーム
+    try:
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        return render_template(
+            "admin_equipment_takeout_new.html",
+            year=year,
+            equipment_items=equipment_items
+        )
+    except Exception as e:
+        print(f"❌ 備品一覧取得エラー: {e}")
+        flash("備品一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/takeouts/<takeout_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_takeout_edit(year, takeout_id):
+    """持ち出し備品 - 編集"""
+    if request.method == "POST":
+        try:
+            takeout_date = request.form.get("takeout_date")
+            equipment_item_id = request.form.get("equipment_item_id")
+            quantity = int(request.form.get("quantity", 0))
+            memo = request.form.get("memo", "").strip()
+            
+            supabase_admin.table("equipment_takeouts").update({
+                "takeout_date": takeout_date,
+                "equipment_item_id": equipment_item_id,
+                "quantity": quantity,
+                "memo": memo
+            }).eq("id", takeout_id).execute()
+            
+            flash("持ち出し備品を更新しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 持ち出し備品更新エラー: {e}")
+            flash(f"持ち出し備品の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 編集フォーム
+    try:
+        res_takeout = supabase_admin.table("equipment_takeouts").select("*, equipment_items(name, unit)").eq("id", takeout_id).execute()
+        if not res_takeout.data:
+            flash("持ち出し備品が見つかりません", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+        
+        takeout = res_takeout.data[0]
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        return render_template(
+            "admin_equipment_takeout_edit.html",
+            year=year,
+            takeout=takeout,
+            equipment_items=equipment_items
+        )
+    except Exception as e:
+        print(f"❌ 持ち出し備品取得エラー: {e}")
+        flash("持ち出し備品の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/takeouts/<takeout_id>/delete", methods=["POST"])
+@admin_required
+def admin_equipment_takeout_delete(year, takeout_id):
+    """持ち出し備品 - 削除"""
+    try:
+        supabase_admin.table("equipment_takeouts").delete().eq("id", takeout_id).execute()
+        flash("持ち出し備品を削除しました", "success")
+    except Exception as e:
+        print(f"❌ 持ち出し備品削除エラー: {e}")
+        flash("持ち出し備品の削除に失敗しました", "error")
+    return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/orders/new", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_order_new(year):
+    """発注備品 - 新規作成"""
+    if request.method == "POST":
+        try:
+            order_date = request.form.get("order_date")
+            equipment_item_id = request.form.get("equipment_item_id")
+            quantity = int(request.form.get("quantity", 0))
+            amount = request.form.get("amount", "").strip()
+            amount_decimal = float(amount) if amount else None
+            status = request.form.get("status", "pending")
+            arrival_date = request.form.get("arrival_date", "").strip() or None
+            memo = request.form.get("memo", "").strip()
+            
+            order_data = {
+                "order_date": order_date,
+                "equipment_item_id": equipment_item_id,
+                "quantity": quantity,
+                "status": status,
+                "memo": memo
+            }
+            
+            if amount_decimal is not None:
+                order_data["amount"] = amount_decimal
+            
+            if arrival_date:
+                order_data["arrival_date"] = arrival_date
+            
+            supabase_admin.table("equipment_orders").insert(order_data).execute()
+            
+            flash("発注備品を登録しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 発注備品登録エラー: {e}")
+            flash(f"発注備品の登録に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 新規作成フォーム
+    try:
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        return render_template(
+            "admin_equipment_order_new.html",
+            year=year,
+            equipment_items=equipment_items
+        )
+    except Exception as e:
+        print(f"❌ 備品一覧取得エラー: {e}")
+        flash("備品一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/orders/<order_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_order_edit(year, order_id):
+    """発注備品 - 編集"""
+    if request.method == "POST":
+        try:
+            order_date = request.form.get("order_date")
+            equipment_item_id = request.form.get("equipment_item_id")
+            quantity = int(request.form.get("quantity", 0))
+            amount = request.form.get("amount", "").strip()
+            amount_decimal = float(amount) if amount else None
+            status = request.form.get("status", "pending")
+            arrival_date = request.form.get("arrival_date", "").strip() or None
+            memo = request.form.get("memo", "").strip()
+            
+            order_data = {
+                "order_date": order_date,
+                "equipment_item_id": equipment_item_id,
+                "quantity": quantity,
+                "status": status,
+                "memo": memo
+            }
+            
+            if amount_decimal is not None:
+                order_data["amount"] = amount_decimal
+            else:
+                order_data["amount"] = None
+            
+            if arrival_date:
+                order_data["arrival_date"] = arrival_date
+            else:
+                order_data["arrival_date"] = None
+            
+            supabase_admin.table("equipment_orders").update(order_data).eq("id", order_id).execute()
+            
+            flash("発注備品を更新しました", "success")
+            return redirect(f"/admin/equipment/years/{year}")
+        except Exception as e:
+            print(f"❌ 発注備品更新エラー: {e}")
+            flash(f"発注備品の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+    
+    # GET: 編集フォーム
+    try:
+        res_order = supabase_admin.table("equipment_orders").select("*, equipment_items(name, unit)").eq("id", order_id).execute()
+        if not res_order.data:
+            flash("発注備品が見つかりません", "error")
+            return redirect(f"/admin/equipment/years/{year}")
+        
+        order = res_order.data[0]
+        res_items = supabase_admin.table("equipment_items").select("*").order("name").execute()
+        equipment_items = res_items.data or []
+        
+        return render_template(
+            "admin_equipment_order_edit.html",
+            year=year,
+            order=order,
+            equipment_items=equipment_items
+        )
+    except Exception as e:
+        print(f"❌ 発注備品取得エラー: {e}")
+        flash("発注備品の取得に失敗しました", "error")
+        return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/years/<year>/orders/<order_id>/delete", methods=["POST"])
+@admin_required
+def admin_equipment_order_delete(year, order_id):
+    """発注備品 - 削除"""
+    try:
+        supabase_admin.table("equipment_orders").delete().eq("id", order_id).execute()
+        flash("発注備品を削除しました", "success")
+    except Exception as e:
+        print(f"❌ 発注備品削除エラー: {e}")
+        flash("発注備品の削除に失敗しました", "error")
+    return redirect(f"/admin/equipment/years/{year}")
+
+
+@app.route("/admin/equipment/items/new", methods=["GET", "POST"])
+@admin_required
+def admin_equipment_item_new():
+    """備品マスタ - 新規作成"""
+    if request.method == "POST":
+        try:
+            name = request.form.get("name", "").strip()
+            unit = request.form.get("unit", "").strip()
+            
+            if not name:
+                flash("備品名を入力してください", "error")
+                return redirect("/admin/equipment/items/new")
+            
+            supabase_admin.table("equipment_items").insert({
+                "name": name,
+                "unit": unit
+            }).execute()
+            
+            flash("備品を登録しました", "success")
+            return redirect("/admin/equipment")
+        except Exception as e:
+            print(f"❌ 備品登録エラー: {e}")
+            flash(f"備品の登録に失敗しました: {e}", "error")
+            return redirect("/admin/equipment/items/new")
+    
+    # GET: 新規作成フォーム
+    return render_template("admin_equipment_item_new.html")
+
+
+@app.route("/admin/equipment/years/<year>/copy-from-previous", methods=["POST"])
+@admin_required
+def admin_equipment_copy_from_previous(year):
+    """前年の現在庫数を年初在庫数としてコピー"""
+    try:
+        year_int = int(year)
+        prev_year = year_int - 1
+        
+        # 前年のデータを取得
+        res_prev_initial = supabase_admin.table("equipment_initial_stock").select("*, equipment_items(name, unit)").eq("year", prev_year).execute()
+        prev_initial_stocks = res_prev_initial.data or []
+        
+        # 前年の持ち出し備品を取得
+        res_prev_takeouts = supabase_admin.table("equipment_takeouts").select("*").gte("takeout_date", f"{prev_year}-01-01").lte("takeout_date", f"{prev_year}-12-31").execute()
+        prev_takeouts = res_prev_takeouts.data or []
+        
+        # 前年の到着済み発注備品を取得
+        res_prev_orders = supabase_admin.table("equipment_orders").select("*").gte("order_date", f"{prev_year}-01-01").lte("order_date", f"{prev_year}-12-31").eq("status", "arrived").execute()
+        prev_orders = res_prev_orders.data or []
+        
+        # 前年の現在庫数を計算
+        prev_current_stock_map = {}
+        for stock in prev_initial_stocks:
+            item_id = stock["equipment_item_id"]
+            initial_qty = stock.get("quantity", 0)
+            
+            # 持ち出し数を集計
+            takeout_qty = sum(t.get("quantity", 0) for t in prev_takeouts if t.get("equipment_item_id") == item_id)
+            
+            # 到着済み発注数を集計
+            arrived_qty = sum(o.get("quantity", 0) for o in prev_orders if o.get("equipment_item_id") == item_id)
+            
+            current_stock = initial_qty - takeout_qty + arrived_qty
+            if current_stock > 0:
+                prev_current_stock_map[item_id] = current_stock
+        
+        # 現在の年の既存データを取得
+        res_current = supabase_admin.table("equipment_initial_stock").select("equipment_item_id").eq("year", year_int).execute()
+        existing_ids = {item["equipment_item_id"] for item in (res_current.data or [])}
+        
+        # 前年の現在庫数を現在の年の年初在庫数として登録
+        new_stocks = []
+        for item_id, quantity in prev_current_stock_map.items():
+            if item_id not in existing_ids:
+                new_stocks.append({
+                    "year": year_int,
+                    "equipment_item_id": item_id,
+                    "quantity": quantity
+                })
+        
+        if new_stocks:
+            supabase_admin.table("equipment_initial_stock").insert(new_stocks).execute()
+            flash(f"{len(new_stocks)}件の備品を前年から引き継ぎました", "success")
+        else:
+            flash("引き継ぐ備品がありませんでした", "info")
+        
+        return redirect(f"/admin/equipment/years/{year}")
+    except Exception as e:
+        import traceback
+        print(f"❌ 前年からの引き継ぎエラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"前年からの引き継ぎに失敗しました: {e}", "error")
+        return redirect(f"/admin/equipment/years/{year}")
 
 
 @app.errorhandler(404)

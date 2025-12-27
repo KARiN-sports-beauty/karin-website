@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}備品マスタ - 新規作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">➕ 備品マスタ - 新規作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/equipment" class="admin-karte-detail-btn-back" style="text-decoration: none;">← 備品管理に戻る</a>
+</div>
+
+<form method="POST" action="/admin/equipment/items/new" style="max-width: 800px;">
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">備品名<span style="color: #f44336;">*</span></label>
+      <input type="text" name="name" required placeholder="例：マッサージベッド" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">単位</label>
+      <input type="text" name="unit" placeholder="例：台、個、本、セット" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-top: 24px;">
+      <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 12px 24px; font-size: 1rem;">登録</button>
+      <a href="/admin/equipment" class="admin-karte-detail-btn-back" style="text-decoration: none; margin-left: 12px; padding: 12px 24px; display: inline-block;">キャンセル</a>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
