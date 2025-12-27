@@ -6173,7 +6173,7 @@ def admin_revenue_staff():
 
 @app.route("/admin/revenue/staff/<staff_id>/years")
 @admin_required
-def admin_revenue_years(staff_id):
+def admin_revenue_staff_years(staff_id):
     """スタッフ別月次売上一覧 - 年選択"""
     try:
         # スタッフ情報を取得
@@ -6214,7 +6214,7 @@ def admin_revenue_years(staff_id):
 
 @app.route("/admin/revenue/staff/<staff_id>/years/<year>")
 @admin_required
-def admin_revenue_months(staff_id, year):
+def admin_revenue_staff_months(staff_id, year):
     """スタッフ別月次売上一覧 - 月選択"""
     try:
         # スタッフ情報を取得
