@@ -1497,100 +1497,53 @@ def blog():
 # ===========================
 @app.route("/blog/<slug>")
 def show_blog(slug):
-    # 対象ブログ取得（slug で検索）
-    res = supabase.table("blogs").select("*").eq("slug", slug).execute()
-    data = res.data
+    try:
+        # 対象ブログ取得（slug で検索）
+        # 公開されているブログのみ取得（draft=False）
+        res = supabase.table("blogs").select("*").eq("slug", slug).eq("draft", False).execute()
+        data = res.data
 
-    if not data:
-        return render_template("404.html"), 404
+        if not data:
+            # 下書きも含めて検索（管理者用）
+            try:
+                res_draft = supabase_admin.table("blogs").select("*").eq("slug", slug).execute()
+                if res_draft.data:
+                    data = res_draft.data
+            except:
+                pass
+        
+        if not data:
+            return render_template("404.html"), 404
 
-    blog = data[0]
-    blog_id = blog["id"]  # ← コメント・いいね取得用に必要
+        blog = data[0]
+        blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
-    # コメント取得（新しい順）
-    comments_res = (
-        supabase
-        .table("comments")
-        .select("*")
-        .eq("blog_id", blog_id)
-        .order("created_at", desc=True)
-        .execute()
-    )
-    comments = comments_res.data or []
-
-    print("💬 COMMENTS_DEBUG:", comments)  # ← これ追加
-    
-    # 著者情報を取得
-    author_info = None
-    author_staff_id = blog.get("author_staff_id")
-    
-    print(f"🔍 ブログ著者情報デバッグ - author_staff_id: {author_staff_id}")
-    
-    if author_staff_id:
+        # コメント取得（新しい順）
+        comments = []
         try:
-            users = supabase_admin.auth.admin.list_users()
-            author_user = next((u for u in users if u.id == author_staff_id), None)
-            if author_user:
-                meta = author_user.user_metadata or {}
-                last_name = meta.get("last_name", "")
-                first_name = meta.get("first_name", "")
-                last_kana = meta.get("last_kana", "")
-                first_kana = meta.get("first_kana", "")
-                
-                # 姓名を生成
-                if last_name and first_name:
-                    author_name = f"{last_name} {first_name}"
-                else:
-                    author_name = meta.get("name", "スタッフ")
-                
-                # セイメイを生成
-                if last_kana and first_kana:
-                    author_kana = f"{last_kana} {first_kana}"
-                else:
-                    author_kana = meta.get("kana", "")
-                
-                profile_image_url = meta.get("profile_image_url", "")
-                print(f"🔍 著者プロフィール画像URL（取得時）: {profile_image_url}")
-                
-                # profile_image_urlが相対パスの場合、url_forで解決
-                if profile_image_url and not profile_image_url.startswith("http"):
-                    # /static/staff_profiles/... の形式の場合
-                    if profile_image_url.startswith("/static/"):
-                        filename = profile_image_url.replace("/static/", "")
-                        profile_image_url = url_for("static", filename=filename)
-                    elif profile_image_url.startswith("static/"):
-                        filename = profile_image_url.replace("static/", "")
-                        profile_image_url = url_for("static", filename=filename)
-                    else:
-                        # パスが指定されていない場合はそのまま使用（相対パスの場合）
-                        pass
-                print(f"🔍 著者プロフィール画像URL（処理後）: {profile_image_url}")
-                
-                author_info = {
-                    "name": author_name,
-                    "kana": author_kana,
-                    "blog_comment": meta.get("blog_comment", ""),
-                    "profile_image_url": profile_image_url
-                }
-                print(f"🔍 著者情報取得成功 - name: {author_name}, profile_image_url: {profile_image_url}")
-            else:
-                print(f"⚠️ 著者ユーザーが見つかりません - author_staff_id: {author_staff_id}")
+            comments_res = (
+                supabase
+                .table("comments")
+                .select("*")
+                .eq("blog_id", blog_id)
+                .order("created_at", desc=True)
+                .execute()
+            )
+            comments = comments_res.data or []
         except Exception as e:
-            print(f"⚠️ 著者情報取得エラー: {e}")
-            import traceback
-            print(traceback.format_exc())
-            author_info = None
-    else:
-        print("⚠️ ブログにauthor_staff_idが設定されていません")
-        # author_staff_idが設定されていない場合、最新のブログ作成者を取得（フォールバック）
-        try:
-            # 同じslugまたは最新のブログからauthor_staff_idを取得
-            res_latest = supabase_admin.table("blogs").select("author_staff_id").eq("slug", slug).order("created_at", desc=True).limit(1).execute()
-            if res_latest.data and res_latest.data[0].get("author_staff_id"):
-                author_staff_id = res_latest.data[0]["author_staff_id"]
-                print(f"🔍 フォールバック: 最新のブログからauthor_staff_idを取得 - {author_staff_id}")
-                
-                # 再度著者情報を取得
+            print(f"⚠️ コメント取得エラー: {e}")
+            comments = []
+
+        print("💬 COMMENTS_DEBUG:", comments)  # ← これ追加
+        
+        # 著者情報を取得
+        author_info = None
+        author_staff_id = blog.get("author_staff_id")
+        
+        print(f"🔍 ブログ著者情報デバッグ - author_staff_id: {author_staff_id}")
+        
+        if author_staff_id:
+            try:
                 users = supabase_admin.auth.admin.list_users()
                 author_user = next((u for u in users if u.id == author_staff_id), None)
                 if author_user:
@@ -1600,26 +1553,34 @@ def show_blog(slug):
                     last_kana = meta.get("last_kana", "")
                     first_kana = meta.get("first_kana", "")
                     
+                    # 姓名を生成
                     if last_name and first_name:
                         author_name = f"{last_name} {first_name}"
                     else:
                         author_name = meta.get("name", "スタッフ")
                     
+                    # セイメイを生成
                     if last_kana and first_kana:
                         author_kana = f"{last_kana} {first_kana}"
                     else:
                         author_kana = meta.get("kana", "")
                     
                     profile_image_url = meta.get("profile_image_url", "")
-                    print(f"🔍 フォールバック: 著者プロフィール画像URL（取得時）: {profile_image_url}")
+                    print(f"🔍 著者プロフィール画像URL（取得時）: {profile_image_url}")
+                    
+                    # profile_image_urlが相対パスの場合、url_forで解決
                     if profile_image_url and not profile_image_url.startswith("http"):
+                        # /static/staff_profiles/... の形式の場合
                         if profile_image_url.startswith("/static/"):
                             filename = profile_image_url.replace("/static/", "")
                             profile_image_url = url_for("static", filename=filename)
                         elif profile_image_url.startswith("static/"):
                             filename = profile_image_url.replace("static/", "")
                             profile_image_url = url_for("static", filename=filename)
-                    print(f"🔍 フォールバック: 著者プロフィール画像URL（処理後）: {profile_image_url}")
+                        else:
+                            # パスが指定されていない場合はそのまま使用（相対パスの場合）
+                            pass
+                    print(f"🔍 著者プロフィール画像URL（処理後）: {profile_image_url}")
                     
                     author_info = {
                         "name": author_name,
@@ -1627,27 +1588,92 @@ def show_blog(slug):
                         "blog_comment": meta.get("blog_comment", ""),
                         "profile_image_url": profile_image_url
                     }
+                    print(f"🔍 著者情報取得成功 - name: {author_name}, profile_image_url: {profile_image_url}")
+                else:
+                    print(f"⚠️ 著者ユーザーが見つかりません - author_staff_id: {author_staff_id}")
+            except Exception as e:
+                print(f"⚠️ 著者情報取得エラー: {e}")
+                import traceback
+                print(traceback.format_exc())
+                author_info = None
+        else:
+            print("⚠️ ブログにauthor_staff_idが設定されていません")
+            # author_staff_idが設定されていない場合、最新のブログ作成者を取得（フォールバック）
+            try:
+                # 同じslugまたは最新のブログからauthor_staff_idを取得
+                res_latest = supabase_admin.table("blogs").select("author_staff_id").eq("slug", slug).order("created_at", desc=True).limit(1).execute()
+                if res_latest.data and res_latest.data[0].get("author_staff_id"):
+                    author_staff_id = res_latest.data[0]["author_staff_id"]
+                    print(f"🔍 フォールバック: 最新のブログからauthor_staff_idを取得 - {author_staff_id}")
+                    
+                    # 再度著者情報を取得
+                    users = supabase_admin.auth.admin.list_users()
+                    author_user = next((u for u in users if u.id == author_staff_id), None)
+                    if author_user:
+                        meta = author_user.user_metadata or {}
+                        last_name = meta.get("last_name", "")
+                        first_name = meta.get("first_name", "")
+                        last_kana = meta.get("last_kana", "")
+                        first_kana = meta.get("first_kana", "")
+                        
+                        if last_name and first_name:
+                            author_name = f"{last_name} {first_name}"
+                        else:
+                            author_name = meta.get("name", "スタッフ")
+                        
+                        if last_kana and first_kana:
+                            author_kana = f"{last_kana} {first_kana}"
+                        else:
+                            author_kana = meta.get("kana", "")
+                        
+                        profile_image_url = meta.get("profile_image_url", "")
+                        print(f"🔍 フォールバック: 著者プロフィール画像URL（取得時）: {profile_image_url}")
+                        if profile_image_url and not profile_image_url.startswith("http"):
+                            if profile_image_url.startswith("/static/"):
+                                filename = profile_image_url.replace("/static/", "")
+                                profile_image_url = url_for("static", filename=filename)
+                            elif profile_image_url.startswith("static/"):
+                                filename = profile_image_url.replace("static/", "")
+                                profile_image_url = url_for("static", filename=filename)
+                        print(f"🔍 フォールバック: 著者プロフィール画像URL（処理後）: {profile_image_url}")
+                        
+                        author_info = {
+                            "name": author_name,
+                            "kana": author_kana,
+                            "blog_comment": meta.get("blog_comment", ""),
+                            "profile_image_url": profile_image_url
+                        }
+            except Exception as e:
+                print(f"⚠️ フォールバック著者情報取得エラー: {e}")
+
+        # いいね数取得
+        like_count = 0
+        try:
+            like_res = (
+                supabase
+                .table("likes")
+                .select("liked", count="exact")
+                .eq("blog_id", blog_id)
+                .eq("liked", True)
+                .execute()
+            )
+            like_count = like_res.count or 0
         except Exception as e:
-            print(f"⚠️ フォールバック著者情報取得エラー: {e}")
+            print(f"⚠️ いいね数取得エラー: {e}")
+            like_count = 0
 
-    # いいね数取得
-    like_res = (
-        supabase
-        .table("likes")
-        .select("liked", count="exact")
-        .eq("blog_id", blog_id)
-        .eq("liked", True)
-        .execute()
-    )
-    like_count = like_res.count or 0
-
-    return render_template(
-        "blog_detail.html",
-        blog=blog,
-        comments=comments,
-        like_count=like_count,
-        author_info=author_info
-    )
+        return render_template(
+            "blog_detail.html",
+            blog=blog,
+            comments=comments,
+            like_count=like_count,
+            author_info=author_info
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ ブログ表示エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        return render_template("404.html"), 500
 
 
 # ===================================================
