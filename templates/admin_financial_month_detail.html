@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}収支管理 - {{ year }}年{{ month_name }} | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 収支管理 - {{ year }}年{{ month_name }}</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+  <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年に戻る</a>
+  <a href="/admin/financial/years/{{ year }}/expenses/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">➕ 経費追加</a>
+  <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">💰 給与追加</a>
+</div>
+
+<!-- 月次収支サマリー -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ year }}年{{ month_name }} 収支サマリー</h3>
+  
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+    <div style="padding: 20px; background: #e8f5e9; border-radius: 12px;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">売上</div>
+      <div style="font-size: 1.8rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format(month_revenue|int) }}</div>
+    </div>
+    <div style="padding: 20px; background: #ffebee; border-radius: 12px;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">経費</div>
+      <div style="font-size: 1.8rem; font-weight: 600; color: #c62828;">¥{{ "{:,}".format(month_expenses|int) }}</div>
+    </div>
+    <div style="padding: 20px; background: {% if month_profit >= 0 %}#e8f5e9{% else %}#ffebee{% endif %}; border-radius: 12px;">
+      <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">収支</div>
+      <div style="font-size: 1.8rem; font-weight: 600; color: {% if month_profit >= 0 %}#2e7d32{% else %}#c62828{% endif %};">
+        ¥{{ "{:,}".format(month_profit|int) }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- スタッフ別売上 -->
+{% if staff_revenue %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ別売上</h3>
+  
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">スタッフ名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">売上</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for staff_name, revenue in staff_revenue.items() %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ staff_name }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(revenue|int) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- スタッフ給与 -->
+{% if staff_salaries %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ給与</h3>
+  
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">スタッフ名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">基本給</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">歩合</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">指名料</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">交通費</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">総支給</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">控除</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">手取り</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for salary in staff_salaries %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ salary.staff_name }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(salary.base_salary|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(salary.commission|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format((salary.nomination_fee or 0)|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(salary.transportation|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">¥{{ "{:,}".format(salary.total_salary|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            ¥{{ "{:,}".format((salary.tax + salary.social_insurance + salary.other_deduction)|int) }}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600; color: #2e7d32;">
+            ¥{{ "{:,}".format(salary.net_salary|int) }}
+          </td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ salary.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
+            <form method="POST" action="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ salary.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+              <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- 経費一覧 -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">経費一覧</h3>
+  
+  {% if expenses or equipment_expenses %}
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">日付</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">カテゴリ</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">説明</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">金額</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for expense in expenses %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ expense.expense_date }}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {% set category_names = {
+              'salary': '給与',
+              'transportation': '交通費',
+              'tax': '税金',
+              'supplies': '消耗品',
+              'other': 'その他'
+            } %}
+            {{ category_names.get(expense.category, expense.category) }}
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {{ expense.description or '' }}
+            {% if expense.staff_name %}({{ expense.staff_name }}){% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(expense.amount|int) }}</td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            {% if expense.linked_type == 'manual' %}
+            <a href="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
+            <form method="POST" action="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+              <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
+            </form>
+            {% else %}
+            <span style="color: #999; font-size: 0.85rem;">自動</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% for order in equipment_expenses %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ order.order_date }}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">消耗品</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            {% if order.equipment_items %}
+              備品発注: {{ order.equipment_items.name }}
+            {% else %}
+              備品発注
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(order.amount|int) if order.amount else 0 }}</td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <span style="color: #999; font-size: 0.85rem;">自動</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="padding: 20px; color: #666;">経費はありません。</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+

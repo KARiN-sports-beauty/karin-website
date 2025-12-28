@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}スタッフ給与 - 新規作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 スタッフ給与 - 新規作成（{{ year }}年{{ month }}月）</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/financial/years/{{ year }}/months/{{ month }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年{{ month }}月の収支管理に戻る</a>
+</div>
+
+<form method="POST" action="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/new" style="max-width: 800px;">
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">スタッフ<span style="color: #f44336;">*</span></label>
+      <select name="staff_id" id="staff_id" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" onchange="updateStaffName(); loadSalaryCalculation();">
+        <option value="">選択してください</option>
+        {% for staff in staff_list %}
+        <option value="{{ staff.id }}" data-name="{{ staff.name }}" data-area="{{ staff.area or 'tokyo' }}">{{ staff.name }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="staff_name" id="staff_name">
+      <button type="button" id="auto_calc_btn" onclick="applyAutoCalculation()" style="margin-top: 8px; padding: 8px 16px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; display: none;">💰 自動計算を適用</button>
+      <input type="hidden" name="use_auto_calc" id="use_auto_calc" value="false">
+    </div>
+    
+    <div id="salary_calc_info" style="margin-bottom: 20px; padding: 12px; background: #e8f5e9; border-radius: 8px; display: none;">
+      <div style="font-size: 0.9rem; color: #2e7d32; margin-bottom: 8px;"><strong>自動計算結果</strong></div>
+      <div style="font-size: 0.85rem; color: #666;">
+        <div>実働時間: <span id="calc_working_hours">-</span>時間</div>
+        <div>売上: ¥<span id="calc_revenue">0</span></div>
+        <div>基本給: ¥<span id="calc_base_salary">0</span></div>
+        <div>歩合給: ¥<span id="calc_commission">0</span></div>
+        <div>指名料: ¥<span id="calc_nomination_fee">0</span></div>
+        <div>交通費: ¥<span id="calc_transportation">0</span></div>
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">基本給</label>
+        <input type="number" name="base_salary" id="base_salary" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">歩合</label>
+        <input type="number" name="commission" id="commission" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">指名料</label>
+        <input type="number" name="nomination_fee" id="nomination_fee" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">交通費</label>
+        <input type="number" name="transportation" id="transportation" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">税金</label>
+        <input type="number" name="tax" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">社会保険</label>
+        <input type="number" name="social_insurance" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">その他控除</label>
+        <input type="number" name="other_deduction" min="0" step="0.01" value="0" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">メモ</label>
+      <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+    </div>
+    
+    <div style="margin-top: 24px;">
+      <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 12px 24px; font-size: 1rem;">登録</button>
+      <a href="/admin/financial/years/{{ year }}/months/{{ month }}" class="admin-karte-detail-btn-back" style="text-decoration: none; margin-left: 12px; padding: 12px 24px; display: inline-block;">キャンセル</a>
+    </div>
+  </div>
+</form>
+
+<script>
+const salaryCalculations = {{ salary_calculations | tojson if salary_calculations else '{}' }};
+
+function updateStaffName() {
+  const select = document.getElementById('staff_id');
+  const hidden = document.getElementById('staff_name');
+  const selectedOption = select.options[select.selectedIndex];
+  if (selectedOption.value) {
+    hidden.value = selectedOption.getAttribute('data-name');
+  } else {
+    hidden.value = '';
+  }
+}
+
+function loadSalaryCalculation() {
+  const select = document.getElementById('staff_id');
+  const staffId = select.value;
+  const calcInfo = document.getElementById('salary_calc_info');
+  const autoCalcBtn = document.getElementById('auto_calc_btn');
+  
+  if (staffId && salaryCalculations[staffId]) {
+    const calc = salaryCalculations[staffId];
+    document.getElementById('calc_working_hours').textContent = calc.working_hours.toFixed(1);
+    document.getElementById('calc_revenue').textContent = calc.revenue.toLocaleString();
+    document.getElementById('calc_base_salary').textContent = calc.base_salary.toLocaleString();
+    document.getElementById('calc_commission').textContent = calc.commission.toLocaleString();
+    document.getElementById('calc_nomination_fee').textContent = calc.nomination_fee.toLocaleString();
+    document.getElementById('calc_transportation').textContent = calc.transportation.toLocaleString();
+    calcInfo.style.display = 'block';
+    autoCalcBtn.style.display = 'inline-block';
+  } else {
+    calcInfo.style.display = 'none';
+    autoCalcBtn.style.display = 'none';
+  }
+}
+
+function applyAutoCalculation() {
+  const select = document.getElementById('staff_id');
+  const staffId = select.value;
+  
+  if (staffId && salaryCalculations[staffId]) {
+    const calc = salaryCalculations[staffId];
+    document.getElementById('base_salary').value = calc.base_salary;
+    document.getElementById('commission').value = calc.commission;
+    document.getElementById('nomination_fee').value = calc.nomination_fee;
+    document.getElementById('transportation').value = calc.transportation;
+    document.getElementById('use_auto_calc').value = 'true';
+    alert('自動計算を適用しました。必要に応じて手動で調整してください。');
+  }
+}
+</script>
+
+{% endblock %}
+

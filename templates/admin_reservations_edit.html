@@ -36,10 +36,36 @@
   </div>
   
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須・複数選択可）</label>
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">基本メニューを選択してください</small>
+  </div>
+  
+  <!-- 追加メニュー（本指名・枠指名・割引） -->
+  <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
+    <label class="form-field" style="display: block; margin-bottom: 12px; font-weight: 600; color: #1E3A5F;">追加メニュー（複数選択可）</label>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="本指名(¥1,000)" id="menu_main_nomination" onchange="updateNominationFee()" {% if reservation.selected_menus and '本指名(¥1,000)' in reservation.selected_menus %}checked{% endif %}>
+        <span>本指名(¥1,000)</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="枠指名(¥500)" id="menu_frame_nomination" onchange="updateNominationFee()" {% if reservation.selected_menus and '枠指名(¥500)' in reservation.selected_menus %}checked{% endif %}>
+        <span>枠指名(¥500)</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="割引(△¥1,000)" id="menu_discount_1000" onchange="updateDiscount()" {% if reservation.selected_menus and '割引(△¥1,000)' in reservation.selected_menus %}checked{% endif %}>
+        <span>割引(△¥1,000)</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="割引(△¥500)" id="menu_discount_500" onchange="updateDiscount()" {% if reservation.selected_menus and '割引(△¥500)' in reservation.selected_menus %}checked{% endif %}>
+        <span>割引(△¥500)</span>
+      </label>
+    </div>
+    <input type="hidden" name="nomination_fee" id="nomination_fee" value="{{ reservation.nomination_fee or 0 }}">
+    <input type="hidden" name="discount" id="discount" value="{{ reservation.discount or 0 }}">
   </div>
   
   <div style="margin-bottom: 20px;">
@@ -228,6 +254,48 @@ function updatePrice() {
     }
   } else {
     basePriceInput.value = '';
+  }
+  
+  // 指名料と割引を再計算
+  updateNominationFee();
+  updateDiscount();
+}
+
+// 指名料更新関数
+function updateNominationFee() {
+  const mainNomination = document.getElementById('menu_main_nomination');
+  const frameNomination = document.getElementById('menu_frame_nomination');
+  const nominationFeeInput = document.getElementById('nomination_fee');
+  
+  let fee = 0;
+  if (mainNomination && mainNomination.checked) {
+    fee += 1000;
+  }
+  if (frameNomination && frameNomination.checked) {
+    fee += 500;
+  }
+  
+  if (nominationFeeInput) {
+    nominationFeeInput.value = fee;
+  }
+}
+
+// 割引更新関数
+function updateDiscount() {
+  const discount1000 = document.getElementById('menu_discount_1000');
+  const discount500 = document.getElementById('menu_discount_500');
+  const discountInput = document.getElementById('discount');
+  
+  let discount = 0;
+  if (discount1000 && discount1000.checked) {
+    discount += 1000;
+  }
+  if (discount500 && discount500.checked) {
+    discount += 500;
+  }
+  
+  if (discountInput) {
+    discountInput.value = discount;
   }
 }
 

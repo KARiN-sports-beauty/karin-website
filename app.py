@@ -276,6 +276,240 @@ def calc_age(birthday_str):
     return age
 
 
+def calculate_salary(staff_name, year, month, area="tokyo"):
+    """
+    スタッフの給与を自動計算する関数
+    
+    計算ロジック：
+    1. 基本給 = 最低時給 × 実働時間（40h×4週 = 160時間が基本）
+    2. 歩合給 = スタッフの売上（治療売上や帯同売上）の35% - 基本給
+    3. 指名料 = 予約から自動集計（本指名・枠指名）
+    4. 交通費 = 別途申請したものをそのまま支給
+    
+    Args:
+        staff_name: スタッフ名
+        year: 年
+        month: 月
+        area: エリア（tokyo/fukuoka）- 最低時給の決定に使用
+    
+    Returns:
+        dict: {
+            "base_salary": 基本給,
+            "commission": 歩合給,
+            "nomination_fee": 指名料,
+            "transportation": 交通費,
+            "total_salary": 総支給,
+            "working_hours": 実働時間（時間）,
+            "revenue": 売上
+        }
+    """
+    # 最低時給の設定（2025年時点）
+    # 東京: 1113円、福岡: 961円（実際の最低賃金に合わせて調整可能）
+    min_hourly_wage = {
+        "tokyo": 1113,
+        "fukuoka": 961
+    }.get(area, 1113)  # デフォルトは東京
+    
+    # 基本実働時間（40h×4週 = 160時間）
+    base_working_hours = 160
+    
+    # 月の開始日と終了日
+    month_start = f"{year}-{month:02d}-01"
+    if month in [1, 3, 5, 7, 8, 10, 12]:
+        month_end = f"{year}-{month:02d}-31"
+    elif month in [4, 6, 9, 11]:
+        month_end = f"{year}-{month:02d}-30"
+    else:
+        if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
+            month_end = f"{year}-{month:02d}-29"
+        else:
+            month_end = f"{year}-{month:02d}-28"
+    
+    # 実働時間を計算（日報から）
+    working_hours = base_working_hours  # デフォルト値
+    try:
+        res_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
+        report_ids = [r["id"] for r in (res_reports.data or [])]
+        
+        if report_ids:
+            total_minutes = 0
+            res_items = supabase_admin.table("staff_daily_report_items").select("start_time, end_time, break_minutes").in_("daily_report_id", report_ids).execute()
+            for item in (res_items.data or []):
+                start_time = item.get("start_time")
+                end_time = item.get("end_time")
+                break_minutes = item.get("break_minutes", 0) or 0
+                
+                if start_time and end_time:
+                    try:
+                        # 時刻文字列をパース（HH:MM形式）
+                        if isinstance(start_time, str):
+                            start_parts = start_time.split(":")
+                            start_hour = int(start_parts[0])
+                            start_minute = int(start_parts[1]) if len(start_parts) > 1 else 0
+                        else:
+                            start_hour = int(start_time)
+                            start_minute = 0
+                        
+                        if isinstance(end_time, str):
+                            end_parts = end_time.split(":")
+                            end_hour = int(end_parts[0])
+                            end_minute = int(end_parts[1]) if len(end_parts) > 1 else 0
+                        else:
+                            end_hour = int(end_time)
+                            end_minute = 0
+                        
+                        # 時間差を計算（分単位）
+                        start_total_minutes = start_hour * 60 + start_minute
+                        end_total_minutes = end_hour * 60 + end_minute
+                        
+                        # 日を跨ぐ場合の処理
+                        if end_total_minutes < start_total_minutes:
+                            end_total_minutes += 24 * 60
+                        
+                        item_minutes = end_total_minutes - start_total_minutes - break_minutes
+                        if item_minutes > 0:
+                            total_minutes += item_minutes
+                    except Exception as e:
+                        print(f"⚠️ WARNING - 実働時間計算エラー: {e}")
+                        continue
+            
+            # 分を時間に変換
+            working_hours = total_minutes / 60.0 if total_minutes > 0 else base_working_hours
+    except Exception as e:
+        print(f"⚠️ WARNING - 実働時間取得エラー: {e}")
+    
+    # 基本給 = 最低時給 × 実働時間
+    base_salary = int(min_hourly_wage * working_hours)
+    
+    # 売上を集計（日報データから）
+    revenue = 0
+    try:
+        res_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
+        report_ids = [r["id"] for r in (res_reports.data or [])]
+        
+        if report_ids:
+            res_items = supabase_admin.table("staff_daily_report_items").select("id").in_("daily_report_id", report_ids).execute()
+            item_ids = [item["id"] for item in (res_items.data or [])]
+            
+            if item_ids:
+                res_patients = supabase_admin.table("staff_daily_report_patients").select("amount").in_("item_id", item_ids).execute()
+                for patient in (res_patients.data or []):
+                    amount = patient.get("amount", 0) or 0
+                    revenue += amount
+    except Exception as e:
+        print(f"⚠️ WARNING - 売上集計エラー: {e}")
+    
+    # 歩合給 = 売上の35% - 基本給（マイナスの場合は0）
+    commission_rate = 0.35
+    commission = max(0, int(revenue * commission_rate) - base_salary)
+    
+    # 指名料を集計（予約から）
+    nomination_fee = 0
+    try:
+        # 予約完了分の指名料を集計
+        res_reservations = supabase_admin.table("reservations").select("nomination_fee, place_type, selected_menus, staff_name, nominated_staff_ids").eq("staff_name", staff_name).eq("status", "completed").gte("reserved_at", month_start).lte("reserved_at", month_end).execute()
+        
+        for reservation in (res_reservations.data or []):
+            # 対応スタッフの指名料を集計
+            res_nomination_fee = reservation.get("nomination_fee", 0) or 0
+            place_type = reservation.get("place_type", "")
+            selected_menus_str = reservation.get("selected_menus", [])
+            
+            if isinstance(selected_menus_str, str):
+                try:
+                    selected_menus_str = json.loads(selected_menus_str)
+                except:
+                    selected_menus_str = []
+            
+            # 本指名・枠指名の金額を計算
+            if "本指名(¥1,000)" in selected_menus_str or "本指名(¥10,000)" in selected_menus_str:
+                if place_type == "field":
+                    nomination_fee += 5000
+                else:
+                    nomination_fee += 500
+            elif "枠指名(¥500)" in selected_menus_str or "枠指名(¥5,000)" in selected_menus_str:
+                if place_type == "field":
+                    nomination_fee += 5000
+                else:
+                    nomination_fee += 500
+        
+        # 枠指名で対応していないスタッフの指名料も集計
+        res_frame_reservations = supabase_admin.table("reservations").select("nominated_staff_ids, place_type, selected_menus").eq("status", "completed").gte("reserved_at", month_start).lte("reserved_at", month_end).execute()
+        
+        for reservation in (res_frame_reservations.data or []):
+            nominated_staff_ids_str = reservation.get("nominated_staff_ids", [])
+            if isinstance(nominated_staff_ids_str, str):
+                try:
+                    nominated_staff_ids_str = json.loads(nominated_staff_ids_str)
+                except:
+                    nominated_staff_ids_str = []
+            
+            # このスタッフが枠指名リストに含まれているか確認
+            if staff_name in nominated_staff_ids_str:
+                # 対応スタッフを取得
+                res_main = supabase_admin.table("reservations").select("staff_name").eq("id", reservation.get("id")).execute()
+                main_staff = res_main.data[0].get("staff_name") if res_main.data else None
+                
+                # 対応スタッフでない場合のみ追加
+                if main_staff != staff_name:
+                    place_type = reservation.get("place_type", "")
+                    selected_menus_str = reservation.get("selected_menus", [])
+                    if isinstance(selected_menus_str, str):
+                        try:
+                            selected_menus_str = json.loads(selected_menus_str)
+                        except:
+                            selected_menus_str = []
+                    
+                    if "枠指名(¥500)" in selected_menus_str or "枠指名(¥5,000)" in selected_menus_str:
+                        if place_type == "field":
+                            nomination_fee += 1000
+                        else:
+                            nomination_fee += 100
+    except Exception as e:
+        print(f"⚠️ WARNING - 指名料集計エラー: {e}")
+    
+    # 交通費を集計（スタッフ日報の交通費申請から）
+    transportation = 0
+    try:
+        # スタッフIDを取得
+        staff_id = None
+        try:
+            users = supabase_admin.auth.admin.list_users()
+            for u in users:
+                meta = u.user_metadata or {}
+                if not meta.get("approved", False):
+                    continue
+                last_name = meta.get("last_name", "")
+                first_name = meta.get("first_name", "")
+                display_name = f"{last_name} {first_name}".strip() if last_name and first_name else meta.get("name", "")
+                if display_name == staff_name:
+                    staff_id = u.id
+                    break
+        except:
+            pass
+        
+        if staff_id:
+            # スタッフ日報の交通費申請テーブルから集計
+            res_transportation = supabase_admin.table("staff_daily_report_transportations").select("amount").eq("staff_id", staff_id).gte("date", month_start).lte("date", month_end).execute()
+            for trans in (res_transportation.data or []):
+                transportation += trans.get("amount", 0) or 0
+    except Exception as e:
+        print(f"⚠️ WARNING - 交通費集計エラー: {e}")
+    
+    # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
+    total_salary = base_salary + commission + nomination_fee + transportation
+    
+    return {
+        "base_salary": base_salary,
+        "commission": commission,
+        "nomination_fee": nomination_fee,
+        "transportation": transportation,
+        "total_salary": total_salary,
+        "working_hours": working_hours,
+        "revenue": revenue
+    }
+
+
 def normalize_datetime(dt):
     """
     入力された日時文字列を PostgreSQL が受け取れる ISO8601 に統一する。
@@ -2830,8 +3064,8 @@ def index():
                         else:
                             continue
                     
-                if d >= today:
-                    upcoming.append(s)
+                    if d >= today:
+                        upcoming.append(s)
             except Exception as e:
                 print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
                 continue
@@ -3666,6 +3900,23 @@ def admin_reservations_new():
         except:
             base_price = None
         
+        # 選択されたメニュー取得（複数選択可）
+        selected_menus = request.form.getlist("selected_menus")
+        
+        # 指名料取得
+        nomination_fee_str = request.form.get("nomination_fee", "0").strip()
+        try:
+            nomination_fee = int(nomination_fee_str) if nomination_fee_str else 0
+        except:
+            nomination_fee = 0
+        
+        # 割引取得
+        discount_str = request.form.get("discount", "0").strip()
+        try:
+            discount = int(discount_str) if discount_str else 0
+        except:
+            discount = 0
+        
         # 予約作成
         reservation_data = {
             "patient_id": patient_id,
@@ -3679,6 +3930,9 @@ def admin_reservations_new():
             "nominated_staff_ids": nominated_staff_ids or [],
             "nomination_priority": nomination_priority,
             "base_price": base_price,
+            "selected_menus": selected_menus,
+            "nomination_fee": nomination_fee,
+            "discount": discount,
             "status": "reserved",
             "memo": memo,
             "created_at": now_iso()
@@ -3812,7 +4066,9 @@ def admin_reservations_status(reservation_id):
                             
                             # 予約情報からコース名と価格を取得
                             course_name = None
-                            amount = reservation.get("base_price")
+                            base_price = reservation.get("base_price") or 0
+                            nomination_fee = reservation.get("nomination_fee") or 0
+                            discount = reservation.get("discount") or 0
                             nomination_type = reservation.get("nomination_type", "本指名")
                             
                             # 英語値から日本語値への変換（後方互換性のため）
@@ -3836,6 +4092,9 @@ def admin_reservations_status(reservation_id):
                                 else:
                                     course_name = f"{nomination_type}（{place_type_label}）"
                             
+                            # 売上金額 = 基本料金 + 指名料（割引は経費として別途処理）
+                            amount = base_price + nomination_fee
+                            
                             # 患者・売上明細を追加（重複チェック）
                             try:
                                 res_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", item_id).eq("reservation_id", reservation_id).execute()
@@ -3845,12 +4104,120 @@ def admin_reservations_status(reservation_id):
                                         "patient_id": patient_id,
                                         "reservation_id": reservation_id,
                                         "course_name": course_name,
-                                        "amount": amount,  # 基本価格を初期値として設定（日報で編集可能）
+                                        "amount": amount,  # 基本価格 + 指名料
                                         "memo": None,
                                         "created_at": now_iso()
                                     }
                                     supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
-                                    print(f"✅ 日報に患者情報を追加しました: staff_name={staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                                    print(f"✅ 日報に患者情報を追加しました: staff_name={staff_name}, report_date={date_str}, reservation_id={reservation_id}, amount={amount}")
+                                    
+                                    # 割引がある場合は経費として反映
+                                    if discount > 0:
+                                        try:
+                                            # 年月を取得
+                                            year = dt_jst.year
+                                            month = dt_jst.month
+                                            
+                                            expense_data = {
+                                                "expense_date": date_str,
+                                                "year": year,
+                                                "month": month,
+                                                "category": "other",
+                                                "amount": discount,
+                                                "description": f"予約割引（予約ID: {reservation_id}）",
+                                                "staff_id": None,
+                                                "staff_name": staff_name,
+                                                "linked_type": "reservation_discount",
+                                                "memo": f"予約ID: {reservation_id}"
+                                            }
+                                            supabase_admin.table("expenses").insert(expense_data).execute()
+                                            print(f"✅ 割引を経費として登録しました: discount={discount}, reservation_id={reservation_id}")
+                                        except Exception as e:
+                                            print(f"⚠️ WARNING - 割引経費登録エラー: {e}")
+                                    
+                                    # 指名料がある場合は給与に反映
+                                    if nomination_fee > 0:
+                                        try:
+                                            # 年月を取得
+                                            year = dt_jst.year
+                                            month = dt_jst.month
+                                            
+                                            # スタッフIDを取得
+                                            staff_id = None
+                                            try:
+                                                users = supabase_admin.auth.admin.list_users()
+                                                for u in users:
+                                                    meta = u.user_metadata or {}
+                                                    if not meta.get("approved", False):
+                                                        continue
+                                                    last_name = meta.get("last_name", "")
+                                                    first_name = meta.get("first_name", "")
+                                                    display_name = f"{last_name} {first_name}".strip() if last_name and first_name else meta.get("name", "")
+                                                    if display_name == staff_name:
+                                                        staff_id = u.id
+                                                        break
+                                            except:
+                                                pass
+                                            
+                                            # 給与データを取得または作成
+                                            res_salary = supabase_admin.table("staff_salaries").select("*").eq("year", year).eq("month", month).eq("staff_name", staff_name).execute()
+                                            
+                                            if res_salary.data:
+                                                # 既存の給与データを更新
+                                                salary = res_salary.data[0]
+                                                current_commission = salary.get("commission", 0) or 0
+                                                new_commission = current_commission + nomination_fee
+                                                new_total_salary = (salary.get("base_salary", 0) or 0) + new_commission + (salary.get("transportation", 0) or 0)
+                                                new_net_salary = new_total_salary - (salary.get("tax", 0) or 0) - (salary.get("social_insurance", 0) or 0) - (salary.get("other_deduction", 0) or 0)
+                                                
+                                                supabase_admin.table("staff_salaries").update({
+                                                    "commission": new_commission,
+                                                    "total_salary": new_total_salary,
+                                                    "net_salary": new_net_salary
+                                                }).eq("id", salary["id"]).execute()
+                                                
+                                                # 経費テーブルも更新
+                                                res_expense = supabase_admin.table("expenses").select("id").eq("year", year).eq("month", month).eq("staff_id", staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
+                                                if res_expense.data:
+                                                    supabase_admin.table("expenses").update({"amount": new_total_salary}).eq("id", res_expense.data[0]["id"]).execute()
+                                            else:
+                                                # 新規の給与データを作成
+                                                salary_data = {
+                                                    "year": year,
+                                                    "month": month,
+                                                    "staff_id": staff_id,
+                                                    "staff_name": staff_name,
+                                                    "base_salary": 0,
+                                                    "commission": nomination_fee,
+                                                    "transportation": 0,
+                                                    "tax": 0,
+                                                    "social_insurance": 0,
+                                                    "other_deduction": 0,
+                                                    "total_salary": nomination_fee,
+                                                    "net_salary": nomination_fee,
+                                                    "memo": f"予約指名料（予約ID: {reservation_id}）"
+                                                }
+                                                supabase_admin.table("staff_salaries").insert(salary_data).execute()
+                                                
+                                                # 経費テーブルにも給与を追加
+                                                expense_data = {
+                                                    "expense_date": f"{year}-{month:02d}-01",
+                                                    "year": year,
+                                                    "month": month,
+                                                    "category": "salary",
+                                                    "amount": nomination_fee,
+                                                    "description": f"{staff_name}の給与",
+                                                    "staff_id": staff_id,
+                                                    "staff_name": staff_name,
+                                                    "linked_type": "salary",
+                                                    "memo": f"予約指名料（予約ID: {reservation_id}）"
+                                                }
+                                                supabase_admin.table("expenses").insert(expense_data).execute()
+                                            
+                                            print(f"✅ 指名料を給与に反映しました: nomination_fee={nomination_fee}, staff_name={staff_name}, reservation_id={reservation_id}")
+                                        except Exception as e:
+                                            print(f"⚠️ WARNING - 指名料給与反映エラー: {e}")
+                                    
                             except Exception as e:
                                 print(f"❌ 日報への患者情報追加エラー: {e}")
                                 print(f"   スタッフ: {staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -3923,7 +4290,11 @@ def admin_reservations_status(reservation_id):
                                                 nom_item_id = None
                                         
                                         if nom_item_id:
-                                            # 枠指名（0円）として追加
+                                            # 枠指名の場合の処理
+                                            # 帯同の場合：対応しなかった指名スタッフに1000円
+                                            # それ以外の場合：対応しなかった指名スタッフに100円
+                                            frame_nomination_fee = 1000 if place_type == "field" else 100
+                                            
                                             try:
                                                 res_nom_existing = supabase_admin.table("staff_daily_report_patients").select("*").eq("item_id", nom_item_id).eq("reservation_id", reservation_id).execute()
                                                 if not res_nom_existing.data:
@@ -3932,12 +4303,95 @@ def admin_reservations_status(reservation_id):
                                                         "patient_id": patient_id,
                                                         "reservation_id": reservation_id,
                                                         "course_name": f"枠指名（{place_type_label}）",  # 表記ルール統一
-                                                        "amount": 0,  # 枠指名で対応スタッフに選ばれなかった場合は0円
+                                                        "amount": frame_nomination_fee,  # 枠指名で対応スタッフに選ばれなかった場合の金額
                                                         "memo": None,
                                                         "created_at": now_iso()
                                                     }
                                                     supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
-                                                    print(f"✅ 枠指名スタッフの日報に患者情報を追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}")
+                                                    print(f"✅ 枠指名スタッフの日報に追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}, amount={frame_nomination_fee}")
+                                                    
+                                                    # 枠指名で対応しなかったスタッフの給与にも反映
+                                                    if frame_nomination_fee > 0:
+                                                        try:
+                                                            # 年月を取得
+                                                            year = dt_jst.year
+                                                            month = dt_jst.month
+                                                            
+                                                            # スタッフIDを取得
+                                                            nom_staff_id = None
+                                                            try:
+                                                                users = supabase_admin.auth.admin.list_users()
+                                                                for u in users:
+                                                                    meta = u.user_metadata or {}
+                                                                    if not meta.get("approved", False):
+                                                                        continue
+                                                                    last_name = meta.get("last_name", "")
+                                                                    first_name = meta.get("first_name", "")
+                                                                    display_name = f"{last_name} {first_name}".strip() if last_name and first_name else meta.get("name", "")
+                                                                    if display_name == nominated_staff_name:
+                                                                        nom_staff_id = u.id
+                                                                        break
+                                                            except:
+                                                                pass
+                                                            
+                                                            # 給与データを取得または作成
+                                                            res_nom_salary = supabase_admin.table("staff_salaries").select("*").eq("year", year).eq("month", month).eq("staff_name", nominated_staff_name).execute()
+                                                            
+                                                            if res_nom_salary.data:
+                                                                # 既存の給与データを更新
+                                                                nom_salary = res_nom_salary.data[0]
+                                                                current_commission = nom_salary.get("commission", 0) or 0
+                                                                new_commission = current_commission + frame_nomination_fee
+                                                                new_total_salary = (nom_salary.get("base_salary", 0) or 0) + new_commission + (nom_salary.get("transportation", 0) or 0)
+                                                                new_net_salary = new_total_salary - (nom_salary.get("tax", 0) or 0) - (nom_salary.get("social_insurance", 0) or 0) - (nom_salary.get("other_deduction", 0) or 0)
+                                                                
+                                                                supabase_admin.table("staff_salaries").update({
+                                                                    "commission": new_commission,
+                                                                    "total_salary": new_total_salary,
+                                                                    "net_salary": new_net_salary
+                                                                }).eq("id", nom_salary["id"]).execute()
+                                                                
+                                                                # 経費テーブルも更新
+                                                                res_nom_expense = supabase_admin.table("expenses").select("id").eq("year", year).eq("month", month).eq("staff_id", nom_staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
+                                                                if res_nom_expense.data:
+                                                                    supabase_admin.table("expenses").update({"amount": new_total_salary}).eq("id", res_nom_expense.data[0]["id"]).execute()
+                                                            else:
+                                                                # 新規の給与データを作成
+                                                                nom_salary_data = {
+                                                                    "year": year,
+                                                                    "month": month,
+                                                                    "staff_id": nom_staff_id,
+                                                                    "staff_name": nominated_staff_name,
+                                                                    "base_salary": 0,
+                                                                    "commission": frame_nomination_fee,
+                                                                    "transportation": 0,
+                                                                    "tax": 0,
+                                                                    "social_insurance": 0,
+                                                                    "other_deduction": 0,
+                                                                    "total_salary": frame_nomination_fee,
+                                                                    "net_salary": frame_nomination_fee,
+                                                                    "memo": f"予約枠指名料（予約ID: {reservation_id}）"
+                                                                }
+                                                                supabase_admin.table("staff_salaries").insert(nom_salary_data).execute()
+                                                                
+                                                                # 経費テーブルにも給与を追加
+                                                                nom_expense_data = {
+                                                                    "expense_date": f"{year}-{month:02d}-01",
+                                                                    "year": year,
+                                                                    "month": month,
+                                                                    "category": "salary",
+                                                                    "amount": frame_nomination_fee,
+                                                                    "description": f"{nominated_staff_name}の給与",
+                                                                    "staff_id": nom_staff_id,
+                                                                    "staff_name": nominated_staff_name,
+                                                                    "linked_type": "salary",
+                                                                    "memo": f"予約枠指名料（予約ID: {reservation_id}）"
+                                                                }
+                                                                supabase_admin.table("expenses").insert(nom_expense_data).execute()
+                                                            
+                                                            print(f"✅ 枠指名スタッフの給与に反映しました: frame_nomination_fee={frame_nomination_fee}, staff_name={nominated_staff_name}, reservation_id={reservation_id}")
+                                                        except Exception as e:
+                                                            print(f"⚠️ WARNING - 枠指名スタッフ給与反映エラー: {e}")
                                             except Exception as e:
                                                 print(f"❌ 枠指名スタッフの日報への患者情報追加エラー: {e}")
                                                 print(f"   スタッフ: {nominated_staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -4001,6 +4455,25 @@ def admin_reservations_edit(reservation_id):
                     reservation["nominated_staff_ids"] = []
             except:
                 reservation["nominated_staff_ids"] = []
+            
+            # selected_menusをJSONからパース
+            try:
+                selected_menus_str = reservation.get("selected_menus")
+                if selected_menus_str:
+                    if isinstance(selected_menus_str, str):
+                        reservation["selected_menus"] = json.loads(selected_menus_str)
+                    else:
+                        reservation["selected_menus"] = selected_menus_str
+                else:
+                    reservation["selected_menus"] = []
+            except:
+                reservation["selected_menus"] = []
+            
+            # nomination_feeとdiscountのデフォルト値
+            if reservation.get("nomination_fee") is None:
+                reservation["nomination_fee"] = 0
+            if reservation.get("discount") is None:
+                reservation["discount"] = 0
             
             # スタッフリスト取得（承認済みスタッフ全員）
             staff = session.get("staff", {})
@@ -4131,6 +4604,23 @@ def admin_reservations_edit(reservation_id):
         except:
             base_price = None
         
+        # 選択されたメニュー取得（複数選択可）
+        selected_menus = request.form.getlist("selected_menus")
+        
+        # 指名料取得
+        nomination_fee_str = request.form.get("nomination_fee", "0").strip()
+        try:
+            nomination_fee = int(nomination_fee_str) if nomination_fee_str else 0
+        except:
+            nomination_fee = 0
+        
+        # 割引取得
+        discount_str = request.form.get("discount", "0").strip()
+        try:
+            discount = int(discount_str) if discount_str else 0
+        except:
+            discount = 0
+        
         status = request.form.get("status", "").strip()
         if status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
@@ -4203,6 +4693,9 @@ def admin_reservations_edit(reservation_id):
             "nominated_staff_ids": nominated_staff_ids or [],
             "nomination_priority": nomination_priority,
             "base_price": base_price,
+            "selected_menus": selected_menus,
+            "nomination_fee": nomination_fee,
+            "discount": discount,
             "status": status,
             "memo": memo
         }
@@ -6864,31 +7357,31 @@ def admin_daily_reports(year=None, month=None, date=None):
                 # 金額を計算（Python側で集計）
                 patients = item["patients"]
                 item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
-                
-                # 時刻表示用に整形
-                if item.get("start_time"):
-                    try:
-                        if isinstance(item["start_time"], str):
-                            time_parts = item["start_time"].split(":")
-                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["start_time_display"] = str(item["start_time"])[:5]
-                    except:
-                        item["start_time_display"] = item.get("start_time", "")
-                else:
-                    item["start_time_display"] = ""
-                
-                if item.get("end_time"):
-                    try:
-                        if isinstance(item["end_time"], str):
-                            time_parts = item["end_time"].split(":")
-                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["end_time_display"] = str(item["end_time"])[:5]
-                    except:
-                        item["end_time_display"] = item.get("end_time", "")
-                else:
-                    item["end_time_display"] = ""
+            
+            # 時刻表示用に整形
+            if item.get("start_time"):
+                try:
+                    if isinstance(item["start_time"], str):
+                        time_parts = item["start_time"].split(":")
+                        item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                    else:
+                        item["start_time_display"] = str(item["start_time"])[:5]
+                except:
+                    item["start_time_display"] = item.get("start_time", "")
+            else:
+                item["start_time_display"] = ""
+            
+            if item.get("end_time"):
+                try:
+                    if isinstance(item["end_time"], str):
+                        time_parts = item["end_time"].split(":")
+                        item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                    else:
+                        item["end_time_display"] = str(item["end_time"])[:5]
+                except:
+                    item["end_time_display"] = item.get("end_time", "")
+            else:
+                item["end_time_display"] = ""
         
         # 当日小計・当月累計を計算（Python側で集計）
         # 当日小計（各itemのtotal_amountを使用）
@@ -8886,6 +9379,763 @@ def admin_equipment_copy_from_previous(year):
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash(f"前年からの引き継ぎに失敗しました: {e}", "error")
         return redirect(f"/admin/equipment/years/{year}")
+
+
+# ===================================================
+# ✅ 収支管理
+# ===================================================
+@app.route("/admin/financial")
+@admin_required
+def admin_financial_years():
+    """収支管理 - 年選択"""
+    try:
+        # 経費が存在する年を取得
+        years_set = set()
+        try:
+            res_expenses = supabase_admin.table("expenses").select("year").order("year", desc=True).execute()
+            for exp in (res_expenses.data or []):
+                if exp.get("year"):
+                    years_set.add(str(exp.get("year")))
+        except Exception as e:
+            print(f"⚠️ WARNING - 経費年一覧取得エラー: {e}")
+        
+        # スタッフ給与が存在する年を取得
+        try:
+            res_salaries = supabase_admin.table("staff_salaries").select("year").order("year", desc=True).execute()
+            for sal in (res_salaries.data or []):
+                if sal.get("year"):
+                    years_set.add(str(sal.get("year")))
+        except Exception as e:
+            print(f"⚠️ WARNING - 給与年一覧取得エラー: {e}")
+        
+        # 日報が存在する年も取得
+        try:
+            res_reports = supabase_admin.table("staff_daily_reports").select("report_date").order("report_date", desc=True).execute()
+            for report in (res_reports.data or []):
+                report_date = report.get("report_date")
+                if report_date:
+                    year = report_date[:4]
+                    years_set.add(year)
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報年一覧取得エラー: {e}")
+        
+        # 請求書が存在する年も取得
+        try:
+            res_invoices = supabase_admin.table("invoices").select("year").order("year", desc=True).execute()
+            for inv in (res_invoices.data or []):
+                if inv.get("year"):
+                    years_set.add(str(inv.get("year")))
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書年一覧取得エラー: {e}")
+        
+        years_list = sorted([int(y) for y in years_set], reverse=True)
+        years_list = [str(y) for y in years_list]
+        
+        # 現在の年も追加
+        current_year = str(datetime.now().year)
+        if current_year not in years_list:
+            years_list.insert(0, current_year)
+        
+        return render_template("admin_financial_years.html", years=years_list)
+    except Exception as e:
+        print(f"❌ 年一覧取得エラー: {e}")
+        flash("年一覧の取得に失敗しました", "error")
+        return redirect("/admin/dashboard")
+
+
+@app.route("/admin/financial/years/<year>")
+@admin_required
+def admin_financial_year_detail(year):
+    """収支管理 - 指定年の全体収支"""
+    try:
+        year_int = int(year)
+        
+        # 売上を集計（日報データから）
+        year_start = f"{year_int}-01-01"
+        year_end = f"{year_int}-12-31"
+        
+        total_revenue = 0
+        monthly_revenue = {}
+        
+        try:
+            # 日報を取得
+            res_reports = supabase_admin.table("staff_daily_reports").select("id, report_date").gte("report_date", year_start).lte("report_date", year_end).execute()
+            report_ids = [r["id"] for r in (res_reports.data or [])]
+            report_date_map = {r["id"]: r.get("report_date") for r in (res_reports.data or [])}
+            
+            if report_ids:
+                # 患者情報を取得
+                res_items = supabase_admin.table("staff_daily_report_items").select("id, daily_report_id").in_("daily_report_id", report_ids).execute()
+                item_ids = [item["id"] for item in (res_items.data or [])]
+                
+                if item_ids:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("amount, item_id").in_("item_id", item_ids).execute()
+                    for patient in (res_patients.data or []):
+                        amount = patient.get("amount", 0) or 0
+                        total_revenue += amount
+                        
+                        # 月別集計
+                        item_id = patient.get("item_id")
+                        for item in (res_items.data or []):
+                            if item["id"] == item_id:
+                                report_id = item.get("daily_report_id")
+                                report_date = report_date_map.get(report_id, "")
+                                if report_date:
+                                    month = int(report_date[5:7])
+                                    monthly_revenue[month] = monthly_revenue.get(month, 0) + amount
+                                break
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報売上集計エラー: {e}")
+        
+        # 請求書の売上を集計
+        try:
+            res_invoices = supabase_admin.table("invoices").select("total_amount, month").eq("year", year_int).execute()
+            for inv in (res_invoices.data or []):
+                amount = inv.get("total_amount", 0) or 0
+                total_revenue += amount
+                month = inv.get("month")
+                if month:
+                    monthly_revenue[month] = monthly_revenue.get(month, 0) + amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書売上集計エラー: {e}")
+        
+        # 経費を集計
+        total_expenses = 0
+        monthly_expenses = {}
+        expense_by_category = {}
+        
+        try:
+            res_expenses = supabase_admin.table("expenses").select("*").eq("year", year_int).execute()
+            for exp in (res_expenses.data or []):
+                amount = exp.get("amount", 0) or 0
+                total_expenses += amount
+                
+                month = exp.get("month")
+                if month:
+                    monthly_expenses[month] = monthly_expenses.get(month, 0) + amount
+                
+                category = exp.get("category", "other")
+                expense_by_category[category] = expense_by_category.get(category, 0) + amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 経費集計エラー: {e}")
+        
+        # スタッフ給与を集計（経費テーブルに含まれているが、念のため確認）
+        try:
+            res_salaries = supabase_admin.table("staff_salaries").select("total_salary, year, month").eq("year", year_int).execute()
+            for sal in (res_salaries.data or []):
+                amount = sal.get("total_salary", 0) or 0
+                # 経費テーブルに既に含まれている可能性があるが、カテゴリ別集計のために確認
+                month = sal.get("month")
+                if month:
+                    # 経費テーブルに給与が登録されているか確認（重複カウントを避ける）
+                    # ここでは経費テーブルに既に含まれていると仮定
+                    pass
+        except Exception as e:
+            print(f"⚠️ WARNING - スタッフ給与集計エラー: {e}")
+        
+        # 備品発注（到着済み）を経費に追加
+        try:
+            res_orders = supabase_admin.table("equipment_orders").select("amount, order_date, status").eq("status", "arrived").gte("order_date", year_start).lte("order_date", year_end).execute()
+            for order in (res_orders.data or []):
+                amount = order.get("amount", 0) or 0
+                if amount:
+                    total_expenses += amount
+                    
+                    order_date = order.get("order_date", "")
+                    if order_date:
+                        month = int(order_date[5:7])
+                        monthly_expenses[month] = monthly_expenses.get(month, 0) + amount
+                    
+                    expense_by_category["supplies"] = expense_by_category.get("supplies", 0) + amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 備品発注経費集計エラー: {e}")
+        
+        # 全体収支
+        total_profit = total_revenue - total_expenses
+        
+        # 月別収支
+        monthly_profit = {}
+        for month in range(1, 13):
+            revenue = monthly_revenue.get(month, 0)
+            expense = monthly_expenses.get(month, 0)
+            monthly_profit[month] = revenue - expense
+        
+        month_names = {
+            1: "1月", 2: "2月", 3: "3月", 4: "4月",
+            5: "5月", 6: "6月", 7: "7月", 8: "8月",
+            9: "9月", 10: "10月", 11: "11月", 12: "12月"
+        }
+        
+        return render_template(
+            "admin_financial_year_detail.html",
+            year=year,
+            total_revenue=total_revenue,
+            total_expenses=total_expenses,
+            total_profit=total_profit,
+            monthly_revenue=monthly_revenue,
+            monthly_expenses=monthly_expenses,
+            monthly_profit=monthly_profit,
+            expense_by_category=expense_by_category,
+            month_names=month_names
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 収支管理詳細取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"収支管理詳細の取得に失敗しました: {e}", "error")
+        return redirect("/admin/financial")
+
+
+@app.route("/admin/financial/years/<year>/months/<month>")
+@admin_required
+def admin_financial_month_detail(year, month):
+    """収支管理 - 指定年月の詳細"""
+    try:
+        year_int = int(year)
+        month_int = int(month)
+        
+        # 月の開始日と終了日
+        month_start = f"{year_int}-{month:02d}-01"
+        if month_int in [1, 3, 5, 7, 8, 10, 12]:
+            month_end = f"{year_int}-{month:02d}-31"
+        elif month_int in [4, 6, 9, 11]:
+            month_end = f"{year_int}-{month:02d}-30"
+        else:
+            if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
+                month_end = f"{year_int}-{month:02d}-29"
+            else:
+                month_end = f"{year_int}-{month:02d}-28"
+        
+        # 売上を集計（日報データから）
+        month_revenue = 0
+        staff_revenue = {}  # スタッフ別売上
+        
+        try:
+            res_reports = supabase_admin.table("staff_daily_reports").select("id, report_date, staff_name").gte("report_date", month_start).lte("report_date", month_end).execute()
+            report_ids = [r["id"] for r in (res_reports.data or [])]
+            report_staff_map = {r["id"]: r.get("staff_name", "") for r in (res_reports.data or [])}
+            
+            if report_ids:
+                res_items = supabase_admin.table("staff_daily_report_items").select("id, daily_report_id").in_("daily_report_id", report_ids).execute()
+                item_ids = [item["id"] for item in (res_items.data or [])]
+                item_report_map = {item["id"]: item.get("daily_report_id") for item in (res_items.data or [])}
+                
+                if item_ids:
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("amount, item_id").in_("item_id", item_ids).execute()
+                    for patient in (res_patients.data or []):
+                        amount = patient.get("amount", 0) or 0
+                        month_revenue += amount
+                        
+                        item_id = patient.get("item_id")
+                        report_id = item_report_map.get(item_id)
+                        staff_name = report_staff_map.get(report_id, "")
+                        if staff_name:
+                            staff_revenue[staff_name] = staff_revenue.get(staff_name, 0) + amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報売上集計エラー: {e}")
+        
+        # 請求書の売上を集計
+        try:
+            res_invoices = supabase_admin.table("invoices").select("total_amount").eq("year", year_int).eq("month", month_int).execute()
+            for inv in (res_invoices.data or []):
+                amount = inv.get("total_amount", 0) or 0
+                month_revenue += amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 請求書売上集計エラー: {e}")
+        
+        # 経費を取得
+        expenses = []
+        try:
+            res_expenses = supabase_admin.table("expenses").select("*").eq("year", year_int).eq("month", month_int).order("expense_date", desc=True).execute()
+            expenses = res_expenses.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 経費取得エラー: {e}")
+        
+        # 備品発注（到着済み）を取得
+        equipment_expenses = []
+        try:
+            res_orders = supabase_admin.table("equipment_orders").select("*, equipment_items(name)").eq("status", "arrived").gte("order_date", month_start).lte("order_date", month_end).execute()
+            equipment_expenses = res_orders.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - 備品発注取得エラー: {e}")
+        
+        # スタッフ給与を取得
+        staff_salaries = []
+        try:
+            res_salaries = supabase_admin.table("staff_salaries").select("*").eq("year", year_int).eq("month", month_int).order("staff_name").execute()
+            staff_salaries = res_salaries.data or []
+        except Exception as e:
+            print(f"⚠️ WARNING - スタッフ給与取得エラー: {e}")
+        
+        # 経費合計
+        month_expenses = sum(exp.get("amount", 0) or 0 for exp in expenses)
+        month_expenses += sum(e.get("amount", 0) or 0 for e in equipment_expenses)
+        month_expenses += sum(sal.get("total_salary", 0) or 0 for sal in staff_salaries)
+        
+        # 月の収支
+        month_profit = month_revenue - month_expenses
+        
+        month_name = {
+            1: "1月", 2: "2月", 3: "3月", 4: "4月",
+            5: "5月", 6: "6月", 7: "7月", 8: "8月",
+            9: "9月", 10: "10月", 11: "11月", 12: "12月"
+        }.get(month_int, f"{month_int}月")
+        
+        return render_template(
+            "admin_financial_month_detail.html",
+            year=year,
+            month=month,
+            month_name=month_name,
+            month_revenue=month_revenue,
+            month_expenses=month_expenses,
+            month_profit=month_profit,
+            staff_revenue=staff_revenue,
+            expenses=expenses,
+            equipment_expenses=equipment_expenses,
+            staff_salaries=staff_salaries
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 月次収支管理詳細取得エラー: {e}")
+        print(f"❌ トレースバック: {traceback.format_exc()}")
+        flash(f"月次収支管理詳細の取得に失敗しました: {e}", "error")
+        return redirect(f"/admin/financial/years/{year}")
+
+
+@app.route("/admin/financial/years/<year>/expenses/new", methods=["GET", "POST"])
+@admin_required
+def admin_financial_expense_new(year):
+    """経費 - 新規作成"""
+    if request.method == "POST":
+        try:
+            expense_date = request.form.get("expense_date")
+            category = request.form.get("category")
+            amount = float(request.form.get("amount", 0))
+            description = request.form.get("description", "").strip()
+            staff_id = request.form.get("staff_id", "").strip() or None
+            staff_name = request.form.get("staff_name", "").strip() or None
+            memo = request.form.get("memo", "").strip()
+            
+            # 年月を抽出
+            year_int = int(year)
+            month_int = int(expense_date[5:7])
+            
+            expense_data = {
+                "expense_date": expense_date,
+                "year": year_int,
+                "month": month_int,
+                "category": category,
+                "amount": amount,
+                "description": description,
+                "memo": memo,
+                "linked_type": "manual"
+            }
+            
+            if staff_id:
+                expense_data["staff_id"] = staff_id
+            if staff_name:
+                expense_data["staff_name"] = staff_name
+            
+            supabase_admin.table("expenses").insert(expense_data).execute()
+            
+            flash("経費を登録しました", "success")
+            return redirect(f"/admin/financial/years/{year}/months/{month_int:02d}")
+        except Exception as e:
+            print(f"❌ 経費登録エラー: {e}")
+            flash(f"経費の登録に失敗しました: {e}", "error")
+            return redirect(f"/admin/financial/years/{year}")
+    
+    # GET: 新規作成フォーム
+    try:
+        # スタッフ一覧を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        for user in users:
+            meta = user.user_metadata or {}
+            if meta.get("approved") == True:
+                name = f"{meta.get('last_name', '')} {meta.get('first_name', '')}".strip()
+                if not name:
+                    name = user.email
+                staff_list.append({
+                    "id": user.id,
+                    "name": name
+                })
+        
+        return render_template(
+            "admin_financial_expense_new.html",
+            year=year,
+            staff_list=staff_list
+        )
+    except Exception as e:
+        print(f"❌ 経費新規作成フォーム取得エラー: {e}")
+        flash("フォームの取得に失敗しました", "error")
+        return redirect(f"/admin/financial/years/{year}")
+
+
+@app.route("/admin/financial/years/<year>/expenses/<expense_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_financial_expense_edit(year, expense_id):
+    """経費 - 編集"""
+    if request.method == "POST":
+        try:
+            expense_date = request.form.get("expense_date")
+            category = request.form.get("category")
+            amount = float(request.form.get("amount", 0))
+            description = request.form.get("description", "").strip()
+            staff_id = request.form.get("staff_id", "").strip() or None
+            staff_name = request.form.get("staff_name", "").strip() or None
+            memo = request.form.get("memo", "").strip()
+            
+            # 年月を抽出
+            year_int = int(year)
+            month_int = int(expense_date[5:7])
+            
+            expense_data = {
+                "expense_date": expense_date,
+                "year": year_int,
+                "month": month_int,
+                "category": category,
+                "amount": amount,
+                "description": description,
+                "memo": memo
+            }
+            
+            if staff_id:
+                expense_data["staff_id"] = staff_id
+            else:
+                expense_data["staff_id"] = None
+            if staff_name:
+                expense_data["staff_name"] = staff_name
+            else:
+                expense_data["staff_name"] = None
+            
+            supabase_admin.table("expenses").update(expense_data).eq("id", expense_id).execute()
+            
+            flash("経費を更新しました", "success")
+            return redirect(f"/admin/financial/years/{year}/months/{month_int:02d}")
+        except Exception as e:
+            print(f"❌ 経費更新エラー: {e}")
+            flash(f"経費の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/financial/years/{year}")
+    
+    # GET: 編集フォーム
+    try:
+        res_expense = supabase_admin.table("expenses").select("*").eq("id", expense_id).execute()
+        if not res_expense.data:
+            flash("経費が見つかりません", "error")
+            return redirect(f"/admin/financial/years/{year}")
+        
+        expense = res_expense.data[0]
+        
+        # スタッフ一覧を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        for user in users:
+            meta = user.user_metadata or {}
+            if meta.get("approved") == True:
+                name = f"{meta.get('last_name', '')} {meta.get('first_name', '')}".strip()
+                if not name:
+                    name = user.email
+                staff_list.append({
+                    "id": user.id,
+                    "name": name
+                })
+        
+        return render_template(
+            "admin_financial_expense_edit.html",
+            year=year,
+            expense=expense,
+            staff_list=staff_list
+        )
+    except Exception as e:
+        print(f"❌ 経費取得エラー: {e}")
+        flash("経費の取得に失敗しました", "error")
+        return redirect(f"/admin/financial/years/{year}")
+
+
+@app.route("/admin/financial/years/<year>/expenses/<expense_id>/delete", methods=["POST"])
+@admin_required
+def admin_financial_expense_delete(year, expense_id):
+    """経費 - 削除"""
+    try:
+        supabase_admin.table("expenses").delete().eq("id", expense_id).execute()
+        flash("経費を削除しました", "success")
+    except Exception as e:
+        print(f"❌ 経費削除エラー: {e}")
+        flash("経費の削除に失敗しました", "error")
+    return redirect(f"/admin/financial/years/{year}")
+
+
+@app.route("/admin/financial/years/<year>/months/<month>/salaries/new", methods=["GET", "POST"])
+@admin_required
+def admin_financial_salary_new(year, month):
+    """スタッフ給与 - 新規作成"""
+    if request.method == "POST":
+        try:
+            staff_id = request.form.get("staff_id")
+            staff_name = request.form.get("staff_name", "").strip()
+            
+            # 自動計算を使用するかどうか
+            use_auto_calc = request.form.get("use_auto_calc") == "true"
+            
+            if use_auto_calc:
+                # スタッフのエリアを取得
+                area = "tokyo"  # デフォルト
+                try:
+                    users = supabase_admin.auth.admin.list_users()
+                    for u in users:
+                        if u.id == staff_id:
+                            meta = u.user_metadata or {}
+                            area = meta.get("area", "tokyo")
+                            break
+                except:
+                    pass
+                
+                # 自動計算
+                calc_result = calculate_salary(staff_name, int(year), int(month), area)
+                base_salary = calc_result["base_salary"]
+                commission = calc_result["commission"]
+                nomination_fee = calc_result["nomination_fee"]
+                transportation = calc_result["transportation"]
+            else:
+                # 手動入力
+                base_salary = float(request.form.get("base_salary", 0) or 0)
+                commission = float(request.form.get("commission", 0) or 0)
+                nomination_fee = float(request.form.get("nomination_fee", 0) or 0)
+                transportation = float(request.form.get("transportation", 0) or 0)
+            
+            tax = float(request.form.get("tax", 0) or 0)
+            social_insurance = float(request.form.get("social_insurance", 0) or 0)
+            other_deduction = float(request.form.get("other_deduction", 0) or 0)
+            memo = request.form.get("memo", "").strip()
+            
+            # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
+            total_salary = base_salary + commission + nomination_fee + transportation
+            net_salary = total_salary - tax - social_insurance - other_deduction
+            
+            salary_data = {
+                "year": int(year),
+                "month": int(month),
+                "staff_id": staff_id,
+                "staff_name": staff_name,
+                "base_salary": base_salary,
+                "commission": commission,
+                "nomination_fee": nomination_fee,
+                "transportation": transportation,
+                "tax": tax,
+                "social_insurance": social_insurance,
+                "other_deduction": other_deduction,
+                "total_salary": total_salary,
+                "net_salary": net_salary,
+                "memo": memo
+            }
+            
+            supabase_admin.table("staff_salaries").insert(salary_data).execute()
+            
+            # 経費テーブルにも給与を追加
+            expense_data = {
+                "expense_date": f"{year}-{month:02d}-01",
+                "year": int(year),
+                "month": int(month),
+                "category": "salary",
+                "amount": total_salary,
+                "description": f"{staff_name}の給与",
+                "staff_id": staff_id,
+                "staff_name": staff_name,
+                "linked_type": "salary",
+                "memo": memo
+            }
+            supabase_admin.table("expenses").insert(expense_data).execute()
+            
+            flash("スタッフ給与を登録しました", "success")
+            return redirect(f"/admin/financial/years/{year}/months/{month}")
+        except Exception as e:
+            print(f"❌ スタッフ給与登録エラー: {e}")
+            flash(f"スタッフ給与の登録に失敗しました: {e}", "error")
+            return redirect(f"/admin/financial/years/{year}/months/{month}")
+    
+    # GET: 新規作成フォーム
+    try:
+        # スタッフ一覧を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        for user in users:
+            meta = user.user_metadata or {}
+            if meta.get("approved") == True:
+                name = f"{meta.get('last_name', '')} {meta.get('first_name', '')}".strip()
+                if not name:
+                    name = user.email
+                staff_list.append({
+                    "id": user.id,
+                    "name": name
+                })
+        
+        # 既に登録されているスタッフIDを取得
+        res_existing = supabase_admin.table("staff_salaries").select("staff_id").eq("year", int(year)).eq("month", int(month)).execute()
+        registered_ids = {sal["staff_id"] for sal in (res_existing.data or [])}
+        
+        # 未登録のスタッフのみ表示
+        available_staff = [s for s in staff_list if s["id"] not in registered_ids]
+        
+        # 各スタッフの給与計算結果を取得（自動計算用）
+        salary_calculations = {}
+        for staff in available_staff:
+            try:
+                area = staff.get("area", "tokyo")
+                calc_result = calculate_salary(staff["name"], int(year), int(month), area)
+                salary_calculations[staff["id"]] = calc_result
+            except Exception as e:
+                print(f"⚠️ WARNING - 給与計算エラー（{staff['name']}）: {e}")
+                salary_calculations[staff["id"]] = None
+        
+        return render_template(
+            "admin_financial_salary_new.html",
+            year=year,
+            month=month,
+            staff_list=available_staff,
+            salary_calculations=salary_calculations
+        )
+    except Exception as e:
+        print(f"❌ スタッフ給与新規作成フォーム取得エラー: {e}")
+        flash("フォームの取得に失敗しました", "error")
+        return redirect(f"/admin/financial/years/{year}/months/{month}")
+
+
+@app.route("/admin/financial/years/<year>/months/<month>/salaries/<salary_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_financial_salary_edit(year, month, salary_id):
+    """スタッフ給与 - 編集"""
+    if request.method == "POST":
+        try:
+            staff_id = request.form.get("staff_id")
+            staff_name = request.form.get("staff_name", "").strip()
+            
+            # 自動計算を使用するかどうか
+            use_auto_calc = request.form.get("use_auto_calc") == "true"
+            
+            if use_auto_calc:
+                # スタッフのエリアを取得
+                area = "tokyo"  # デフォルト
+                try:
+                    users = supabase_admin.auth.admin.list_users()
+                    for u in users:
+                        if u.id == staff_id:
+                            meta = u.user_metadata or {}
+                            area = meta.get("area", "tokyo")
+                            break
+                except:
+                    pass
+                
+                # 自動計算
+                calc_result = calculate_salary(staff_name, int(year), int(month), area)
+                base_salary = calc_result["base_salary"]
+                commission = calc_result["commission"]
+                nomination_fee = calc_result["nomination_fee"]
+                transportation = calc_result["transportation"]
+            else:
+                # 手動入力
+                base_salary = float(request.form.get("base_salary", 0) or 0)
+                commission = float(request.form.get("commission", 0) or 0)
+                nomination_fee = float(request.form.get("nomination_fee", 0) or 0)
+                transportation = float(request.form.get("transportation", 0) or 0)
+            
+            tax = float(request.form.get("tax", 0) or 0)
+            social_insurance = float(request.form.get("social_insurance", 0) or 0)
+            other_deduction = float(request.form.get("other_deduction", 0) or 0)
+            memo = request.form.get("memo", "").strip()
+            
+            # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
+            total_salary = base_salary + commission + nomination_fee + transportation
+            net_salary = total_salary - tax - social_insurance - other_deduction
+            
+            salary_data = {
+                "staff_id": staff_id,
+                "staff_name": staff_name,
+                "base_salary": base_salary,
+                "commission": commission,
+                "nomination_fee": nomination_fee,
+                "transportation": transportation,
+                "tax": tax,
+                "social_insurance": social_insurance,
+                "other_deduction": other_deduction,
+                "total_salary": total_salary,
+                "net_salary": net_salary,
+                "memo": memo
+            }
+            
+            supabase_admin.table("staff_salaries").update(salary_data).eq("id", salary_id).execute()
+            
+            # 経費テーブルも更新
+            res_expense = supabase_admin.table("expenses").select("id").eq("year", int(year)).eq("month", int(month)).eq("staff_id", staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
+            if res_expense.data:
+                expense_id = res_expense.data[0]["id"]
+                expense_data = {
+                    "amount": total_salary,
+                    "description": f"{staff_name}の給与",
+                    "memo": memo
+                }
+                supabase_admin.table("expenses").update(expense_data).eq("id", expense_id).execute()
+            
+            flash("スタッフ給与を更新しました", "success")
+            return redirect(f"/admin/financial/years/{year}/months/{month}")
+        except Exception as e:
+            print(f"❌ スタッフ給与更新エラー: {e}")
+            flash(f"スタッフ給与の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/financial/years/{year}/months/{month}")
+    
+    # GET: 編集フォーム
+    try:
+        res_salary = supabase_admin.table("staff_salaries").select("*").eq("id", salary_id).execute()
+        if not res_salary.data:
+            flash("スタッフ給与が見つかりません", "error")
+            return redirect(f"/admin/financial/years/{year}/months/{month}")
+        
+        salary = res_salary.data[0]
+        
+        # スタッフ一覧を取得
+        users = supabase_admin.auth.admin.list_users()
+        staff_list = []
+        for user in users:
+            meta = user.user_metadata or {}
+            if meta.get("approved") == True:
+                name = f"{meta.get('last_name', '')} {meta.get('first_name', '')}".strip()
+                if not name:
+                    name = user.email
+                staff_list.append({
+                    "id": user.id,
+                    "name": name
+                })
+        
+        return render_template(
+            "admin_financial_salary_edit.html",
+            year=year,
+            month=month,
+            salary=salary,
+            staff_list=staff_list
+        )
+    except Exception as e:
+        print(f"❌ スタッフ給与取得エラー: {e}")
+        flash("スタッフ給与の取得に失敗しました", "error")
+        return redirect(f"/admin/financial/years/{year}/months/{month}")
+
+
+@app.route("/admin/financial/years/<year>/months/<month>/salaries/<salary_id>/delete", methods=["POST"])
+@admin_required
+def admin_financial_salary_delete(year, month, salary_id):
+    """スタッフ給与 - 削除"""
+    try:
+        # 給与を取得して経費も削除
+        res_salary = supabase_admin.table("staff_salaries").select("staff_id").eq("id", salary_id).execute()
+        if res_salary.data:
+            staff_id = res_salary.data[0].get("staff_id")
+            supabase_admin.table("expenses").delete().eq("year", int(year)).eq("month", int(month)).eq("staff_id", staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
+        
+        supabase_admin.table("staff_salaries").delete().eq("id", salary_id).execute()
+        flash("スタッフ給与を削除しました", "success")
+    except Exception as e:
+        print(f"❌ スタッフ給与削除エラー: {e}")
+        flash("スタッフ給与の削除に失敗しました", "error")
+    return redirect(f"/admin/financial/years/{year}/months/{month}")
 
 
 @app.errorhandler(404)

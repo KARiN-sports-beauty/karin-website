@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}経費 - 編集 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">✏️ 経費 - 編集（{{ year }}年）</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年の収支管理に戻る</a>
+</div>
+
+<form method="POST" action="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/edit" style="max-width: 800px;">
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">経費発生日<span style="color: #f44336;">*</span></label>
+      <input type="date" name="expense_date" required value="{{ expense.expense_date }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">カテゴリ<span style="color: #f44336;">*</span></label>
+      <select name="category" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <option value="transportation" {% if expense.category == 'transportation' %}selected{% endif %}>交通費</option>
+        <option value="tax" {% if expense.category == 'tax' %}selected{% endif %}>税金</option>
+        <option value="supplies" {% if expense.category == 'supplies' %}selected{% endif %}>消耗品</option>
+        <option value="other" {% if expense.category == 'other' %}selected{% endif %}>その他</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">金額<span style="color: #f44336;">*</span></label>
+      <input type="number" name="amount" required min="0" step="0.01" value="{{ expense.amount }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">説明</label>
+      <input type="text" name="description" value="{{ expense.description or '' }}" placeholder="経費の説明を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">スタッフ（該当する場合）</label>
+      <select name="staff_id" id="staff_id" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" onchange="updateStaffName()">
+        <option value="">選択してください</option>
+        {% for staff in staff_list %}
+        <option value="{{ staff.id }}" data-name="{{ staff.name }}" {% if expense.staff_id == staff.id %}selected{% endif %}>{{ staff.name }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="staff_name" id="staff_name" value="{{ expense.staff_name or '' }}">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">メモ</label>
+      <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;">{{ expense.memo or '' }}</textarea>
+    </div>
+    
+    <div style="margin-top: 24px;">
+      <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 12px 24px; font-size: 1rem;">更新</button>
+      <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none; margin-left: 12px; padding: 12px 24px; display: inline-block;">キャンセル</a>
+    </div>
+  </div>
+</form>
+
+<script>
+function updateStaffName() {
+  const select = document.getElementById('staff_id');
+  const hidden = document.getElementById('staff_name');
+  const selectedOption = select.options[select.selectedIndex];
+  if (selectedOption.value) {
+    hidden.value = selectedOption.getAttribute('data-name');
+  } else {
+    hidden.value = '';
+  }
+}
+</script>
+
+{% endblock %}
+
