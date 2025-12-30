@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ video.name }} - セルフケア動画詳細 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🎥 セルフケア動画詳細</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/videos" class="admin-karte-detail-btn-back" style="text-decoration: none;">← セルフケア動画一覧に戻る</a>
+</div>
+
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px; max-width: 1000px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.5rem; font-weight: 600; color: #1E3A5F;">{{ video.name }}</h3>
+  
+  <div style="margin-bottom: 24px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">動画</label>
+    <div style="background: #000; border-radius: 8px; overflow: hidden; position: relative; padding-bottom: 56.25%; height: 0;">
+      {% if 'youtube.com' in video.video_url or 'youtu.be' in video.video_url %}
+        {% set video_id = video.video_url.split('v=')[1].split('&')[0] if 'v=' in video.video_url else video.video_url.split('/')[-1] %}
+        <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+      {% elif 'vimeo.com' in video.video_url %}
+        {% set video_id = video.video_url.split('/')[-1] %}
+        <iframe src="https://player.vimeo.com/video/{{ video_id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+      {% else %}
+        <video controls style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+          <source src="{{ video.video_url }}" type="video/mp4">
+          お使いのブラウザは動画タグをサポートしていません。
+        </video>
+      {% endif %}
+    </div>
+  </div>
+  
+  {% if video.purpose %}
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">目的</label>
+    <div style="padding: 12px; background: #f5f7fb; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">{{ video.purpose }}</div>
+  </div>
+  {% endif %}
+  
+  {% if video.method %}
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">方法</label>
+    <div style="padding: 12px; background: #f5f7fb; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">{{ video.method }}</div>
+  </div>
+  {% endif %}
+  
+  {% if video.recommended_for %}
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">このような方におすすめ</label>
+    <div style="padding: 12px; background: #f5f7fb; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">{{ video.recommended_for }}</div>
+  </div>
+  {% endif %}
+  
+  <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee;">
+    <a href="/admin/videos/{{ video.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; margin-right: 12px;">✏ 編集</a>
+    <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この動画を削除しますか？\n（元には戻せません）');">
+      <button type="submit" class="admin-blog-delete-btn" style="padding: 12px 24px; font-size: 1rem;">🗑 削除</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+

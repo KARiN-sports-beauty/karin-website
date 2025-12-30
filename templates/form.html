@@ -295,7 +295,7 @@
     <div class="form-block">
       <h2 class="block-title">🧾 施術同意書（鍼灸・整体・リラクゼーション・トレーニング）</h2>
 
-      <div class="agreement-text">
+      <div class="agreement-text-scroll" style="max-height: 150px; overflow-y: auto; padding: 16px; background: #f5f7fb; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; line-height: 1.6; font-size: 0.9rem;">
         <p><strong>【施術の目的・内容について】</strong><br>
         国家資格を有する鍼灸師による鍼灸施術を中心に、整体・オイルトリートメント・ストレッチ・トレーニング指導などを組み合わせ、心身の調整・回復・健康維持を目的としたケアを行います。<br><br>
         ただし、整体やオイルマッサージは医療行為ではなく、リラクゼーションやコンディショニングを目的としたものであり、診断・治療・処方を行うものではありません。</p>
@@ -342,33 +342,15 @@
         上記の内容をすべて理解し、自己責任のもとで施術を受けることに同意します。</p>
       </div>
 
-      <div class="form-field signature-row">
-        <label>
-          <span>署名</span>
-          <input type="text" name="signature" required placeholder="ご本人のお名前をご記入ください">
+      <div class="form-field" style="margin-top: 20px;">
+        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px; background: #fff; border: 2px solid #1E3A5F; border-radius: 8px;">
+          <input type="checkbox" name="agreement_confirmed" id="agreement_confirmed" required style="width: 20px; height: 20px; cursor: pointer; accent-color: #1E3A5F;">
+          <span style="font-weight: 600; color: #1E3A5F; font-size: 1rem;">同意書を確認しました</span>
         </label>
-
-        <div class="date-select-group">
-          <span>日付</span>
-          <div class="date-select-inline">
-            <select name="agree_year">
-              {% for y in years %}
-              <option value="{{ y }}">{{ y }}年</option>
-              {% endfor %}
-            </select>
-            <select name="agree_month">
-              {% for m in months %}
-              <option value="{{ m }}">{{ m }}月</option>
-              {% endfor %}
-            </select>
-            <select name="agree_day">
-              {% for d in days %}
-              <option value="{{ d }}">{{ d }}日</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
+        <p style="font-size: 0.85rem; color: #666; margin-top: 8px; margin-left: 32px;">※上記の同意書を最後まで読み、内容を理解した上でチェックしてください</p>
       </div>
+      
+      <input type="hidden" name="agreed_at" id="agreed_at" value="">
     </div>
 
     <!-- 送信 -->
@@ -386,5 +368,33 @@
   <span>ホームに戻る</span>
 </a>
 <script src="https://yubinbango.github.io/yubinbango/yubinbango.js" charset="UTF-8"></script>
+<script>
+// 送信日時を自動設定（サーバー側でも設定されるが、念のためクライアント側でも設定）
+document.addEventListener('DOMContentLoaded', function() {
+  const agreedAtInput = document.getElementById('agreed_at');
+  if (agreedAtInput) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    agreedAtInput.value = `${year}-${month}-${day}`;
+  }
+  
+  // フォーム送信時に日付を再設定（念のため）
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function() {
+      const agreedAtInput = document.getElementById('agreed_at');
+      if (agreedAtInput) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        agreedAtInput.value = `${year}-${month}-${day}`;
+      }
+    });
+  }
+});
+</script>
 </body>
 </html>

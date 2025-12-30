@@ -656,19 +656,22 @@ def submit_form():
         chronic = request.form.get("chronic", "").strip()
         surgery = request.form.get("surgery", "").strip()
         under_medical = request.form.get("under_medical", "").strip()
-        signature = request.form.get("signature", "").strip()
+        # 同意書確認チェックボックス
+        agreement_confirmed = request.form.get("agreement_confirmed") == "on"
+        if not agreement_confirmed:
+            flash("同意書を確認してチェックしてください", "error")
+            return redirect(url_for("form"))
         
         # 希望日をフォーマット
         preferred_date1 = normalize_datetime(request.form.get("preferred_date1"))
         preferred_date2 = normalize_datetime(request.form.get("preferred_date2"))
         preferred_date3 = normalize_datetime(request.form.get("preferred_date3"))
 
+        # agreed_atは送信日時で自動設定（YYYY-MM-DD形式）
+        agreed_at = datetime.now(JST).strftime("%Y-%m-%d")
         
-        # agreed_atをYYYY-MM-DD形式で作成
-        agree_year = request.form.get("agree_year", "").strip()
-        agree_month = request.form.get("agree_month", "").strip()
-        agree_day = request.form.get("agree_day", "").strip()
-        agreed_at = f"{agree_year}-{agree_month}-{agree_day}" if agree_year and agree_month and agree_day else None
+        # 署名は姓名を結合（後方互換性のため）
+        signature = name
         
         # Supabase patientsテーブルに保存（DBスキーマと完全同期）
         patient_data = {
@@ -699,8 +702,9 @@ def submit_form():
             "preferred_date1": preferred_date1,
             "preferred_date2": preferred_date2,
             "preferred_date3": preferred_date3,
-            "signature": signature,
-            "agreed_at": agreed_at,
+            "signature": signature,  # 後方互換性のため姓名を保存
+            "agreed_at": agreed_at,  # 送信日時で自動設定
+            "agreement_confirmed": True,  # チェックボックスで確認済み
             "note": "",  # 空でも入れる
             "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso(),
@@ -1172,14 +1176,22 @@ def staff_profile_edit():
                 staff["blog_comment"] = meta.get("blog_comment", "")
                 profile_image_url = meta.get("profile_image_url", "")
                 # プロフィール画像URLが相対パスの場合はurl_forで解決
-                if profile_image_url and not profile_image_url.startswith("http"):
-                    if profile_image_url.startswith("/static/"):
-                        filename = profile_image_url.replace("/static/", "")
-                        profile_image_url = url_for("static", filename=filename)
-                    elif profile_image_url.startswith("static/"):
-                        filename = profile_image_url.replace("static/", "")
-                        profile_image_url = url_for("static", filename=filename)
-                staff["profile_image_url"] = profile_image_url
+                if profile_image_url:
+                    if not profile_image_url.startswith("http"):
+                        if profile_image_url.startswith("/static/"):
+                            filename = profile_image_url.replace("/static/", "")
+                            profile_image_url = url_for("static", filename=filename)
+                        elif profile_image_url.startswith("static/"):
+                            filename = profile_image_url.replace("static/", "")
+                            profile_image_url = url_for("static", filename=filename)
+                    # staffオブジェクトとセッションの両方に設定
+                    staff["profile_image_url"] = profile_image_url
+                    session["staff"]["profile_image_url"] = profile_image_url
+                else:
+                    # profile_image_urlが空の場合は、staffオブジェクトからも削除
+                    staff["profile_image_url"] = None
+                    if "profile_image_url" in session.get("staff", {}):
+                        session["staff"]["profile_image_url"] = None
         except:
             pass
 
@@ -1282,6 +1294,10 @@ def staff_profile_edit():
         session["staff"]["last_name"] = last_name
         session["staff"]["first_name"] = first_name
         session["staff"]["phone"] = new_phone
+        
+        # 写真がアップロードされた場合、セッションにも反映
+        if profile_image_url:
+            session["staff"]["profile_image_url"] = profile_image_url
 
         return redirect(url_for(
             "staff_profile_edit",
@@ -10162,6 +10178,206 @@ def admin_financial_salary_delete(year, month, salary_id):
         print(f"❌ スタッフ給与削除エラー: {e}")
         flash("スタッフ給与の削除に失敗しました", "error")
     return redirect(f"/admin/financial/years/{year}/months/{month}")
+
+
+# ===================================================
+# ✅ セルフケア動画管理
+# ===================================================
+@app.route("/admin/videos")
+@staff_required
+def admin_videos():
+    """セルフケア動画一覧（あいうえお順）"""
+    try:
+        res = supabase_admin.table("self_care_videos").select("*").order("name").execute()
+        videos = res.data or []
+        return render_template("admin_videos.html", videos=videos)
+    except Exception as e:
+        print(f"❌ セルフケア動画一覧取得エラー: {e}")
+        flash("動画一覧の取得に失敗しました", "error")
+        return render_template("admin_videos.html", videos=[])
+
+
+@app.route("/admin/videos/new", methods=["GET", "POST"])
+@staff_required
+def admin_video_new():
+    """セルフケア動画 - 新規作成"""
+    if request.method == "POST":
+        try:
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("種目名を入力してください", "error")
+                return render_template("admin_video_new.html")
+            
+            video_url = request.form.get("video_url", "").strip()
+            if not video_url:
+                flash("動画URLを入力してください", "error")
+                return render_template("admin_video_new.html")
+            
+            purpose = request.form.get("purpose", "").strip()
+            method = request.form.get("method", "").strip()
+            recommended_for = request.form.get("recommended_for", "").strip()
+            
+            # ファイルアップロードがある場合
+            if "video_file" in request.files:
+                video_file = request.files["video_file"]
+                if video_file and video_file.filename:
+                    try:
+                        # Supabase Storageにアップロード
+                        file_name = video_file.filename
+                        ext = os.path.splitext(file_name)[1].lower()
+                        safe_name = f"{uuid.uuid4().hex}{ext}"
+                        storage_path = f"self-care-videos/{safe_name}"
+                        
+                        mime_type, _ = mimetypes.guess_type(file_name)
+                        if not mime_type:
+                            mime_type = "video/mp4"  # デフォルト
+                        
+                        file_data = video_file.read()
+                        supabase_admin.storage.from_("self-care-videos").upload(
+                            path=storage_path,
+                            file=file_data,
+                            file_options={"content-type": mime_type}
+                        )
+                        
+                        # 公開URLを取得
+                        video_url = supabase_admin.storage.from_("self-care-videos").get_public_url(storage_path)
+                    except Exception as e:
+                        print(f"❌ 動画アップロードエラー: {e}")
+                        flash(f"動画のアップロードに失敗しました: {e}", "error")
+                        return render_template("admin_video_new.html")
+            
+            insert_data = {
+                "name": name,
+                "video_url": video_url,
+                "purpose": purpose,
+                "method": method,
+                "recommended_for": recommended_for,
+                "created_at": now_iso(),
+                "updated_at": now_iso()
+            }
+            
+            supabase_admin.table("self_care_videos").insert(insert_data).execute()
+            flash("セルフケア動画を登録しました", "success")
+            return redirect("/admin/videos")
+        except Exception as e:
+            print(f"❌ セルフケア動画登録エラー: {e}")
+            flash(f"動画の登録に失敗しました: {e}", "error")
+            return render_template("admin_video_new.html")
+    
+    # GET: 新規作成フォーム
+    return render_template("admin_video_new.html")
+
+
+@app.route("/admin/videos/<video_id>")
+@staff_required
+def admin_video_detail(video_id):
+    """セルフケア動画 - 詳細表示"""
+    try:
+        res = supabase_admin.table("self_care_videos").select("*").eq("id", video_id).execute()
+        if not res.data:
+            flash("動画が見つかりません", "error")
+            return redirect("/admin/videos")
+        
+        video = res.data[0]
+        return render_template("admin_video_detail.html", video=video)
+    except Exception as e:
+        print(f"❌ セルフケア動画取得エラー: {e}")
+        flash("動画の取得に失敗しました", "error")
+        return redirect("/admin/videos")
+
+
+@app.route("/admin/videos/<video_id>/edit", methods=["GET", "POST"])
+@staff_required
+def admin_video_edit(video_id):
+    """セルフケア動画 - 編集"""
+    if request.method == "POST":
+        try:
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("種目名を入力してください", "error")
+                return redirect(f"/admin/videos/{video_id}/edit")
+            
+            video_url = request.form.get("video_url", "").strip()
+            if not video_url:
+                flash("動画URLを入力してください", "error")
+                return redirect(f"/admin/videos/{video_id}/edit")
+            
+            purpose = request.form.get("purpose", "").strip()
+            method = request.form.get("method", "").strip()
+            recommended_for = request.form.get("recommended_for", "").strip()
+            
+            # ファイルアップロードがある場合
+            if "video_file" in request.files:
+                video_file = request.files["video_file"]
+                if video_file and video_file.filename:
+                    try:
+                        # Supabase Storageにアップロード
+                        file_name = video_file.filename
+                        ext = os.path.splitext(file_name)[1].lower()
+                        safe_name = f"{uuid.uuid4().hex}{ext}"
+                        storage_path = f"self-care-videos/{safe_name}"
+                        
+                        mime_type, _ = mimetypes.guess_type(file_name)
+                        if not mime_type:
+                            mime_type = "video/mp4"  # デフォルト
+                        
+                        file_data = video_file.read()
+                        supabase_admin.storage.from_("self-care-videos").upload(
+                            path=storage_path,
+                            file=file_data,
+                            file_options={"content-type": mime_type}
+                        )
+                        
+                        # 公開URLを取得
+                        video_url = supabase_admin.storage.from_("self-care-videos").get_public_url(storage_path)
+                    except Exception as e:
+                        print(f"❌ 動画アップロードエラー: {e}")
+                        flash(f"動画のアップロードに失敗しました: {e}", "error")
+                        return redirect(f"/admin/videos/{video_id}/edit")
+            
+            update_data = {
+                "name": name,
+                "video_url": video_url,
+                "purpose": purpose,
+                "method": method,
+                "recommended_for": recommended_for,
+                "updated_at": now_iso()
+            }
+            
+            supabase_admin.table("self_care_videos").update(update_data).eq("id", video_id).execute()
+            flash("セルフケア動画を更新しました", "success")
+            return redirect(f"/admin/videos/{video_id}")
+        except Exception as e:
+            print(f"❌ セルフケア動画更新エラー: {e}")
+            flash(f"動画の更新に失敗しました: {e}", "error")
+            return redirect(f"/admin/videos/{video_id}/edit")
+    
+    # GET: 編集フォーム
+    try:
+        res = supabase_admin.table("self_care_videos").select("*").eq("id", video_id).execute()
+        if not res.data:
+            flash("動画が見つかりません", "error")
+            return redirect("/admin/videos")
+        
+        video = res.data[0]
+        return render_template("admin_video_edit.html", video=video)
+    except Exception as e:
+        print(f"❌ セルフケア動画取得エラー: {e}")
+        flash("動画の取得に失敗しました", "error")
+        return redirect("/admin/videos")
+
+
+@app.route("/admin/videos/<video_id>/delete", methods=["POST"])
+@staff_required
+def admin_video_delete(video_id):
+    """セルフケア動画 - 削除"""
+    try:
+        supabase_admin.table("self_care_videos").delete().eq("id", video_id).execute()
+        flash("セルフケア動画を削除しました", "success")
+    except Exception as e:
+        print(f"❌ セルフケア動画削除エラー: {e}")
+        flash("動画の削除に失敗しました", "error")
+    return redirect("/admin/videos")
 
 
 @app.errorhandler(404)

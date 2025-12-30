@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}セルフケア動画 - 新規作成 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🆕 セルフケア動画 - 新規作成</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/videos" class="admin-karte-detail-btn-back" style="text-decoration: none;">← セルフケア動画一覧に戻る</a>
+</div>
+
+<form method="POST" action="/admin/videos/new" enctype="multipart/form-data" style="max-width: 800px;">
+  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">種目名<span style="color: #f44336;">*</span></label>
+      <input type="text" name="name" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" placeholder="例：肩甲骨のストレッチ">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">動画URLまたはファイルアップロード<span style="color: #f44336;">*</span></label>
+      <input type="text" name="video_url" id="video_url" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; margin-bottom: 8px;" placeholder="YouTube URL、Vimeo URL、またはSupabase Storage URL">
+      <p style="font-size: 0.85rem; color: #666; margin-bottom: 8px;">または</p>
+      <input type="file" name="video_file" id="video_file" accept="video/*" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" onchange="handleFileSelect(event)">
+      <p style="font-size: 0.85rem; color: #666; margin-top: 8px;">※ファイルを選択した場合、URL入力欄は無視されます</p>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">目的</label>
+      <textarea name="purpose" rows="3" placeholder="この動画の目的を入力してください" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">方法</label>
+      <textarea name="method" rows="5" placeholder="実施方法を入力してください" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">このような方におすすめ</label>
+      <textarea name="recommended_for" rows="3" placeholder="例：肩こりが気になる方、デスクワークが多い方など" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; font-family: inherit;"></textarea>
+    </div>
+    
+    <div style="margin-top: 24px;">
+      <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 12px 24px; font-size: 1rem;">登録</button>
+      <a href="/admin/videos" class="admin-karte-detail-btn-back" style="text-decoration: none; margin-left: 12px; padding: 12px 24px; display: inline-block;">キャンセル</a>
+    </div>
+  </div>
+</form>
+
+<script>
+function handleFileSelect(event) {
+  const fileInput = event.target;
+  const urlInput = document.getElementById('video_url');
+  
+  if (fileInput.files && fileInput.files.length > 0) {
+    // ファイルが選択された場合、URL入力欄を無効化（必須チェックを回避）
+    urlInput.required = false;
+    urlInput.disabled = true;
+    urlInput.placeholder = "ファイルが選択されているため、URL入力は不要です";
+  } else {
+    // ファイルが選択されていない場合、URL入力欄を有効化
+    urlInput.required = true;
+    urlInput.disabled = false;
+    urlInput.placeholder = "YouTube URL、Vimeo URL、またはSupabase Storage URL";
+  }
+}
+
+// フォーム送信時のバリデーション
+document.querySelector('form').addEventListener('submit', function(e) {
+  const fileInput = document.getElementById('video_file');
+  const urlInput = document.getElementById('video_url');
+  
+  if (!fileInput.files || fileInput.files.length === 0) {
+    if (!urlInput.value.trim()) {
+      e.preventDefault();
+      alert('動画URLを入力するか、動画ファイルをアップロードしてください。');
+      return false;
+    }
+  }
+});
+</script>
+
+{% endblock %}
+

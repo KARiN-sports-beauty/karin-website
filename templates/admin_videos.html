@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}セルフケア動画管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">🎥 セルフケア動画管理</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/videos/new" class="admin-blog-btn">🆕 新規動画作成</a>
+</div>
+
+{% if videos %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+  {% for video in videos %}
+  <div class="admin-blog-card unread" style="cursor: pointer;" onclick="window.location.href='/admin/videos/{{ video.id }}'">
+    <div class="admin-blog-head">
+      <strong>{{ video.name }}</strong>
+    </div>
+    
+    <div class="admin-blog-buttons" style="margin-top: 12px;">
+      <a href="/admin/videos/{{ video.id }}" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 6px 12px;">👁 詳細</a>
+      <a href="/admin/videos/{{ video.id }}/edit" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 6px 12px; margin-left: 8px;">✏ 編集</a>
+      <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline; margin-left: 8px;" onsubmit="return confirm('この動画を削除しますか？\n（元には戻せません）');">
+        <button type="submit" class="admin-blog-delete-btn">🗑 削除</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>動画がありません。新規動画を作成してください。</p>
+{% endif %}
+
+{% endblock %}
+
