@@ -381,27 +381,30 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     # 基本給 = 最低時給 × 実働時間
     base_salary = int(min_hourly_wage * working_hours)
     
-    # 売上を集計（日報データから）
-    revenue = 0
+    # 売上を集計（予約テーブルから直接集計：税抜き料金、出張費、指名料を個別に集計）
+    base_revenue = 0  # 税抜き料金の合計
+    transportation_total = 0  # 出張費の合計
     try:
-        res_reports = supabase_admin.table("staff_daily_reports").select("id").eq("staff_name", staff_name).gte("report_date", month_start).lte("report_date", month_end).execute()
-        report_ids = [r["id"] for r in (res_reports.data or [])]
+        # 予約完了分の予約データを取得
+        res_reservations = supabase_admin.table("reservations").select("base_price, transportation_fee, place_type").eq("staff_name", staff_name).eq("status", "completed").gte("reserved_at", month_start).lte("reserved_at", month_end).execute()
         
-        if report_ids:
-            res_items = supabase_admin.table("staff_daily_report_items").select("id").in_("daily_report_id", report_ids).execute()
-            item_ids = [item["id"] for item in (res_items.data or [])]
+        for reservation in (res_reservations.data or []):
+            # 税抜き料金を集計（院内・往診・帯同すべて）
+            base_price = reservation.get("base_price", 0) or 0
+            base_revenue += base_price
             
-            if item_ids:
-                res_patients = supabase_admin.table("staff_daily_report_patients").select("amount").in_("item_id", item_ids).execute()
-                for patient in (res_patients.data or []):
-                    amount = patient.get("amount", 0) or 0
-                    revenue += amount
+            # 出張費を集計（往診の場合のみ）
+            transportation_fee = reservation.get("transportation_fee", 0) or 0
+            transportation_total += transportation_fee
     except Exception as e:
         print(f"⚠️ WARNING - 売上集計エラー: {e}")
     
-    # 歩合給 = 売上の35% - 基本給（マイナスの場合は0）
+    # 歩合給 = 税抜き料金の35% - 基本給（マイナスの場合は0）
     commission_rate = 0.35
-    commission = max(0, int(revenue * commission_rate) - base_salary)
+    commission = max(0, int(base_revenue * commission_rate) - base_salary)
+    
+    # 総売上 = 税抜き料金（給与計算用の参考値）
+    revenue = base_revenue
     
     # 指名料を集計（予約から）
     nomination_fee = 0
@@ -496,17 +499,19 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     except Exception as e:
         print(f"⚠️ WARNING - 交通費集計エラー: {e}")
     
-    # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
-    total_salary = base_salary + commission + nomination_fee + transportation
+    # 総支給 = 基本給 + 歩合給 + 指名料 + 出張費 + 交通費
+    # 出張費は給与に直接反映（予約テーブルから集計）
+    total_salary = base_salary + commission + nomination_fee + transportation_total + transportation
     
     return {
         "base_salary": base_salary,
         "commission": commission,
         "nomination_fee": nomination_fee,
-        "transportation": transportation,
+        "transportation_fee": transportation_total,  # 出張費
+        "transportation": transportation,  # 交通費
         "total_salary": total_salary,
         "working_hours": working_hours,
-        "revenue": revenue
+        "revenue": revenue  # 税抜き料金の合計
     }
 
 
@@ -3959,6 +3964,25 @@ def admin_reservations_new():
         except:
             discount = 0
         
+        # 出張費取得
+        transportation_fee_str = request.form.get("transportation_fee", "0").strip()
+        try:
+            transportation_fee = int(transportation_fee_str) if transportation_fee_str else 0
+        except:
+            transportation_fee = 0
+        
+        # 消費税取得
+        tax_str = request.form.get("tax", "0").strip()
+        try:
+            tax = int(tax_str) if tax_str else 0
+        except:
+            # 消費税が未入力の場合は自動計算（料金 + 出張費 + 指名料 - 割引）× 0.1
+            if base_price:
+                total_without_tax = (base_price or 0) + transportation_fee + nomination_fee - discount
+                tax = int(total_without_tax * 0.1)
+            else:
+                tax = 0
+        
         # 予約作成
         reservation_data = {
             "patient_id": patient_id,
@@ -3975,6 +3999,8 @@ def admin_reservations_new():
             "selected_menus": selected_menus,
             "nomination_fee": nomination_fee,
             "discount": discount,
+            "transportation_fee": transportation_fee,
+            "tax": tax,
             "status": "reserved",
             "memo": memo,
             "created_at": now_iso()
@@ -4109,6 +4135,7 @@ def admin_reservations_status(reservation_id):
                             # 予約情報からコース名と価格を取得
                             course_name = None
                             base_price = reservation.get("base_price") or 0
+                            transportation_fee = reservation.get("transportation_fee") or 0
                             nomination_fee = reservation.get("nomination_fee") or 0
                             discount = reservation.get("discount") or 0
                             nomination_type = reservation.get("nomination_type", "本指名")
@@ -4134,8 +4161,9 @@ def admin_reservations_status(reservation_id):
                                 else:
                                     course_name = f"{nomination_type}（{place_type_label}）"
                             
-                            # 売上金額 = 基本料金 + 指名料（割引は経費として別途処理）
-                            amount = base_price + nomination_fee
+                            # 売上金額 = 税抜き料金 + 出張費 + 指名料（割引は経費として別途処理）
+                            # スタッフ給与計算用：税抜き価格の売上の35%＋出張費＋指名料
+                            amount = base_price + transportation_fee + nomination_fee
                             
                             # 患者・売上明細を追加（重複チェック）
                             try:
@@ -4663,6 +4691,25 @@ def admin_reservations_edit(reservation_id):
         except:
             discount = 0
         
+        # 出張費取得
+        transportation_fee_str = request.form.get("transportation_fee", "0").strip()
+        try:
+            transportation_fee = int(transportation_fee_str) if transportation_fee_str else 0
+        except:
+            transportation_fee = 0
+        
+        # 消費税取得
+        tax_str = request.form.get("tax", "0").strip()
+        try:
+            tax = int(tax_str) if tax_str else 0
+        except:
+            # 消費税が未入力の場合は自動計算（料金 + 出張費 + 指名料 - 割引）× 0.1
+            if base_price:
+                total_without_tax = (base_price or 0) + transportation_fee + nomination_fee - discount
+                tax = int(total_without_tax * 0.1)
+            else:
+                tax = 0
+        
         status = request.form.get("status", "").strip()
         if status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
@@ -4738,8 +4785,11 @@ def admin_reservations_edit(reservation_id):
             "selected_menus": selected_menus,
             "nomination_fee": nomination_fee,
             "discount": discount,
+            "transportation_fee": transportation_fee,
+            "tax": tax,
             "status": status,
-            "memo": memo
+            "memo": memo,
+            "updated_at": now_iso()
         }
         
         supabase_admin.table("reservations").update(update_data).eq("id", reservation_id).execute()
