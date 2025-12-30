@@ -659,7 +659,7 @@ def submit_form():
         # 同意書確認チェックボックス
         agreement_confirmed = request.form.get("agreement_confirmed") == "on"
         if not agreement_confirmed:
-            flash("同意書を確認してチェックしてください", "error")
+            flash("同意書を確認の上、チェックボックスにチェックを入れてください", "error")
             return redirect(url_for("form"))
         
         # 希望日をフォーマット

@@ -345,7 +345,7 @@
       <div class="form-field" style="margin-top: 20px;">
         <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px; background: #fff; border: 2px solid #1E3A5F; border-radius: 8px;">
           <input type="checkbox" name="agreement_confirmed" id="agreement_confirmed" required style="width: 20px; height: 20px; cursor: pointer; accent-color: #1E3A5F;">
-          <span style="font-weight: 600; color: #1E3A5F; font-size: 1rem;">同意書を確認しました</span>
+          <span style="font-weight: 600; color: #1E3A5F; font-size: 1rem;">同意書を確認の上、同意します</span>
         </label>
         <p style="font-size: 0.85rem; color: #666; margin-top: 8px; margin-left: 32px;">※上記の同意書を最後まで読み、内容を理解した上でチェックしてください</p>
       </div>
@@ -380,10 +380,23 @@ document.addEventListener('DOMContentLoaded', function() {
     agreedAtInput.value = `${year}-${month}-${day}`;
   }
   
-  // フォーム送信時に日付を再設定（念のため）
+  // フォーム送信時のバリデーション（同意書チェックボックス必須）
   const form = document.querySelector('form');
   if (form) {
-    form.addEventListener('submit', function() {
+    form.addEventListener('submit', function(e) {
+      const agreementCheckbox = document.getElementById('agreement_confirmed');
+      
+      // 同意書チェックボックスの確認
+      if (!agreementCheckbox || !agreementCheckbox.checked) {
+        e.preventDefault();
+        alert('同意書を確認の上、チェックボックスにチェックを入れてください。');
+        if (agreementCheckbox) {
+          agreementCheckbox.focus();
+        }
+        return false;
+      }
+      
+      // 日付を再設定（念のため）
       const agreedAtInput = document.getElementById('agreed_at');
       if (agreedAtInput) {
         const now = new Date();
