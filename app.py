@@ -3101,6 +3101,7 @@ def index():
                     # 既に正しいフォーマットの場合
                     try:
                         d = datetime.strptime(date_str, "%Y-%m-%d").date()
+                        normalized_date = date_str
                     except:
                         # ゼロパディングがない場合（"2026-1-31"など）
                         parts = date_str.split("-")
@@ -3112,6 +3113,8 @@ def index():
                             continue
                     
                     if d >= today:
+                        # 正規化した日付を反映
+                        s["date"] = normalized_date
                         upcoming.append(s)
             except Exception as e:
                 print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
