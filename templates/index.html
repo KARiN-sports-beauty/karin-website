@@ -350,7 +350,11 @@
         {% for s in schedule %}
           <div class="schedule-card">
             <div class="schedule-cell {% if s.date == today %}today{% endif %}">
-              {{ s.date[5:7] }}/{{ s.date[8:10] }}
+              {% if s.month and s.day %}
+                {{ s.month }}/{{ s.day }}
+              {% else %}
+                {{ s.date[5:7] }}/{{ s.date[8:10] }}
+              {% endif %}
             </div>
 
             <div class="schedule-cell {% if '休' in s.place %}off-day{% endif %}">

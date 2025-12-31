@@ -3115,6 +3115,9 @@ def index():
                     if d >= today:
                         # 正規化した日付を反映
                         s["date"] = normalized_date
+                        # 表示用の月/日も追加
+                        s["month"] = normalized_date[5:7]
+                        s["day"] = normalized_date[8:10]
                         upcoming.append(s)
             except Exception as e:
                 print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
@@ -6195,6 +6198,11 @@ def admin_invoices_years():
             print(f"⚠️ WARNING - 日報年一覧取得エラー: {e}")
             all_years = years_list
         
+        # 現在の年も追加（データがなくても選択できるように）
+        current_year = str(datetime.now().year)
+        if current_year not in all_years:
+            all_years.insert(0, current_year)
+        
         return render_template("admin_invoices_years.html", years=all_years)
     except Exception as e:
         print(f"❌ 年一覧取得エラー: {e}")
@@ -7159,7 +7167,11 @@ def admin_daily_reports_years():
                 year = report_date[:4]
                 years_set.add(year)
         
-        years_list = sorted(years_set, reverse=True)
+        # 現在の年も追加（データがなくても選択できるように）
+        current_year = str(datetime.now().year)
+        years_set.add(current_year)
+        
+        years_list = sorted(years_set, reverse=True, key=int)
         
         return render_template("admin_daily_reports_years.html", years=years_list)
     except Exception as e:
