@@ -26,10 +26,44 @@
     <div style="margin-bottom: 20px;">
       <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">カテゴリ<span style="color: #f44336;">*</span></label>
       <select name="category" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
-        <option value="transportation">交通費</option>
-        <option value="tax">税金</option>
-        <option value="supplies">消耗品</option>
-        <option value="other">その他</option>
+        <optgroup label="人件費・給与関連">
+          <option value="salary">給与</option>
+          <option value="transportation">旅費交通費</option>
+          <option value="social_insurance">社会保険料</option>
+        </optgroup>
+        <optgroup label="固定費">
+          <option value="rent">地代家賃</option>
+          <option value="utilities">光熱費（電気・ガス・水道）</option>
+          <option value="communication">通信費（電話・インターネット）</option>
+          <option value="insurance">保険料</option>
+          <option value="lease">リース料</option>
+        </optgroup>
+        <optgroup label="税金・経理">
+          <option value="tax">税金</option>
+          <option value="accounting">経理・税理士費用</option>
+        </optgroup>
+        <optgroup label="広告・宣伝">
+          <option value="advertising">広告宣伝費</option>
+          <option value="promotion">プロモーション費用</option>
+        </optgroup>
+        <optgroup label="備品・消耗品">
+          <option value="supplies">消耗品</option>
+          <option value="equipment">備品・機器</option>
+          <option value="office_supplies">事務用品費</option>
+        </optgroup>
+        <optgroup label="修繕・メンテナンス">
+          <option value="repairs">修繕費</option>
+          <option value="maintenance">メンテナンス費</option>
+        </optgroup>
+        <optgroup label="その他経費">
+          <option value="meeting">会議費</option>
+          <option value="entertainment">接待費</option>
+          <option value="depreciation">減価償却費</option>
+          <option value="training">研修費</option>
+          <option value="subscription">サブスクリプション</option>
+          <option value="software">ソフトウェア・システム費用</option>
+          <option value="other">その他</option>
+        </optgroup>
       </select>
     </div>
     

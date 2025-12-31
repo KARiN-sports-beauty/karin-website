@@ -1532,7 +1532,7 @@ def show_blog(slug):
                     data = res_draft.data
             except:
                 pass
-        
+
         if not data:
             return render_template("404.html"), 404
 
@@ -4287,7 +4287,6 @@ def admin_reservations_status(reservation_id):
                                             print(f"✅ 指名料を給与に反映しました: nomination_fee={nomination_fee}, staff_name={staff_name}, reservation_id={reservation_id}")
                                         except Exception as e:
                                             print(f"⚠️ WARNING - 指名料給与反映エラー: {e}")
-                                    
                             except Exception as e:
                                 print(f"❌ 日報への患者情報追加エラー: {e}")
                                 print(f"   スタッフ: {staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -7442,38 +7441,38 @@ def admin_daily_reports(year=None, month=None, date=None):
                 print(f"⚠️ WARNING - 日報患者情報取得エラー: {e}")
             
             # 各勤務カードに患者情報を結合
-            for item in items:
+        for item in items:
                 item_id = item.get("id")
                 item["patients"] = patients_map.get(item_id, [])
                 
                 # 金額を計算（Python側で集計）
                 patients = item["patients"]
                 item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
-            
-            # 時刻表示用に整形
-            if item.get("start_time"):
-                try:
-                    if isinstance(item["start_time"], str):
-                        time_parts = item["start_time"].split(":")
-                        item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                    else:
-                        item["start_time_display"] = str(item["start_time"])[:5]
-                except:
-                    item["start_time_display"] = item.get("start_time", "")
-            else:
-                item["start_time_display"] = ""
-            
-            if item.get("end_time"):
-                try:
-                    if isinstance(item["end_time"], str):
-                        time_parts = item["end_time"].split(":")
-                        item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                    else:
-                        item["end_time_display"] = str(item["end_time"])[:5]
-                except:
-                    item["end_time_display"] = item.get("end_time", "")
-            else:
-                item["end_time_display"] = ""
+                
+                # 時刻表示用に整形
+                if item.get("start_time"):
+                    try:
+                        if isinstance(item["start_time"], str):
+                            time_parts = item["start_time"].split(":")
+                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["start_time_display"] = str(item["start_time"])[:5]
+                    except:
+                        item["start_time_display"] = item.get("start_time", "")
+                else:
+                    item["start_time_display"] = ""
+                
+                if item.get("end_time"):
+                    try:
+                        if isinstance(item["end_time"], str):
+                            time_parts = item["end_time"].split(":")
+                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
+                        else:
+                            item["end_time_display"] = str(item["end_time"])[:5]
+                    except:
+                        item["end_time_display"] = item.get("end_time", "")
+                else:
+                    item["end_time_display"] = ""
         
         # 当日小計・当月累計を計算（Python側で集計）
         # 当日小計（各itemのtotal_amountを使用）
@@ -9625,6 +9624,24 @@ def admin_financial_year_detail(year):
         except Exception as e:
             print(f"⚠️ WARNING - スタッフ給与集計エラー: {e}")
         
+        # スタッフの日報での交通費申請を経費に追加
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("amount, date").gte("date", year_start).lte("date", year_end).execute()
+            for trans in (res_transportations.data or []):
+                amount = trans.get("amount", 0) or 0
+                if amount:
+                    total_expenses += amount
+                    
+                    trans_date = trans.get("date", "")
+                    if trans_date:
+                        month = int(trans_date[5:7])
+                        monthly_expenses[month] = monthly_expenses.get(month, 0) + amount
+                    
+                    # 旅費交通費カテゴリに追加
+                    expense_by_category["transportation"] = expense_by_category.get("transportation", 0) + amount
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報交通費経費集計エラー: {e}")
+        
         # 備品発注（到着済み）を経費に追加
         try:
             res_orders = supabase_admin.table("equipment_orders").select("amount, order_date, status").eq("status", "arrived").gte("order_date", year_start).lte("order_date", year_end).execute()
@@ -9687,16 +9704,16 @@ def admin_financial_month_detail(year, month):
         month_int = int(month)
         
         # 月の開始日と終了日
-        month_start = f"{year_int}-{month:02d}-01"
+        month_start = f"{year_int}-{month_int:02d}-01"
         if month_int in [1, 3, 5, 7, 8, 10, 12]:
-            month_end = f"{year_int}-{month:02d}-31"
+            month_end = f"{year_int}-{month_int:02d}-31"
         elif month_int in [4, 6, 9, 11]:
-            month_end = f"{year_int}-{month:02d}-30"
+            month_end = f"{year_int}-{month_int:02d}-30"
         else:
             if (year_int % 4 == 0 and year_int % 100 != 0) or (year_int % 400 == 0):
-                month_end = f"{year_int}-{month:02d}-29"
+                month_end = f"{year_int}-{month_int:02d}-29"
             else:
-                month_end = f"{year_int}-{month:02d}-28"
+                month_end = f"{year_int}-{month_int:02d}-28"
         
         # 売上を集計（日報データから）
         month_revenue = 0
@@ -9742,6 +9759,102 @@ def admin_financial_month_detail(year, month):
             expenses = res_expenses.data or []
         except Exception as e:
             print(f"⚠️ WARNING - 経費取得エラー: {e}")
+        
+        # スタッフの日報での交通費申請を経費に追加
+        try:
+            res_transportations = supabase_admin.table("staff_daily_report_transportations").select("*, staff_daily_reports!inner(staff_name, staff_id)").gte("date", month_start).lte("date", month_end).execute()
+            for trans in (res_transportations.data or []):
+                amount = trans.get("amount", 0) or 0
+                if amount:
+                    report_info = trans.get("staff_daily_reports")
+                    if report_info:
+                        # リレーションが配列の場合とオブジェクトの場合に対応
+                        if isinstance(report_info, list) and len(report_info) > 0:
+                            report_info = report_info[0]
+                        if isinstance(report_info, dict):
+                            staff_name = report_info.get("staff_name", "")
+                            staff_id = report_info.get("staff_id")
+                        else:
+                            staff_name = ""
+                            staff_id = None
+                    else:
+                        staff_name = ""
+                        staff_id = None
+                    
+                    # 経費として追加（既にexpensesテーブルに登録されている可能性があるため、重複チェック）
+                    trans_date = trans.get("date", "")
+                    if trans_date:
+                        # 同じ日付・同じスタッフ・同じ金額の経費が既に存在するかチェック
+                        existing = False
+                        for exp in expenses:
+                            if (exp.get("expense_date") == trans_date and 
+                                exp.get("staff_id") == staff_id and 
+                                abs(exp.get("amount", 0) - amount) < 0.01 and
+                                exp.get("category") in ["transportation", "travel"]):
+                                existing = True
+                                break
+                        
+                        if not existing:
+                            expenses.append({
+                                "id": trans.get("id"),
+                                "expense_date": trans_date,
+                                "year": year_int,
+                                "month": month_int,
+                                "category": "transportation",
+                                "amount": amount,
+                                "description": f"交通費申請{(' - ' + staff_name) if staff_name else ''}",
+                                "staff_id": staff_id,
+                                "staff_name": staff_name,
+                                "linked_type": "daily_report_transportation",
+                                "linked_id": trans.get("id")
+                            })
+        except Exception as e:
+            print(f"⚠️ WARNING - 日報交通費経費追加エラー: {e}")
+            # リレーションクエリが失敗する場合、別の方法で取得
+            try:
+                res_transportations = supabase_admin.table("staff_daily_report_transportations").select("id, amount, date, daily_report_id").gte("date", month_start).lte("date", month_end).execute()
+                report_ids = list(set([t.get("daily_report_id") for t in (res_transportations.data or []) if t.get("daily_report_id")]))
+                report_map = {}
+                if report_ids:
+                    res_reports = supabase_admin.table("staff_daily_reports").select("id, staff_name, staff_id").in_("id", report_ids).execute()
+                    for r in (res_reports.data or []):
+                        report_map[r.get("id")] = r
+                
+                for trans in (res_transportations.data or []):
+                    amount = trans.get("amount", 0) or 0
+                    if amount:
+                        daily_report_id = trans.get("daily_report_id")
+                        report_info = report_map.get(daily_report_id) if daily_report_id else None
+                        staff_name = report_info.get("staff_name", "") if report_info else ""
+                        staff_id = report_info.get("staff_id") if report_info else None
+                        
+                        trans_date = trans.get("date", "")
+                        if trans_date:
+                            existing = False
+                            for exp in expenses:
+                                if (exp.get("expense_date") == trans_date and 
+                                    exp.get("staff_id") == staff_id and 
+                                    abs(exp.get("amount", 0) - amount) < 0.01 and
+                                    exp.get("category") in ["transportation", "travel"]):
+                                    existing = True
+                                    break
+                            
+                            if not existing:
+                                expenses.append({
+                                    "id": trans.get("id"),
+                                    "expense_date": trans_date,
+                                    "year": year_int,
+                                    "month": month_int,
+                                    "category": "transportation",
+                                    "amount": amount,
+                                    "description": f"交通費申請{(' - ' + staff_name) if staff_name else ''}",
+                                    "staff_id": staff_id,
+                                    "staff_name": staff_name,
+                                    "linked_type": "daily_report_transportation",
+                                    "linked_id": trans.get("id")
+                                })
+            except Exception as e2:
+                print(f"⚠️ WARNING - 日報交通費経費追加（フォールバック）エラー: {e2}")
         
         # 備品発注（到着済み）を取得
         equipment_expenses = []
@@ -10238,7 +10351,7 @@ def admin_financial_salary_delete(year, month, salary_id):
 def admin_videos():
     """セルフケア動画一覧（あいうえお順）"""
     try:
-        res = supabase_admin.table("self_care_videos").select("*").order("name").execute()
+        res = supabase_admin.table("self_care_videos").select("*").order("item_name").execute()
         videos = res.data or []
         return render_template("admin_videos.html", videos=videos)
     except Exception as e:

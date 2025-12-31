@@ -12,30 +12,36 @@
   {% endfor %}
 {% endif %}
 
-<div style="margin-bottom: 20px;">
+<div style="margin-bottom: 24px;">
   <a href="/admin/videos/new" class="admin-blog-btn">🆕 新規動画作成</a>
 </div>
 
 {% if videos %}
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+<div class="admin-blog-grid">
   {% for video in videos %}
-  <div class="admin-blog-card unread" style="cursor: pointer;" onclick="window.location.href='/admin/videos/{{ video.id }}'">
-    <div class="admin-blog-head">
-      <strong>{{ video.name }}</strong>
+  <div class="admin-blog-card unread" style="padding: 20px; min-height: 160px;">
+    <div class="admin-blog-head" style="margin-bottom: 12px;">
+      <strong style="font-size: 1.1rem; color: #1E3A5F;">{{ video.item_name }}</strong>
     </div>
     
-    <div class="admin-blog-buttons" style="margin-top: 12px;">
-      <a href="/admin/videos/{{ video.id }}" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 6px 12px;">👁 詳細</a>
-      <a href="/admin/videos/{{ video.id }}/edit" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 6px 12px; margin-left: 8px;">✏ 編集</a>
-      <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline; margin-left: 8px;" onsubmit="return confirm('この動画を削除しますか？\n（元には戻せません）');">
-        <button type="submit" class="admin-blog-delete-btn">🗑 削除</button>
+    {% if video.purpose %}
+    <p style="margin-top: 0; margin-bottom: 12px; color: #666; font-size: 0.9rem; line-height: 1.5; min-height: 40px;">目的: {{ video.purpose[:60] }}{% if video.purpose|length > 60 %}...{% endif %}</p>
+    {% else %}
+    <p style="margin-top: 0; margin-bottom: 12px; color: #999; font-size: 0.85rem; font-style: italic; min-height: 40px;">目的未設定</p>
+    {% endif %}
+    
+    <div style="margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid #f0f0f0;">
+      <a href="/admin/videos/{{ video.id }}" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 8px 16px; border-radius: 6px; background: #1E3A5F; color: #fff; font-size: 0.9rem; transition: all 0.2s; border: none; cursor: pointer; flex: 1; text-align: center; min-width: 80px;" onmouseover="this.style.background='#16304A'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#1E3A5F'; this.style.transform='translateY(0)'">👁 詳細</a>
+      <a href="/admin/videos/{{ video.id }}/edit" class="reply-btn" style="text-decoration: none; display: inline-block; padding: 8px 16px; border-radius: 6px; background: #1E3A5F; color: #fff; font-size: 0.9rem; transition: all 0.2s; border: none; cursor: pointer; flex: 1; text-align: center; min-width: 80px;" onmouseover="this.style.background='#16304A'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#1E3A5F'; this.style.transform='translateY(0)'">✏ 編集</a>
+      <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline; flex: 1; min-width: 80px;" onsubmit="return confirm('この動画を削除しますか？\n（元には戻せません）');">
+        <button type="submit" class="admin-blog-delete-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; width: 100%; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'; this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'">🗑 削除</button>
       </form>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<p>動画がありません。新規動画を作成してください。</p>
+<p style="padding: 40px; text-align: center; color: #666; background: #f5f7fb; border-radius: 12px; margin-top: 20px;">動画がありません。新規動画を作成してください。</p>
 {% endif %}
 
 {% endblock %}

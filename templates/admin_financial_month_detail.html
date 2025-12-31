@@ -138,9 +138,29 @@
           <td style="padding: 12px; border-bottom: 1px solid #eee;">
             {% set category_names = {
               'salary': '給与',
-              'transportation': '交通費',
+              'transportation': '旅費交通費',
+              'travel': '旅費交通費',
+              'social_insurance': '社会保険料',
+              'rent': '地代家賃',
+              'utilities': '光熱費',
+              'communication': '通信費',
+              'insurance': '保険料',
+              'lease': 'リース料',
               'tax': '税金',
+              'accounting': '経理・税理士費用',
+              'advertising': '広告宣伝費',
+              'promotion': 'プロモーション費用',
               'supplies': '消耗品',
+              'equipment': '備品・機器',
+              'office_supplies': '事務用品費',
+              'repairs': '修繕費',
+              'maintenance': 'メンテナンス費',
+              'meeting': '会議費',
+              'entertainment': '接待費',
+              'depreciation': '減価償却費',
+              'training': '研修費',
+              'subscription': 'サブスクリプション',
+              'software': 'ソフトウェア・システム費用',
               'other': 'その他'
             } %}
             {{ category_names.get(expense.category, expense.category) }}

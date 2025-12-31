@@ -11,7 +11,7 @@
 {% if months %}
 <div class="admin-karte-grid" style="margin-top: 20px;">
   {% for month_num, month_name in months %}
-  <a href="/admin/daily-reports?year={{ year }}&month={{ month_num }}" class="admin-karte-card">
+  <a href="/admin/daily-reports/years/{{ year }}/months/{{ month_num }}" class="admin-karte-card">
     <div class="admin-karte-head">
       <strong class="admin-karte-name">{{ month_name }}</strong>
     </div>

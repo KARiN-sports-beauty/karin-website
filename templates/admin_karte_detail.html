@@ -116,6 +116,8 @@
           {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
             <span class="admin-introducer-badge">{{ patient.introducer_info.introduced_count }}</span>
           {% endif %}
+        {% elif patient.introducer %}
+          {{ patient.introducer }}
         {% else %}
           <span style="color:#999;">なし</span>
         {% endif %}
