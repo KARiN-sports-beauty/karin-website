@@ -352,8 +352,17 @@
             <div class="schedule-cell {% if s.date == today %}today{% endif %}">
               {% if s.month and s.day %}
                 {{ s.month }}/{{ s.day }}
+              {% elif s.date %}
+                {% set date_parts = s.date.split('-') %}
+                {% if date_parts|length >= 3 %}
+                  {% set month_num = date_parts[1]|int %}
+                  {% set day_num = date_parts[2]|int %}
+                  {% if month_num < 10 %}{{ "0" }}{% endif %}{{ month_num }}/{% if day_num < 10 %}{{ "0" }}{% endif %}{{ day_num }}
+                {% else %}
+                  {{ s.date[5:7] }}/{{ s.date[8:10] }}
+                {% endif %}
               {% else %}
-                {{ s.date[5:7] }}/{{ s.date[8:10] }}
+                --
               {% endif %}
             </div>
 

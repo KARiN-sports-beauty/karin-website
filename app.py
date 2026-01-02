@@ -3098,6 +3098,9 @@ def index():
                 # 日付フォーマットを正規化（"2026-1-31" → "2026-01-31"）
                 date_str = s.get("date", "")
                 if date_str:
+                    d = None
+                    normalized_date = None
+                    
                     # 既に正しいフォーマットの場合
                     try:
                         d = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -3108,16 +3111,32 @@ def index():
                         if len(parts) == 3:
                             year, month, day = parts
                             normalized_date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-                            d = datetime.strptime(normalized_date, "%Y-%m-%d").date()
+                            try:
+                                d = datetime.strptime(normalized_date, "%Y-%m-%d").date()
+                            except:
+                                print(f"⚠️ WARNING - 日付解析失敗: {normalized_date}")
+                                continue
                         else:
+                            print(f"⚠️ WARNING - 日付フォーマット不正: {date_str}")
                             continue
                     
-                    if d >= today:
+                    if d and d >= today:
                         # 正規化した日付を反映
                         s["date"] = normalized_date
-                        # 表示用の月/日も追加
-                        s["month"] = normalized_date[5:7]
-                        s["day"] = normalized_date[8:10]
+                        # 表示用の月/日も追加（必ず設定）
+                        # normalized_dateは "YYYY-MM-DD" 形式なので、[5:7]と[8:10]で取得
+                        if len(normalized_date) >= 10:
+                            s["month"] = normalized_date[5:7]
+                            s["day"] = normalized_date[8:10]
+                        else:
+                            # フォールバック: 日付文字列から直接取得
+                            parts = normalized_date.split("-")
+                            if len(parts) >= 3:
+                                s["month"] = parts[1].zfill(2)
+                                s["day"] = parts[2].zfill(2)
+                            else:
+                                s["month"] = "01"
+                                s["day"] = "01"
                         upcoming.append(s)
             except Exception as e:
                 print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
