@@ -286,6 +286,7 @@
     </div>
     <div class="treatment-cta">
       <a href="{{ url_for('treatment') }}" class="cta-btn">詳しく見る</a>
+      <a href="{{ url_for('yoyogiuehara_shinkyu') }}" class="cta-btn" style="margin-top: 15px; font-size: 0.95rem;">代々木上原で鍼灸をお探しの方へ</a>
     </div>
   </section>
 
@@ -354,10 +355,13 @@
                 {{ s.month }}/{{ s.day }}
               {% elif s.date %}
                 {% set date_parts = s.date.split('-') %}
-                {% if date_parts|length >= 3 %}
+                {% set parts_length = date_parts|length %}
+                {% if parts_length != 1 and parts_length != 2 %}
                   {% set month_num = date_parts[1]|int %}
                   {% set day_num = date_parts[2]|int %}
-                  {% if month_num < 10 %}{{ "0" }}{% endif %}{{ month_num }}/{% if day_num < 10 %}{{ "0" }}{% endif %}{{ day_num }}
+                  {% set month_str = "%02d"|format(month_num) %}
+                  {% set day_str = "%02d"|format(day_num) %}
+                  {{ month_str }}/{{ day_str }}
                 {% else %}
                   {{ s.date[5:7] }}/{{ s.date[8:10] }}
                 {% endif %}

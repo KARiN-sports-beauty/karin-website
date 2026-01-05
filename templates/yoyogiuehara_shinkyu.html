@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ============================
+       SEO最適化（代々木上原 × 鍼灸）
+  ============================ -->
+  <title>代々木上原で鍼灸をお探しの方へ | KARiN. ~Sports & Beauty~</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="代々木上原で鍼灸をお探しの方へ。KARiN.は、鍼灸を軸に一人ひとりの身体状態に合わせたオーダーメイド施術を行う出張専門の鍼灸サービスです。施術歴15年以上。夜間対応可。">
+  <meta name="keywords" content="代々木上原, 鍼灸, 出張鍼灸, 整体, 美容鍼, トレーニング, 肩こり, 腰痛, スポーツケア, KARiN">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ============================
+       OGP（SNS最適化）
+  ============================ -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="代々木上原で鍼灸をお探しの方へ | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="代々木上原で鍼灸をお探しの方へ。出張専門の鍼灸サービス。施術歴15年以上。夜間対応可。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ============================
+       構造化データ（Service + LocalBusiness）
+       既存のものを流用
+  ============================ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        "serviceType": "鍼灸・整体・美容鍼・トレーニング",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": "KARiN. ~Sports & Beauty~",
+          "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+          "telephone": "+81-90-5088-6993",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "福岡市中央区",
+            "addressRegion": "福岡県",
+            "addressCountry": "JP"
+          },
+          "areaServed": [
+            "東京（代々木上原）",
+            "福岡（薬院）"
+          ],
+          "openingHoursSpecification": [{
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            "opens": "10:00",
+            "closes": "19:00"
+          }],
+          "url": "{{ request.url_root }}"
+        },
+        "description": "KARiN.では国家資格を持つ鍼灸師が、鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術を行います。"
+      },
+      {
+        "@type": "WebPage",
+        "name": "代々木上原で鍼灸をお探しの方へ",
+        "url": "{{ request.url }}",
+        "about": "代々木上原エリアで出張専門の鍼灸サービスを提供するKARiN.の地域専用ページ"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ============================
+       CSS & フォント & AOS
+  ============================ -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <style>
+    .yoyogi-page {
+      padding: 100px 4% 80px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .yoyogi-section {
+      margin-bottom: 60px;
+    }
+    .yoyogi-section h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #1E3A5F;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .yoyogi-section h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1E3A5F;
+      margin-bottom: 20px;
+      margin-top: 40px;
+      line-height: 1.6;
+    }
+    .yoyogi-section p {
+      font-size: 1rem;
+      line-height: 2;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .yoyogi-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    .yoyogi-section ul li {
+      padding: 10px 0 10px 25px;
+      position: relative;
+      line-height: 1.8;
+      color: #333;
+    }
+    .yoyogi-section ul li:before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: #1E3A5F;
+      font-weight: bold;
+    }
+    .yoyogi-intro {
+      font-size: 1.1rem;
+      line-height: 2.2;
+      margin-bottom: 40px;
+    }
+    .yoyogi-note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 10px;
+    }
+    .yoyogi-faq {
+      margin-top: 30px;
+    }
+    .yoyogi-faq-item {
+      margin-bottom: 25px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .yoyogi-faq-item:last-child {
+      border-bottom: none;
+    }
+    .yoyogi-faq-q {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1E3A5F;
+    }
+    .yoyogi-faq-a {
+      color: #333;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="yoyogi-page">
+  
+  <!-- ファーストビュー（導入） -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h1>代々木上原で鍼灸をお探しの方へ。</h1>
+    <div class="yoyogi-intro">
+      <p>KARiN.は、鍼灸を軸に一人ひとりの身体状態に合わせた<br>
+      オーダーメイド施術を行う出張専門の鍼灸サービスです。</p>
+
+      <p>肩こり・腰痛・疲労の蓄積から、<br>
+      スポーツによるコンディション調整まで。<br>
+      施術歴15年以上の経験をもとに、<br>
+      その日の身体に本当に必要な施術をご提案します。</p>
+    </div>
+  </section>
+
+  <!-- 代々木上原でKARiN.が選ばれる理由 -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>代々木上原でKARiN.が選ばれる理由</h2>
+    <ul>
+      <li>鍼灸を中心とした 身体全体をみる施術</li>
+      <li>出張専門だから ご自宅や滞在先で施術可能</li>
+      <li>夜間対応も可能で 仕事後でも利用しやすい</li>
+      <li>鍼灸・整体・ストレッチ・リコンディショニングなど状態に応じた柔軟なアプローチ</li>
+      <li>施術歴15年以上の安心感</li>
+    </ul>
+  </section>
+
+  <!-- 対応しているお悩み -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>対応しているお悩み</h2>
+    <ul>
+      <li>慢性的な肩こり・腰痛</li>
+      <li>首・背中の張り、疲労感</li>
+      <li>スポーツ後のケア・コンディション調整</li>
+      <li>姿勢や身体バランスの乱れ</li>
+      <li>日常生活による身体の不調</li>
+    </ul>
+    <p class="yoyogi-note">※症状や状態に応じて施術内容は調整します。</p>
+  </section>
+
+  <!-- 施術内容について -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>施術内容について</h2>
+    <p>KARiN.では鍼灸を軸に、<br>
+    身体の状態に合わせて以下の手技を組み合わせます。</p>
+    <ul>
+      <li>鍼灸</li>
+      <li>整体（スポーツマッサージ的手技を含む）</li>
+      <li>美容鍼</li>
+      <li>ストレッチ</li>
+      <li>リコンディショニング</li>
+      <li>トレーニング</li>
+      <li>アクティベーター</li>
+      <li>テクニカ・ガビラン</li>
+      <li>オイルマッサージ</li>
+      <li>カッピング</li>
+      <li>トレーナー帯同サポート</li>
+    </ul>
+    <p>一時的なリラクゼーションではなく、動きやすい身体づくりを目的とした施術を行います。</p>
+  </section>
+
+  <!-- 出張対応エリア（代々木上原） -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>出張対応エリア（代々木上原）</h2>
+    <p>代々木上原を中心に、<br>
+    周辺エリアへの出張施術に対応しています。<br>
+    ご自宅・宿泊先など、<br>
+    落ち着いた環境で施術を受けたい方におすすめです。</p>
+  </section>
+
+  <!-- 営業時間（代々木上原） -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>営業時間（代々木上原）</h2>
+    <p>平日・土日対応<br>
+    夜間対応可（要予約）<br>
+    ※詳細な時間帯はご予約時にご確認ください。</p>
+  </section>
+
+  <!-- よくある質問 -->
+  <section class="yoyogi-section" data-aos="fade-up">
+    <h2>よくある質問</h2>
+    <div class="yoyogi-faq">
+      <div class="yoyogi-faq-item">
+        <p class="yoyogi-faq-q">Q. 初めてでも大丈夫ですか？</p>
+        <p class="yoyogi-faq-a">A. もちろんです。初回はカウンセリングから丁寧に行いますので、ご安心ください。</p>
+      </div>
+      <div class="yoyogi-faq-item">
+        <p class="yoyogi-faq-q">Q. 鍼が苦手でも大丈夫ですか？</p>
+        <p class="yoyogi-faq-a">A. 状態に応じて整体やストレッチ中心の施術も可能です。</p>
+      </div>
+      <div class="yoyogi-faq-item">
+        <p class="yoyogi-faq-q">Q. スポーツをしていなくても利用できますか？</p>
+        <p class="yoyogi-faq-a">A. 日常の不調や疲労ケアの方も多くご利用いただいています。</p>
+      </div>
+      <div class="yoyogi-faq-item">
+        <p class="yoyogi-faq-q">Q.クレジットカードは使えますか？</p>
+        <p class="yoyogi-faq-a">はい、主要なクレジットカード・タッチ決済に対応しています。</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- AOSスクリプト -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,
+    once: true
+  });
+</script>
+
+<!-- ホームボタン（左下固定） -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+
+</body>
+</html>
+

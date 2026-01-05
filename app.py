@@ -613,6 +613,10 @@ def treatment():
     ]
     return render_template("treatment.html", items=items)
 
+@app.route("/yoyogiuehara/shinkyu")
+def yoyogiuehara_shinkyu():
+    return render_template("yoyogiuehara_shinkyu.html")
+
 @app.route("/price")
 def price():
     return render_template("price.html")
