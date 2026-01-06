@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ============================
+       SEO最適化（薬院 × 鍼灸）
+  ============================ -->
+  <title>薬院で鍼灸をお探しの方へ | KARiN. ~Sports & Beauty~</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="description" content="福岡・薬院エリアで鍼灸をお探しの方へ。KARiN.は、鍼灸を軸に一人ひとりの身体状態に合わせた施術を行う出張専門の施術サービスです。施術歴15年以上。夜間対応も事前相談可。">
+  <meta name="keywords" content="薬院, 鍼灸, 出張鍼灸, 整体, 美容鍼, トレーニング, 肩こり, 腰痛, スポーツケア, 福岡, KARiN">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <!-- ============================
+       OGP（SNS最適化）
+  ============================ -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="薬院で鍼灸をお探しの方へ | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="福岡・薬院エリアで鍼灸をお探しの方へ。出張専門の施術サービス。施術歴15年以上。夜間対応も事前相談可。">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ============================
+       構造化データ（Service + LocalBusiness）
+       既存のものを流用
+  ============================ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        "serviceType": "鍼灸・整体・美容鍼・トレーニング",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": "KARiN. ~Sports & Beauty~",
+          "image": "{{ url_for('static', filename='images/relogo.png', _external=True) }}",
+          "telephone": "+81-90-5088-6993",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "福岡市中央区",
+            "addressRegion": "福岡県",
+            "addressCountry": "JP"
+          },
+          "areaServed": [
+            "東京（代々木上原）",
+            "福岡（薬院）"
+          ],
+          "openingHoursSpecification": [{
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            "opens": "10:00",
+            "closes": "19:00"
+          }],
+          "url": "{{ request.url_root }}"
+        },
+        "description": "KARiN.では国家資格を持つ鍼灸師が、鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術を行います。"
+      },
+      {
+        "@type": "WebPage",
+        "name": "薬院で鍼灸をお探しの方へ",
+        "url": "{{ request.url }}",
+        "about": "福岡・薬院エリアで出張専門の鍼灸サービスを提供するKARiN.の地域専用ページ"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ============================
+       CSS & フォント & AOS
+  ============================ -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <style>
+    .yakuin-page {
+      padding: 100px 4% 80px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .yakuin-section {
+      margin-bottom: 60px;
+    }
+    .yakuin-section h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #1E3A5F;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .yakuin-section h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1E3A5F;
+      margin-bottom: 20px;
+      margin-top: 40px;
+      line-height: 1.6;
+    }
+    .yakuin-section p {
+      font-size: 1rem;
+      line-height: 2;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .yakuin-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    .yakuin-section ul li {
+      padding: 10px 0 10px 25px;
+      position: relative;
+      line-height: 1.8;
+      color: #333;
+    }
+    .yakuin-section ul li:before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: #1E3A5F;
+      font-weight: bold;
+    }
+    .yakuin-intro {
+      font-size: 1.1rem;
+      line-height: 2.2;
+      margin-bottom: 40px;
+    }
+    .yakuin-note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 10px;
+    }
+    .yakuin-faq {
+      margin-top: 30px;
+    }
+    .yakuin-faq-item {
+      margin-bottom: 25px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .yakuin-faq-item:last-child {
+      border-bottom: none;
+    }
+    .yakuin-faq-q {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1E3A5F;
+    }
+    .yakuin-faq-a {
+      color: #333;
+      line-height: 1.8;
+    }
+    .yakuin-hours {
+      margin-top: 15px;
+    }
+    .yakuin-hours p {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="yakuin-page">
+  
+  <!-- ファーストビュー（導入） -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h1>薬院で鍼灸をお探しの方へ</h1>
+    <div class="yakuin-intro">
+      <p>福岡・薬院エリアで鍼灸をお探しの方へ。<br>
+      KARiN.は、鍼灸を軸に一人ひとりの身体状態に合わせた施術を行う出張専門の施術サービスです。</p>
+
+      <p>肩こりや腰痛といった慢性的な不調から、<br>
+      疲労回復・コンディショニング・自律神経の乱れまで、<br>
+      その日の状態を丁寧に確認し、無理のない施術をご提案します。<br>
+      現在は出張専門ですが、将来的には治療院開設も予定しています。</p>
+    </div>
+  </section>
+
+  <!-- KARiN.が薬院で選ばれる理由 -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>KARiN.が薬院で選ばれる理由</h2>
+    <ul>
+      <li>施術歴15年以上の経験<br>
+      臨床経験を重ねてきた施術者が、身体の反応を見ながら対応します。</li>
+      <li>鍼灸を中心に多角的なアプローチ<br>
+      鍼灸だけにこだわらず、必要に応じて整体的手技、ストレッチ、リコンディショニングなどを組み合わせます。</li>
+      <li>夜間の対応も事前相談可能<br>
+      お仕事帰りや日中の時間が取りづらい方もご相談ください。</li>
+      <li>出張専門ならではの安心感<br>
+      ご自宅や滞在先で、リラックスした状態で施術を受けられます。</li>
+    </ul>
+  </section>
+
+  <!-- 対応しているお悩み -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>対応しているお悩み</h2>
+    <ul>
+      <li>肩こり・首こり・腰痛</li>
+      <li>慢性的な疲労・身体のだるさ</li>
+      <li>デスクワークによる不調</li>
+      <li>自律神経の乱れ</li>
+      <li>スポーツ後のコンディション調整</li>
+      <li>身体のバランスの崩れが気になる方</li>
+    </ul>
+    <p class="yakuin-note">※症状や状態により、施術内容は調整します。</p>
+  </section>
+
+  <!-- 施術内容について -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>施術内容について</h2>
+    <p>KARiN.では、以下の施術を症状に応じて組み合わせます。</p>
+    <ul>
+      <li>鍼灸</li>
+      <li>整体的アプローチ（スポーツマッサージを含む手技）</li>
+      <li>ストレッチ</li>
+      <li>リコンディショニング</li>
+      <li>トレーニング指導</li>
+      <li>アクティベーター</li>
+      <li>テクニカ・ガビラン</li>
+      <li>カッピング</li>
+      <li>オイルを用いた手技</li>
+      <li>トレーナー帯同対応</li>
+    </ul>
+    <p class="yakuin-note">※状態により、すべてを行うわけではありません。</p>
+  </section>
+
+  <!-- 薬院エリアの出張対応について -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>薬院エリアの出張対応について</h2>
+    <p>薬院を中心に、<br>
+    天神・平尾・大名・赤坂など周辺エリアへの出張に対応しています。<br>
+    詳細な出張範囲はご相談ください。</p>
+  </section>
+
+  <!-- 営業時間・対応曜日 -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>営業時間・対応曜日</h2>
+    <div class="yakuin-hours">
+      <p><strong>営業時間</strong><br>
+      10:00 ～ 19:00<br>
+      ※夜間の対応も事前相談により可能です。</p>
+      <p><strong>対応曜日</strong><br>
+      不定休（代々木上原と同様）</p>
+    </div>
+  </section>
+
+  <!-- よくあるご質問 -->
+  <section class="yakuin-section" data-aos="fade-up">
+    <h2>よくあるご質問</h2>
+    <div class="yakuin-faq">
+      <div class="yakuin-faq-item">
+        <p class="yakuin-faq-q">Q. 初めてでも大丈夫ですか？</p>
+        <p class="yakuin-faq-a">A. もちろんです。初回はカウンセリングから丁寧に行いますので、ご安心ください。</p>
+      </div>
+      <div class="yakuin-faq-item">
+        <p class="yakuin-faq-q">Q. 鍼が苦手ですが大丈夫ですか？</p>
+        <p class="yakuin-faq-a">A. 無理に鍼を行うことはありません。状態に応じて施術内容を調整します。</p>
+      </div>
+      <div class="yakuin-faq-item">
+        <p class="yakuin-faq-q">Q. クレジットカードは使えますか？</p>
+        <p class="yakuin-faq-a">A. はい、主要なクレジットカード・タッチ決済に対応しています。</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- AOSスクリプト -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,
+    once: true
+  });
+</script>
+
+<!-- ホームボタン（左下固定） -->
+<a href="{{ url_for('index') }}" class="home-btn">
+  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+  <span>ホームに戻る</span>
+</a>
+
+</body>
+</html>
+

@@ -617,6 +617,10 @@ def treatment():
 def yoyogiuehara_shinkyu():
     return render_template("yoyogiuehara_shinkyu.html")
 
+@app.route("/yakuin/shinkyu")
+def yakuin_shinkyu():
+    return render_template("yakuin_shinkyu.html")
+
 @app.route("/price")
 def price():
     return render_template("price.html")
@@ -3404,7 +3408,7 @@ def sitemap():
         # --- 固定ページ ---
         static_urls = [
             "/", "/treatment", "/price", "/contact",
-            "/form", "/login", "/register", "/blog", "/news", "/yoyogiuehara/shinkyu"
+            "/form", "/login", "/register", "/blog", "/news", "/yoyogiuehara/shinkyu", "/yakuin/shinkyu"
         ]
         for url in static_urls:
             pages.append(
