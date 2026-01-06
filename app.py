@@ -3404,7 +3404,7 @@ def sitemap():
         # --- 固定ページ ---
         static_urls = [
             "/", "/treatment", "/price", "/contact",
-            "/form", "/login", "/register", "/blog", "/news"
+            "/form", "/login", "/register", "/blog", "/news", "/yoyogiuehara/shinkyu"
         ]
         for url in static_urls:
             pages.append(
