@@ -68,8 +68,26 @@
           "addressCountry": "JP"
         },
         "areaServed": [
-          "東京都（代々木上原・都内近郊）",
-          "福岡県（薬院・中央区周辺）"
+          {
+            "@type": "Place",
+            "name": "代々木上原",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "渋谷区",
+              "addressRegion": "東京都",
+              "addressCountry": "JP"
+            }
+          },
+          {
+            "@type": "Place",
+            "name": "薬院",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "福岡市中央区",
+              "addressRegion": "福岡県",
+              "addressCountry": "JP"
+            }
+          }
         ],
         "openingHoursSpecification": [
           {
@@ -418,6 +436,11 @@
     <div class="footer-inner">
       <div class="footer-logo">
         KARiN. <span>~Sports & Beauty~</span>
+      </div>
+      <div class="footer-area-links" style="text-align: center; margin: 10px 0; font-size: 0.85rem; color: #999;">
+        <a href="/yoyogiuehara/shinkyu" aria-label="代々木上原で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">代々木上原</a>
+        <span style="color: #ccc;">|</span>
+        <a href="/yakuin/shinkyu" aria-label="薬院で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">薬院</a>
       </div>
       <ul class="footer-links">
         <li><a href="{{ url_for('index') }}">ホーム</a></li>
