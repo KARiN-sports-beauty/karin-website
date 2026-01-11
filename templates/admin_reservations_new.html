@@ -57,7 +57,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">セイ（必須）</label>
-          <input type="text" name="last_kana" id="new_last_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="last_kana" id="new_last_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-right: 8px;">
         </div>
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メイ（必須）</label>
@@ -97,7 +97,7 @@
     <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">基本メニューを選択してください</small>
   </div>
   
-  <!-- 追加メニュー（本指名・枠指名・割引） -->
+  <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->
   <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
     <label class="form-field" style="display: block; margin-bottom: 12px; font-weight: 600; color: #1E3A5F;">追加メニュー（複数選択可）</label>
     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -117,6 +117,17 @@
         <input type="checkbox" name="selected_menus" value="割引(△¥500)" id="menu_discount_500" onchange="updateDiscount()">
         <span>割引(△¥500)</span>
       </label>
+    </div>
+    <div style="margin-top: 12px;">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">出張費</label>
+      <select name="transportation_fee" id="transportation_fee" onchange="updateTotalPrice()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <option value="0">出張費なし</option>
+        <option value="1000">¥1,000</option>
+        <option value="2000">¥2,000</option>
+        <option value="3000">¥3,000</option>
+        <option value="other">その他（手入力）</option>
+      </select>
+      <input type="number" id="transportation_fee_other" name="transportation_fee_other" min="0" step="100" placeholder="金額を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-top: 8px; display: none;" onchange="updateTotalPrice()">
     </div>
     <input type="hidden" name="nomination_fee" id="nomination_fee" value="0">
     <input type="hidden" name="discount" id="discount" value="0">
@@ -177,17 +188,6 @@
     </select>
   </div>
   
-  <!-- 出張費選択（往診の場合のみ表示） -->
-  <div style="margin-bottom: 20px; display: none;" id="transportation_fee_wrapper">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">出張費</label>
-    <select name="transportation_fee" id="transportation_fee" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      <option value="0">出張費なし</option>
-      <option value="1000">5km圏内（+¥1,000）</option>
-      <option value="2000">10km圏内（+¥2,000）</option>
-      <option value="3000">15km圏内（+¥3,000）</option>
-    </select>
-    <small style="color: #666; font-size: 0.85rem;">往診の場合のみ出張費を選択してください</small>
-  </div>
   
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">料金（税抜き・円）</label>
@@ -459,18 +459,24 @@ function updatePrice() {
 // 合計金額更新関数（料金、出張費、指名料、消費税、割引を考慮）
 function updateTotalPrice() {
   const basePrice = parseInt(document.getElementById('base_price').value) || 0;
-  const transportationFee = parseInt(document.getElementById('transportation_fee').value) || 0;
+  const transportationFeeSelect = document.getElementById('transportation_fee');
+  const transportationFeeOther = document.getElementById('transportation_fee_other');
+  let transportationFee = 0;
+  
+  if (transportationFeeSelect.value === 'other') {
+    transportationFee = parseInt(transportationFeeOther.value) || 0;
+  } else {
+    transportationFee = parseInt(transportationFeeSelect.value) || 0;
+  }
+  
   const nominationFee = parseInt(document.getElementById('nomination_fee').value) || 0;
   const discount = parseInt(document.getElementById('discount').value) || 0;
   
-  // 税抜き合計 = 料金 + 出張費 + 指名料 - 割引
-  const totalWithoutTax = basePrice + transportationFee + nominationFee - discount;
+  // 消費税 = 料金 × 0.1（指名料と出張費にはかからない）
+  const tax = Math.floor(basePrice * 0.1);
   
-  // 消費税 = 税抜き合計 × 0.1（端数切り捨て）
-  const tax = Math.floor(totalWithoutTax * 0.1);
-  
-  // 税込合計 = 税抜き合計 + 消費税
-  const totalWithTax = totalWithoutTax + tax;
+  // 税込合計 = 料金 + 出張費 + 指名料 - 割引 + 消費税
+  const totalWithTax = basePrice + transportationFee + nominationFee - discount + tax;
   
   // 消費税フィールドを更新
   document.getElementById('tax').value = tax;
@@ -481,7 +487,19 @@ function updateTotalPrice() {
 
 // 料金、出張費、指名料、割引の変更時に合計を更新
 document.getElementById('base_price').addEventListener('input', updateTotalPrice);
-document.getElementById('transportation_fee').addEventListener('change', updateTotalPrice);
+document.getElementById('transportation_fee').addEventListener('change', function() {
+  const transportationFeeOther = document.getElementById('transportation_fee_other');
+  if (this.value === 'other') {
+    transportationFeeOther.style.display = 'block';
+    transportationFeeOther.setAttribute('required', 'required');
+  } else {
+    transportationFeeOther.style.display = 'none';
+    transportationFeeOther.removeAttribute('required');
+    transportationFeeOther.value = '';
+  }
+  updateTotalPrice();
+});
+document.getElementById('transportation_fee_other').addEventListener('input', updateTotalPrice);
 
 // 指名料更新関数
 function updateNominationFee() {
@@ -576,25 +594,15 @@ document.getElementById('add_frame_staff_btn').addEventListener('click', functio
   });
 });
 
-// 現場区分に応じて現場名入力欄と出張費を表示/非表示
+// 現場区分に応じて現場名入力欄を表示/非表示
 document.getElementById('place_type').addEventListener('change', function() {
   const placeType = this.value;
   const placeNameWrapper = document.getElementById('place_name_wrapper');
-  const transportationFeeWrapper = document.getElementById('transportation_fee_wrapper');
   
   if (placeType === 'visit' || placeType === 'field') {
     placeNameWrapper.style.display = 'block';
   } else {
     placeNameWrapper.style.display = 'none';
-  }
-  
-  // 出張費は往診の場合のみ表示
-  if (placeType === 'visit') {
-    transportationFeeWrapper.style.display = 'block';
-  } else {
-    transportationFeeWrapper.style.display = 'none';
-    // 出張費をリセット
-    document.getElementById('transportation_fee').value = '0';
   }
   
   updateTotalPrice();

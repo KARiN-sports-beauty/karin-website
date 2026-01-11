@@ -3999,8 +3999,12 @@ def admin_reservations_new():
         
         # 出張費取得
         transportation_fee_str = request.form.get("transportation_fee", "0").strip()
+        transportation_fee_other_str = request.form.get("transportation_fee_other", "0").strip()
         try:
-            transportation_fee = int(transportation_fee_str) if transportation_fee_str else 0
+            if transportation_fee_str == "other":
+                transportation_fee = int(transportation_fee_other_str) if transportation_fee_other_str else 0
+            else:
+                transportation_fee = int(transportation_fee_str) if transportation_fee_str else 0
         except:
             transportation_fee = 0
         
@@ -4009,10 +4013,9 @@ def admin_reservations_new():
         try:
             tax = int(tax_str) if tax_str else 0
         except:
-            # 消費税が未入力の場合は自動計算（料金 + 出張費 + 指名料 - 割引）× 0.1
+            # 消費税が未入力の場合は自動計算 料金 × 0.1（指名料と出張費にはかからない）
             if base_price:
-                total_without_tax = (base_price or 0) + transportation_fee + nomination_fee - discount
-                tax = int(total_without_tax * 0.1)
+                tax = int((base_price or 0) * 0.1)
             else:
                 tax = 0
         
@@ -4735,10 +4738,9 @@ def admin_reservations_edit(reservation_id):
         try:
             tax = int(tax_str) if tax_str else 0
         except:
-            # 消費税が未入力の場合は自動計算（料金 + 出張費 + 指名料 - 割引）× 0.1
+            # 消費税が未入力の場合は自動計算 料金 × 0.1（指名料と出張費にはかからない）
             if base_price:
-                total_without_tax = (base_price or 0) + transportation_fee + nomination_fee - discount
-                tax = int(total_without_tax * 0.1)
+                tax = int((base_price or 0) * 0.1)
             else:
                 tax = 0
         
