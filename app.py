@@ -621,6 +621,10 @@ def yoyogiuehara_shinkyu():
 def yakuin_shinkyu():
     return render_template("yakuin_shinkyu.html")
 
+@app.route("/lp-tokyo")
+def lp_tokyo():
+    return render_template("lp-tokyo.html")
+
 @app.route("/price")
 def price():
     return render_template("price.html")
