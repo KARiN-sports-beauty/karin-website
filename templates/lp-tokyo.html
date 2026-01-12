@@ -7,7 +7,7 @@
   <meta name="description" content="東京で出張対応の鍼灸・ボディケア。心と身体をやさしく整えるKARiN.。初回体験あり。無理な継続提案はありません。ご予約・ご相談は公式LINEから。">
   
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
   
   <style>
     * {
@@ -24,13 +24,95 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    section {
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 80px 24px;
+    /* ① ファーストビュー */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    section:nth-of-type(odd) {
+    .hero-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.85);
+    }
+
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.25);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 0 24px;
+      max-width: 600px;
+    }
+
+    .hero h1 {
+      font-size: 24px;
+      font-weight: 400;
+      color: #333;
+      margin-bottom: 48px;
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
+
+    .btn-line {
+      display: inline-block;
+      padding: 12px 32px;
+      background-color: transparent;
+      border: 1px solid #333;
+      color: #333;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      text-align: center;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn-line:hover {
+      background-color: rgba(51, 51, 51, 0.05);
+    }
+
+    /* ② 世界観の補足 */
+    .intro-text {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 80px 24px;
+      text-align: center;
+      background-color: #ffffff;
+    }
+
+    .intro-text p {
+      font-size: 14px;
+      color: #666;
+      line-height: 2.2;
+      letter-spacing: 0.02em;
+    }
+
+    /* セクション共通 */
+    section {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 80px 24px;
       background-color: #ffffff;
     }
 
@@ -38,36 +120,21 @@
       background-color: #fafafa;
     }
 
-    h1 {
-      font-size: 28px;
-      font-weight: 500;
+    h2 {
+      font-size: 20px;
+      font-weight: 400;
       color: #333;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
       letter-spacing: 0.02em;
       line-height: 1.6;
     }
 
-    h2 {
-      font-size: 24px;
-      font-weight: 500;
-      color: #444;
-      margin-bottom: 32px;
-      letter-spacing: 0.01em;
-      line-height: 1.5;
-    }
-
     p {
-      font-size: 16px;
+      font-size: 15px;
       color: #333;
       margin-bottom: 20px;
-      line-height: 1.9;
-    }
-
-    .sub-copy {
-      font-size: 15px;
-      color: #666;
-      margin-bottom: 40px;
-      line-height: 1.8;
+      line-height: 2;
+      letter-spacing: 0.01em;
     }
 
     ul {
@@ -78,143 +145,105 @@
 
     li {
       position: relative;
-      padding-left: 24px;
+      padding-left: 20px;
       margin-bottom: 16px;
-      font-size: 16px;
+      font-size: 15px;
       color: #333;
-      line-height: 1.9;
+      line-height: 2;
+      letter-spacing: 0.01em;
     }
 
     li::before {
       content: "・";
       position: absolute;
       left: 0;
-      color: #888;
-    }
-
-    ol {
-      list-style: none;
-      padding: 0;
-      margin-bottom: 28px;
-      counter-reset: step-counter;
-    }
-
-    ol li {
-      counter-increment: step-counter;
-      padding-left: 48px;
-      position: relative;
-    }
-
-    ol li::before {
-      content: counter(step-counter);
-      position: absolute;
-      left: 0;
-      width: 32px;
-      height: 32px;
-      background-color: #f5f5f5;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 500;
       color: #666;
     }
 
-    .btn-line {
-      display: inline-block;
-      margin-top: 32px;
-      padding: 16px 40px;
-      background-color: #5A8B5A;
-      color: #ffffff;
+    .price-text {
       font-size: 15px;
+      color: #333;
+      line-height: 2;
+      margin: 24px 0;
+    }
+
+    .price-text strong {
       font-weight: 500;
-      letter-spacing: 0.05em;
-      text-align: center;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-    }
-
-    .btn-line:hover {
-      background-color: #4a754a;
-    }
-
-    .btn-line:active {
-      background-color: #3d603d;
-    }
-
-    .note {
-      font-size: 14px;
-      color: #666;
-      margin-top: 24px;
-      line-height: 1.8;
-    }
-
-    .note-item {
+      display: block;
       margin-bottom: 8px;
     }
 
-    .price-info {
-      background-color: #f9f9f9;
-      padding: 24px;
-      border-radius: 4px;
-      margin: 28px 0;
+    .note {
+      font-size: 13px;
+      color: #666;
+      margin-top: 24px;
+      line-height: 2;
     }
 
-    .price-info p {
-      margin-bottom: 12px;
+    .btn-line-section {
+      margin-top: 40px;
+      text-align: center;
     }
 
-    .price-info strong {
-      font-size: 18px;
-      font-weight: 500;
-      color: #333;
+    .btn-line-section .btn-line {
+      display: inline-block;
     }
 
+    /* ⑧ 注意書き */
     footer {
       padding: 60px 24px;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       color: #888;
       background-color: #ffffff;
+      line-height: 2;
     }
 
     footer p {
-      margin-bottom: 6px;
-      line-height: 1.8;
+      margin-bottom: 4px;
     }
 
     @media screen and (max-width: 768px) {
+      .hero {
+        min-height: 500px;
+      }
+
+      .hero h1 {
+        font-size: 20px;
+        margin-bottom: 40px;
+      }
+
+      .btn-line {
+        padding: 10px 28px;
+        font-size: 13px;
+      }
+
+      .intro-text {
+        padding: 60px 20px;
+      }
+
+      .intro-text p {
+        font-size: 13px;
+      }
+
       section {
         padding: 60px 20px;
       }
 
-      h1 {
-        font-size: 24px;
-      }
-
       h2 {
-        font-size: 20px;
+        font-size: 18px;
         margin-bottom: 28px;
       }
 
       p {
-        font-size: 15px;
-      }
-
-      li {
-        font-size: 15px;
-      }
-
-      .sub-copy {
         font-size: 14px;
       }
 
-      .btn-line {
-        display: block;
-        width: 100%;
-        padding: 16px 24px;
+      li {
+        font-size: 14px;
+      }
+
+      .price-text {
         font-size: 14px;
       }
     }
@@ -224,55 +253,69 @@
 <body>
 
   <!-- ① ファーストビュー -->
-  <section>
-    <h1>整えるために、無理をしない。</h1>
-    <p class="sub-copy">
-      東京で受けられる<br>
-      鍼灸・ボディケア／完全予約制
-    </p>
-    <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-      LINEで相談・予約する
-    </a>
-  </section>
+  <div class="hero">
+    <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>整えるために、無理をしない。</h1>
+      <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
+        LINEで相談する
+      </a>
+    </div>
+  </div>
 
-  <!-- ② 初回体験について -->
+  <!-- ② 世界観の補足 -->
+  <div class="intro-text">
+    <p>
+      KARiN.では、<br>
+      その日の状態に合わせて、<br>
+      鍼灸とボディケアを組み合わせた<br>
+      施術を行っています。
+    </p>
+  </div>
+
+  <!-- ③ 初めての方へ -->
   <section>
     <h2>初めての方へ</h2>
     <p>
-      初めての方には、現在のお身体の状態を丁寧に確認しながら、
+      初めての方には、<br>
+      現在のお身体の状態を丁寧に確認しながら、<br>
       施術内容を組み立てていきます。
     </p>
-    <div class="price-info">
-      <p>
-        <strong>初回限定</strong><br>
-        60分 通常料金から30%OFF
-      </p>
+    <p>
+      無理な継続提案は行っておりません。
+    </p>
+  </section>
+
+  <!-- ④ 初回体験 -->
+  <section>
+    <div class="price-text">
+      <strong>【初回限定】</strong>
+      通常料金より30%OFF<br>
+      （60分）
     </div>
     <div class="note">
-      <p class="note-item">※ 無理な継続提案はありません</p>
-      <p class="note-item">※ 状態に合わせて内容を調整します</p>
+      ※ 詳細はLINEにてご案内します
     </div>
   </section>
 
-  <!-- ③ KARiN.のケアについて -->
+  <!-- ⑤ KARiN.のケア -->
   <section>
     <h2>KARiN.のケア</h2>
     <p>
-      KARiN.が大切にしているのは、
-      「その人にとって、今ちょうどいい状態」を見つけること。
+      整えるために、<br>
+      無理をしないこと。
     </p>
     <p>
-      その日の体調や緊張の状態を確認しながら、
-      心と身体のバランスをやさしく整えていきます。
+      今の自分と向き合うこと。
     </p>
     <p>
-      整えるために、無理をしない。<br>
-      自分の身体と向き合う時間をつくる。<br>
-      その日の状態に合わせて、必要最小限のアプローチを。
+      その日の状態に合わせて、<br>
+      心と身体のバランスを整えていきます。
     </p>
   </section>
 
-  <!-- ④ こんな方に -->
+  <!-- ⑥ こんな方に -->
   <section>
     <h2>こんな方に</h2>
     <ul>
@@ -284,47 +327,29 @@
     </ul>
   </section>
 
-  <!-- ⑤ 施術の流れ -->
-  <section>
-    <h2>施術の流れ</h2>
-    <ol>
-      <li>ご相談・状態確認</li>
-      <li>施術内容の調整</li>
-      <li>鍼灸・ボディケア</li>
-      <li>施術後のフィードバック</li>
-    </ol>
-  </section>
-
-  <!-- ⑥ 予約について -->
+  <!-- ⑦ 予約について -->
   <section>
     <h2>予約について</h2>
     <p>
-      まずはLINEでご相談ください。<br>
-      日時や内容はやり取りしながら決めていきます。
+      ご予約はLINEから承っております。<br>
+      まずはご相談だけでも大丈夫です。
     </p>
-    <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-      LINEで相談・予約する
-    </a>
-  </section>
-
-  <!-- ⑦ 注意事項・補足 -->
-  <section>
-    <h2>出張施術について</h2>
     <p>
-      東京エリアにて出張施術にも対応しています。<br>
-      ご自宅や滞在先での施術が可能です。
+      日時や内容は、<br>
+      やり取りしながら決めていきます。
     </p>
-    <div class="note">
-      <p class="note-item">※ 詳細はLINEにてご相談ください</p>
-      <p class="note-item">※ 出張範囲は地域により異なります</p>
+    <div class="btn-line-section">
+      <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
+        LINEで相談する
+      </a>
     </div>
   </section>
 
-  <!-- フッター -->
+  <!-- ⑧ 注意書き -->
   <footer>
-    <p>KARiN.</p>
-    <p>出張対応 鍼灸・ボディケア</p>
-    <p>東京・福岡</p>
+    <p>完全予約制</p>
+    <p>出張対応</p>
+    <p>LINEでご案内</p>
   </footer>
 
 </body>
