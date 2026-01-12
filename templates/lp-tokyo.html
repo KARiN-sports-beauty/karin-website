@@ -7,21 +7,31 @@
   <meta name="description" content="東京で出張対応の鍼灸・ボディケア。心と身体をやさしく整えるKARiN.。初回体験あり。無理な継続提案はありません。ご予約・ご相談は公式LINEから。">
   
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
   
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      color: #1E3A5F;
+      color: #333;
       line-height: 1.9;
       background-color: #ffffff;
+      -webkit-font-smoothing: antialiased;
     }
 
     section {
-      max-width: 900px;
+      max-width: 700px;
       margin: 0 auto;
-      padding: 100px 32px;
+      padding: 80px 24px;
+    }
+
+    section:nth-of-type(odd) {
+      background-color: #ffffff;
     }
 
     section:nth-of-type(even) {
@@ -29,97 +39,164 @@
     }
 
     h1 {
-      font-family: "Playfair Display", serif;
-      font-size: 42px;
-      font-weight: 600;
-      color: #1E3A5F;
-      margin-bottom: 32px;
-      letter-spacing: 0.04em;
-      line-height: 1.4;
+      font-size: 28px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+      line-height: 1.6;
     }
 
     h2 {
-      font-family: "Playfair Display", serif;
-      font-size: 32px;
-      font-weight: 600;
-      color: #1E3A5F;
-      margin-bottom: 40px;
-      letter-spacing: 0.03em;
+      font-size: 24px;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 32px;
+      letter-spacing: 0.01em;
       line-height: 1.5;
     }
 
     p {
       font-size: 16px;
       color: #333;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
       line-height: 1.9;
     }
 
-    p strong {
-      color: #1E3A5F;
-      font-weight: 600;
+    .sub-copy {
+      font-size: 15px;
+      color: #666;
+      margin-bottom: 40px;
+      line-height: 1.8;
     }
 
     ul {
-      padding-left: 24px;
+      list-style: none;
+      padding: 0;
       margin-bottom: 28px;
     }
 
     li {
+      position: relative;
+      padding-left: 24px;
       margin-bottom: 16px;
       font-size: 16px;
       color: #333;
-      line-height: 1.8;
+      line-height: 1.9;
     }
 
-    a {
-      text-decoration: none;
+    li::before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: #888;
+    }
+
+    ol {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 28px;
+      counter-reset: step-counter;
+    }
+
+    ol li {
+      counter-increment: step-counter;
+      padding-left: 48px;
+      position: relative;
+    }
+
+    ol li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      width: 32px;
+      height: 32px;
+      background-color: #f5f5f5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
     }
 
     .btn-line {
       display: inline-block;
       margin-top: 32px;
-      padding: 18px 40px;
-      border: 2px solid #1E3A5F;
-      background-color: #ffffff;
-      color: #1E3A5F;
+      padding: 16px 40px;
+      background-color: #5A8B5A;
+      color: #ffffff;
       font-size: 15px;
       font-weight: 500;
-      letter-spacing: 0.06em;
-      transition: all 0.3s ease;
+      letter-spacing: 0.05em;
+      text-align: center;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
     }
 
     .btn-line:hover {
-      background-color: #1E3A5F;
-      color: #ffffff;
-      transform: translateY(-2px);
+      background-color: #4a754a;
+    }
+
+    .btn-line:active {
+      background-color: #3d603d;
+    }
+
+    .note {
+      font-size: 14px;
+      color: #666;
+      margin-top: 24px;
+      line-height: 1.8;
+    }
+
+    .note-item {
+      margin-bottom: 8px;
+    }
+
+    .price-info {
+      background-color: #f9f9f9;
+      padding: 24px;
+      border-radius: 4px;
+      margin: 28px 0;
+    }
+
+    .price-info p {
+      margin-bottom: 12px;
+    }
+
+    .price-info strong {
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
     }
 
     footer {
-      padding: 60px 32px;
+      padding: 60px 24px;
       text-align: center;
-      font-size: 14px;
-      color: #666;
+      font-size: 13px;
+      color: #888;
       background-color: #ffffff;
-      border-top: 1px solid #e8e8e8;
     }
 
     footer p {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       line-height: 1.8;
     }
 
     @media screen and (max-width: 768px) {
       section {
-        padding: 70px 24px;
+        padding: 60px 20px;
       }
 
       h1 {
-        font-size: 32px;
+        font-size: 24px;
       }
 
       h2 {
-        font-size: 26px;
+        font-size: 20px;
+        margin-bottom: 28px;
       }
 
       p {
@@ -130,8 +207,14 @@
         font-size: 15px;
       }
 
+      .sub-copy {
+        font-size: 14px;
+      }
+
       .btn-line {
-        padding: 16px 32px;
+        display: block;
+        width: 100%;
+        padding: 16px 24px;
         font-size: 14px;
       }
     }
@@ -140,68 +223,38 @@
 
 <body>
 
-  <!-- ファーストビュー -->
+  <!-- ① ファーストビュー -->
   <section>
-    <h1>心と身体を、やさしく整える。</h1>
-
-    <p>
-      出張対応の鍼灸・ボディケア<br>
-      東京｜KARiN.
+    <h1>整えるために、無理をしない。</h1>
+    <p class="sub-copy">
+      東京で受けられる<br>
+      鍼灸・ボディケア／完全予約制
     </p>
-
-    <p>
-      忙しい日常の中で、<br>
-      ふと立ち止まり、自分の身体と向き合う時間を。
-    </p>
-
     <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-      公式LINEで相談・予約する
+      LINEで相談・予約する
     </a>
   </section>
 
-  <!-- KARiN.について -->
+  <!-- ② 初回体験について -->
   <section>
-    <h2>KARiN.について</h2>
-    <p>
-      KARiN.は、鍼灸やボディケアを組み合わせながら、
-      その日の心身の状態に合わせた施術を行っています。
-    </p>
-    <p>
-      「整えるために、無理をしないこと」<br>
-      「自分の身体と向き合う時間をつくること」
-    </p>
-    <p>
-      スポーツをされている方も、<br>
-      日常の疲れを感じている方も、<br>
-      それぞれの状態に合わせて対応しています。
-    </p>
-  </section>
-
-  <!-- 初回体験 -->
-  <section>
-    <h2>初回体験について</h2>
+    <h2>初めての方へ</h2>
     <p>
       初めての方には、現在のお身体の状態を丁寧に確認しながら、
       施術内容を組み立てていきます。
     </p>
-
-    <p>
-      <strong>初回体験（約60分）</strong><br>
-      通常価格より 約30%OFF
-    </p>
-
-    <p>
-      ※料金は地域により異なります。<br>
-      詳細はLINEにてご案内いたします。
-    </p>
-
-    <p>
-      無理な継続提案などは行っておりませんので、
-      安心してご相談ください。
-    </p>
+    <div class="price-info">
+      <p>
+        <strong>初回限定</strong><br>
+        60分 通常料金から30%OFF
+      </p>
+    </div>
+    <div class="note">
+      <p class="note-item">※ 無理な継続提案はありません</p>
+      <p class="note-item">※ 状態に合わせて内容を調整します</p>
+    </div>
   </section>
 
-  <!-- KARiN.のケア -->
+  <!-- ③ KARiN.のケアについて -->
   <section>
     <h2>KARiN.のケア</h2>
     <p>
@@ -213,50 +266,65 @@
       心と身体のバランスをやさしく整えていきます。
     </p>
     <p>
-      刺激が強すぎる施術や、
-      無理なアプローチは行いません。
+      整えるために、無理をしない。<br>
+      自分の身体と向き合う時間をつくる。<br>
+      その日の状態に合わせて、必要最小限のアプローチを。
     </p>
   </section>
 
-  <!-- 出張について -->
+  <!-- ④ こんな方に -->
+  <section>
+    <h2>こんな方に</h2>
+    <ul>
+      <li>慢性的な疲れを感じている</li>
+      <li>緊張が抜けない</li>
+      <li>スポーツ後のケアをしたい</li>
+      <li>鍼灸が初めてで不安</li>
+      <li>自分に合う施術を探している</li>
+    </ul>
+  </section>
+
+  <!-- ⑤ 施術の流れ -->
+  <section>
+    <h2>施術の流れ</h2>
+    <ol>
+      <li>ご相談・状態確認</li>
+      <li>施術内容の調整</li>
+      <li>鍼灸・ボディケア</li>
+      <li>施術後のフィードバック</li>
+    </ol>
+  </section>
+
+  <!-- ⑥ 予約について -->
+  <section>
+    <h2>予約について</h2>
+    <p>
+      まずはLINEでご相談ください。<br>
+      日時や内容はやり取りしながら決めていきます。
+    </p>
+    <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
+      LINEで相談・予約する
+    </a>
+  </section>
+
+  <!-- ⑦ 注意事項・補足 -->
   <section>
     <h2>出張施術について</h2>
-    <ul>
-      <li>畳1畳ほどのスペースがあれば施術可能です</li>
-      <li>ベッドやマットがない場合も対応可能です</li>
-      <li>リラックスできる服装でお待ちください</li>
-      <li>必要なものは基本的にこちらで準備します</li>
-    </ul>
-
     <p>
-      不安なことがあれば、事前にお気軽にご相談ください。
+      東京エリアにて出張施術にも対応しています。<br>
+      ご自宅や滞在先での施術が可能です。
     </p>
-  </section>
-
-  <!-- 予約方法 -->
-  <section>
-    <h2>ご予約・ご相談について</h2>
-    <p>
-      ご予約やご相談は、公式LINEから受け付けています。
-    </p>
-
-    <p>
-      ご希望の日時やお悩みをお伺いし、
-      スケジュールを確認のうえご提案いたします。
-    </p>
-
-    <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-      公式LINEで相談・予約する
-    </a>
+    <div class="note">
+      <p class="note-item">※ 詳細はLINEにてご相談ください</p>
+      <p class="note-item">※ 出張範囲は地域により異なります</p>
+    </div>
   </section>
 
   <!-- フッター -->
   <footer>
-    <p>
-      KARiN.<br>
-      出張対応 鍼灸・ボディケア<br>
-      東京・福岡
-    </p>
+    <p>KARiN.</p>
+    <p>出張対応 鍼灸・ボディケア</p>
+    <p>東京・福岡</p>
   </footer>
 
 </body>
