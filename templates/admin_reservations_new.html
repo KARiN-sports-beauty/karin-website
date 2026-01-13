@@ -44,7 +44,7 @@
     
     <!-- 新規患者作成フォーム -->
     <div id="new_patient_section" style="display: none;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">姓（必須）</label>
           <input type="text" name="last_name" id="new_last_name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -54,10 +54,10 @@
           <input type="text" name="first_name" id="new_first_name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
       </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">セイ（必須）</label>
-          <input type="text" name="last_kana" id="new_last_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-right: 8px;">
+          <input type="text" name="last_kana" id="new_last_kana" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
         </div>
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">メイ（必須）</label>
@@ -116,6 +116,10 @@
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
         <input type="checkbox" name="selected_menus" value="割引(△¥500)" id="menu_discount_500" onchange="updateDiscount()">
         <span>割引(△¥500)</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="初回体験割引（60分：30%OFF）" id="menu_first_time_discount" onchange="updateFirstTimeDiscount()">
+        <span>初回体験割引（60分：30%OFF）</span>
       </label>
     </div>
     <div style="margin-top: 12px;">
@@ -390,6 +394,11 @@ document.getElementById('area').addEventListener('change', function() {
 // メニュー選択時に価格を自動入力
 document.getElementById('menu').addEventListener('change', function() {
   updatePrice();
+  // 初回体験割引が選択されている場合は再計算
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    updateFirstTimeDiscount();
+  }
 });
 
 // 現場区分変更時にメニューを更新（帯同の場合は「その他」を追加）
@@ -486,7 +495,15 @@ function updateTotalPrice() {
 }
 
 // 料金、出張費、指名料、割引の変更時に合計を更新
-document.getElementById('base_price').addEventListener('input', updateTotalPrice);
+document.getElementById('base_price').addEventListener('input', function() {
+  // 初回体験割引が選択されている場合は再計算
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    updateFirstTimeDiscount();
+  } else {
+    updateTotalPrice();
+  }
+});
 document.getElementById('transportation_fee').addEventListener('change', function() {
   const transportationFeeOther = document.getElementById('transportation_fee_other');
   if (this.value === 'other') {
@@ -529,7 +546,16 @@ function updateNominationFee() {
 function updateDiscount() {
   const discount1000 = document.getElementById('menu_discount_1000');
   const discount500 = document.getElementById('menu_discount_500');
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
   const discountInput = document.getElementById('discount');
+  
+  // 初回体験割引が選択されている場合は、他の割引を無効化
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    updateFirstTimeDiscount();
+    return;
+  }
   
   let discount = 0;
   if (discount1000 && discount1000.checked) {
@@ -541,6 +567,35 @@ function updateDiscount() {
   
   if (discountInput) {
     discountInput.value = discount;
+  }
+  
+  updateTotalPrice();
+}
+
+// 初回体験割引更新関数
+function updateFirstTimeDiscount() {
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  const discountInput = document.getElementById('discount');
+  const basePriceInput = document.getElementById('base_price');
+  const discount1000 = document.getElementById('menu_discount_1000');
+  const discount500 = document.getElementById('menu_discount_500');
+  
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    // 他の割引を無効化
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    
+    // base_priceの30%を計算
+    const basePrice = parseInt(basePriceInput.value) || 0;
+    const discount = Math.floor(basePrice * 0.3);
+    
+    if (discountInput) {
+      discountInput.value = discount;
+    }
+  } else {
+    // 初回体験割引が外れた場合は、他の割引を再計算
+    updateDiscount();
+    return;
   }
   
   updateTotalPrice();

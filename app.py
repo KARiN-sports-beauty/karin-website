@@ -4201,9 +4201,10 @@ def admin_reservations_status(reservation_id):
                                 else:
                                     course_name = f"{nomination_type}（{place_type_label}）"
                             
-                            # 売上金額 = 税抜き料金 + 出張費 + 指名料（割引は経費として別途処理）
-                            # スタッフ給与計算用：税抜き価格の売上の35%＋出張費＋指名料
-                            amount = base_price + transportation_fee + nomination_fee
+                            # スタッフ日報の売上金額 = 新規予約作成フォームの合計金額そのまま
+                            # 合計金額 = 料金 + 出張費 + 指名料 - 割引 + 消費税
+                            tax = reservation.get("tax") or 0
+                            amount = base_price + transportation_fee + nomination_fee - discount + tax
                             
                             # 患者・売上明細を追加（重複チェック）
                             try:
@@ -4214,34 +4215,37 @@ def admin_reservations_status(reservation_id):
                                         "patient_id": patient_id,
                                         "reservation_id": reservation_id,
                                         "course_name": course_name,
-                                        "amount": amount,  # 基本価格 + 指名料
+                                        "amount": amount,  # (料金 - 割引) × 1.1 + 出張費
                                         "memo": None,
                                         "created_at": now_iso()
                                     }
                                     supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
                                     print(f"✅ 日報に患者情報を追加しました: staff_name={staff_name}, report_date={date_str}, reservation_id={reservation_id}, amount={amount}")
                                     
-                                    # 割引がある場合は経費として反映
+                                    # 割引がある場合は経費（広告費）として反映
                                     if discount > 0:
                                         try:
                                             # 年月を取得
                                             year = dt_jst.year
                                             month = dt_jst.month
                                             
+                                            # 経費（広告費）= 割引 × 1.1（本来の売上よりマイナス分）
+                                            expense_amount = int(discount * 1.1)
+                                            
                                             expense_data = {
                                                 "expense_date": date_str,
                                                 "year": year,
                                                 "month": month,
-                                                "category": "other",
-                                                "amount": discount,
-                                                "description": f"予約割引（予約ID: {reservation_id}）",
+                                                "category": "advertising",
+                                                "amount": expense_amount,
+                                                "description": f"初回体験割引（予約ID: {reservation_id}）",
                                                 "staff_id": None,
-                                                "staff_name": staff_name,
+                                                "staff_name": None,
                                                 "linked_type": "reservation_discount",
                                                 "memo": f"予約ID: {reservation_id}"
                                             }
                                             supabase_admin.table("expenses").insert(expense_data).execute()
-                                            print(f"✅ 割引を経費として登録しました: discount={discount}, reservation_id={reservation_id}")
+                                            print(f"✅ 割引を経費（広告費）として登録しました: expense_amount={expense_amount}, reservation_id={reservation_id}")
                                         except Exception as e:
                                             print(f"⚠️ WARNING - 割引経費登録エラー: {e}")
                                     
