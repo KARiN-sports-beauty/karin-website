@@ -28,62 +28,51 @@
     .hero {
       position: relative;
       width: 100%;
-      height: 100vh;
+      min-height: 600px;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .hero-image-wrapper {
+      flex: 1;
+      position: relative;
       min-height: 600px;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .hero-image {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: brightness(0.85);
-    }
-
-    .hero-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(255, 255, 255, 0.25);
-      z-index: 1;
+      filter: brightness(0.9);
     }
 
     .hero-content {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      padding: 0 24px;
-      max-width: 600px;
-      width: 100%;
-      height: 100%;
+      flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
+      padding: 80px 60px;
+      background-color: #ffffff;
     }
 
     .hero h1 {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 400;
       color: #333;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       letter-spacing: 0.05em;
       line-height: 1.6;
     }
 
     .hero .sub-copy {
-      font-size: 15px;
+      font-size: 16px;
       color: #444;
       line-height: 1.8;
       letter-spacing: 0.02em;
+      margin-bottom: 40px;
     }
 
     .hero-info {
@@ -99,11 +88,7 @@
     }
 
     .hero-cta {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
+      margin-top: 0;
     }
 
     /* セクション共通 */
@@ -205,9 +190,9 @@
     .btn-line {
       display: inline-block;
       padding: 12px 32px;
-      background-color: transparent;
-      border: 1px solid #333;
-      color: #333;
+      background-color: #4a5568;
+      border: 1px solid #4a5568;
+      color: #ffffff;
       font-size: 14px;
       font-weight: 400;
       letter-spacing: 0.05em;
@@ -218,7 +203,8 @@
     }
 
     .btn-line:hover {
-      background-color: rgba(51, 51, 51, 0.05);
+      background-color: #3a4458;
+      border-color: #3a4458;
     }
 
     .btn-line-section {
@@ -251,26 +237,34 @@
 
     @media screen and (max-width: 768px) {
       .hero {
-        min-height: 500px;
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .hero-image-wrapper {
+        width: 100%;
+        min-height: 300px;
+      }
+
+      .hero-content {
+        padding: 60px 24px;
+        align-items: flex-start;
       }
 
       .hero h1 {
-        font-size: 20px;
+        font-size: 22px;
         margin-bottom: 12px;
       }
 
       .hero .sub-copy {
         font-size: 14px;
+        margin-bottom: 32px;
       }
 
       .hero-info {
-        bottom: 100px;
+        bottom: 20px;
         right: 20px;
         font-size: 11px;
-      }
-
-      .hero-cta {
-        bottom: 20px;
       }
 
       section {
@@ -307,23 +301,24 @@
 
   <!-- フレーム1：ファーストビュー -->
   <div class="hero">
-    <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
-    <div class="hero-overlay"></div>
+    <div class="hero-image-wrapper">
+      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
+      <div class="hero-info">
+        東京で受けられる<br>
+        出張対応の鍼灸・ボディケア<br>
+        （完全予約制）
+      </div>
+    </div>
     <div class="hero-content">
       <h1>その一歩が、身体の変わる瞬間。</h1>
       <p class="sub-copy">
         がんばる日々に、やさしい選択を。
       </p>
-    </div>
-    <div class="hero-info">
-      東京で受けられる<br>
-      出張対応の鍼灸・ボディケア<br>
-      （完全予約制）
-    </div>
-    <div class="hero-cta">
-      <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-        まずは相談する
-      </a>
+      <div class="hero-cta">
+        <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
+          まずは相談する
+        </a>
+      </div>
     </div>
   </div>
 
