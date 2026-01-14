@@ -4232,13 +4232,27 @@ def admin_reservations_status(reservation_id):
                                             # 経費（広告費）= 割引 × 1.1（本来の売上よりマイナス分）
                                             expense_amount = int(discount * 1.1)
                                             
+                                            # selected_menusから割引タイプを判定
+                                            selected_menus_str = reservation.get("selected_menus", [])
+                                            if isinstance(selected_menus_str, str):
+                                                try:
+                                                    selected_menus_str = json.loads(selected_menus_str)
+                                                except:
+                                                    selected_menus_str = []
+                                            
+                                            discount_description = "施術割引"
+                                            if "初回体験割引（60分：30%OFF）" in selected_menus_str:
+                                                discount_description = "初回体験割引"
+                                            elif "施術割引" in selected_menus_str:
+                                                discount_description = "施術割引"
+                                            
                                             expense_data = {
                                                 "expense_date": date_str,
                                                 "year": year,
                                                 "month": month,
                                                 "category": "advertising",
                                                 "amount": expense_amount,
-                                                "description": f"初回体験割引（予約ID: {reservation_id}）",
+                                                "description": f"{discount_description}（予約ID: {reservation_id}）",
                                                 "staff_id": None,
                                                 "staff_name": None,
                                                 "linked_type": "reservation_discount",
