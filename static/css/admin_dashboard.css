@@ -226,6 +226,36 @@
 
 /* レスポンシブ */
 @media (max-width: 768px) {
+  .admin-header {
+    height: auto;
+    min-height: 64px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .admin-logo {
+    font-size: 1.5rem;
+  }
+
+  .admin-logo .sub {
+    font-size: 0.75rem;
+    margin-left: 4px;
+  }
+
+  .admin-user {
+    font-size: 0.85rem;
+    gap: 12px;
+  }
+
+  .admin-user-name {
+    font-size: 0.85rem;
+  }
+
+  .admin-logout-link {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+
   .admin-main {
     margin-top: 18px;
   }
@@ -255,15 +285,49 @@
 }
 
 @media (max-width: 480px) {
-  .admin-header-inner {
+  .admin-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .admin-header-left,
+  .admin-header-right {
+    width: 100%;
+  }
+
+  .admin-header-right {
+    justify-content: space-between;
+  }
+
+  .admin-logo {
+    font-size: 1.3rem;
+  }
+
+  .admin-logo .sub {
+    font-size: 0.7rem;
   }
 
   .admin-user {
     width: 100%;
     justify-content: space-between;
+    gap: 8px;
+  }
+
+  .admin-user-name {
+    font-size: 0.8rem;
+  }
+
+  .admin-logout-link {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .admin-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .dashboard-grid {
