@@ -39,7 +39,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       padding: 80px 60px;
       background-color: #ffffff;
       z-index: 2;
@@ -52,6 +52,8 @@
       margin-bottom: 16px;
       letter-spacing: 0.05em;
       line-height: 1.6;
+      text-align: left;
+      width: 100%;
     }
 
     .hero .sub-copy {
@@ -60,10 +62,15 @@
       line-height: 1.8;
       letter-spacing: 0.02em;
       margin-bottom: 40px;
+      text-align: left;
+      width: 100%;
     }
 
     .hero-cta {
       margin-top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
 
     .hero-image-wrapper {
@@ -255,6 +262,15 @@
       .hero-content {
         flex: 0 0 40%;
         padding: 30px 24px;
+        align-items: center;
+      }
+
+      .hero h1 {
+        text-align: left;
+      }
+
+      .hero .sub-copy {
+        text-align: left;
       }
 
       .hero-image-wrapper {
@@ -331,7 +347,7 @@
       </p>
       <div class="hero-cta">
         <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-          まずは相談する
+          まずは相談する <span style="font-weight: 600;">LINE</span>
         </a>
       </div>
     </div>
