@@ -90,10 +90,10 @@
     .hero-image-gradient {
       position: absolute;
       top: 0;
-      left: 0;
+      right: 0;
       width: 45%;
       height: 100%;
-      background: linear-gradient(to right, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 25%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+      background: linear-gradient(to left, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 25%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
       z-index: 1;
       backdrop-filter: blur(3px);
     }
@@ -101,9 +101,9 @@
     .hero-info {
       position: absolute;
       bottom: 40px;
-      right: 24px;
+      left: 24px;
       z-index: 2;
-      text-align: right;
+      text-align: left;
       font-size: 12px;
       color: #666;
       line-height: 1.8;
@@ -283,27 +283,29 @@
       }
 
       .hero h1 {
-        font-size: 18px;
-        margin-bottom: 10px;
-        line-height: 1.5;
+        font-size: 16px;
+        margin-bottom: 8px;
+        line-height: 1.4;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
       }
 
       .hero .sub-copy {
-        font-size: 13px;
-        margin-bottom: 24px;
-        line-height: 1.7;
+        font-size: 12px;
+        margin-bottom: 20px;
+        line-height: 1.6;
       }
 
       .hero-info {
         bottom: 16px;
-        right: 12px;
+        left: 12px;
         font-size: 9px;
         line-height: 1.6;
       }
 
       .btn-line {
-        padding: 10px 20px;
-        font-size: 12px;
+        padding: 9px 18px;
+        font-size: 11px;
       }
 
       section {
@@ -311,21 +313,21 @@
       }
 
       h2 {
-        font-size: 18px;
-        margin-bottom: 28px;
+        font-size: 16px;
+        margin-bottom: 24px;
       }
 
       h3 {
-        font-size: 16px;
-        margin-bottom: 20px;
+        font-size: 15px;
+        margin-bottom: 18px;
       }
 
       p {
-        font-size: 14px;
+        font-size: 12px;
       }
 
       li {
-        font-size: 14px;
+        font-size: 12px;
       }
 
       .service-image {
@@ -340,6 +342,15 @@
 
   <!-- フレーム1：ファーストビュー -->
   <div class="hero">
+    <div class="hero-image-wrapper">
+      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
+      <div class="hero-image-gradient"></div>
+      <div class="hero-info">
+        東京で受けられる<br>
+        出張対応の鍼灸・ボディケア<br>
+        （完全予約制）
+      </div>
+    </div>
     <div class="hero-content">
       <h1>その一歩が、身体の変わる瞬間。</h1>
       <p class="sub-copy">
@@ -349,15 +360,6 @@
         <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
           まずはLINEで相談する
         </a>
-      </div>
-    </div>
-    <div class="hero-image-wrapper">
-      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
-      <div class="hero-image-gradient"></div>
-      <div class="hero-info">
-        東京で受けられる<br>
-        出張対応の鍼灸・ボディケア<br>
-        （完全予約制）
       </div>
     </div>
   </div>
