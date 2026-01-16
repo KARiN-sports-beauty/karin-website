@@ -71,7 +71,8 @@
       margin-top: 0;
       width: 100%;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
 
     .hero-image-wrapper {
@@ -370,6 +371,10 @@
 
   <!-- フレーム1：ファーストビュー -->
   <div class="hero">
+    <div class="hero-image-wrapper">
+      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
+      <div class="hero-image-gradient"></div>
+    </div>
     <div class="hero-content">
       <h1>その一歩が、身体の変わる瞬間。</h1>
       <p class="sub-copy">
@@ -386,10 +391,6 @@
         出張対応の鍼灸・ボディケア<br>
         （完全予約制）
       </div>
-    </div>
-    <div class="hero-image-wrapper">
-      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
-      <div class="hero-image-gradient"></div>
     </div>
   </div>
 
