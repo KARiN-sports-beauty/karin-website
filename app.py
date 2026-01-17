@@ -668,6 +668,7 @@ def submit_form():
         shinkyu_pref = request.form.get("shinkyu_pref", "").strip()
         electric_pref = request.form.get("electric_pref", "").strip()
         pressure_pref = request.form.get("pressure_pref", "").strip()
+        chiropractic = request.form.get("chiropractic", "").strip()
         heart = request.form.get("heart", "").strip()
         pregnant = request.form.get("pregnant", "").strip()
         chronic = request.form.get("chronic", "").strip()
@@ -711,6 +712,7 @@ def submit_form():
             "shinkyu_pref": shinkyu_pref,
             "electric_pref": electric_pref,
             "pressure_pref": pressure_pref,
+            "chiropractic": chiropractic,
             "heart": heart,
             "pregnant": pregnant,
             "chronic": chronic,
@@ -2691,6 +2693,7 @@ def admin_karte_edit(patient_id):
             "shinkyu_pref": request.form.get("shinkyu_pref", "").strip(),
             "electric_pref": request.form.get("electric_pref", "").strip(),
             "pressure_pref": request.form.get("pressure_pref", "").strip(),
+            "chiropractic": request.form.get("chiropractic", "").strip(),
             "signature": request.form.get("signature", "").strip(),
             "agreed_at": request.form.get("agreed_at", "").strip() or None,
             "note": request.form.get("note", "").strip(),

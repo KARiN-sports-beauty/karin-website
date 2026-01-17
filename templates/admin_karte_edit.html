@@ -141,6 +141,11 @@
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">圧力の好み</label>
     <input type="text" name="pressure_pref" value="{{ patient.pressure_pref or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="圧力の好み">
   </div>
+
+  <div style="margin-bottom: 20px;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">矯正（骨をならす手技）について</label>
+    <input type="text" name="chiropractic" value="{{ patient.chiropractic or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="矯正の好み">
+  </div>
   
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">初回署名</label>

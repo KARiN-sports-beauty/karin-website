@@ -162,10 +162,11 @@
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">13. 刺激の好み</span>
       <span class="admin-karte-detail-value">
-        {% if patient.shinkyu_pref or patient.electric_pref or patient.pressure_pref %}
+        {% if patient.shinkyu_pref or patient.electric_pref or patient.pressure_pref or patient.chiropractic %}
           鍼灸：{{ patient.shinkyu_pref or '指定なし' }} / 
           電気：{{ patient.electric_pref or '指定なし' }} / 
-          圧力：{{ patient.pressure_pref or '指定なし' }}
+          圧力：{{ patient.pressure_pref or '指定なし' }} / 
+          矯正：{{ patient.chiropractic or '指定なし' }}
         {% else %}
           未入力
         {% endif %}
