@@ -190,7 +190,7 @@
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">16. 初診日</span>
       <span class="admin-karte-detail-value">
-        {% if patient.created_at %}{{ patient.created_at[:10] }}{% else %}未入力{% endif %}
+        {% if patient.first_visit_date %}{{ patient.first_visit_date }}{% else %}未記録{% endif %}
       </span>
     </div>
     

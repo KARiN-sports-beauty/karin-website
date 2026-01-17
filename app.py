@@ -2471,6 +2471,12 @@ def admin_karte_detail(patient_id):
             last_visit_date = logs[0].get("date")
         patient["last_visit_date"] = last_visit_date
         
+        # 初診日を取得（最古の施術ログの日付）
+        first_visit_date = None
+        if logs:
+            first_visit_date = logs[-1].get("date")
+        patient["first_visit_date"] = first_visit_date
+        
         # staff_nameは既にDBから取得されているため、追加処理は不要
         # ログからstaff_idなどの不要な参照を削除（staff_nameのみを使用）
         for log in logs:
