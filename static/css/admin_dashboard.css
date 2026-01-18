@@ -284,6 +284,37 @@
   }
 }
 
+@media (max-width: 768px) {
+  #daily-report-form input,
+  #daily-report-form textarea,
+  #daily-report-form select {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  #daily-report-form input[type="date"] {
+    max-width: 100%;
+  }
+
+  .work-card .work-card-time-row,
+  .work-card .work-card-break-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  #admin-reservation-form input,
+  #admin-reservation-form textarea,
+  #admin-reservation-form select {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  #karte-search {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .admin-header {
     flex-direction: column;

@@ -178,7 +178,7 @@ function addWorkCard() {
       </select>
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div class="work-card-time-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">開始時刻</label>
         <input type="time" name="start_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
@@ -189,7 +189,7 @@ function addWorkCard() {
       </div>
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div class="work-card-break-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">休憩時間（分）</label>
         <input type="number" name="break_minutes_${workCardCount}" value="0" min="0" max="480" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">

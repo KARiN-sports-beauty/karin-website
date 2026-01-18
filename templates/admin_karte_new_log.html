@@ -24,7 +24,7 @@
   
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
-    <select name="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択してください</option>
       <option value="in_house">院内</option>
       <option value="visit">往診</option>
@@ -32,7 +32,7 @@
     </select>
   </div>
   
-  <div style="margin-bottom: 20px;">
+  <div id="place_name_wrapper" style="margin-bottom: 20px; display: none;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名</label>
     <input type="text" name="place_name" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
@@ -71,5 +71,20 @@
     <a href="/admin/karte/{{ patient.id }}" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 詳細に戻る</a>
   </div>
 </form>
+
+<script>
+  const placeTypeSelect = document.getElementById("place_type");
+  const placeNameWrapper = document.getElementById("place_name_wrapper");
+
+  function togglePlaceName() {
+    if (!placeTypeSelect || !placeNameWrapper) return;
+    placeNameWrapper.style.display = placeTypeSelect.value === "field" ? "block" : "none";
+  }
+
+  if (placeTypeSelect) {
+    placeTypeSelect.addEventListener("change", togglePlaceName);
+    togglePlaceName();
+  }
+</script>
 
 {% endblock %}
