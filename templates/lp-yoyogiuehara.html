@@ -139,6 +139,57 @@
       background-color: #fafafa;
     }
 
+    .worries-section {
+      max-width: none;
+      background-color: #f6f6f4;
+      padding: 80px 20px;
+    }
+
+    .worries-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 60px 50px;
+    }
+
+    .worries-title {
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 32px;
+      color: #222;
+    }
+
+    .worries-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 32px 0;
+    }
+
+    .worries-list li {
+      font-size: 16px;
+      line-height: 1.9;
+      color: #444;
+      padding-left: 1.2em;
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .worries-list li::before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: #777;
+    }
+
+    .worries-message {
+      font-size: 16px;
+      color: #666;
+      margin-top: 40px;
+      border-top: 1px solid #eee;
+      padding-top: 24px;
+    }
+
     h2 {
       font-size: 20px;
       font-weight: 400;
@@ -541,14 +592,25 @@
   </div>
 
   <!-- フレーム2：悩み（共感） -->
-  <section>
-    <h3>こんなことで悩んでいませんか？</h3>
-    <ul>
-      <li>慢性的な疲れが抜けない</li>
-      <li>体質改善と言われてもピンとこない</li>
-      <li>どこで何を受ければいいか分からない</li>
-      <li>鍼灸が初めてで不安</li>
-    </ul>
+  <section class="worries-section">
+    <div class="worries-inner">
+      <h2 class="worries-title">こんなことで悩んでいませんか？</h2>
+  
+      <ul class="worries-list">
+        <li>慢性的な疲れが、なかなか抜けない</li>
+        <li>気づいたら、首や肩がずっと重い</li>
+        <li>マッサージに行っても、その場しのぎに感じる</li>
+        <li>運動したい気持ちはあるけど、身体がついてこない</li>
+        <li>忙しくて、通う時間を作るのが難しい</li>
+        <li>不調だけど、病院に行くほどでもない気がしている</li>
+        <li>痛みはあるけど、もう仕方ないと諦めている</li>
+        <li>鍼灸が初めてで、少し不安がある</li>
+      </ul>
+  
+      <p class="worries-message">
+        その違和感は、無理をしてきたサインかもしれません。
+      </p>
+    </div>
   </section>
 
   <!-- フレーム3：解決（KARiN.がどう向き合うか） -->
