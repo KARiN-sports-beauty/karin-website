@@ -4,6 +4,28 @@
 {% block content %}
 <h2 class="admin-title">📅 予約管理</h2>
 
+<style>
+  .payment-method-btn {
+    padding: 6px 12px;
+    background: #f5f7fb;
+    color: #1E3A5F;
+    border: 1px solid #cfd8e3;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .payment-method-btn.active {
+    background: #1E3A5F;
+    color: #fff;
+    border-color: #1E3A5F;
+  }
+  .payment-complete-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+
 <!-- 月移動ヘッダー -->
 <div class="admin-resv-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
   <a href="/admin/reservations?ym={{ prev_month }}&day={{ selected_day }}" class="admin-resv-nav-btn" style="padding: 8px 16px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">← 前月</a>
@@ -172,9 +194,22 @@
           <span>｜{{ reservation.duration_minutes or 60 }}分</span>
         </div>
         
+        {% set base_price = reservation.base_price or 0 %}
+        {% set transportation_fee = reservation.transportation_fee or 0 %}
+        {% set nomination_fee = reservation.nomination_fee or 0 %}
+        {% set discount = reservation.discount or 0 %}
+        {% set tax = reservation.tax or 0 %}
+        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+
         {% if reservation.memo %}
         <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
           {{ reservation.memo }}
+        </div>
+        {% endif %}
+
+        {% if reservation.status == 'visited' or reservation.status == 'completed' %}
+        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
         </div>
         {% endif %}
         
@@ -199,10 +234,16 @@
           {% endif %}
           
           {% if reservation.status == 'visited' %}
-          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
-            <input type="hidden" name="status" value="completed">
-            <button type="submit" style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 完了</button>
-          </form>
+          <div data-reservation-id="{{ reservation.id }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button type="button" class="payment-method-btn" data-method="cash">現金</button>
+            <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
+            <button type="button" class="payment-method-btn" data-method="paypay">paypay</button>
+            <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+              <input type="hidden" name="status" value="completed">
+              <input type="hidden" name="payment_method" value="">
+              <button type="submit" class="payment-complete-btn" disabled style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">✓ 完了</button>
+            </form>
+          </div>
           {% endif %}
           
           {% if reservation.status != 'canceled' %}
@@ -224,6 +265,29 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const paymentBlocks = document.querySelectorAll('[data-reservation-id]');
+  paymentBlocks.forEach(function(block) {
+    const buttons = block.querySelectorAll('.payment-method-btn');
+    const completeBtn = block.querySelector('.payment-complete-btn');
+    const paymentInput = block.querySelector('input[name="payment_method"]');
+    buttons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (paymentInput) {
+          paymentInput.value = btn.dataset.method || '';
+        }
+        if (completeBtn) {
+          completeBtn.disabled = false;
+        }
+      });
+    });
+  });
+});
+</script>
 
 
 {% endblock %}

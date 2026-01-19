@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}収支管理 - {{ year }}年 スタッフ給与 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 収支管理 - {{ year }}年 スタッフ給与</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年に戻る</a>
+</div>
+
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ staff_name }}</h3>
+  <p style="margin: 0; color: #666; font-size: 0.9rem;">日報がある月のみ表示しています。</p>
+</div>
+
+{% if month_cards %}
+<div class="admin-karte-grid" style="margin-top: 20px;">
+  {% for card in month_cards %}
+  <a href="/admin/financial/years/{{ year }}/staff/{{ staff_id | urlencode }}/months/{{ '%02d'|format(card.num) }}" class="admin-karte-card">
+    <div class="admin-karte-head">
+      <strong class="admin-karte-name">{{ card.label }}</strong>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">この年の勤務（日報）がありません。</p>
+{% endif %}
+
+{% endblock %}

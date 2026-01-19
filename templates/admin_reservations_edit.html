@@ -20,13 +20,24 @@
       {{ reservation.patient_name or '患者不明' }}
     </a>
   </div>
-  
+
+  <!-- 現場区分（最初に配置） -->
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" value="{{ reservation.reserved_at_display_local }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分（必須）</label>
+    <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" onchange="updatePlaceTypeFields()">
+      <option value="">選択してください</option>
+      <option value="in_house" {% if reservation.place_type == 'in_house' %}selected{% endif %}>院内</option>
+      <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>往診</option>
+      <option value="field" {% if reservation.place_type == 'field' %}selected{% endif %}>帯同</option>
+    </select>
   </div>
-  
-  <div style="margin-bottom: 20px;">
+
+  <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+
+  <div id="area_section" style="margin-bottom: 20px; display: none;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">エリア（必須）</label>
     <select name="area" id="area" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択してください</option>
@@ -34,17 +45,17 @@
       <option value="fukuoka" {% if reservation.area == 'fukuoka' %}selected{% endif %}>福岡</option>
     </select>
   </div>
-  
-  <div style="margin-bottom: 20px;">
+
+  <div id="menu_section" style="margin-bottom: 20px; display: none;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須・複数選択可）</label>
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
     <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">基本メニューを選択してください</small>
   </div>
-  
-  <!-- 追加メニュー（本指名・枠指名・割引） -->
-  <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
+
+  <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->
+  <div id="additional_menu_section" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; display: none;">
     <label class="form-field" style="display: block; margin-bottom: 12px; font-weight: 600; color: #1E3A5F;">追加メニュー（複数選択可）</label>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -63,26 +74,40 @@
         <input type="checkbox" name="selected_menus" value="割引(△¥500)" id="menu_discount_500" onchange="updateDiscount()" {% if reservation.selected_menus and '割引(△¥500)' in reservation.selected_menus %}checked{% endif %}>
         <span>割引(△¥500)</span>
       </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="初回体験割引（60分：30%OFF）" id="menu_first_time_discount" onchange="updateFirstTimeDiscount()" {% if reservation.selected_menus and '初回体験割引（60分：30%OFF）' in reservation.selected_menus %}checked{% endif %}>
+        <span>初回体験割引（60分：30%OFF）</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="selected_menus" value="施術割引" id="menu_treatment_discount" onchange="updateTreatmentDiscount()" {% if reservation.selected_menus and '施術割引' in reservation.selected_menus %}checked{% endif %}>
+        <span>施術割引（手入力）</span>
+      </label>
+    </div>
+    <div id="treatment_discount_input_wrapper" style="margin-top: 12px; display: {% if reservation.selected_menus and '施術割引' in reservation.selected_menus %}block{% else %}none{% endif %};">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">施術割引額（円）</label>
+      <input type="number" id="treatment_discount_amount" name="treatment_discount_amount" min="0" step="100" placeholder="割引額を入力" value="{% if reservation.selected_menus and '施術割引' in reservation.selected_menus %}{{ reservation.discount or 0 }}{% endif %}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" onchange="updateTreatmentDiscount()">
+    </div>
+    <div style="margin-top: 12px;">
+      <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">出張費</label>
+      {% set transportation_fee = reservation.transportation_fee or 0 %}
+      <select name="transportation_fee" id="transportation_fee" onchange="updateTotalPrice()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <option value="0" {% if transportation_fee == 0 %}selected{% endif %}>出張費なし</option>
+        <option value="1000" {% if transportation_fee == 1000 %}selected{% endif %}>¥1,000</option>
+        <option value="2000" {% if transportation_fee == 2000 %}selected{% endif %}>¥2,000</option>
+        <option value="3000" {% if transportation_fee == 3000 %}selected{% endif %}>¥3,000</option>
+        <option value="other" {% if transportation_fee not in [0, 1000, 2000, 3000] %}selected{% endif %}>その他（手入力）</option>
+      </select>
+      <input type="number" id="transportation_fee_other" name="transportation_fee_other" min="0" step="100" placeholder="金額を入力" value="{% if transportation_fee not in [0, 1000, 2000, 3000] %}{{ transportation_fee }}{% endif %}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-top: 8px; display: {% if transportation_fee not in [0, 1000, 2000, 3000] %}block{% else %}none{% endif %};" onchange="updateTotalPrice()">
     </div>
     <input type="hidden" name="nomination_fee" id="nomination_fee" value="{{ reservation.nomination_fee or 0 }}">
     <input type="hidden" name="discount" id="discount" value="{{ reservation.discount or 0 }}">
   </div>
-  
-  <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分</label>
-    <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      <option value="">選択してください</option>
-      <option value="in_house" {% if reservation.place_type == 'in_house' %}selected{% endif %}>院内</option>
-      <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>往診</option>
-      <option value="field" {% if reservation.place_type == 'field' %}selected{% endif %}>帯同</option>
-    </select>
-  </div>
-  
-  <div style="margin-bottom: 20px; {% if reservation.place_type not in ['visit', 'field'] %}display: none;{% endif %}" id="place_name_wrapper">
+
+  <div style="margin-bottom: 20px; display: none;" id="place_name_wrapper">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名</label>
     <input type="text" name="place_name" value="{{ reservation.place_name or '' }}" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名タイプ（必須）</label>
     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -104,16 +129,16 @@
       </label>
     </div>
   </div>
-  
-  <!-- 枠指名用のスタッフ選択（全スタッフ選択可能） -->
+
+  <!-- 枠指名用のスタッフ選択（最大3名） -->
   <div id="frame_nomination_section" style="margin-bottom: 20px; {% if reservation.nomination_type != '枠指名' and reservation.nomination_type != 'frame' %}display: none;{% endif %}">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">対応スタッフ（全スタッフ選択可能）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名スタッフ（最大3名）</label>
     <div id="frame_staff_list" style="display: flex; flex-direction: column; gap: 8px;">
       <!-- JavaScriptで動的に追加 -->
     </div>
     <button type="button" id="add_frame_staff_btn" style="margin-top: 8px; padding: 6px 12px; background: #1E3A5F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">➕ スタッフを追加</button>
   </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">担当スタッフ</label>
     <select name="staff_name" id="staff_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -122,38 +147,26 @@
       {% endfor %}
     </select>
   </div>
-  
-  <!-- 出張費選択（往診の場合のみ表示） -->
-  <div style="margin-bottom: 20px; {% if reservation.place_type != 'visit' %}display: none;{% endif %}" id="transportation_fee_wrapper">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">出張費</label>
-    <select name="transportation_fee" id="transportation_fee" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-      <option value="0" {% if not reservation.transportation_fee or reservation.transportation_fee == 0 %}selected{% endif %}>出張費なし</option>
-      <option value="1000" {% if reservation.transportation_fee == 1000 %}selected{% endif %}>5km圏内（+¥1,000）</option>
-      <option value="2000" {% if reservation.transportation_fee == 2000 %}selected{% endif %}>10km圏内（+¥2,000）</option>
-      <option value="3000" {% if reservation.transportation_fee == 3000 %}selected{% endif %}>15km圏内（+¥3,000）</option>
-    </select>
-    <small style="color: #666; font-size: 0.85rem;">往診の場合のみ出張費を選択してください</small>
-  </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">料金（税抜き・円）</label>
     <input type="number" name="base_price" id="base_price" value="{{ reservation.base_price or '' }}" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
     <small style="color: #666; font-size: 0.85rem;">メニュー選択で自動入力されます（編集可）</small>
   </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">消費税（円）</label>
     <input type="number" name="tax" id="tax" value="{{ reservation.tax or '' }}" min="0" step="1" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #f5f5f5;">
     <small style="color: #666; font-size: 0.85rem;">料金の10%（自動計算）</small>
   </div>
-  
+
   <div style="margin-bottom: 20px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
     <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #1E3A5F;">
       <span>合計金額（税込）:</span>
       <span id="total_price_display" style="font-size: 1.2rem;">¥0</span>
     </div>
   </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">ステータス</label>
     <select name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -163,12 +176,12 @@
       <option value="canceled" {% if reservation.status == 'canceled' %}selected{% endif %}>キャンセル</option>
     </select>
   </div>
-  
+
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
     <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ reservation.memo or '' }}</textarea>
   </div>
-  
+
   <div style="display: flex; gap: 12px; margin-top: 30px;">
     <button type="submit" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer;">💾 更新</button>
     <a href="/admin/reservations" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
@@ -179,14 +192,14 @@
 // メニュー定義（エリア別・時間別・税抜き価格）
 const menuPrices = {
   tokyo: {
-    60: 10000,  // 税抜き
-    90: 15000,  // 税抜き
-    120: 20000  // 税抜き
+    60: 10000,
+    90: 15000,
+    120: 20000
   },
   fukuoka: {
-    60: 8000,   // 税抜き
-    90: 12000,  // 税抜き
-    120: 16000  // 税抜き
+    60: 8000,
+    90: 12000,
+    120: 16000
   }
 };
 
@@ -196,10 +209,9 @@ document.getElementById('area').addEventListener('change', function() {
   const menuSelect = document.getElementById('menu');
   const placeTypeSelect = document.getElementById('place_type');
   const placeType = placeTypeSelect ? placeTypeSelect.value : '';
-  
+
   menuSelect.innerHTML = '<option value="">エリアを選択してください</option>';
-  
-  // 帯同の場合は「その他」を追加
+
   if (placeType === 'field') {
     const otherOption = document.createElement('option');
     otherOption.value = 'other';
@@ -207,96 +219,43 @@ document.getElementById('area').addEventListener('change', function() {
     otherOption.dataset.price = '';
     menuSelect.appendChild(otherOption);
   }
-  
+
   if (area && menuPrices[area]) {
     const prices = menuPrices[area];
     for (const [minutes, price] of Object.entries(prices)) {
       const option = document.createElement('option');
       option.value = minutes;
-      // 税込価格を表示（税抜き価格 × 1.1）
       const priceWithTax = Math.floor(price * 1.1);
       option.textContent = `${minutes}分コース（¥${priceWithTax.toLocaleString()}税込）`;
-      option.dataset.price = price; // 税抜き価格を保存
-      if (minutes == {{ reservation.duration_minutes or 90 }}) {
-        option.selected = true;
-      }
+      option.dataset.price = price;
       menuSelect.appendChild(option);
     }
   }
-  
-  updatePrice();
-});
 
-// 現場区分変更時にメニューを更新（帯同の場合は「その他」を追加）
-document.getElementById('place_type').addEventListener('change', function() {
-  const placeType = this.value;
-  const area = document.getElementById('area').value;
-  const menuSelect = document.getElementById('menu');
-  const placeNameWrapper = document.getElementById('place_name_wrapper');
-  const transportationFeeWrapper = document.getElementById('transportation_fee_wrapper');
-  
-  // 現場名入力欄の表示/非表示
-  if (placeType === 'visit' || placeType === 'field') {
-    placeNameWrapper.style.display = 'block';
-  } else {
-    placeNameWrapper.style.display = 'none';
-  }
-  
-  // 出張費は往診の場合のみ表示
-  if (placeType === 'visit') {
-    transportationFeeWrapper.style.display = 'block';
-  } else {
-    transportationFeeWrapper.style.display = 'none';
-    // 出張費をリセット
-    document.getElementById('transportation_fee').value = '0';
-  }
-  
-  // 帯同の場合は「その他」を追加
-  if (placeType === 'field') {
-    // 既存の「その他」オプションを削除
-    const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-    if (existingOther) {
-      existingOther.remove();
-    }
-    
-    // 「その他」を先頭に追加
-    const otherOption = document.createElement('option');
-    otherOption.value = 'other';
-    otherOption.textContent = 'その他（帯同）';
-    otherOption.dataset.price = '';
-    menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
-  } else {
-    // 帯同以外の場合は「その他」を削除
-    const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-    if (existingOther) {
-      existingOther.remove();
-    }
-  }
-  
   updatePrice();
-  updateTotalPrice();
 });
 
 // メニュー選択時に価格を自動入力
 document.getElementById('menu').addEventListener('change', function() {
   updatePrice();
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    updateFirstTimeDiscount();
+  }
 });
 
 // 価格更新関数
 function updatePrice() {
-  const area = document.getElementById('area').value;
   const menuSelect = document.getElementById('menu');
   const basePriceInput = document.getElementById('base_price');
   const placeType = document.getElementById('place_type').value;
-  
+
   if (menuSelect.value) {
     const selectedOption = menuSelect.options[menuSelect.selectedIndex];
     if (selectedOption && selectedOption.dataset.price) {
-      // 税抜き価格を設定（dataset.priceは既に税抜き価格）
       const priceWithoutTax = parseInt(selectedOption.dataset.price);
       basePriceInput.value = priceWithoutTax;
     } else if (selectedOption && selectedOption.value === 'other') {
-      // 「その他（帯同）」の場合は50000円（税抜き）
       if (placeType === 'field') {
         basePriceInput.value = 50000;
       } else {
@@ -308,39 +267,56 @@ function updatePrice() {
   } else {
     basePriceInput.value = '';
   }
-  
-  // 指名料と割引を再計算
+
   updateNominationFee();
   updateDiscount();
   updateTotalPrice();
 }
 
-// 合計金額更新関数（料金、出張費、指名料、消費税、割引を考慮）
+// 合計金額更新関数
 function updateTotalPrice() {
   const basePrice = parseInt(document.getElementById('base_price').value) || 0;
-  const transportationFee = parseInt(document.getElementById('transportation_fee').value) || 0;
+  const transportationFeeSelect = document.getElementById('transportation_fee');
+  const transportationFeeOther = document.getElementById('transportation_fee_other');
+  let transportationFee = 0;
+
+  if (transportationFeeSelect.value === 'other') {
+    transportationFee = parseInt(transportationFeeOther.value) || 0;
+  } else {
+    transportationFee = parseInt(transportationFeeSelect.value) || 0;
+  }
+
   const nominationFee = parseInt(document.getElementById('nomination_fee').value) || 0;
   const discount = parseInt(document.getElementById('discount').value) || 0;
-  
-  // 税抜き合計 = 料金 + 出張費 + 指名料 - 割引
-  const totalWithoutTax = basePrice + transportationFee + nominationFee - discount;
-  
-  // 消費税 = 税抜き合計 × 0.1（端数切り捨て）
-  const tax = Math.floor(totalWithoutTax * 0.1);
-  
-  // 税込合計 = 税抜き合計 + 消費税
-  const totalWithTax = totalWithoutTax + tax;
-  
-  // 消費税フィールドを更新
+  const tax = Math.floor(basePrice * 0.1);
+  const totalWithTax = basePrice + transportationFee + nominationFee - discount + tax;
+
   document.getElementById('tax').value = tax;
-  
-  // 合計金額表示を更新
   document.getElementById('total_price_display').textContent = '¥' + totalWithTax.toLocaleString();
 }
 
-// 料金、出張費、指名料、割引の変更時に合計を更新
-document.getElementById('base_price').addEventListener('input', updateTotalPrice);
-document.getElementById('transportation_fee').addEventListener('change', updateTotalPrice);
+document.getElementById('base_price').addEventListener('input', function() {
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    updateFirstTimeDiscount();
+  } else {
+    updateTotalPrice();
+  }
+});
+
+document.getElementById('transportation_fee').addEventListener('change', function() {
+  const transportationFeeOther = document.getElementById('transportation_fee_other');
+  if (this.value === 'other') {
+    transportationFeeOther.style.display = 'block';
+    transportationFeeOther.setAttribute('required', 'required');
+  } else {
+    transportationFeeOther.style.display = 'none';
+    transportationFeeOther.removeAttribute('required');
+    transportationFeeOther.value = '';
+  }
+  updateTotalPrice();
+});
+document.getElementById('transportation_fee_other').addEventListener('input', updateTotalPrice);
 
 // 指名料更新関数
 function updateNominationFee() {
@@ -348,21 +324,19 @@ function updateNominationFee() {
   const frameNomination = document.getElementById('menu_frame_nomination');
   const nominationFeeInput = document.getElementById('nomination_fee');
   const placeType = document.getElementById('place_type').value;
-  
+
   let fee = 0;
   if (mainNomination && mainNomination.checked) {
-    // 帯同の場合は10000円、それ以外は1000円
     fee += (placeType === 'field') ? 10000 : 1000;
   }
   if (frameNomination && frameNomination.checked) {
-    // 帯同の場合は5000円、それ以外は500円
     fee += (placeType === 'field') ? 5000 : 500;
   }
-  
+
   if (nominationFeeInput) {
     nominationFeeInput.value = fee;
   }
-  
+
   updateTotalPrice();
 }
 
@@ -370,8 +344,27 @@ function updateNominationFee() {
 function updateDiscount() {
   const discount1000 = document.getElementById('menu_discount_1000');
   const discount500 = document.getElementById('menu_discount_500');
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  const treatmentDiscount = document.getElementById('menu_treatment_discount');
   const discountInput = document.getElementById('discount');
-  
+
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    if (treatmentDiscount) treatmentDiscount.checked = false;
+    const treatmentDiscountInputWrapper = document.getElementById('treatment_discount_input_wrapper');
+    if (treatmentDiscountInputWrapper) treatmentDiscountInputWrapper.style.display = 'none';
+    updateFirstTimeDiscount();
+    return;
+  }
+
+  if (treatmentDiscount && treatmentDiscount.checked) {
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    updateTreatmentDiscount();
+    return;
+  }
+
   let discount = 0;
   if (discount1000 && discount1000.checked) {
     discount += 1000;
@@ -379,11 +372,77 @@ function updateDiscount() {
   if (discount500 && discount500.checked) {
     discount += 500;
   }
-  
+
   if (discountInput) {
     discountInput.value = discount;
   }
-  
+
+  updateTotalPrice();
+}
+
+// 初回体験割引更新関数
+function updateFirstTimeDiscount() {
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+  const discountInput = document.getElementById('discount');
+  const basePriceInput = document.getElementById('base_price');
+  const discount1000 = document.getElementById('menu_discount_1000');
+  const discount500 = document.getElementById('menu_discount_500');
+  const treatmentDiscount = document.getElementById('menu_treatment_discount');
+
+  if (firstTimeDiscount && firstTimeDiscount.checked) {
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    if (treatmentDiscount) treatmentDiscount.checked = false;
+    const treatmentDiscountInputWrapper = document.getElementById('treatment_discount_input_wrapper');
+    if (treatmentDiscountInputWrapper) treatmentDiscountInputWrapper.style.display = 'none';
+
+    const basePrice = parseInt(basePriceInput.value) || 0;
+    const discount = Math.floor(basePrice * 0.3);
+
+    if (discountInput) {
+      discountInput.value = discount;
+    }
+  } else {
+    updateDiscount();
+    return;
+  }
+
+  updateTotalPrice();
+}
+
+// 施術割引更新関数
+function updateTreatmentDiscount() {
+  const treatmentDiscount = document.getElementById('menu_treatment_discount');
+  const discountInput = document.getElementById('discount');
+  const treatmentDiscountAmount = document.getElementById('treatment_discount_amount');
+  const treatmentDiscountInputWrapper = document.getElementById('treatment_discount_input_wrapper');
+  const discount1000 = document.getElementById('menu_discount_1000');
+  const discount500 = document.getElementById('menu_discount_500');
+  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+
+  if (treatmentDiscount && treatmentDiscount.checked) {
+    if (treatmentDiscountInputWrapper) {
+      treatmentDiscountInputWrapper.style.display = 'block';
+    }
+    if (discount1000) discount1000.checked = false;
+    if (discount500) discount500.checked = false;
+    if (firstTimeDiscount) firstTimeDiscount.checked = false;
+
+    const discount = parseInt(treatmentDiscountAmount.value) || 0;
+    if (discountInput) {
+      discountInput.value = discount;
+    }
+  } else {
+    if (treatmentDiscountInputWrapper) {
+      treatmentDiscountInputWrapper.style.display = 'none';
+    }
+    if (treatmentDiscountAmount) {
+      treatmentDiscountAmount.value = '';
+    }
+    updateDiscount();
+    return;
+  }
+
   updateTotalPrice();
 }
 
@@ -392,14 +451,13 @@ function updateNominationUI() {
   const nominationType = document.querySelector('input[name="nomination_type"]:checked').value;
   const frameSection = document.getElementById('frame_nomination_section');
   const staffNameSelect = document.getElementById('staff_name');
-  
+
   if (nominationType === '枠指名') {
     frameSection.style.display = 'block';
     staffNameSelect.removeAttribute('required');
   } else {
     frameSection.style.display = 'none';
     staffNameSelect.setAttribute('required', 'required');
-    // 枠指名のスタッフリストをクリア
     document.getElementById('frame_staff_list').innerHTML = '';
   }
 }
@@ -408,7 +466,8 @@ function updateNominationUI() {
 let frameStaffCount = 0;
 const staffList = {{ staff_list | tojson if staff_list else '[]' }};
 
-document.getElementById('add_frame_staff_btn').addEventListener('click', function() {
+function addFrameStaff(selectedName = '', selectedPriority = '1') {
+  if (frameStaffCount >= 3) return;
   frameStaffCount++;
   const container = document.getElementById('frame_staff_list');
   const div = document.createElement('div');
@@ -416,119 +475,136 @@ document.getElementById('add_frame_staff_btn').addEventListener('click', functio
   div.innerHTML = `
     <select name="frame_staff_${frameStaffCount}" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
       <option value="">選択してください</option>
-      ${staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
+      ${staffList.map(s => `<option value="${s.name}" ${s.name === selectedName ? 'selected' : ''}>${s.name}</option>`).join('')}
     </select>
     <select name="frame_priority_${frameStaffCount}" required style="width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
-      <option value="1">優先1</option>
-      <option value="2">優先2</option>
-      <option value="3">優先3</option>
+      <option value="1" ${selectedPriority === '1' ? 'selected' : ''}>優先1</option>
+      <option value="2" ${selectedPriority === '2' ? 'selected' : ''}>優先2</option>
+      <option value="3" ${selectedPriority === '3' ? 'selected' : ''}>優先3</option>
     </select>
     <button type="button" class="remove-frame-staff" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
   `;
-  
+
   container.appendChild(div);
-  
-  // 削除ボタンのイベント
+
   div.querySelector('.remove-frame-staff').addEventListener('click', function() {
     div.remove();
     frameStaffCount--;
   });
+}
+
+document.getElementById('add_frame_staff_btn').addEventListener('click', function() {
+  addFrameStaff();
 });
 
-// 初期化：エリアが選択されている場合はメニューを更新
-document.addEventListener('DOMContentLoaded', function() {
-  const areaSelect = document.getElementById('area');
-  const basePriceInput = document.getElementById('base_price');
-  
-  // 初期化時にメニューを更新
-  if (areaSelect.value) {
-    areaSelect.dispatchEvent(new Event('change'));
-    // 既存の施術時間に合わせてメニューを選択
-    const menuSelect = document.getElementById('menu');
-    const existingDuration = {{ reservation.duration_minutes or 90 }};
-    if (menuSelect.options.length > 1) {
-      for (let i = 0; i < menuSelect.options.length; i++) {
-        if (menuSelect.options[i].value == existingDuration) {
-          menuSelect.selectedIndex = i;
-          updatePrice();
-          updateTotalPrice();
-          break;
-        }
-      }
-    }
-  }
-  
-  // 初期化時に現場区分をチェックしてメニューを更新
-  const placeTypeSelect = document.getElementById('place_type');
-  if (placeTypeSelect && placeTypeSelect.value === 'field') {
-    const area = document.getElementById('area').value;
-    if (area) {
-      document.getElementById('area').dispatchEvent(new Event('change'));
-    }
-  }
-  
-  // 既存の枠指名スタッフを表示（編集時・全スタッフ選択可能）
-  {% if (reservation.nomination_type == '枠指名' or reservation.nomination_type == 'frame') and reservation.nominated_staff_ids %}
-  const nominatedStaffIds = {{ reservation.nominated_staff_ids | tojson if reservation.nominated_staff_ids else '[]' }};
-  const nominationPriority = {{ reservation.nomination_priority or 1 }};
-  if (nominatedStaffIds && nominatedStaffIds.length > 0) {
-    nominatedStaffIds.forEach((staffName, index) => {
-      frameStaffCount++;
-      const container = document.getElementById('frame_staff_list');
-      const div = document.createElement('div');
-      div.style.cssText = 'display: flex; gap: 8px; align-items: center;';
-      const priority = (index === 0 && nominationPriority) ? nominationPriority : (index + 1);
-      div.innerHTML = `
-        <select name="frame_staff_${frameStaffCount}" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
-          <option value="">選択してください</option>
-          ${staffList.map(s => `<option value="${s.name}" ${s.name == staffName ? 'selected' : ''}>${s.name}</option>`).join('')}
-        </select>
-        <select name="frame_priority_${frameStaffCount}" required style="width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
-          <option value="1" ${priority == 1 ? 'selected' : ''}>優先1</option>
-          <option value="2" ${priority == 2 ? 'selected' : ''}>優先2</option>
-          <option value="3" ${priority == 3 ? 'selected' : ''}>優先3</option>
-        </select>
-        <button type="button" class="remove-frame-staff" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">削除</button>
-      `;
-      container.appendChild(div);
-      div.querySelector('.remove-frame-staff').addEventListener('click', function() {
-        div.remove();
-        frameStaffCount--;
-      });
-    });
-  }
-  {% endif %}
-});
-
-// 現場区分に応じて現場名入力欄を表示/非表示
-document.getElementById('place_type').addEventListener('change', function() {
-  const placeType = this.value;
+// 現場区分に応じてフィールドを表示/非表示
+function updatePlaceTypeFields() {
+  const placeType = document.getElementById('place_type').value;
+  const datetimeSection = document.getElementById('reservation_datetime_section');
+  const areaSection = document.getElementById('area_section');
+  const menuSection = document.getElementById('menu_section');
+  const additionalMenuSection = document.getElementById('additional_menu_section');
   const placeNameWrapper = document.getElementById('place_name_wrapper');
+
+  if (placeType === 'in_house' || placeType === 'visit') {
+    if (datetimeSection) datetimeSection.style.display = 'block';
+    if (areaSection) areaSection.style.display = 'block';
+    if (menuSection) menuSection.style.display = 'block';
+    if (additionalMenuSection) additionalMenuSection.style.display = 'block';
+    const reservedAtInput = document.getElementById('reserved_at');
+    const areaSelect = document.getElementById('area');
+    const menuSelect = document.getElementById('menu');
+    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
+    if (areaSelect) areaSelect.setAttribute('required', 'required');
+    if (menuSelect) menuSelect.setAttribute('required', 'required');
+  } else if (placeType === 'field') {
+    if (datetimeSection) datetimeSection.style.display = 'block';
+    if (areaSection) areaSection.style.display = 'none';
+    if (menuSection) menuSection.style.display = 'none';
+    if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    const areaSelect = document.getElementById('area');
+    const menuSelect = document.getElementById('menu');
+    if (areaSelect) areaSelect.removeAttribute('required');
+    if (menuSelect) menuSelect.removeAttribute('required');
+  } else {
+    if (datetimeSection) datetimeSection.style.display = 'none';
+    if (areaSection) areaSection.style.display = 'none';
+    if (menuSection) menuSection.style.display = 'none';
+    if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+  }
+
   if (placeType === 'visit' || placeType === 'field') {
     placeNameWrapper.style.display = 'block';
   } else {
     placeNameWrapper.style.display = 'none';
   }
-});
 
-// フォーム送信時のバリデーション
-document.querySelector('form').addEventListener('submit', function(e) {
-  // 予約日時のチェック
-  const reservedAt = document.querySelector('input[name="reserved_at"]').value;
-  if (!reservedAt) {
-    e.preventDefault();
-    alert('予約日時を入力してください');
-    return false;
+  const menuSelect = document.getElementById('menu');
+  if (menuSelect) {
+    if (placeType === 'field') {
+      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
+      if (existingOther) {
+        existingOther.remove();
+      }
+      const otherOption = document.createElement('option');
+      otherOption.value = 'other';
+      otherOption.textContent = 'その他（帯同）';
+      otherOption.dataset.price = '';
+      menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
+    } else {
+      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
+      if (existingOther) {
+        existingOther.remove();
+      }
+    }
   }
-  
-  // 現場区分のチェック
-  const placeType = document.getElementById('place_type').value;
-  if (!placeType) {
-    e.preventDefault();
-    alert('現場区分を選択してください');
-    return false;
+
+  updatePrice();
+  updateTotalPrice();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  updatePlaceTypeFields();
+
+  const areaSelect = document.getElementById('area');
+  if (areaSelect && areaSelect.value) {
+    areaSelect.dispatchEvent(new Event('change'));
   }
-  
+
+  const menuSelect = document.getElementById('menu');
+  const initialMenu = "{{ reservation.duration_minutes or 90 }}";
+  const initialPlaceType = "{{ reservation.place_type or '' }}";
+  if (menuSelect) {
+    if (initialPlaceType === 'field') {
+      menuSelect.value = 'other';
+    } else if (menuSelect.querySelector(`option[value="${initialMenu}"]`)) {
+      menuSelect.value = initialMenu;
+    }
+  }
+
+  const transportationFeeSelect = document.getElementById('transportation_fee');
+  const transportationFeeOther = document.getElementById('transportation_fee_other');
+  if (transportationFeeSelect && transportationFeeOther) {
+    if (transportationFeeSelect.value === 'other') {
+      transportationFeeOther.style.display = 'block';
+      transportationFeeOther.setAttribute('required', 'required');
+    } else {
+      transportationFeeOther.style.display = 'none';
+      transportationFeeOther.removeAttribute('required');
+    }
+  }
+
+  const existingFrameStaff = {{ reservation.nominated_staff_ids | tojson if reservation.nominated_staff_ids else '[]' }};
+  if (existingFrameStaff && existingFrameStaff.length) {
+    existingFrameStaff.slice(0, 3).forEach((name, index) => {
+      addFrameStaff(name, String(index + 1));
+    });
+  }
+
+  updateNominationUI();
+  updateNominationFee();
+  updateDiscount();
+  updateTotalPrice();
 });
 </script>
 

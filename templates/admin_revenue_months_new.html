@@ -1,11 +1,38 @@
 {% extends "base.html" %}
-{% block title %}月次売上一覧 - {{ year }}年 | KARiN.{% endblock %}
+{% block title %}売上一覧 - {{ year }}年 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">💰 月次売上一覧 - {{ year }}年</h2>
+<h2 class="admin-title">💰 売上一覧 - {{ year }}年</h2>
 
 <div style="margin-bottom: 20px;">
   <a href="/admin/revenue/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← 年一覧に戻る</a>
+</div>
+
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ year }}年 会社売上（全体）</h3>
+  <div style="font-size: 1.8rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format(total_revenue or 0) }}</div>
+</div>
+
+{% set other_revenue = (total_revenue or 0) - (in_house_revenue or 0) - (visit_revenue or 0) - (field_revenue or 0) %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">年間売上の内訳</h3>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #1E3A5F;">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">院内</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue or 0) }}</div>
+    </div>
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #4CAF50;">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">往診</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_revenue or 0) }}</div>
+    </div>
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #FFB6C1;">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">帯同</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_revenue or 0) }}</div>
+    </div>
+  </div>
+  {% if other_revenue > 0 %}
+  <div style="margin-top: 16px; font-size: 0.9rem; color: #666;">その他: ¥{{ "{:,}".format(other_revenue) }}</div>
+  {% endif %}
 </div>
 
 {% if months %}

@@ -39,6 +39,22 @@
   </div>
 </div>
 
+<!-- スタッフ別給与（年） -->
+{% if staff_list %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ別給与</h3>
+  <div class="admin-karte-grid">
+    {% for staff in staff_list %}
+    <a href="/admin/financial/years/{{ year }}/staff/{{ staff.id | urlencode }}" class="admin-karte-card" style="text-decoration: none;">
+      <div class="admin-karte-head">
+        <strong class="admin-karte-name">{{ staff.name }}</strong>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- 経費カテゴリ別内訳 -->
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">経費カテゴリ別内訳</h3>

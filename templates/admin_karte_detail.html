@@ -224,6 +224,28 @@
   </div>
 </div>
 
+<style>
+  .payment-method-btn {
+    padding: 6px 12px;
+    background: #f5f7fb;
+    color: #1E3A5F;
+    border: 1px solid #cfd8e3;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .payment-method-btn.active {
+    background: #1E3A5F;
+    color: #fff;
+    border-color: #1E3A5F;
+  }
+  .payment-complete-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+
 <!-- 現在の予約状況 -->
 {% if current_reservations %}
 <div class="admin-karte-detail-card" style="margin-top: 20px;">
@@ -311,6 +333,19 @@
         {{ reservation.memo }}
       </div>
       {% endif %}
+
+      {% set base_price = reservation.base_price or 0 %}
+      {% set transportation_fee = reservation.transportation_fee or 0 %}
+      {% set nomination_fee = reservation.nomination_fee or 0 %}
+      {% set discount = reservation.discount or 0 %}
+      {% set tax = reservation.tax or 0 %}
+      {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+
+      {% if reservation.status == 'visited' or reservation.status == 'completed' %}
+      <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+        合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
+      </div>
+      {% endif %}
       
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="/admin/reservations/{{ reservation.id }}/edit" 
@@ -318,6 +353,19 @@
            style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
           ✏ 編集
         </a>
+
+        {% if reservation.status == 'visited' %}
+        <div data-reservation-id="{{ reservation.id }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button type="button" class="payment-method-btn" data-method="cash">現金</button>
+          <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
+          <button type="button" class="payment-method-btn" data-method="paypay">paypay</button>
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="completed">
+            <input type="hidden" name="payment_method" value="">
+            <button type="submit" class="payment-complete-btn" disabled style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">✓ 完了</button>
+          </form>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -406,6 +454,17 @@
         {{ reservation.memo }}
       </div>
       {% endif %}
+
+      {% set base_price = reservation.base_price or 0 %}
+      {% set transportation_fee = reservation.transportation_fee or 0 %}
+      {% set nomination_fee = reservation.nomination_fee or 0 %}
+      {% set discount = reservation.discount or 0 %}
+      {% set tax = reservation.tax or 0 %}
+      {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+
+      <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+        合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
+      </div>
       
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="/admin/reservations/{{ reservation.id }}/edit" 
@@ -419,6 +478,29 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const paymentBlocks = document.querySelectorAll('[data-reservation-id]');
+  paymentBlocks.forEach(function(block) {
+    const buttons = block.querySelectorAll('.payment-method-btn');
+    const completeBtn = block.querySelector('.payment-complete-btn');
+    const paymentInput = block.querySelector('input[name="payment_method"]');
+    buttons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (paymentInput) {
+          paymentInput.value = btn.dataset.method || '';
+        }
+        if (completeBtn) {
+          completeBtn.disabled = false;
+        }
+      });
+    });
+  });
+});
+</script>
 
 <!-- 紹介患者一覧（開閉表示） -->
 {% if patient.introduced_count and patient.introduced_count > 0 %}
