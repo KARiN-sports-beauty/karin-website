@@ -110,7 +110,7 @@
     .hero-info {
       position: absolute;
       bottom: 32px;
-      left: 24px;
+      left: 60px;
       z-index: 2;
       text-align: left;
       font-size: 11px;
@@ -142,7 +142,7 @@
     .worries-section {
       max-width: none;
       background-color: #f6f6f4;
-      padding: 80px 20px;
+      padding: 80px 60px;
     }
 
     .worries-inner {
@@ -154,40 +154,36 @@
     }
 
     .worries-title {
-      font-size: 24px;
-      font-weight: 500;
-      margin-bottom: 32px;
+      max-width: 900px;
+      margin: 0 auto 32px;
+      font-size: 26px;
+      font-weight: 400;
       color: #222;
     }
 
     .worries-list {
       list-style: none;
       padding: 0;
-      margin: 0 0 32px 0;
+      margin: 0;
     }
 
     .worries-list li {
-      font-size: 16px;
-      line-height: 1.9;
+      font-size: 15px;
+      line-height: 1.7;
       color: #444;
-      padding-left: 1.2em;
-      position: relative;
+      padding: 14px 18px;
       margin-bottom: 12px;
-    }
-
-    .worries-list li::before {
-      content: "・";
-      position: absolute;
-      left: 0;
-      color: #777;
+      background: #f9f9f9;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      white-space: nowrap;
     }
 
     .worries-message {
-      font-size: 16px;
+      max-width: 900px;
+      margin: 32px auto 0;
+      font-size: 17px;
       color: #666;
-      margin-top: 40px;
-      border-top: 1px solid #eee;
-      padding-top: 24px;
     }
 
     h2 {
@@ -388,7 +384,7 @@
 
       .hero-info {
         bottom: 12px;
-        left: 12px;
+        left: 14px;
         font-size: 8px;
         line-height: 1.6;
       }
@@ -405,6 +401,30 @@
 
       section {
         padding: 60px 20px;
+      }
+
+      .worries-section {
+        padding: 60px 20px;
+      }
+
+      .worries-inner {
+        padding: 28px 20px;
+      }
+
+      .worries-title {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      .worries-list li {
+        font-size: 11px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+      }
+
+      .worries-message {
+        font-size: 13px;
+        margin-top: 20px;
       }
 
       h2 {
@@ -468,6 +488,7 @@
 
       .hero-info {
         font-size: 7px;
+        left: 12px;
       }
     }
 
@@ -494,6 +515,10 @@
       .btn-line {
         padding: 4.5px 8px;
         font-size: 7px;
+      }
+
+      .hero-info {
+        left: 11px;
       }
     }
 
@@ -524,6 +549,10 @@
 
       .hero-cta-note {
         font-size: 6px;
+      }
+
+      .hero-info {
+        left: 10px;
       }
     }
 
@@ -559,6 +588,7 @@
 
       .hero-info {
         font-size: 6px;
+        left: 9px;
       }
     }
   </style>
@@ -593,9 +623,9 @@
 
   <!-- フレーム2：悩み（共感） -->
   <section class="worries-section">
+    <h2 class="worries-title">こんなことで悩んでいませんか？</h2>
+
     <div class="worries-inner">
-      <h2 class="worries-title">こんなことで悩んでいませんか？</h2>
-  
       <ul class="worries-list">
         <li>慢性的な疲れが、なかなか抜けない</li>
         <li>気づいたら、首や肩がずっと重い</li>
@@ -606,11 +636,11 @@
         <li>痛みはあるけど、もう仕方ないと諦めている</li>
         <li>鍼灸が初めてで、少し不安がある</li>
       </ul>
-  
-      <p class="worries-message">
-        その違和感は、無理をしてきたサインかもしれません。
-      </p>
     </div>
+
+    <p class="worries-message">
+      その違和感は、無理をしてきたサインかもしれません。
+    </p>
   </section>
 
   <!-- フレーム3：解決（KARiN.がどう向き合うか） -->

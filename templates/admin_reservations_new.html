@@ -407,7 +407,7 @@ document.getElementById('menu').addEventListener('change', function() {
   const firstTimeDiscount = document.getElementById('menu_first_time_discount');
   if (firstTimeDiscount && firstTimeDiscount.checked) {
     updateFirstTimeDiscount();
-  }
+    }
 });
 
 // 現場区分変更時の処理はupdatePlaceTypeFields()に統合
@@ -768,12 +768,12 @@ function updatePlaceTypeFields() {
       otherOption.textContent = 'その他（帯同）';
       otherOption.dataset.price = '';
       menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
-    } else {
+  } else {
       // 帯同以外の場合は「その他」を削除
       const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
       if (existingOther) {
         existingOther.remove();
-      }
+  }
     }
   }
   
