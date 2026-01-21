@@ -9953,6 +9953,41 @@ def admin_financial_month_detail(year, month):
             except Exception as e2:
                 print(f"⚠️ WARNING - 日報交通費経費追加（フォールバック）エラー: {e2}")
         
+        # 予約割引の表示名（予約者名）に差し替え
+        try:
+            reservation_ids = set()
+            for exp in expenses:
+                if exp.get("linked_type") == "reservation_discount":
+                    raw = exp.get("memo") or exp.get("description") or ""
+                    match = re.search(r"予約ID[:：]\s*([0-9a-fA-F-]+)", raw)
+                    if match:
+                        reservation_ids.add(match.group(1))
+
+            if reservation_ids:
+                res_reservations = supabase_admin.table("reservations").select("id, patient_id").in_("id", list(reservation_ids)).execute()
+                reservations = res_reservations.data or []
+                patient_ids = [r.get("patient_id") for r in reservations if r.get("patient_id")]
+                patient_map = {}
+                if patient_ids:
+                    res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name").in_("id", patient_ids).execute()
+                    for p in (res_patients.data or []):
+                        name = f"{p.get('last_name', '')} {p.get('first_name', '')}".strip()
+                        patient_map[p.get("id")] = name or p.get("name", "予約者不明")
+                reservation_patient_map = {r.get("id"): patient_map.get(r.get("patient_id"), "予約者不明") for r in reservations}
+
+                for exp in expenses:
+                    if exp.get("linked_type") == "reservation_discount":
+                        raw = exp.get("memo") or exp.get("description") or ""
+                        match = re.search(r"予約ID[:：]\s*([0-9a-fA-F-]+)", raw)
+                        if match:
+                            res_id = match.group(1)
+                            patient_name = reservation_patient_map.get(res_id, "予約者不明")
+                            description = exp.get("description") or "施術割引"
+                            prefix = description.split("（")[0].strip() if "（" in description else description.strip()
+                            exp["display_description"] = f"{prefix}（{patient_name}）"
+        except Exception as e:
+            print(f"⚠️ WARNING - 割引表示名変換エラー: {e}")
+
         # 備品発注（到着済み）を取得
         equipment_expenses = []
         try:
@@ -10196,6 +10231,20 @@ def admin_financial_expense_edit(year, expense_id):
     """経費 - 編集"""
     if request.method == "POST":
         try:
+            res_existing = supabase_admin.table("expenses").select("*").eq("id", expense_id).execute()
+            existing_expense = res_existing.data[0] if res_existing.data else None
+            linked_type = existing_expense.get("linked_type") if existing_expense else None
+            transportation_record = None
+
+            if not existing_expense:
+                res_transport = supabase_admin.table("staff_daily_report_transportations").select("*").eq("id", expense_id).execute()
+                if res_transport.data:
+                    transportation_record = res_transport.data[0]
+                    linked_type = "daily_report_transportation"
+                else:
+                    flash("経費が見つかりません", "error")
+                    return redirect(f"/admin/financial/years/{year}")
+
             expense_date = request.form.get("expense_date")
             category = request.form.get("category")
             amount = float(request.form.get("amount", 0))
@@ -10208,6 +10257,26 @@ def admin_financial_expense_edit(year, expense_id):
             year_int = int(year)
             month_int = int(expense_date[5:7])
             
+            # linked_typeに応じて編集内容を調整
+            if linked_type == "salary":
+                category = "salary"
+                staff_id = existing_expense.get("staff_id")
+                staff_name = existing_expense.get("staff_name")
+            elif linked_type == "daily_report_transportation":
+                # 交通費はスタッフ情報を固定
+                if transportation_record:
+                    report_id = transportation_record.get("daily_report_id")
+                    report_staff_id = None
+                    report_staff_name = None
+                    if report_id:
+                        res_report = supabase_admin.table("staff_daily_reports").select("staff_id, staff_name").eq("id", report_id).execute()
+                        if res_report.data:
+                            report_staff_id = res_report.data[0].get("staff_id")
+                            report_staff_name = res_report.data[0].get("staff_name")
+                    staff_id = report_staff_id
+                    staff_name = report_staff_name
+                category = "transportation"
+
             expense_data = {
                 "expense_date": expense_date,
                 "year": year_int,
@@ -10227,7 +10296,44 @@ def admin_financial_expense_edit(year, expense_id):
             else:
                 expense_data["staff_name"] = None
             
-            supabase_admin.table("expenses").update(expense_data).eq("id", expense_id).execute()
+            if existing_expense:
+                supabase_admin.table("expenses").update(expense_data).eq("id", expense_id).execute()
+            elif linked_type == "daily_report_transportation":
+                # 交通費はexpensesに保存して紐付け（以後はexpensesで編集）
+                expense_data["linked_type"] = "daily_report_transportation"
+                expense_data["linked_id"] = expense_id
+                supabase_admin.table("expenses").insert(expense_data).execute()
+
+            # linked_typeがある場合は関連データも更新
+            if linked_type == "salary" and staff_id:
+                try:
+                    res_salary = supabase_admin.table("staff_salaries").select("*").eq("year", existing_expense.get("year")).eq("month", existing_expense.get("month")).eq("staff_id", staff_id).execute()
+                    if res_salary.data:
+                        salary = res_salary.data[0]
+                        net_salary = amount - (salary.get("tax", 0) or 0) - (salary.get("social_insurance", 0) or 0) - (salary.get("other_deduction", 0) or 0)
+                        salary_update = {
+                            "total_salary": amount,
+                            "net_salary": net_salary,
+                            "memo": memo
+                        }
+                        # 日付変更がある場合は年月も更新
+                        if expense_date:
+                            salary_update["year"] = year_int
+                            salary_update["month"] = month_int
+                        supabase_admin.table("staff_salaries").update(salary_update).eq("id", salary["id"]).execute()
+                except Exception as e:
+                    print(f"⚠️ WARNING - 給与連動更新エラー: {e}")
+            elif linked_type == "daily_report_transportation":
+                try:
+                    linked_id = (existing_expense.get("linked_id") if existing_expense else None) or expense_id
+                    trans_update = {"amount": amount}
+                    if expense_date:
+                        trans_update["date"] = expense_date
+                    if description:
+                        trans_update["memo"] = description
+                    supabase_admin.table("staff_daily_report_transportations").update(trans_update).eq("id", linked_id).execute()
+                except Exception as e:
+                    print(f"⚠️ WARNING - 交通費連動更新エラー: {e}")
             
             flash("経費を更新しました", "success")
             return redirect(f"/admin/financial/years/{year}/months/{month_int:02d}")
@@ -10239,11 +10345,36 @@ def admin_financial_expense_edit(year, expense_id):
     # GET: 編集フォーム
     try:
         res_expense = supabase_admin.table("expenses").select("*").eq("id", expense_id).execute()
-        if not res_expense.data:
-            flash("経費が見つかりません", "error")
-            return redirect(f"/admin/financial/years/{year}")
-        
-        expense = res_expense.data[0]
+        expense = res_expense.data[0] if res_expense.data else None
+        if not expense:
+            res_transport = supabase_admin.table("staff_daily_report_transportations").select("*").eq("id", expense_id).execute()
+            if not res_transport.data:
+                flash("経費が見つかりません", "error")
+                return redirect(f"/admin/financial/years/{year}")
+
+            transport = res_transport.data[0]
+            report_staff_id = None
+            report_staff_name = None
+            report_id = transport.get("daily_report_id")
+            if report_id:
+                res_report = supabase_admin.table("staff_daily_reports").select("staff_id, staff_name").eq("id", report_id).execute()
+                if res_report.data:
+                    report_staff_id = res_report.data[0].get("staff_id")
+                    report_staff_name = res_report.data[0].get("staff_name")
+
+            transport_memo = transport.get("memo") if transport.get("memo") else ""
+            expense = {
+                "id": transport.get("id"),
+                "expense_date": transport.get("date"),
+                "category": "transportation",
+                "amount": transport.get("amount"),
+                "description": transport_memo or f"交通費申請{(' - ' + report_staff_name) if report_staff_name else ''}",
+                "staff_id": report_staff_id,
+                "staff_name": report_staff_name,
+                "memo": transport_memo,
+                "linked_type": "daily_report_transportation",
+                "linked_id": transport.get("id")
+            }
         
         # スタッフ一覧を取得
         users = supabase_admin.auth.admin.list_users()
@@ -10276,7 +10407,25 @@ def admin_financial_expense_edit(year, expense_id):
 def admin_financial_expense_delete(year, expense_id):
     """経費 - 削除"""
     try:
-        supabase_admin.table("expenses").delete().eq("id", expense_id).execute()
+        res_expense = supabase_admin.table("expenses").select("*").eq("id", expense_id).execute()
+        expense = res_expense.data[0] if res_expense.data else None
+
+        if expense:
+            linked_type = expense.get("linked_type")
+
+            # linked_typeに応じて関連データも削除
+            if linked_type == "salary":
+                staff_id = expense.get("staff_id")
+                if staff_id:
+                    supabase_admin.table("staff_salaries").delete().eq("year", expense.get("year")).eq("month", expense.get("month")).eq("staff_id", staff_id).execute()
+            elif linked_type == "daily_report_transportation":
+                linked_id = expense.get("linked_id") or expense_id
+                supabase_admin.table("staff_daily_report_transportations").delete().eq("id", linked_id).execute()
+
+            supabase_admin.table("expenses").delete().eq("id", expense_id).execute()
+        else:
+            # expensesにない交通費は直接削除
+            supabase_admin.table("staff_daily_report_transportations").delete().eq("id", expense_id).execute()
         flash("経費を削除しました", "success")
     except Exception as e:
         print(f"❌ 経費削除エラー: {e}")

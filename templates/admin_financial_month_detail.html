@@ -155,7 +155,8 @@
               'repairs': '修繕費',
               'maintenance': 'メンテナンス費',
               'meeting': '会議費',
-              'entertainment': '接待費',
+              'entertainment': '接待交際費',
+              'vehicle': '車両費',
               'depreciation': '減価償却費',
               'training': '研修費',
               'subscription': 'サブスクリプション',
@@ -165,12 +166,12 @@
             {{ category_names.get(expense.category, expense.category) }}
           </td>
           <td style="padding: 12px; border-bottom: 1px solid #eee;">
-            {{ expense.description or '' }}
+            {{ expense.display_description or expense.description or '' }}
             {% if expense.staff_name %}({{ expense.staff_name }}){% endif %}
           </td>
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(expense.amount|int) }}</td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
-            {% if expense.linked_type == 'manual' %}
+            {% if expense.linked_type in ['manual', 'salary', 'reservation_discount', 'daily_report_transportation'] %}
             <a href="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
             <form method="POST" action="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
               <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>

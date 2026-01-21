@@ -57,7 +57,8 @@
         </optgroup>
         <optgroup label="その他経費">
           <option value="meeting" {% if expense.category == 'meeting' %}selected{% endif %}>会議費</option>
-          <option value="entertainment" {% if expense.category == 'entertainment' %}selected{% endif %}>接待費</option>
+          <option value="entertainment" {% if expense.category == 'entertainment' %}selected{% endif %}>接待交際費</option>
+          <option value="vehicle" {% if expense.category == 'vehicle' %}selected{% endif %}>車両費</option>
           <option value="depreciation" {% if expense.category == 'depreciation' %}selected{% endif %}>減価償却費</option>
           <option value="training" {% if expense.category == 'training' %}selected{% endif %}>研修費</option>
           <option value="subscription" {% if expense.category == 'subscription' %}selected{% endif %}>サブスクリプション</option>
