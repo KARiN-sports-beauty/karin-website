@@ -198,6 +198,62 @@
       color: #666;
     }
 
+    .philosophy {
+      background: #fafafa;
+      padding: 80px 20px;
+    }
+
+    .philosophy-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .philosophy-title {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+    }
+
+    .philosophy-lead {
+      text-align: center;
+      color: #555;
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+
+    .philosophy-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .philosophy-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .philosophy-item h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .philosophy-item p {
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .philosophy-message {
+      text-align: center;
+      color: #444;
+      line-height: 1.8;
+    }
+
+    .sp-only {
+      display: none;
+    }
+
     h2 {
       font-size: 20px;
       font-weight: 400;
@@ -439,6 +495,10 @@
         margin-top: 20px;
       }
 
+      .sp-only {
+        display: inline;
+      }
+
       h2 {
         font-size: 14px;
         margin-bottom: 20px;
@@ -656,15 +716,47 @@
   </section>
 
   <!-- フレーム3：解決（KARiN.がどう向き合うか） -->
-  <section>
-    <h2>KARiN.ならこう考えます</h2>
-    <p>
-      整えるために、無理をしない。
-    </p>
-    <p>
-      明確な決まりはなく、あなたの今の状態に寄り添います。
-    </p>
-    <img src="/static/images/hands-treatment.jpg" alt="施術の手元" class="service-image">
+  <section class="philosophy">
+    <div class="philosophy-inner">
+      <h2 class="philosophy-title">KARiN.が大切にしていること</h2>
+
+      <p class="philosophy-lead">
+        KARiN.は、<br class="sp-only">
+        「つらさを我慢させる施術」や<br class="sp-only">
+        「無理に変えようとするケア」は行いません。
+      </p>
+
+      <div class="philosophy-list">
+        <div class="philosophy-item">
+          <h3>無理をさせないこと</h3>
+          <p>
+            その日の体調や気持ちを大切にし、<br>
+            今のあなたにとって負担の少ない施術を選びます。
+          </p>
+        </div>
+
+        <div class="philosophy-item">
+          <h3>話を聞くこと</h3>
+          <p>
+            痛みや不調だけでなく、<br>
+            生活リズムやこれまでの経過も含めて伺います。
+          </p>
+        </div>
+
+        <div class="philosophy-item">
+          <h3>整えることを目的にする</h3>
+          <p>
+            「すぐに良くする」よりも、<br>
+            少しずつ整い、戻りにくい状態を目指します。
+          </p>
+        </div>
+      </div>
+
+      <p class="philosophy-message">
+        まずは、今感じている違和感や不安を<br class="sp-only">
+        そのまま聞かせてください。
+      </p>
+    </div>
   </section>
 
   <!-- フレーム4：サービス説明 -->
