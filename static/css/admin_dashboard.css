@@ -1910,6 +1910,33 @@ form .admin-news-btn {
   gap: 8px;
 }
 
+@media (max-width: 480px) {
+  .admin-resv-calendar {
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  .admin-resv-calendar-header,
+  .admin-resv-calendar-days {
+    min-width: 360px;
+    gap: 4px;
+  }
+
+  .admin-resv-calendar-header > div {
+    padding: 6px 4px;
+    font-size: 0.85rem;
+  }
+
+  .admin-resv-day {
+    border-width: 1px;
+    padding: 6px 4px;
+  }
+
+  .admin-resv-day span {
+    font-size: 0.85rem;
+  }
+}
+
 .admin-resv-day {
   aspect-ratio: 1;
   background: #fff;
