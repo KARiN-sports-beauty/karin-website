@@ -1541,6 +1541,13 @@ form .admin-news-btn {
     grid-column: 1 / -1;
     margin-top: 36px;
   }
+
+  /* 入力幅を揃えて右の間延びを抑える */
+  .admin-karte-form .admin-form-input,
+  .admin-karte-form .admin-form-select,
+  .admin-karte-form .admin-form-textarea {
+    max-width: 320px;
+  }
 }
 
 
