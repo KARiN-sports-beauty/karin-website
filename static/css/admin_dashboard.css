@@ -1496,6 +1496,13 @@ form .admin-news-btn {
     grid-column: 1 / -1;
     margin-top: 28px;
   }
+
+  /* 入力幅を統一して右の間延びを抑える */
+  .admin-karte-form .admin-form-input,
+  .admin-karte-form .admin-form-select,
+  .admin-karte-form .admin-form-textarea {
+    max-width: 320px;
+  }
 }
 
 
@@ -1613,6 +1620,11 @@ form .admin-news-btn {
 
 /* スマホ表示時もinput/select間のスペースを確保 */
 @media (max-width: 767px) {
+  .admin-karte-form {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
   .admin-form-field .admin-form-input + .admin-form-select,
   .admin-form-field .admin-form-input + .admin-form-textarea,
   .admin-form-field .admin-form-select + .admin-form-input,

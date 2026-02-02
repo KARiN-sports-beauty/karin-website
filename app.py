@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 from datetime import datetime, timedelta, timezone
+import calendar
 JST = timezone(timedelta(hours=9))
 
 def to_jst(dt_str):
@@ -3649,9 +3650,9 @@ def admin_reservations():
         
         # カレンダー表示用の日付計算
         calendar_days = []
-        # 月初の曜日（0=日曜日、6=土曜日に変換）
-        # weekday()は月曜日=0、日曜日=6なので、日曜始まりに変換
-        first_weekday = (current_date.weekday() + 1) % 7
+        # 月初の曜日（0=日曜日、6=土曜日）
+        # calendar.monthrange は月曜日=0なので、日曜始まりに変換
+        first_weekday = (calendar.monthrange(current_date.year, current_date.month)[0] + 1) % 7
         # 月の日数
         if current_date.month == 12:
             next_month_first = datetime(current_date.year + 1, 1, 1, tzinfo=JST)
