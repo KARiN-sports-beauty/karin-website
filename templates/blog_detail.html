@@ -74,13 +74,6 @@
       {{ blog.body|safe }}
     </div>
 
-    <!-- ❤️ いいね -->
-    <div class="like-section">
-      <button id="like-btn" data-id="{{ blog.id }}" class="action-btn {% if liked %}liked{% endif %}">
-        ❤️ いいね (<span id="like-count">{{ like_count }}</span>)
-      </button>
-    </div>
-
     <!-- 💬 コメント -->
     <div class="comment-section">
       <h3 class="comment-title">💬 コメント（{{ comments|length }}）</h3>
@@ -172,29 +165,6 @@
 
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
-  <!-- Like -->
-  <script>
-    const likeBtn = document.getElementById("like-btn");
-    const countEl = document.getElementById("like-count");
-    const blogId = "{{ blog.id }}";
-    let processing = false;
-
-    likeBtn.addEventListener("click", async () => {
-      if (processing) return;
-      processing = true;
-
-      const res = await fetch(`/api/like/${blogId}`, { method: "POST" });
-      const data = await res.json();
-
-      if (data.status === "ok") {
-        countEl.textContent = data.count;
-        likeBtn.classList.toggle("liked", data.liked);
-      }
-
-      processing = false;
-    });
-  </script>
 
   <!-- コメント送信 -->
   <script>

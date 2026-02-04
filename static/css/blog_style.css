@@ -355,31 +355,8 @@ body,
 }
 
 /* ===============================
-   💬 コメント & いいね
+   💬 コメント
 =============================== */
-#like-btn {
-  margin-left: 24px;
-}
-
-.like-btn {
-  background-color: #fff7f7;
-  color: #e25555;
-  border: 1px solid #f3c2c2;
-  border-radius: 999px;
-  padding: 10px 24px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: 0.2s;
-}
-
-.like-btn:hover {
-  background-color: #ffe5e5;
-  transform: translateY(-1px);
-}
 
 .comment-title {
   font-size: 1.2rem;
@@ -527,9 +504,6 @@ body,
   background-color: #e3e9f2;
 }
 
-.action-btn.liked, .action-btn:has(.liked) {
-  background-color: #d0e2ff;
-}
 
 .submit-btn {
   background-color: #e1e7f0;
@@ -575,7 +549,6 @@ body,
   margin-top: 30px;
 }
 .action-btn:hover { background-color: #d7e3f2; }
-.action-btn.liked { background-color: #c4d8f3; }
 
 .submit-btn {
   background-color: #e1e7f0;
@@ -883,16 +856,6 @@ body,
   text-align: right;
 }
 
-.liked {
-  color: red;
-  font-weight: bold;
-}
-
-#like-btn.liked {
-  background-color: #ffeded;
-  color: #e60033;
-  border-color: #e60033;
-}
 
 /* ===== コメント返信UI ===== */
 .comment-date {

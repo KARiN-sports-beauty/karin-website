@@ -756,7 +756,7 @@ def submit_form():
         # 📨 メール通知（patientsに保存した内容をJSONで）
         send_email(
             from_addr=FROM_ADDRESS,
-            to_addr="form@karin-sb.jp",
+            to_addr="info@karin-sb.jp",
             subject="【KARiN.】初診フォーム送信",
             content=json.dumps(saved_patient, ensure_ascii=False, indent=2)
         )
@@ -824,7 +824,7 @@ def submit_contact():
 
         send_email(
             from_addr=FROM_ADDRESS,
-            to_addr="contact@karin-sb.jp",
+            to_addr="info@karin-sb.jp",
             subject="【KARiN.】お問い合わせ",
             content=body_text
         )
@@ -1682,27 +1682,10 @@ def show_blog(slug):
             except Exception as e:
                 print(f"⚠️ フォールバック著者情報取得エラー: {e}")
 
-        # いいね数取得
-        like_count = 0
-        try:
-            like_res = (
-                supabase
-                .table("likes")
-                .select("liked", count="exact")
-                .eq("blog_id", blog_id)
-                .eq("liked", True)
-                .execute()
-            )
-            like_count = like_res.count or 0
-        except Exception as e:
-            print(f"⚠️ いいね数取得エラー: {e}")
-            like_count = 0
-
         return render_template(
             "blog_detail.html",
             blog=blog,
             comments=comments,
-            like_count=like_count,
             author_info=author_info
         )
     except Exception as e:
@@ -1852,7 +1835,7 @@ def admin_blog_edit(blog_id):
 @app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
 @staff_required
 def admin_blog_delete(blog_id):
-    """ブログ削除（関連するコメントとlikesも削除）"""
+    """ブログ削除（関連するコメントも削除）"""
     try:
         # blog_idを数値に変換（UUIDの場合はそのまま）
         try:
@@ -1877,25 +1860,6 @@ def admin_blog_delete(blog_id):
         except Exception as e:
             import traceback
             print(f"⚠️ コメント削除エラー: {e}")
-            print(f"⚠️ トレースバック: {traceback.format_exc()}")
-        
-        # 関連するlikesも削除
-        deleted_likes = 0
-        try:
-            # 削除前にいいね数を確認
-            res_likes = supabase_admin.table("likes").select("id", count="exact").eq("blog_id", blog_id_int).execute()
-            like_count = res_likes.count or 0
-            
-            if like_count > 0:
-                # いいねを削除
-                supabase_admin.table("likes").delete().eq("blog_id", blog_id_int).execute()
-                deleted_likes = like_count
-                print(f"✅ ブログID {blog_id_int} のいいね {deleted_likes} 件を削除しました")
-            else:
-                print(f"ℹ️ ブログID {blog_id_int} に関連するいいねはありませんでした")
-        except Exception as e:
-            import traceback
-            print(f"⚠️ いいね削除エラー: {e}")
             print(f"⚠️ トレースバック: {traceback.format_exc()}")
         
         # 最後にブログを削除
@@ -3185,48 +3149,6 @@ def index():
 
 
 
-# =====================================
-# いいね API（Supabase版・トグル式）
-# =====================================
-@app.route("/api/like/<int:blog_id>", methods=["POST"])
-def api_like(blog_id):
-    try:
-        user_token = request.cookies.get("user_token")
-        if not user_token:
-            user_token = str(uuid.uuid4())
-
-        # 既に like しているか判定
-        res = supabase.table("likes").select("*").eq("blog_id", blog_id).eq("user_token", user_token).execute()
-        rows = res.data
-
-        if rows:
-            row = rows[0]
-            new_state = not row["liked"]   # トグル切り替え
-            supabase.table("likes").update({"liked": new_state}).eq("id", row["id"]).execute()
-        else:
-            new_state = True
-            supabase.table("likes").insert({
-                "blog_id": blog_id,
-                "user_token": user_token,
-                "liked": True
-            }).execute()
-
-        # 総いいね数 (liked=Trueのみ)
-        count_res = supabase.table("likes").select("liked", count="exact").eq("blog_id", blog_id).eq("liked", True).execute()
-        like_count = count_res.count
-
-        resp = jsonify({"status": "ok", "count": like_count, "liked": new_state})
-        resp.set_cookie("user_token", user_token, max_age=3600*24*365)
-        return resp
-
-    except Exception as e:
-        print("LIKE ERROR:", e)
-        return {"status": "error", "message": str(e)}, 500
-
-
-
-
-
 # ===================================================
 # 💬 Supabase コメント API
 # ===================================================
@@ -3272,7 +3194,7 @@ def api_comment():
 
     send_email(
         from_addr=FROM_ADDRESS,
-        to_addr="comment@karin-sb.jp",
+        to_addr="info@karin-sb.jp",
         subject=f"【KARiN.】新しいコメント（{slug}）",
         content=body_text,
         reply_to=FROM_ADDRESS
@@ -3397,7 +3319,7 @@ def admin_reply(comment_id):
     # ✅ メール通知（今まで通り）
     send_email(
         from_addr=FROM_ADDRESS,
-        to_addr="comment@karin-sb.jp",
+        to_addr="info@karin-sb.jp",
         subject="【KARiN.】コメント返信通知",
         content=f"コメントID {comment_id} に返信:\n{reply_text}",
         reply_to=FROM_ADDRESS
