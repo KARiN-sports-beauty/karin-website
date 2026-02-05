@@ -368,6 +368,112 @@
       color: #555;
     }
 
+    .trial-section {
+      max-width: none;
+      background: #ffffff;
+      padding: 64px 60px;
+    }
+
+    .trial-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .trial-title {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 40px;
+      font-weight: 400;
+      color: #222;
+      letter-spacing: 0.02em;
+    }
+
+    .trial-text p {
+      font-size: 15px;
+      line-height: 1.9;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    .trial-price {
+      margin-top: 32px;
+      padding: 24px;
+      background: #fafafa;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid #eee;
+    }
+
+    .trial-price-label {
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .trial-price-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1E3A5F;
+    }
+
+    .trial-price-note {
+      font-size: 13px;
+      color: #777;
+      margin-top: 8px;
+    }
+
+    .line-section {
+      max-width: none;
+      background: #f7f7f7;
+      padding: 96px 20px;
+    }
+
+    .line-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .line-title {
+      font-size: 28px;
+      margin-bottom: 24px;
+      font-weight: 400;
+      color: #222;
+      letter-spacing: 0.02em;
+    }
+
+    .line-text {
+      font-size: 15px;
+      line-height: 1.9;
+      color: #444;
+      margin-bottom: 40px;
+    }
+
+    .line-button-area {
+      margin-bottom: 16px;
+    }
+
+    .line-button {
+      display: inline-block;
+      background: #06c755;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 18px 36px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .line-button:hover {
+      opacity: 0.9;
+    }
+
+    .line-note {
+      font-size: 13px;
+      color: #777;
+    }
+
     .sp-only {
       display: none;
     }
@@ -709,6 +815,60 @@
 
       .faq-answer {
         font-size: 11px;
+      }
+
+      .trial-section {
+        padding: 48px 20px;
+      }
+
+      .trial-title {
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+
+      .trial-text p {
+        font-size: 11px;
+        margin-bottom: 14px;
+      }
+
+      .trial-price {
+        margin-top: 20px;
+        padding: 18px;
+      }
+
+      .trial-price-label {
+        font-size: 12px;
+      }
+
+      .trial-price-value {
+        font-size: 15px;
+      }
+
+      .trial-price-note {
+        font-size: 10px;
+      }
+
+      .line-section {
+        padding: 56px 20px;
+      }
+
+      .line-title {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+
+      .line-text {
+        font-size: 11px;
+        margin-bottom: 24px;
+      }
+
+      .line-button {
+        font-size: 12px;
+        padding: 12px 22px;
+      }
+
+      .line-note {
+        font-size: 10px;
       }
 
       .sp-only {
@@ -1072,30 +1232,63 @@
   </section>
 
   <!-- フレーム6：初回体験 -->
-  <section>
-    <h2>初回体験</h2>
-    <div class="price-text">
-      <strong>【初回限定】</strong>
-      通常料金より30%OFF
-    </div>
-    <div class="note">
-      ※ 地域により異なります
+  <section class="trial-section">
+    <div class="trial-inner">
+      <h2 class="trial-title">初回体験について</h2>
+
+      <div class="trial-text">
+        <p>
+          初めての方には、今のお身体の状態を丁寧に確認しながら、<br>
+          鍼灸やボディケアを組み合わせた施術を行います。
+        </p>
+
+        <p>
+          「合うかどうか分からない」「まずは試してみたい」<br>
+          そんな方のために、初回体験は
+          <strong>通常料金より30%OFF</strong>でご案内しています。
+        </p>
+
+        <p>
+          無理な継続提案や、回数券の販売は行っておりません。<br>
+          ご自身のペースで、必要なケアを選んでいただけます。
+        </p>
+      </div>
+
+      <div class="trial-price">
+        <p class="trial-price-label">【初回体験】</p>
+        <p class="trial-price-value">通常料金より 30%OFF</p>
+        <p class="trial-price-note">
+          ※施術時間・内容はご相談時にご案内します
+        </p>
+      </div>
     </div>
   </section>
 
   <!-- フレーム7：LINE導線（CTA） -->
-  <section>
-    <h2>ご予約について</h2>
-    <p>
-      まずはLINEで相談
-    </p>
-    <p>
-      日時や内容は、会話しながら決めます
-    </p>
-    <div class="btn-line-section">
-      <a href="https://lin.ee/rVEbNhl5" target="_blank" class="btn-line">
-        LINEで相談する
-      </a>
+  <section class="line-section">
+    <div class="line-inner">
+      <h2 class="line-title">まずは、LINEでご相談ください</h2>
+
+      <p class="line-text">
+        施術を受けるかどうかは、相談してから決めていただいて大丈夫です。<br>
+        今のお身体のこと、不安に思っていることがあれば、<br>
+        LINEでお気軽にご相談ください。
+      </p>
+
+      <div class="line-button-area">
+        <a
+          href="https://lin.ee/rVEbNhl5"
+          class="line-button"
+          target="_blank"
+          rel="noopener"
+        >
+          LINEで相談してみる
+        </a>
+      </div>
+
+      <p class="line-note">
+        ※ご相談のみでも問題ありません
+      </p>
     </div>
   </section>
 
@@ -1103,7 +1296,7 @@
   <footer>
     <p>KARiN.</p>
     <p>出張対応 鍼灸・ボディケア</p>
-    <p>代々木上原・福岡</p>
+    <p>代々木上原</p>
   </footer>
 
 </body>
