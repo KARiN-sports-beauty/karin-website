@@ -40,9 +40,10 @@
         <div>実働時間: <span id="calc_working_hours">{{ salary_calculation.working_hours|round(1) }}</span>時間</div>
         <div>売上: ¥<span id="calc_revenue">{{ salary_calculation.revenue|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
         <div>基本給: ¥<span id="calc_base_salary">{{ salary_calculation.base_salary|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
-        <div>歩合給: ¥<span id="calc_commission">{{ salary_calculation.commission|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
-        <div>指名料: ¥<span id="calc_nomination_fee">{{ salary_calculation.nomination_fee|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
+        <div>資格給: ¥<span id="calc_commission">{{ salary_calculation.commission|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
+        <div>歩合給: ¥<span id="calc_nomination_fee">{{ salary_calculation.nomination_fee|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
         <div>交通費: ¥<span id="calc_transportation">{{ salary_calculation.transportation|int|string|replace(',', '')|int|string|replace(',', ',') }}</span></div>
+        <div>特別給（6月/12月）: ¥<span id="calc_special_bonus">0</span></div>
       </div>
     </div>
     {% endif %}
@@ -53,14 +54,14 @@
         <input type="number" name="base_salary" id="base_salary" min="0" step="0.01" value="{{ salary.base_salary or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">歩合</label>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">資格給</label>
         <input type="number" name="commission" id="commission" min="0" step="0.01" value="{{ salary.commission or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">指名料</label>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">歩合給</label>
         <input type="number" name="nomination_fee" id="nomination_fee" min="0" step="0.01" value="{{ salary.nomination_fee or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
@@ -83,6 +84,11 @@
         <input type="number" name="other_deduction" min="0" step="0.01" value="{{ salary.other_deduction or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">特別給（6月/12月）</label>
+      <input type="number" name="special_bonus" id="special_bonus" min="0" step="0.01" value="{{ salary.special_bonus or 0 }}" readonly style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; background: #f5f7fb;">
+    </div>
     
     <div style="margin-bottom: 20px;">
       <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">メモ</label>
@@ -98,6 +104,7 @@
 
 <script>
 const salaryCalculation = {{ salary_calculation | tojson if salary_calculation else 'null' }};
+const targetMonth = {{ month|int }};
 
 function updateStaffName() {
   const select = document.getElementById('staff_id');
@@ -117,13 +124,47 @@ function loadSalaryCalculation() {
 
 function applyAutoCalculation() {
   if (salaryCalculation) {
-    document.getElementById('base_salary').value = salaryCalculation.base_salary;
-    document.getElementById('commission').value = salaryCalculation.commission;
     document.getElementById('nomination_fee').value = salaryCalculation.nomination_fee;
     document.getElementById('transportation').value = salaryCalculation.transportation;
+    updateSpecialBonus(salaryCalculation);
     document.getElementById('use_auto_calc').value = 'true';
     alert('自動計算を適用しました。必要に応じて手動で調整してください。');
   }
+}
+
+function updateSpecialBonus(calc) {
+  const bonusInput = document.getElementById('special_bonus');
+  const bonusLabel = document.getElementById('calc_special_bonus');
+  if (!bonusInput || !bonusLabel) return;
+
+  if (targetMonth !== 6 && targetMonth !== 12) {
+    bonusInput.value = 0;
+    bonusLabel.textContent = 0;
+    return;
+  }
+
+  const baseSalary = parseFloat(document.getElementById('base_salary').value) || 0;
+  const qualificationPay = parseFloat(document.getElementById('commission').value) || 0;
+  const performancePay = parseFloat(document.getElementById('nomination_fee').value) || 0;
+  const revenue = calc?.half_year_revenue || 0;
+  const existingTotal = calc?.half_year_existing_total || 0;
+  const bonus = Math.max(0, Math.floor(revenue * 0.35) - (existingTotal + baseSalary + qualificationPay + performancePay));
+  bonusInput.value = bonus;
+  bonusLabel.textContent = bonus.toLocaleString();
+}
+
+document.getElementById('base_salary')?.addEventListener('input', () => {
+  if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+});
+document.getElementById('commission')?.addEventListener('input', () => {
+  if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+});
+document.getElementById('nomination_fee')?.addEventListener('input', () => {
+  if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+});
+
+if (salaryCalculation) {
+  updateSpecialBonus(salaryCalculation);
 }
 </script>
 

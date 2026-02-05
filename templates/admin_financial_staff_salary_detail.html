@@ -18,16 +18,20 @@
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary.base_salary|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">歩合</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">資格給</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary.commission|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">指名料</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">歩合給</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format((salary.nomination_fee or 0)|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
       <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">交通費</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary.transportation|int) }}</div>
+    </div>
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">特別給（6月/12月）</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format((salary.special_bonus or 0)|int) }}</div>
     </div>
   </div>
 
@@ -65,21 +69,25 @@
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary_calc.base_salary|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">歩合</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">資格給</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary_calc.commission|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">指名料</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">歩合給</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary_calc.nomination_fee|int) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
       <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">交通費</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(salary_calc.transportation|int) }}</div>
     </div>
+    <div style="padding: 16px; background: #f5f7fb; border-radius: 10px;">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">特別給（6月/12月）</div>
+      <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(bonus_calc|int) }}</div>
+    </div>
   </div>
   <div style="margin-top: 20px; padding: 16px; background: #e8f5e9; border-radius: 10px;">
     <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">総支給（自動計算）</div>
-    <div style="font-size: 1.3rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format(salary_calc.total_salary|int) }}</div>
+    <div style="font-size: 1.3rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format((salary_calc.total_salary + bonus_calc)|int) }}</div>
   </div>
   {% else %}
   <p style="color: #999; font-size: 0.95rem;">給与データがありません。</p>

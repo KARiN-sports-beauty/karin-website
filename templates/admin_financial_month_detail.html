@@ -76,9 +76,10 @@
         <tr style="background: #f5f7fb;">
           <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">スタッフ名</th>
           <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">基本給</th>
-          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">歩合</th>
-          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">指名料</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">資格給</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">歩合給</th>
           <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">交通費</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">特別給</th>
           <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">総支給</th>
           <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">控除</th>
           <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">手取り</th>
@@ -93,6 +94,7 @@
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(salary.commission|int) }}</td>
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format((salary.nomination_fee or 0)|int) }}</td>
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format(salary.transportation|int) }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥{{ "{:,}".format((salary.special_bonus or 0)|int) }}</td>
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">¥{{ "{:,}".format(salary.total_salary|int) }}</td>
           <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
             ¥{{ "{:,}".format((salary.tax + salary.social_insurance + salary.other_deduction)|int) }}

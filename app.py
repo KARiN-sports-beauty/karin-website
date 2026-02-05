@@ -21,8 +21,6 @@ from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 import uuid
-import sendgrid
-from sendgrid.helpers.mail import Mail as SGMail
 
 
 
@@ -204,65 +202,6 @@ def admin_required(f):
 
 
 
-# =====================================
-# SendGrid 設定（Render からのメール送信）
-# =====================================
-# Render の環境変数に SENDGRID_API_KEY を設定済み想定
-sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
-
-FROM_ADDRESS = "info@karin-sb.jp"  # 送信元は共通で info@ に統一
-
-
-def send_email(from_addr, to_addr, subject, content, reply_to=None):
-    """
-    SendGrid 経由でプレーンテキストメールを送信するユーティリティ
-    """
-    try:
-        email = SGMail(
-            from_email=from_addr,
-            to_emails=to_addr,
-            subject=subject,
-            plain_text_content=content
-        )
-        if reply_to:
-            email.reply_to = reply_to
-
-        response = sg.send(email)
-        print("✅ SendGrid response:", response.status_code)
-        return response.status_code
-    except Exception as e:
-        print("❌ SendGrid メール送信エラー:", e)
-        return None
-
-
-
-# スタッフ承認メール送信用
-def send_staff_approved_email(to_addr, name):
-    body = f"""
-{name} 様
-
-スタッフアカウントが承認されました。
-
-以下よりログインしてご利用いただけます。
-
-https://www.karin-sb.jp/staff/login
-
-KARiN. ~ Sports & Beauty ~
-"""
-
-    try:
-        send_email(
-            from_addr="info@karin-sb.jp",
-            to_addr=to_addr,
-            subject="【KARiN.】スタッフアカウント承認のお知らせ",
-            content=body
-        )
-        print("📨 承認メール送信完了:", to_addr)
-    except Exception as e:
-        print("❌ 承認メール送信エラー:", e)
-
-
-
 
 
 # =====================================
@@ -281,11 +220,10 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     """
     スタッフの給与を自動計算する関数
     
-    計算ロジック：
-    1. 基本給 = 最低時給 × 実働時間（40h×4週 = 160時間が基本）
-    2. 歩合給 = スタッフの売上（治療売上や帯同売上）の35% - 基本給
-    3. 指名料 = 予約から自動集計（本指名・枠指名）
-    4. 交通費 = 別途申請したものをそのまま支給
+    計算ロジック（自動計算用の参考値）：
+    1. 基本給/資格給は手入力のため自動計算しない
+    2. 歩合給 = 指名料（予約から自動集計）
+    3. 交通費 = スタッフの日報申請を集計
     
     Args:
         staff_name: スタッフ名
@@ -296,21 +234,14 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     Returns:
         dict: {
             "base_salary": 基本給,
-            "commission": 歩合給,
-            "nomination_fee": 指名料,
+            "commission": 資格給（手入力用のため0）,
+            "nomination_fee": 歩合給（指名料）,
             "transportation": 交通費,
             "total_salary": 総支給,
             "working_hours": 実働時間（時間）,
             "revenue": 売上
         }
     """
-    # 最低時給の設定（2025年時点）
-    # 東京: 1113円、福岡: 961円（実際の最低賃金に合わせて調整可能）
-    min_hourly_wage = {
-        "tokyo": 1113,
-        "fukuoka": 961
-    }.get(area, 1113)  # デフォルトは東京
-    
     # 基本実働時間（40h×4週 = 160時間）
     base_working_hours = 160
     
@@ -379,8 +310,8 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     except Exception as e:
         print(f"⚠️ WARNING - 実働時間取得エラー: {e}")
     
-    # 基本給 = 最低時給 × 実働時間
-    base_salary = int(min_hourly_wage * working_hours)
+    # 基本給/資格給は手入力のため自動計算しない
+    base_salary = 0
     
     # 売上を集計（予約テーブルから直接集計：税抜き料金、出張費、指名料を個別に集計）
     base_revenue = 0  # 税抜き料金の合計
@@ -400,9 +331,8 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     except Exception as e:
         print(f"⚠️ WARNING - 売上集計エラー: {e}")
     
-    # 歩合給 = 税抜き料金の35% - 基本給（マイナスの場合は0）
-    commission_rate = 0.35
-    commission = max(0, int(base_revenue * commission_rate) - base_salary)
+    # 資格給（手入力のため自動計算しない）
+    commission = 0
     
     # 総売上 = 税抜き料金（給与計算用の参考値）
     revenue = base_revenue
@@ -500,7 +430,7 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
     except Exception as e:
         print(f"⚠️ WARNING - 交通費集計エラー: {e}")
     
-    # 総支給 = 基本給 + 歩合給 + 指名料 + 出張費 + 交通費
+    # 総支給 = 基本給 + 資格給 + 歩合給(指名料) + 出張費 + 交通費
     # 出張費は給与に直接反映（予約テーブルから集計）
     total_salary = base_salary + commission + nomination_fee + transportation_total + transportation
     
@@ -514,6 +444,96 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
         "working_hours": working_hours,
         "revenue": revenue  # 税抜き料金の合計
     }
+
+
+def _half_year_range(year: int, month: int):
+    if month <= 6:
+        return 1, 6
+    return 7, 12
+
+
+def _sum_staff_revenue(staff_name: str, year: int, start_month: int, end_month: int) -> int:
+    revenue_total = 0
+    try:
+        start_date = f"{year}-{start_month:02d}-01"
+        end_day = calendar.monthrange(year, end_month)[1]
+        end_date = f"{year}-{end_month:02d}-{end_day:02d}"
+        res_reservations = (
+            supabase_admin
+            .table("reservations")
+            .select("base_price")
+            .eq("staff_name", staff_name)
+            .eq("status", "completed")
+            .gte("reserved_at", start_date)
+            .lte("reserved_at", end_date)
+            .execute()
+        )
+        for reservation in (res_reservations.data or []):
+            revenue_total += reservation.get("base_price", 0) or 0
+    except Exception as e:
+        print(f"⚠️ WARNING - 半期売上集計エラー: {e}")
+    return int(revenue_total)
+
+
+def _sum_staff_pay_total(
+    staff_id: str,
+    year: int,
+    start_month: int,
+    end_month: int,
+    exclude_salary_id: str | None = None,
+    exclude_month: int | None = None
+) -> int:
+    total = 0
+    try:
+        res_salaries = (
+            supabase_admin
+            .table("staff_salaries")
+            .select("id, month, base_salary, commission, nomination_fee")
+            .eq("staff_id", staff_id)
+            .eq("year", year)
+            .gte("month", start_month)
+            .lte("month", end_month)
+            .execute()
+        )
+        for sal in (res_salaries.data or []):
+            if exclude_salary_id and str(sal.get("id")) == str(exclude_salary_id):
+                continue
+            if exclude_month and sal.get("month") == exclude_month:
+                continue
+            total += (sal.get("base_salary", 0) or 0)
+            total += (sal.get("commission", 0) or 0)
+            total += (sal.get("nomination_fee", 0) or 0)
+    except Exception as e:
+        print(f"⚠️ WARNING - 半期給与合計エラー: {e}")
+    return int(total)
+
+
+def calculate_special_bonus(
+    year: int,
+    month: int,
+    staff_id: str,
+    staff_name: str,
+    base_salary: float,
+    commission: float,
+    nomination_fee: float,
+    exclude_salary_id: str | None = None
+) -> dict:
+    if month not in [6, 12]:
+        return {"bonus": 0, "revenue_total": 0, "existing_total": 0}
+
+    start_month, end_month = _half_year_range(year, month)
+    revenue_total = _sum_staff_revenue(staff_name, year, start_month, end_month)
+    existing_total = _sum_staff_pay_total(
+        staff_id,
+        year,
+        start_month,
+        end_month,
+        exclude_salary_id=exclude_salary_id,
+        exclude_month=month
+    )
+    current_total = (base_salary or 0) + (commission or 0) + (nomination_fee or 0)
+    bonus = max(0, int(revenue_total * 0.35) - int(existing_total + current_total))
+    return {"bonus": bonus, "revenue_total": revenue_total, "existing_total": existing_total}
 
 
 def normalize_datetime(dt):
@@ -753,14 +773,6 @@ def submit_form():
 """
         send_line_message(line_message)
 
-        # 📨 メール通知（patientsに保存した内容をJSONで）
-        send_email(
-            from_addr=FROM_ADDRESS,
-            to_addr="info@karin-sb.jp",
-            subject="【KARiN.】初診フォーム送信",
-            content=json.dumps(saved_patient, ensure_ascii=False, indent=2)
-        )
-
         return redirect(url_for(
             "thanks",
             message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
@@ -812,22 +824,6 @@ def submit_contact():
 {message}
 """
         send_line_message(line_message)
-
-                # 📨 メール通知（SendGrid）
-        body_text = (
-            f"名前: {name}\n"
-            f"電話: {phone}\n"
-            f"メール: {email}\n"
-            f"日時: {timestamp}\n"
-            f"内容:\n{message}"
-        )
-
-        send_email(
-            from_addr=FROM_ADDRESS,
-            to_addr="info@karin-sb.jp",
-            subject="【KARiN.】お問い合わせ",
-            content=body_text
-        )
 
         # ▼ Supabase に保存
         supabase_admin.table("contacts").insert({
@@ -1085,10 +1081,7 @@ def admin_staff_approve(user_id):
             # 後方互換性：既存データはnameフィールドを使用
             display_name = meta.get("name", "")
 
-        # 承認メール送信
-        send_staff_approved_email(user.email, display_name)
-
-        flash("スタッフを承認しました（メール送信済み）", "success")
+        flash("スタッフを承認しました", "success")
 
     except Exception as e:
         print("❌ APPROVE ERROR:", e)
@@ -3184,22 +3177,6 @@ def api_comment():
         "created_at": created_at
     }).execute()
 
-    # 📨 コメント通知メール（SendGrid）
-    body_text = (
-        f"ブログ: {slug}\n"
-        f"名前: {name}\n"
-        f"時間: {created_at}\n"
-        f"コメント:\n{body}"
-    )
-
-    send_email(
-        from_addr=FROM_ADDRESS,
-        to_addr="info@karin-sb.jp",
-        subject=f"【KARiN.】新しいコメント（{slug}）",
-        content=body_text,
-        reply_to=FROM_ADDRESS
-    )
-
     # 🔥 ここがポイント：記事ページに戻す（即最新コメント反映！）
     return redirect(url_for("show_blog", slug=slug))
 
@@ -3315,15 +3292,6 @@ def admin_reply(comment_id):
     )
 
     print("UPDATE_RES:", update_res)
-
-    # ✅ メール通知（今まで通り）
-    send_email(
-        from_addr=FROM_ADDRESS,
-        to_addr="info@karin-sb.jp",
-        subject="【KARiN.】コメント返信通知",
-        content=f"コメントID {comment_id} に返信:\n{reply_text}",
-        reply_to=FROM_ADDRESS
-    )
 
     # ✅ 返信後は「元のブログ」ではなく「管理画面の一覧」に戻す
     return redirect("/admin/comments")
@@ -4154,88 +4122,6 @@ def admin_reservations_status(reservation_id):
                                     supabase_admin.table("staff_daily_report_patients").insert(patient_data).execute()
                                     print(f"✅ 日報に患者情報を追加しました: staff_name={staff_name}, report_date={date_str}, reservation_id={reservation_id}, amount={amount}")
                                     
-                                    # 指名料がある場合は給与に反映
-                                    if nomination_fee > 0:
-                                        try:
-                                            # 年月を取得
-                                            year = dt_jst.year
-                                            month = dt_jst.month
-                                            
-                                            # スタッフIDを取得
-                                            staff_id = None
-                                            try:
-                                                users = supabase_admin.auth.admin.list_users()
-                                                for u in users:
-                                                    meta = u.user_metadata or {}
-                                                    if not meta.get("approved", False):
-                                                        continue
-                                                    last_name = meta.get("last_name", "")
-                                                    first_name = meta.get("first_name", "")
-                                                    display_name = f"{last_name} {first_name}".strip() if last_name and first_name else meta.get("name", "")
-                                                    if display_name == staff_name:
-                                                        staff_id = u.id
-                                                        break
-                                            except:
-                                                pass
-                                            
-                                            # 給与データを取得または作成
-                                            res_salary = supabase_admin.table("staff_salaries").select("*").eq("year", year).eq("month", month).eq("staff_name", staff_name).execute()
-                                            
-                                            if res_salary.data:
-                                                # 既存の給与データを更新
-                                                salary = res_salary.data[0]
-                                                current_commission = salary.get("commission", 0) or 0
-                                                new_commission = current_commission + nomination_fee
-                                                new_total_salary = (salary.get("base_salary", 0) or 0) + new_commission + (salary.get("transportation", 0) or 0)
-                                                new_net_salary = new_total_salary - (salary.get("tax", 0) or 0) - (salary.get("social_insurance", 0) or 0) - (salary.get("other_deduction", 0) or 0)
-                                                
-                                                supabase_admin.table("staff_salaries").update({
-                                                    "commission": new_commission,
-                                                    "total_salary": new_total_salary,
-                                                    "net_salary": new_net_salary
-                                                }).eq("id", salary["id"]).execute()
-                                                
-                                                # 経費テーブルも更新
-                                                res_expense = supabase_admin.table("expenses").select("id").eq("year", year).eq("month", month).eq("staff_id", staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
-                                                if res_expense.data:
-                                                    supabase_admin.table("expenses").update({"amount": new_total_salary}).eq("id", res_expense.data[0]["id"]).execute()
-                                            else:
-                                                # 新規の給与データを作成
-                                                salary_data = {
-                                                    "year": year,
-                                                    "month": month,
-                                                    "staff_id": staff_id,
-                                                    "staff_name": staff_name,
-                                                    "base_salary": 0,
-                                                    "commission": nomination_fee,
-                                                    "transportation": 0,
-                                                    "tax": 0,
-                                                    "social_insurance": 0,
-                                                    "other_deduction": 0,
-                                                    "total_salary": nomination_fee,
-                                                    "net_salary": nomination_fee,
-                                                    "memo": f"予約指名料（予約ID: {reservation_id}）"
-                                                }
-                                                supabase_admin.table("staff_salaries").insert(salary_data).execute()
-                                                
-                                                # 経費テーブルにも給与を追加
-                                                expense_data = {
-                                                    "expense_date": f"{year}-{month:02d}-01",
-                                                    "year": year,
-                                                    "month": month,
-                                                    "category": "salary",
-                                                    "amount": nomination_fee,
-                                                    "description": f"{staff_name}の給与",
-                                                    "staff_id": staff_id,
-                                                    "staff_name": staff_name,
-                                                    "linked_type": "salary",
-                                                    "memo": f"予約指名料（予約ID: {reservation_id}）"
-                                                }
-                                                supabase_admin.table("expenses").insert(expense_data).execute()
-                                            
-                                            print(f"✅ 指名料を給与に反映しました: nomination_fee={nomination_fee}, staff_name={staff_name}, reservation_id={reservation_id}")
-                                        except Exception as e:
-                                            print(f"⚠️ WARNING - 指名料給与反映エラー: {e}")
                             except Exception as e:
                                 print(f"❌ 日報への患者情報追加エラー: {e}")
                                 print(f"   スタッフ: {staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -4328,88 +4214,6 @@ def admin_reservations_status(reservation_id):
                                                     supabase_admin.table("staff_daily_report_patients").insert(nom_patient_data).execute()
                                                     print(f"✅ 枠指名スタッフの日報に追加しました: staff_name={nominated_staff_name}, report_date={date_str}, reservation_id={reservation_id}, amount={frame_nomination_fee}")
                                                     
-                                                    # 枠指名で対応しなかったスタッフの給与にも反映
-                                                    if frame_nomination_fee > 0:
-                                                        try:
-                                                            # 年月を取得
-                                                            year = dt_jst.year
-                                                            month = dt_jst.month
-                                                            
-                                                            # スタッフIDを取得
-                                                            nom_staff_id = None
-                                                            try:
-                                                                users = supabase_admin.auth.admin.list_users()
-                                                                for u in users:
-                                                                    meta = u.user_metadata or {}
-                                                                    if not meta.get("approved", False):
-                                                                        continue
-                                                                    last_name = meta.get("last_name", "")
-                                                                    first_name = meta.get("first_name", "")
-                                                                    display_name = f"{last_name} {first_name}".strip() if last_name and first_name else meta.get("name", "")
-                                                                    if display_name == nominated_staff_name:
-                                                                        nom_staff_id = u.id
-                                                                        break
-                                                            except:
-                                                                pass
-                                                            
-                                                            # 給与データを取得または作成
-                                                            res_nom_salary = supabase_admin.table("staff_salaries").select("*").eq("year", year).eq("month", month).eq("staff_name", nominated_staff_name).execute()
-                                                            
-                                                            if res_nom_salary.data:
-                                                                # 既存の給与データを更新
-                                                                nom_salary = res_nom_salary.data[0]
-                                                                current_commission = nom_salary.get("commission", 0) or 0
-                                                                new_commission = current_commission + frame_nomination_fee
-                                                                new_total_salary = (nom_salary.get("base_salary", 0) or 0) + new_commission + (nom_salary.get("transportation", 0) or 0)
-                                                                new_net_salary = new_total_salary - (nom_salary.get("tax", 0) or 0) - (nom_salary.get("social_insurance", 0) or 0) - (nom_salary.get("other_deduction", 0) or 0)
-                                                                
-                                                                supabase_admin.table("staff_salaries").update({
-                                                                    "commission": new_commission,
-                                                                    "total_salary": new_total_salary,
-                                                                    "net_salary": new_net_salary
-                                                                }).eq("id", nom_salary["id"]).execute()
-                                                                
-                                                                # 経費テーブルも更新
-                                                                res_nom_expense = supabase_admin.table("expenses").select("id").eq("year", year).eq("month", month).eq("staff_id", nom_staff_id).eq("category", "salary").eq("linked_type", "salary").execute()
-                                                                if res_nom_expense.data:
-                                                                    supabase_admin.table("expenses").update({"amount": new_total_salary}).eq("id", res_nom_expense.data[0]["id"]).execute()
-                                                            else:
-                                                                # 新規の給与データを作成
-                                                                nom_salary_data = {
-                                                                    "year": year,
-                                                                    "month": month,
-                                                                    "staff_id": nom_staff_id,
-                                                                    "staff_name": nominated_staff_name,
-                                                                    "base_salary": 0,
-                                                                    "commission": frame_nomination_fee,
-                                                                    "transportation": 0,
-                                                                    "tax": 0,
-                                                                    "social_insurance": 0,
-                                                                    "other_deduction": 0,
-                                                                    "total_salary": frame_nomination_fee,
-                                                                    "net_salary": frame_nomination_fee,
-                                                                    "memo": f"予約枠指名料（予約ID: {reservation_id}）"
-                                                                }
-                                                                supabase_admin.table("staff_salaries").insert(nom_salary_data).execute()
-                                                                
-                                                                # 経費テーブルにも給与を追加
-                                                                nom_expense_data = {
-                                                                    "expense_date": f"{year}-{month:02d}-01",
-                                                                    "year": year,
-                                                                    "month": month,
-                                                                    "category": "salary",
-                                                                    "amount": frame_nomination_fee,
-                                                                    "description": f"{nominated_staff_name}の給与",
-                                                                    "staff_id": nom_staff_id,
-                                                                    "staff_name": nominated_staff_name,
-                                                                    "linked_type": "salary",
-                                                                    "memo": f"予約枠指名料（予約ID: {reservation_id}）"
-                                                                }
-                                                                supabase_admin.table("expenses").insert(nom_expense_data).execute()
-                                                            
-                                                            print(f"✅ 枠指名スタッフの給与に反映しました: frame_nomination_fee={frame_nomination_fee}, staff_name={nominated_staff_name}, reservation_id={reservation_id}")
-                                                        except Exception as e:
-                                                            print(f"⚠️ WARNING - 枠指名スタッフ給与反映エラー: {e}")
                                             except Exception as e:
                                                 print(f"❌ 枠指名スタッフの日報への患者情報追加エラー: {e}")
                                                 print(f"   スタッフ: {nominated_staff_name}, 日付: {date_str}, 予約ID: {reservation_id}")
@@ -10052,6 +9856,7 @@ def admin_financial_staff_salary_detail(year, staff_id, month):
             print(f"⚠️ WARNING - スタッフ給与取得エラー: {e}")
 
         salary_calc = None
+        bonus_calc = 0
         if not salary:
             try:
                 if not staff_name:
@@ -10060,8 +9865,33 @@ def admin_financial_staff_salary_detail(year, staff_id, month):
                     if res_reports.data:
                         staff_name = res_reports.data[0].get("staff_name") or "スタッフ"
                 salary_calc = calculate_salary(staff_name or "スタッフ", year_int, month_int, staff_area)
+                bonus_result = calculate_special_bonus(
+                    year_int,
+                    month_int,
+                    staff_id,
+                    staff_name or "スタッフ",
+                    salary_calc.get("base_salary", 0) or 0,
+                    salary_calc.get("commission", 0) or 0,
+                    salary_calc.get("nomination_fee", 0) or 0
+                )
+                bonus_calc = bonus_result["bonus"]
             except Exception as e:
                 print(f"⚠️ WARNING - 給与自動計算エラー: {e}")
+        else:
+            try:
+                bonus_result = calculate_special_bonus(
+                    year_int,
+                    month_int,
+                    staff_id,
+                    staff_name or "スタッフ",
+                    salary.get("base_salary", 0) or 0,
+                    salary.get("commission", 0) or 0,
+                    salary.get("nomination_fee", 0) or 0,
+                    exclude_salary_id=salary.get("id")
+                )
+                bonus_calc = salary.get("special_bonus") or bonus_result["bonus"]
+            except Exception as e:
+                print(f"⚠️ WARNING - 特別給計算エラー: {e}")
 
         return render_template(
             "admin_financial_staff_salary_detail.html",
@@ -10070,7 +9900,8 @@ def admin_financial_staff_salary_detail(year, staff_id, month):
             staff_id=staff_id,
             staff_name=staff_name or "スタッフ",
             salary=salary,
-            salary_calc=salary_calc
+            salary_calc=salary_calc,
+            bonus_calc=bonus_calc
         )
     except Exception as e:
         print(f"❌ スタッフ給与詳細取得エラー: {e}")
@@ -10134,7 +9965,8 @@ def admin_financial_expense_new(year):
                     name = user.email
                 staff_list.append({
                     "id": user.id,
-                    "name": name
+                    "name": name,
+                    "area": meta.get("area", "tokyo")
                 })
         
         return render_template(
@@ -10310,7 +10142,8 @@ def admin_financial_expense_edit(year, expense_id):
                     name = user.email
                 staff_list.append({
                     "id": user.id,
-                    "name": name
+                    "name": name,
+                    "area": meta.get("area", "tokyo")
                 })
         
         return render_template(
@@ -10367,8 +10200,10 @@ def admin_financial_salary_new(year, month):
             
             # 自動計算を使用するかどうか
             use_auto_calc = request.form.get("use_auto_calc") == "true"
-            
-            if use_auto_calc:
+            calc_result = None
+            month_int = int(month)
+
+            if use_auto_calc or month_int in [6, 12]:
                 # スタッフのエリアを取得
                 area = "tokyo"  # デフォルト
                 try:
@@ -10381,26 +10216,41 @@ def admin_financial_salary_new(year, month):
                 except:
                     pass
                 
-                # 自動計算
-                calc_result = calculate_salary(staff_name, int(year), int(month), area)
-                base_salary = calc_result["base_salary"]
-                commission = calc_result["commission"]
-                nomination_fee = calc_result["nomination_fee"]
-                transportation = calc_result["transportation"]
+                # 自動計算（売上・歩合給・交通費の参考値）
+                calc_result = calculate_salary(staff_name, int(year), month_int, area)
+
+            # 手動入力（基本給・資格給は必須で手入力）
+            base_salary = float(request.form.get("base_salary", 0) or 0)
+            commission = float(request.form.get("commission", 0) or 0)
+
+            if use_auto_calc and calc_result:
+                nomination_fee = calc_result.get("nomination_fee", 0) or 0
+                transportation = calc_result.get("transportation", 0) or 0
+                revenue = calc_result.get("revenue", 0) or 0
             else:
-                # 手動入力
-                base_salary = float(request.form.get("base_salary", 0) or 0)
-                commission = float(request.form.get("commission", 0) or 0)
                 nomination_fee = float(request.form.get("nomination_fee", 0) or 0)
                 transportation = float(request.form.get("transportation", 0) or 0)
+                revenue = calc_result.get("revenue", 0) if calc_result else 0
+
+            # 特別給（6月/12月のみ・半期合計で算出）
+            bonus_result = calculate_special_bonus(
+                int(year),
+                month_int,
+                staff_id,
+                staff_name,
+                base_salary,
+                commission,
+                nomination_fee
+            )
+            special_bonus = bonus_result["bonus"]
             
             tax = float(request.form.get("tax", 0) or 0)
             social_insurance = float(request.form.get("social_insurance", 0) or 0)
             other_deduction = float(request.form.get("other_deduction", 0) or 0)
             memo = request.form.get("memo", "").strip()
             
-            # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
-            total_salary = base_salary + commission + nomination_fee + transportation
+            # 総支給 = 基本給 + 資格給 + 歩合給(指名料) + 交通費 + 特別給
+            total_salary = base_salary + commission + nomination_fee + transportation + special_bonus
             net_salary = total_salary - tax - social_insurance - other_deduction
             
             salary_data = {
@@ -10412,6 +10262,7 @@ def admin_financial_salary_new(year, month):
                 "commission": commission,
                 "nomination_fee": nomination_fee,
                 "transportation": transportation,
+                "special_bonus": special_bonus,
                 "tax": tax,
                 "social_insurance": social_insurance,
                 "other_deduction": other_deduction,
@@ -10473,6 +10324,17 @@ def admin_financial_salary_new(year, month):
             try:
                 area = staff.get("area", "tokyo")
                 calc_result = calculate_salary(staff["name"], int(year), int(month), area)
+                half_year = calculate_special_bonus(
+                    int(year),
+                    int(month),
+                    staff["id"],
+                    staff["name"],
+                    0,
+                    0,
+                    0
+                )
+                calc_result["half_year_revenue"] = half_year["revenue_total"]
+                calc_result["half_year_existing_total"] = half_year["existing_total"]
                 salary_calculations[staff["id"]] = calc_result
             except Exception as e:
                 print(f"⚠️ WARNING - 給与計算エラー（{staff['name']}）: {e}")
@@ -10502,8 +10364,10 @@ def admin_financial_salary_edit(year, month, salary_id):
             
             # 自動計算を使用するかどうか
             use_auto_calc = request.form.get("use_auto_calc") == "true"
-            
-            if use_auto_calc:
+            calc_result = None
+            month_int = int(month)
+
+            if use_auto_calc or month_int in [6, 12]:
                 # スタッフのエリアを取得
                 area = "tokyo"  # デフォルト
                 try:
@@ -10516,26 +10380,42 @@ def admin_financial_salary_edit(year, month, salary_id):
                 except:
                     pass
                 
-                # 自動計算
-                calc_result = calculate_salary(staff_name, int(year), int(month), area)
-                base_salary = calc_result["base_salary"]
-                commission = calc_result["commission"]
-                nomination_fee = calc_result["nomination_fee"]
-                transportation = calc_result["transportation"]
+                # 自動計算（売上・歩合給・交通費の参考値）
+                calc_result = calculate_salary(staff_name, int(year), month_int, area)
+
+            # 手動入力（基本給・資格給は必須で手入力）
+            base_salary = float(request.form.get("base_salary", 0) or 0)
+            commission = float(request.form.get("commission", 0) or 0)
+
+            if use_auto_calc and calc_result:
+                nomination_fee = calc_result.get("nomination_fee", 0) or 0
+                transportation = calc_result.get("transportation", 0) or 0
+                revenue = calc_result.get("revenue", 0) or 0
             else:
-                # 手動入力
-                base_salary = float(request.form.get("base_salary", 0) or 0)
-                commission = float(request.form.get("commission", 0) or 0)
                 nomination_fee = float(request.form.get("nomination_fee", 0) or 0)
                 transportation = float(request.form.get("transportation", 0) or 0)
+                revenue = calc_result.get("revenue", 0) if calc_result else 0
+
+            # 特別給（6月/12月のみ・半期合計で算出）
+            bonus_result = calculate_special_bonus(
+                int(year),
+                month_int,
+                staff_id,
+                staff_name,
+                base_salary,
+                commission,
+                nomination_fee,
+                exclude_salary_id=salary_id
+            )
+            special_bonus = bonus_result["bonus"]
             
             tax = float(request.form.get("tax", 0) or 0)
             social_insurance = float(request.form.get("social_insurance", 0) or 0)
             other_deduction = float(request.form.get("other_deduction", 0) or 0)
             memo = request.form.get("memo", "").strip()
             
-            # 総支給 = 基本給 + 歩合給 + 指名料 + 交通費
-            total_salary = base_salary + commission + nomination_fee + transportation
+            # 総支給 = 基本給 + 資格給 + 歩合給(指名料) + 交通費 + 特別給
+            total_salary = base_salary + commission + nomination_fee + transportation + special_bonus
             net_salary = total_salary - tax - social_insurance - other_deduction
             
             salary_data = {
@@ -10545,6 +10425,7 @@ def admin_financial_salary_edit(year, month, salary_id):
                 "commission": commission,
                 "nomination_fee": nomination_fee,
                 "transportation": transportation,
+                "special_bonus": special_bonus,
                 "tax": tax,
                 "social_insurance": social_insurance,
                 "other_deduction": other_deduction,
@@ -10596,12 +10477,36 @@ def admin_financial_salary_edit(year, month, salary_id):
                     "name": name
                 })
         
+        salary_calculation = None
+        try:
+            area = "tokyo"
+            for staff in staff_list:
+                if staff["id"] == salary.get("staff_id"):
+                    area = staff.get("area", "tokyo")
+                    break
+            salary_calculation = calculate_salary(salary.get("staff_name", ""), int(year), int(month), area)
+            half_year = calculate_special_bonus(
+                int(year),
+                int(month),
+                salary.get("staff_id"),
+                salary.get("staff_name", ""),
+                0,
+                0,
+                0,
+                exclude_salary_id=salary_id
+            )
+            salary_calculation["half_year_revenue"] = half_year["revenue_total"]
+            salary_calculation["half_year_existing_total"] = half_year["existing_total"]
+        except Exception as e:
+            print(f"⚠️ WARNING - 給与計算データ生成エラー: {e}")
+
         return render_template(
             "admin_financial_salary_edit.html",
             year=year,
             month=month,
             salary=salary,
-            staff_list=staff_list
+            staff_list=staff_list,
+            salary_calculation=salary_calculation
         )
     except Exception as e:
         print(f"❌ スタッフ給与取得エラー: {e}")
