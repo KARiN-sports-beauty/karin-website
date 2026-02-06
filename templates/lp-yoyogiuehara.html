@@ -453,22 +453,6 @@
       margin-bottom: 16px;
     }
 
-    .line-button {
-      display: inline-block;
-      background: #06c755;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 700;
-      padding: 18px 36px;
-      border-radius: 999px;
-      text-decoration: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .line-button:hover {
-      opacity: 0.9;
-    }
-
     .line-note {
       font-size: 13px;
       color: #777;
@@ -608,6 +592,20 @@
 
     footer p {
       margin-bottom: 4px;
+    }
+
+    .footer-logos {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-logos img {
+      height: 28px;
+      width: auto;
+      display: block;
     }
 
     @media screen and (max-width: 768px) {
@@ -862,13 +860,12 @@
         margin-bottom: 24px;
       }
 
-      .line-button {
-        font-size: 12px;
-        padding: 12px 22px;
-      }
-
       .line-note {
         font-size: 10px;
+      }
+
+      .footer-logos img {
+        height: 22px;
       }
 
       .sp-only {
@@ -1278,7 +1275,7 @@
       <div class="line-button-area">
         <a
           href="https://lin.ee/rVEbNhl5"
-          class="line-button"
+          class="btn-line"
           target="_blank"
           rel="noopener"
         >
@@ -1294,9 +1291,12 @@
 
   <!-- フッター -->
   <footer>
-    <p>KARiN.</p>
     <p>出張対応 鍼灸・ボディケア</p>
     <p>代々木上原</p>
+    <a href="{{ url_for('index') }}" class="footer-logos">
+      <img src="{{ url_for('static', filename='images/logoname.jpg') }}" alt="KARiN. ロゴネーム">
+      <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. ロゴ">
+    </a>
   </footer>
 
 </body>
