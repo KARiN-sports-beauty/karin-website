@@ -132,16 +132,16 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 64px 24px;
-      background-color: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
     }
 
     section:nth-of-type(even) {
-      background-color: #fafafa;
+      background: linear-gradient(180deg, #f9f9f9 0%, #ffffff 100%);
     }
 
     .worries-section {
       max-width: none;
-      background-color: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
       padding: 64px 60px;
     }
 
@@ -201,7 +201,7 @@
     .philosophy {
       max-width: none;
       margin: 0 auto;
-      background: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
       padding: 64px 60px;
     }
 
@@ -265,7 +265,7 @@
 
     .flow-section {
       max-width: none;
-      background: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
       padding: 64px 60px;
     }
 
@@ -325,7 +325,7 @@
 
     .faq-section {
       max-width: none;
-      background: #f5f5f5;
+      background: linear-gradient(180deg, #f7f7f7 0%, #ffffff 100%);
       padding: 64px 60px;
     }
 
@@ -370,7 +370,7 @@
 
     .trial-section {
       max-width: none;
-      background: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
       padding: 64px 60px;
     }
 
@@ -424,8 +424,87 @@
 
     .line-section {
       max-width: none;
-      background: #f7f7f7;
+      background: linear-gradient(180deg, #f8f8f8 0%, #ffffff 100%);
       padding: 96px 20px;
+    }
+
+    @keyframes fadeUpSoft {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeFromRight {
+      from {
+        opacity: 0;
+        transform: translateX(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    section {
+      opacity: 0;
+      animation: fadeUpSoft 0.9s ease forwards;
+    }
+
+    section:nth-of-type(1) { animation-delay: 0.05s; }
+    section:nth-of-type(2) { animation-delay: 0.12s; }
+    section:nth-of-type(3) { animation-delay: 0.19s; }
+    section:nth-of-type(4) { animation-delay: 0.26s; }
+    section:nth-of-type(5) { animation-delay: 0.33s; }
+    section:nth-of-type(6) { animation-delay: 0.40s; }
+    section:nth-of-type(7) { animation-delay: 0.47s; }
+
+    .worries-list li {
+      opacity: 0;
+      animation-duration: 0.8s;
+      animation-timing-function: ease;
+      animation-fill-mode: forwards;
+    }
+
+    .worries-list li:nth-child(odd) {
+      animation-name: fadeFromLeft;
+    }
+
+    .worries-list li:nth-child(even) {
+      animation-name: fadeFromRight;
+    }
+
+    .worries-list li:nth-child(1) { animation-delay: 0.15s; }
+    .worries-list li:nth-child(2) { animation-delay: 0.22s; }
+    .worries-list li:nth-child(3) { animation-delay: 0.29s; }
+    .worries-list li:nth-child(4) { animation-delay: 0.36s; }
+    .worries-list li:nth-child(5) { animation-delay: 0.43s; }
+    .worries-list li:nth-child(6) { animation-delay: 0.50s; }
+    .worries-list li:nth-child(7) { animation-delay: 0.57s; }
+    .worries-list li:nth-child(8) { animation-delay: 0.64s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      section,
+      .worries-list li {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+      }
     }
 
     .line-inner {
@@ -603,7 +682,7 @@
     }
 
     .footer-logos img {
-      height: 28px;
+      height: 90px;
       width: auto;
       display: block;
     }
@@ -865,7 +944,7 @@
       }
 
       .footer-logos img {
-        height: 22px;
+        height: 66px;
       }
 
       .sp-only {
