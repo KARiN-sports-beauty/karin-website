@@ -12,7 +12,7 @@
   {% endfor %}
 {% endif %}
 
-<form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" style="max-width: 800px;">
+<form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" id="admin-reservation-edit-form" style="max-width: 800px;">
   <!-- 患者情報（編集不可） -->
   <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
     <strong style="color: #1E3A5F;">患者：</strong>

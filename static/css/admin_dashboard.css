@@ -309,6 +309,19 @@
     max-width: 100%;
   }
 
+  #admin-reservation-edit-form input,
+  #admin-reservation-edit-form textarea,
+  #admin-reservation-edit-form select {
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  #admin-reservation-form input[type="datetime-local"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   #karte-search {
     box-sizing: border-box;
     max-width: 100%;
@@ -1914,6 +1927,7 @@ form .admin-news-btn {
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
 }
 
 .admin-resv-calendar-header > div {
@@ -1927,17 +1941,18 @@ form .admin-news-btn {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  width: 100%;
 }
 
 @media (max-width: 480px) {
   .admin-resv-calendar {
     padding: 12px;
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   .admin-resv-calendar-header,
   .admin-resv-calendar-days {
-    min-width: 360px;
+    min-width: 0;
     gap: 4px;
   }
 
@@ -1970,6 +1985,8 @@ form .admin-news-btn {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .admin-resv-day:hover {
@@ -2002,7 +2019,9 @@ form .admin-news-btn {
 }
 
 .admin-resv-badge {
-  margin-top: 4px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
   padding: 2px 6px;
   background: #1E3A5F;
   color: #fff;

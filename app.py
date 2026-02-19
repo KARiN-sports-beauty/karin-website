@@ -3981,6 +3981,8 @@ def admin_reservations_status(reservation_id):
     """予約ステータス更新"""
     try:
         new_status = request.form.get("status", "").strip()
+        payment_method = request.form.get("payment_method", "").strip()
+        receipt_status = request.form.get("receipt_status", "").strip()
         if new_status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
             return redirect("/admin/reservations")
@@ -3994,6 +3996,19 @@ def admin_reservations_status(reservation_id):
         
         # ステータス更新
         supabase_admin.table("reservations").update({"status": new_status}).eq("id", reservation_id).execute()
+
+        # 支払い方法（任意）を保存
+        if new_status == "completed":
+            update_fields = {}
+            if payment_method:
+                update_fields["payment_method"] = payment_method
+            if receipt_status:
+                update_fields["receipt_status"] = receipt_status
+            if update_fields:
+                try:
+                    supabase_admin.table("reservations").update(update_fields).eq("id", reservation_id).execute()
+                except Exception as e:
+                    print(f"⚠️ payment/receipt 更新エラー: {e}")
         
         # 予約完了時に日報へ自動反映（院内 or 往診のみ）
         if new_status == "completed":

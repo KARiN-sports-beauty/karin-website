@@ -359,9 +359,13 @@
           <button type="button" class="payment-method-btn" data-method="cash">現金</button>
           <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
           <button type="button" class="payment-method-btn" data-method="paypay">paypay</button>
+          <button type="button" class="payment-method-btn" data-method="month_end">月末請求</button>
+          <button type="button" class="payment-method-btn" data-receipt="with_receipt">領収書あり</button>
+          <button type="button" class="payment-method-btn" data-receipt="no_receipt">領収書なし</button>
           <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
             <input type="hidden" name="status" value="completed">
             <input type="hidden" name="payment_method" value="">
+            <input type="hidden" name="receipt_status" value="">
             <button type="submit" class="payment-complete-btn" disabled style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">✓ 完了</button>
           </form>
         </div>
@@ -486,15 +490,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const buttons = block.querySelectorAll('.payment-method-btn');
     const completeBtn = block.querySelector('.payment-complete-btn');
     const paymentInput = block.querySelector('input[name="payment_method"]');
+    const receiptInput = block.querySelector('input[name="receipt_status"]');
     buttons.forEach(function(btn) {
       btn.addEventListener('click', function() {
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (paymentInput) {
-          paymentInput.value = btn.dataset.method || '';
+        if (btn.dataset.method) {
+          buttons.forEach(b => {
+            if (b.dataset.method) b.classList.remove('active');
+          });
+          btn.classList.add('active');
+          if (paymentInput) {
+            paymentInput.value = btn.dataset.method || '';
+          }
+        }
+        if (btn.dataset.receipt) {
+          buttons.forEach(b => {
+            if (b.dataset.receipt) b.classList.remove('active');
+          });
+          btn.classList.add('active');
+          if (receiptInput) {
+            receiptInput.value = btn.dataset.receipt || '';
+          }
         }
         if (completeBtn) {
-          completeBtn.disabled = false;
+          completeBtn.disabled = !(
+            paymentInput && paymentInput.value &&
+            receiptInput && receiptInput.value
+          );
         }
       });
     });
