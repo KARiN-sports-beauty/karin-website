@@ -6373,10 +6373,10 @@ def admin_invoice_new():
             return redirect("/admin/invoices/years")
     
     # GET: 新規作成フォーム
+    # 既存の請求先が取得できなくてもフォームは表示する
+    existing_places = []
     try:
-        # 既存の請求先を取得（選択肢として）
         res_existing = supabase_admin.table("invoices").select("place_name, address, phone, contact_person").order("created_at", desc=True).limit(50).execute()
-        existing_places = []
         seen_places = set()
         for inv in (res_existing.data or []):
             place = inv.get("place_name")
@@ -6388,18 +6388,17 @@ def admin_invoice_new():
                     "contact_person": inv.get("contact_person", "")
                 })
                 seen_places.add(place)
-        
-        current_year = datetime.now().year
-        
-        return render_template(
-            "admin_invoice_new.html",
-            existing_places=existing_places,
-            current_year=current_year
-        )
     except Exception as e:
         print(f"❌ 請求書新規作成フォーム取得エラー: {e}")
-        flash("フォームの取得に失敗しました", "error")
-        return redirect("/admin/invoices/years")
+        flash("既存の請求先の取得に失敗しました", "error")
+
+    current_year = datetime.now().year
+
+    return render_template(
+        "admin_invoice_new.html",
+        existing_places=existing_places,
+        current_year=current_year
+    )
 
 
 @app.route("/admin/invoices/<invoice_id>")
