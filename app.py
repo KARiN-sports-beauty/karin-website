@@ -6390,7 +6390,6 @@ def admin_invoice_new():
                 seen_places.add(place)
     except Exception as e:
         print(f"❌ 請求書新規作成フォーム取得エラー: {e}")
-        flash("既存の請求先の取得に失敗しました", "error")
 
     current_year = datetime.now().year
 

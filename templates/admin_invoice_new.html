@@ -74,7 +74,7 @@
       </div>
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+<div class="invoice-date-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div>
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">発行日<span style="color: #f44336;">*</span></label>
         <input type="date" name="issue_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
@@ -99,7 +99,7 @@
     </div>
     
     <div id="items_container">
-      <div class="item-row" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
+      <div class="item-row invoice-item-row" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
         <div>
           <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">日付<span style="color: #f44336;">*</span></label>
           <input type="date" name="item_date" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
@@ -129,7 +129,7 @@
 function addItemRow() {
   const container = document.getElementById('items_container');
   const newRow = document.createElement('div');
-  newRow.className = 'item-row';
+  newRow.className = 'item-row invoice-item-row';
   newRow.style.cssText = 'display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;';
   newRow.innerHTML = `
     <div>
@@ -191,6 +191,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<style>
+@media (max-width: 767px) {
+  .invoice-date-row {
+    grid-template-columns: 1fr !important;
+  }
+  .invoice-item-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .invoice-item-row label {
+    font-size: 0.8rem !important;
+  }
+  .invoice-item-row input {
+    font-size: 0.9rem !important;
+  }
+  .invoice-item-row button {
+    width: 100%;
+  }
+}
+</style>
 
 {% endblock %}
 
