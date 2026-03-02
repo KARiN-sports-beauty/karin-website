@@ -6421,7 +6421,7 @@ def admin_invoice_detail(invoice_id):
         company_info = {
             "name": "KARiN.",
             "address": "福岡県福岡市中央区小笹1-5-11-803",
-            "phone": "09050886993",
+            "phone": "09081549313",
             "bank": "三井住友銀行",
             "branch": "神田駅前支店",
             "account_type": "普通",
