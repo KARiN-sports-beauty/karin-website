@@ -216,6 +216,25 @@ def calc_age(birthday_str):
     return age
 
 
+def normalize_blog_image_url(image_url):
+    if not image_url:
+        return ""
+    image_url = image_url.strip()
+    if not image_url:
+        return ""
+    if image_url.startswith("http"):
+        return image_url
+    if image_url.startswith("/static/"):
+        filename = image_url.replace("/static/", "")
+        return url_for("static", filename=filename)
+    if image_url.startswith("static/"):
+        filename = image_url.replace("static/", "")
+        return url_for("static", filename=filename)
+    if re.search(r"\.(jpg|jpeg|png|webp)$", image_url, re.IGNORECASE):
+        return url_for("static", filename=f"images/blogs/{image_url}")
+    return image_url
+
+
 def calculate_salary(staff_name, year, month, area="tokyo"):
     """
     スタッフの給与を自動計算する関数
@@ -1512,7 +1531,9 @@ def blog():
         sb = sb.ilike("title", f"%{query}%")
 
     res = sb.order("created_at", desc=True).execute()
-    blogs = res.data
+    blogs = res.data or []
+    for blog_item in blogs:
+        blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
 
     # ★ ここでブログの中身をログに出す（確認用）
     print("BLOGS_FROM_DB:", blogs)
@@ -1545,6 +1566,7 @@ def show_blog(slug):
             return render_template("404.html"), 404
 
         blog = data[0]
+        blog["image"] = normalize_blog_image_url(blog.get("image"))
         blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
         # コメント取得（新しい順）
@@ -8341,11 +8363,8 @@ def admin_reports_new():
             flash("対応スタッフを1名以上選択してください", "error")
             return redirect("/admin/reports/new")
         
-        # 列数を対応スタッフの人数に合わせて設定（1名の場合は2列、それ以上はスタッフ数）
-        if len(staff_names) == 1:
-            column_count = 2  # 列1：スタッフ名、列2：施術内容
-        else:
-            column_count = len(staff_names)  # 各スタッフ名
+        # 列数を対応スタッフの人数に合わせて設定（n名ならn+1、最低3列）
+        column_count = max(3, len(staff_names) + 1)
         
         # 開始時間・終了時間（デフォルト値）
         start_time = request.form.get("start_time", "07:00").strip() or "07:00"
@@ -8364,29 +8383,42 @@ def admin_reports_new():
         }
         
         # start_timeとend_timeを追加（カラムが存在しない場合に備えてエラーハンドリング）
+        def insert_report_with_time(data):
+            try:
+                data["start_time"] = start_time
+                data["end_time"] = end_time
+                return supabase_admin.table("field_reports").insert(data).execute()
+            except Exception as e:
+                error_str = str(e)
+                # end_timeカラムが存在しない場合
+                if "end_time" in error_str:
+                    try:
+                        # start_timeのみで再試行
+                        data_no_end = data.copy()
+                        if "end_time" in data_no_end:
+                            del data_no_end["end_time"]
+                        data_no_end["start_time"] = start_time
+                        return supabase_admin.table("field_reports").insert(data_no_end).execute()
+                    except Exception:
+                        # start_timeも存在しない場合は、カラムなしで挿入
+                        data_no_time = data.copy()
+                        if "start_time" in data_no_time:
+                            del data_no_time["start_time"]
+                        if "end_time" in data_no_time:
+                            del data_no_time["end_time"]
+                        return supabase_admin.table("field_reports").insert(data_no_time).execute()
+                raise
+
         try:
-            report_data["start_time"] = start_time
-            report_data["end_time"] = end_time
-            res = supabase_admin.table("field_reports").insert(report_data).execute()
+            res = insert_report_with_time(report_data)
         except Exception as e:
             error_str = str(e)
-            # end_timeカラムが存在しない場合
-            if "end_time" in error_str:
-                try:
-                    # start_timeのみで再試行
-                    report_data_no_end = report_data.copy()
-                    if "end_time" in report_data_no_end:
-                        del report_data_no_end["end_time"]
-                    report_data_no_end["start_time"] = start_time
-                    res = supabase_admin.table("field_reports").insert(report_data_no_end).execute()
-                except Exception as e2:
-                    # start_timeも存在しない場合は、カラムなしで挿入
-                    report_data_no_time = report_data.copy()
-                    if "start_time" in report_data_no_time:
-                        del report_data_no_time["start_time"]
-                    if "end_time" in report_data_no_time:
-                        del report_data_no_time["end_time"]
-                    res = supabase_admin.table("field_reports").insert(report_data_no_time).execute()
+            if "column_count" in error_str or "check constraint" in error_str:
+                # DB制約が3列以上の場合のフォールバック
+                report_data_fallback = report_data.copy()
+                report_data_fallback["column_count"] = 3
+                res = insert_report_with_time(report_data_fallback)
+                flash("列数制約のため3列で作成しました。2列にしたい場合はDB制約の更新が必要です。", "error")
             else:
                 raise
         report_id = res.data[0]["id"] if res.data else None
@@ -8626,11 +8658,8 @@ def admin_reports_edit(report_id):
             flash("対応スタッフを1名以上選択してください", "error")
             return redirect(f"/admin/reports/{report_id}/edit")
         
-        # 列数を対応スタッフの人数に合わせて設定（1名の場合は2列、それ以上はスタッフ数）
-        if len(staff_names) == 1:
-            column_count = 2  # 列1：スタッフ名、列2：施術内容
-        else:
-            column_count = len(staff_names)  # 各スタッフ名
+        # 列数を対応スタッフの人数に合わせて設定（n名ならn+1、最低3列）
+        column_count = max(3, len(staff_names) + 1)
         
         # 開始時間・終了時間
         start_time = request.form.get("start_time", "07:00").strip() or "07:00"
@@ -8648,8 +8677,18 @@ def admin_reports_edit(report_id):
             "special_notes": special_notes,
             "updated_at": now_iso()
         }
-        
-        supabase_admin.table("field_reports").update(update_data).eq("id", report_id).execute()
+
+        try:
+            supabase_admin.table("field_reports").update(update_data).eq("id", report_id).execute()
+        except Exception as e:
+            error_str = str(e)
+            if "column_count" in error_str or "check constraint" in error_str:
+                update_data_fallback = update_data.copy()
+                update_data_fallback["column_count"] = 3
+                supabase_admin.table("field_reports").update(update_data_fallback).eq("id", report_id).execute()
+                flash("列数制約のため3列で更新しました。2列にしたい場合はDB制約の更新が必要です。", "error")
+            else:
+                raise
         
         # 時間スロットを更新
         # 既存のスロットを削除して再作成
