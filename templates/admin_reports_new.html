@@ -51,11 +51,11 @@
       
       <!-- 右列 -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div>
+        <div class="report-date-field">
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">日付（必須）</label>
-          <input type="date" name="report_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+          <input type="text" name="report_date" required class="report-date-input" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" placeholder="YYYY-MM-DD">
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="report-time-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">開始時間</label>
             <input type="time" name="start_time" value="{% if copy_from_report and copy_from_report.start_time %}{{ copy_from_report.start_time }}{% else %}07:00{% endif %}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
@@ -81,6 +81,34 @@
     <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
   </div>
 </form>
+
+<style>
+@media (max-width: 767px) {
+  .report-date-field input,
+  .report-time-fields input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .report-time-fields {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.flatpickr) {
+    flatpickr(".report-date-input", {
+      dateFormat: "Y-m-d",
+      allowInput: true
+    });
+  }
+});
+</script>
 
 {% endblock %}
 

@@ -22,7 +22,7 @@
       </div>
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
-        <input type="date" name="report_date" value="{{ report.report_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+        <input type="text" name="report_date" value="{{ report.report_date }}" required class="report-date-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="YYYY-MM-DD">
       </div>
     </div>
     
@@ -177,6 +177,19 @@
     <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
   </div>
 </form>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.flatpickr) {
+    flatpickr(".report-date-input", {
+      dateFormat: "Y-m-d",
+      allowInput: true
+    });
+  }
+});
+</script>
 
 {% endblock %}
 

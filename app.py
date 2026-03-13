@@ -8594,7 +8594,20 @@ def admin_reports_new():
             })
         
         if staff_details:
-            supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+            try:
+                supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+            except Exception as e:
+                error_str = str(e)
+                if "patient_name" in error_str:
+                    sanitized_details = []
+                    for detail in staff_details:
+                        detail_no_patient = detail.copy()
+                        if "patient_name" in detail_no_patient:
+                            del detail_no_patient["patient_name"]
+                        sanitized_details.append(detail_no_patient)
+                    supabase_admin.table("field_report_staff_details").insert(sanitized_details).execute()
+                else:
+                    raise
         
         flash("報告書を作成しました", "success")
         return redirect(f"/admin/reports/{report_id}/edit")
@@ -8864,7 +8877,20 @@ def admin_reports_edit(report_id):
             })
         
         if staff_details:
-            supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+            try:
+                supabase_admin.table("field_report_staff_details").insert(staff_details).execute()
+            except Exception as e:
+                error_str = str(e)
+                if "patient_name" in error_str:
+                    sanitized_details = []
+                    for detail in staff_details:
+                        detail_no_patient = detail.copy()
+                        if "patient_name" in detail_no_patient:
+                            del detail_no_patient["patient_name"]
+                        sanitized_details.append(detail_no_patient)
+                    supabase_admin.table("field_report_staff_details").insert(sanitized_details).execute()
+                else:
+                    raise
         
         flash("報告書を更新しました", "success")
         return redirect(f"/admin/reports/{report_id}/edit")
