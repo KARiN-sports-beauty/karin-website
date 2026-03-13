@@ -1843,10 +1843,9 @@ def admin_blog_new():
     }
     
     try:
-        res = supabase_admin.table("blogs").insert(insert_data).execute()
-        blog_id = res.data[0]["id"]
+        supabase_admin.table("blogs").insert(insert_data).execute()
         flash("ブログを作成しました", "success")
-        return redirect(f"/admin/blogs/edit/{blog_id}")
+        return redirect("/admin/blogs")
     except Exception as e:
         print("❌ ブログ作成エラー:", e)
         flash(f"ブログの作成に失敗しました: {e}", "error")
@@ -1920,7 +1919,7 @@ def admin_blog_edit(blog_id):
     try:
         supabase_admin.table("blogs").update(update_data).eq("id", blog_id).execute()
         flash("ブログを更新しました", "success")
-        return redirect(f"/admin/blogs/edit/{blog_id}")
+        return redirect("/admin/blogs")
     except Exception as e:
         print("❌ ブログ更新エラー:", e)
         flash(f"ブログの更新に失敗しました: {e}", "error")
