@@ -1522,7 +1522,7 @@ def blog():
     query = request.args.get("q")
     category = request.args.get("category")
 
-    sb = supabase.table("blogs").select("*")
+    sb = supabase.table("blogs").select("*").eq("draft", False)
 
     if category:
         sb = sb.eq("category", category)
@@ -1535,10 +1535,21 @@ def blog():
     for blog_item in blogs:
         blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
 
-    # ★ ここでブログの中身をログに出す（確認用）
-    print("BLOGS_FROM_DB:", blogs)
+    # カテゴリ一覧（全公開記事から抽出）
+    categories = []
+    try:
+        res_categories = supabase.table("blogs").select("category").eq("draft", False).execute()
+        category_set = {
+            c.get("category").strip()
+            for c in (res_categories.data or [])
+            if c.get("category") and c.get("category").strip()
+        }
+        categories = sorted(category_set)
+    except Exception as e:
+        print(f"⚠️ WARNING - カテゴリ取得エラー: {e}")
+        categories = []
 
-    return render_template("blog.html", blogs=blogs, current_category=category, query=query)
+    return render_template("blog.html", blogs=blogs, categories=categories, current_category=category, query=query)
 
 
 
