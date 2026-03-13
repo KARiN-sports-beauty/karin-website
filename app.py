@@ -262,6 +262,26 @@ def upload_blog_image(file):
     return supabase_admin.storage.from_("blog-images").get_public_url(storage_path)
 
 
+@app.route("/admin/blogs/body-image", methods=["POST"])
+@staff_required
+def admin_blog_body_image_upload():
+    """ブログ本文用の画像アップロード"""
+    try:
+        if "image" not in request.files:
+            return jsonify({"error": "画像が選択されていません"}), 400
+        file = request.files["image"]
+        if file.filename == "":
+            return jsonify({"error": "ファイルが選択されていません"}), 400
+
+        public_url = upload_blog_image(file)
+        return jsonify({"success": True, "url": public_url})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print("❌ ブログ本文画像アップロードエラー:", e)
+        return jsonify({"error": str(e)}), 500
+
+
 def calculate_salary(staff_name, year, month, area="tokyo"):
     """
     スタッフの給与を自動計算する関数

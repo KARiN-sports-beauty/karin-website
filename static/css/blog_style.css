@@ -767,6 +767,38 @@ body,
   }
 }
 
+/* =========================================================
+   余白を詰めて間延び感を軽減（ブログ本文）
+========================================================= */
+.blog-detail .blog-body {
+  line-height: 1.7;
+}
+
+.blog-detail .blog-body p {
+  margin: 0 0 1.1em;
+}
+
+.blog-detail .blog-body p + p {
+  margin-top: 0.4em;
+}
+
+.blog-detail .blog-body h2 {
+  margin: 1.7em 0 0.9em;
+}
+
+.blog-detail .blog-body h3 {
+  margin: 1.4em 0 0.7em;
+}
+
+.blog-detail .blog-body ul,
+.blog-detail .blog-body ol {
+  margin: 0.9em 0 1.2em 1.4em;
+}
+
+.blog-detail .blog-body li {
+  margin: 0.35em 0;
+}
+
 /* ===============================
    💬 コメント欄（デザインB）
 ================================ */
