@@ -12,7 +12,7 @@
   {% endfor %}
 {% endif %}
 
-<form method="POST" action="/admin/blogs/new" style="max-width: 800px;">
+<form method="POST" action="/admin/blogs/new" enctype="multipart/form-data" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">タイトル <span style="color: #c65a3a;">*</span></label>
     <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="ブログタイトルを入力">
@@ -31,6 +31,12 @@
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">サムネイル画像URL</label>
     <input type="text" name="image" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="https://...（jpg/png/webp 可）">
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">サムネイル画像ファイル（任意）</label>
+    <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; background: #fff;">
+    <p style="margin: 6px 0 0; font-size: 0.8rem; color: #666;">ファイルを選ぶとURL入力より優先して保存します</p>
   </div>
   
   <div style="margin-bottom: 20px;">

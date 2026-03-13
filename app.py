@@ -235,6 +235,33 @@ def normalize_blog_image_url(image_url):
     return image_url
 
 
+def upload_blog_image(file):
+    if not file or file.filename == "":
+        return ""
+    ext = os.path.splitext(file.filename)[1].lower()
+    allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+    if ext not in allowed_exts:
+        raise ValueError("画像は jpg / jpeg / png / webp のみ対応です")
+
+    safe_name = f"{uuid.uuid4().hex}{ext}"
+    storage_path = safe_name
+
+    mime_type = file.mimetype
+    if not mime_type:
+        mime_type, _ = mimetypes.guess_type(file.filename)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+    file_data = file.read()
+    supabase_admin.storage.from_("blog-images").upload(
+        path=storage_path,
+        file=file_data,
+        file_options={"content-type": mime_type}
+    )
+
+    return supabase_admin.storage.from_("blog-images").get_public_url(storage_path)
+
+
 def calculate_salary(staff_name, year, month, area="tokyo"):
     """
     スタッフの給与を自動計算する関数
@@ -1758,6 +1785,17 @@ def admin_blog_new():
 
     excerpt = request.form.get("excerpt", "").strip()
     image = request.form.get("image", "").strip()
+    image_file = request.files.get("image_file")
+    if image_file and image_file.filename:
+        try:
+            image = upload_blog_image(image_file)
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin_blog_new.html")
+        except Exception as e:
+            print("❌ ブログ画像アップロードエラー:", e)
+            flash(f"画像アップロードに失敗しました: {e}", "error")
+            return render_template("admin_blog_new.html")
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
@@ -1829,6 +1867,17 @@ def admin_blog_edit(blog_id):
     
     excerpt = request.form.get("excerpt", "").strip()
     image = request.form.get("image", "").strip()
+    image_file = request.files.get("image_file")
+    if image_file and image_file.filename:
+        try:
+            image = upload_blog_image(image_file)
+        except ValueError as e:
+            flash(str(e), "error")
+            return redirect(f"/admin/blogs/edit/{blog_id}")
+        except Exception as e:
+            print("❌ ブログ画像アップロードエラー:", e)
+            flash(f"画像アップロードに失敗しました: {e}", "error")
+            return redirect(f"/admin/blogs/edit/{blog_id}")
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
