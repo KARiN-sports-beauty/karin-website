@@ -8667,8 +8667,12 @@ def admin_reports_edit(report_id):
                     time_ranges.append({"hour": hour, "minute": 30})
             
             # 時間スロットを取得
-            res_slots = supabase_admin.table("field_report_time_slots").select("*").eq("report_id", report_id).order("time").order("time_minute").order("column_index").execute()
-            time_slots = res_slots.data or []
+            try:
+                res_slots = supabase_admin.table("field_report_time_slots").select("*").eq("report_id", report_id).order("time").order("time_minute").order("column_index").execute()
+                time_slots = res_slots.data or []
+            except Exception as e:
+                print(f"⚠️ WARNING - 時間スロット取得エラー: {e}")
+                time_slots = []
             
             # 時間スロットをマップに変換（高速検索用）
             time_slots_map = {}
@@ -8680,15 +8684,21 @@ def admin_reports_edit(report_id):
                 time_slots_map[key] = slot.get("content", "")
             
             # スタッフ詳細を取得
-            res_staff = supabase_admin.table("field_report_staff_details").select("*").eq("report_id", report_id).execute()
-            staff_details = res_staff.data or []
+            try:
+                res_staff = supabase_admin.table("field_report_staff_details").select("*").eq("report_id", report_id).execute()
+                staff_details = res_staff.data or []
+            except Exception as e:
+                print(f"⚠️ WARNING - スタッフ詳細取得エラー: {e}")
+                staff_details = []
             
             # 各スタッフ詳細に患者名を追加（施術ログから取得）
+            report_date_value = report.get("report_date")
+            report_date_str = str(report_date_value) if report_date_value is not None else ""
             for detail in staff_details:
                 staff_name = detail.get("staff_name")
                 patient_name = None
                 try:
-                    res_logs = supabase_admin.table("karte_logs").select("patient_id").eq("date", report["report_date"]).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
+                    res_logs = supabase_admin.table("karte_logs").select("patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
                     if res_logs.data:
                         patient_id = res_logs.data[0].get("patient_id")
                         if patient_id:
