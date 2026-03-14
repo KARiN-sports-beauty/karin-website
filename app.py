@@ -216,6 +216,25 @@ def calc_age(birthday_str):
     return age
 
 
+def parse_time_parts(value, default_hour=7, default_minute=0):
+    if value is None:
+        return default_hour, default_minute
+    if hasattr(value, "strftime"):
+        value = value.strftime("%H:%M")
+    value_str = str(value).strip()
+    if not value_str:
+        return default_hour, default_minute
+    parts = value_str.split(":")
+    if len(parts) < 2:
+        return default_hour, default_minute
+    try:
+        hour = int(parts[0])
+        minute = int(parts[1])
+        return hour, minute
+    except Exception:
+        return default_hour, default_minute
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -8509,8 +8528,8 @@ def admin_reports_new():
         # 時間スロットを初期化（開始時間〜終了時間、30分単位、各列）
         time_slots = []
         try:
-            start_hour, start_min = map(int, start_time.split(':'))
-            end_hour, end_min = map(int, end_time.split(':'))
+            start_hour, start_min = parse_time_parts(start_time, 7, 0)
+            end_hour, end_min = parse_time_parts(end_time, 22, 0)
             
             # 開始時間から終了時間まで30分刻みで生成
             current_hour = start_hour
@@ -8644,8 +8663,8 @@ def admin_reports_edit(report_id):
             # 時間範囲を計算（テンプレート用、30分単位）
             time_ranges = []
             try:
-                start_hour, start_min = map(int, start_time.split(':'))
-                end_hour, end_min = map(int, end_time.split(':'))
+                start_hour, start_min = parse_time_parts(start_time, 7, 0)
+                end_hour, end_min = parse_time_parts(end_time, 22, 0)
                 
                 current_hour = start_hour
                 current_min = start_min

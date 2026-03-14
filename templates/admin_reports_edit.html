@@ -89,11 +89,7 @@
             </tr>
           </thead>
           <tbody>
-            {% if report.staff_names|length == 1 %}
-              {% set actual_column_count = 2 %}
-            {% else %}
-              {% set actual_column_count = report.staff_names|length %}
-            {% endif %}
+            {% set actual_column_count = (report.staff_names|length) + 1 %}
             {% set current_hour = None %}
             {% for time_range in time_ranges %}
               {% if time_range.minute == 0 %}
@@ -107,7 +103,7 @@
                 {% endif %}
               {% endif %}
               {% for col_idx in range(actual_column_count) %}
-                {% set slot_key = f"{time_range.hour}_{time_range.minute:02d}_{col_idx}" %}
+                {% set slot_key = time_range.hour ~ "_" ~ ("%02d"|format(time_range.minute)) ~ "_" ~ col_idx %}
                 {% set slot_content = time_slots_map.get(slot_key, '') %}
                 {% if time_range.minute == 0 %}
               <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
