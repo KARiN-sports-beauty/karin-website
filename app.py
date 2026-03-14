@@ -247,6 +247,18 @@ def normalize_place_name(value):
     return str(value).replace(" ", "").replace("　", "")
 
 
+def normalize_date_string(value):
+    if value is None:
+        return ""
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d")
+    s = str(value).strip()
+    if not s:
+        return ""
+    s = s.replace("/", "-")
+    return s[:10]
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -8725,7 +8737,7 @@ def admin_reports_edit(report_id):
             # 施術ログから最新情報を反映（現場名・日付・スタッフ名一致）
             staff_details_map = {d.get("staff_name"): d for d in staff_details if d.get("staff_name")}
             report_date_value = report.get("report_date")
-            report_date_str = str(report_date_value) if report_date_value is not None else ""
+            report_date_str = normalize_date_string(report_date_value)
             report_staff_names = report.get("staff_names") or []
             enriched_staff_details = []
 
@@ -8749,23 +8761,21 @@ def admin_reports_edit(report_id):
                     res_logs = logs_query.order("created_at", desc=True).limit(50).execute()
                     logs = res_logs.data or []
 
-                    # 日付完全一致のフォールバック
+                    # 日付完全一致のフォールバック（スラッシュ/ハイフン両対応）
                     if not logs and report_date_str:
-                        res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", report_date_str).order("created_at", desc=True).limit(50).execute()
-                        logs = res_logs.data or []
+                        candidates = [report_date_str, report_date_str.replace("-", "/")]
+                        for candidate in candidates:
+                            res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", candidate).order("created_at", desc=True).limit(50).execute()
+                            logs = res_logs.data or []
+                            if logs:
+                                break
 
                     # 現場名/場所でフィルタ
                     if normalized_places:
                         logs = [row for row in logs if normalize_place_name(row.get("place_name")) in normalized_places]
 
                     if logs:
-                        target_staff = normalize_staff_name(staff_name)
-                        for row in logs:
-                            if normalize_staff_name(row.get("staff_name")) == target_staff and target_staff:
-                                log_row = row
-                                break
-                        if not log_row:
-                            log_row = logs[0]
+                        log_row = logs[0]
 
                     if log_row:
                         detail["treatment_content"] = log_row.get("treatment")
