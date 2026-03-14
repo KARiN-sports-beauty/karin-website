@@ -8786,10 +8786,15 @@ def admin_reports_edit(report_id):
 
                     logs = []
                     if report_date_str:
-                        date_candidates = [report_date_str, report_date_str.replace("-", "/")]
-                        for candidate in date_candidates:
-                            res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").ilike("date", f"{candidate}%").order("created_at", desc=True).limit(300).execute()
-                            logs.extend(res_logs.data or [])
+                        # まず日付完全一致で取得（date型のカラム対応）
+                        res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", report_date_str).order("created_at", desc=True).limit(300).execute()
+                        logs = res_logs.data or []
+                        # 文字列型で時刻付きの場合に備えて前方一致も試す
+                        if not logs:
+                            date_candidates = [report_date_str, report_date_str.replace("-", "/")]
+                            for candidate in date_candidates:
+                                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").ilike("date", f"{candidate}%").order("created_at", desc=True).limit(300).execute()
+                                logs.extend(res_logs.data or [])
                     else:
                         res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").order("created_at", desc=True).limit(300).execute()
                         logs = res_logs.data or []
