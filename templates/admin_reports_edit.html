@@ -107,14 +107,14 @@
                 {% set slot_content = time_slots_map.get(slot_key, '') %}
                 {% if time_range.minute == 0 %}
               <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ time_range.minute:02d }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
               </td>
                 {% else %}
                   {% if loop.first %}
             <tr>
                   {% endif %}
               <td style="padding: 4px; border: 1px solid #ddd; border-top: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ time_range.minute:02d }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
               </td>
                 {% endif %}
               {% endfor %}
