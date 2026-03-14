@@ -792,11 +792,11 @@ body,
 
 .blog-detail .blog-body ul,
 .blog-detail .blog-body ol {
-  margin: 0.6em 0 0.8em 1.2em;
+  margin: 0.3em 0 0.4em 1.1em;
 }
 
 .blog-detail .blog-body li {
-  margin: 0.1em 0;
+  margin: 0;
 }
 
 /* ===============================

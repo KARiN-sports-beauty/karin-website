@@ -14,8 +14,8 @@
 
 <form method="POST" action="/admin/reports/{{ report.id }}/edit" style="max-width: 1400px;">
   <!-- ヘッダー -->
-  <div style="margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+  <div class="report-edit-header" style="margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div class="report-edit-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名（必須）</label>
         <input type="text" name="field_name" value="{{ report.field_name }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -26,12 +26,12 @@
       </div>
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div class="report-edit-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
         <input type="text" name="place" value="{{ report.place or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="report-time-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始時間</label>
           <input type="time" name="start_time" value="{{ report.start_time or '07:00' }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -59,7 +59,7 @@
       <p style="margin: 0; font-size: 0.9rem; color: #1E3A5F;">
         <strong>列数について：</strong><br>
         対応スタッフの人数に応じて自動的に列数が設定されます。<br>
-        1名の場合は2列（スタッフ名・施術内容）、2名以上の場合はスタッフ名の列が作成されます。
+        基本は「スタッフ数 + 1列（例：2名→3列、3名→4列）」で、最低3列になります。
       </p>
     </div>
   </div>
@@ -106,15 +106,15 @@
                 {% set slot_key = time_range.hour ~ "_" ~ ("%02d"|format(time_range.minute)) ~ "_" ~ col_idx %}
                 {% set slot_content = time_slots_map.get(slot_key, '') %}
                 {% if time_range.minute == 0 %}
-              <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+              <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 6px 4px; box-sizing: border-box; height: 100%; text-align: center; line-height: 1.4; display: flex; align-items: center; justify-content: center;">{{ slot_content or '' }}</textarea>
               </td>
                 {% else %}
                   {% if loop.first %}
             <tr>
                   {% endif %}
-              <td style="padding: 4px; border: 1px solid #ddd; border-top: 2px dashed #999; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 4px; box-sizing: border-box; height: 100%;">{{ slot_content }}</textarea>
+              <td style="padding: 4px; border: 1px solid #ddd; border-top: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 6px 4px; box-sizing: border-box; height: 100%; text-align: center; line-height: 1.4; display: flex; align-items: center; justify-content: center;">{{ slot_content or '' }}</textarea>
               </td>
                 {% endif %}
               {% endfor %}
@@ -173,6 +173,33 @@
     <a href="/admin/reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center;">← 一覧に戻る</a>
   </div>
 </form>
+
+<style>
+@media (max-width: 767px) {
+  .report-edit-header {
+    padding: 16px;
+  }
+  .report-edit-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .report-time-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .report-edit-header input[type="text"],
+  .report-edit-header input[type="date"],
+  .report-edit-header input[type="time"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 0.95rem;
+  }
+  .report-edit-header label {
+    font-size: 0.9rem;
+  }
+}
+</style>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

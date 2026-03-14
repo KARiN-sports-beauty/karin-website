@@ -8709,17 +8709,30 @@ def admin_reports_edit(report_id):
             except Exception as e:
                 print(f"⚠️ WARNING - スタッフ詳細取得エラー: {e}")
                 staff_details = []
-            
-            # 各スタッフ詳細に患者名を追加（施術ログから取得）
+
+            # 施術ログから最新情報を反映（現場名・日付・スタッフ名一致）
+            staff_details_map = {d.get("staff_name"): d for d in staff_details if d.get("staff_name")}
             report_date_value = report.get("report_date")
             report_date_str = str(report_date_value) if report_date_value is not None else ""
-            for detail in staff_details:
-                staff_name = detail.get("staff_name")
-                patient_name = None
+            report_staff_names = report.get("staff_names") or []
+            enriched_staff_details = []
+
+            for staff_name in report_staff_names:
+                detail = staff_details_map.get(staff_name, {
+                    "report_id": report_id,
+                    "staff_name": staff_name,
+                    "status": None,
+                    "treatment_content": None,
+                    "patient_name": None
+                })
+
                 try:
-                    res_logs = supabase_admin.table("karte_logs").select("patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
+                    res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
                     if res_logs.data:
-                        patient_id = res_logs.data[0].get("patient_id")
+                        log = res_logs.data[0]
+                        detail["treatment_content"] = log.get("treatment")
+                        detail["status"] = log.get("body_state")
+                        patient_id = log.get("patient_id")
                         if patient_id:
                             res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
                             if res_patient.data:
@@ -8727,12 +8740,15 @@ def admin_reports_edit(report_id):
                                 last_name = p.get("last_name", "")
                                 first_name = p.get("first_name", "")
                                 if last_name or first_name:
-                                    patient_name = f"{last_name} {first_name}".strip()
+                                    detail["patient_name"] = f"{last_name} {first_name}".strip()
                                 else:
-                                    patient_name = p.get("name", "患者不明")
+                                    detail["patient_name"] = p.get("name", "患者不明")
                 except Exception as e:
-                    print(f"⚠️ WARNING - 患者名取得エラー: {e}")
-                detail["patient_name"] = patient_name
+                    print(f"⚠️ WARNING - 施術ログ自動反映エラー: {e}")
+
+                enriched_staff_details.append(detail)
+
+            staff_details = enriched_staff_details
             
             # スタッフリスト取得
             staff = session.get("staff", {})
