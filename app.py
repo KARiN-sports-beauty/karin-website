@@ -241,6 +241,12 @@ def normalize_staff_name(value):
     return str(value).replace(" ", "").replace("　", "")
 
 
+def normalize_place_name(value):
+    if value is None:
+        return ""
+    return str(value).replace(" ", "").replace("　", "")
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -8733,27 +8739,33 @@ def admin_reports_edit(report_id):
                 })
 
                 try:
-                    place_candidates = [report.get("field_name"), report.get("place")]
                     log_row = None
-                    for place_name in place_candidates:
-                        if not place_name:
-                            continue
-                        logs_query = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date").eq("place_name", place_name)
-                        if report_date_str:
-                            logs_query = logs_query.ilike("date", f"{report_date_str}%")
-                        res_logs = logs_query.order("created_at", desc=True).limit(20).execute()
-                        if not res_logs.data:
-                            if report_date_str:
-                                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date").eq("place_name", place_name).eq("date", report_date_str).order("created_at", desc=True).limit(20).execute()
-                        if res_logs.data:
-                            target_staff = normalize_staff_name(staff_name)
-                            for row in res_logs.data:
-                                if normalize_staff_name(row.get("staff_name")) == target_staff:
-                                    log_row = row
-                                    break
-                            if not log_row:
-                                log_row = res_logs.data[0]
-                            break
+                    place_candidates = [report.get("field_name"), report.get("place")]
+                    normalized_places = [normalize_place_name(p) for p in place_candidates if p]
+
+                    logs_query = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name")
+                    if report_date_str:
+                        logs_query = logs_query.ilike("date", f"{report_date_str}%")
+                    res_logs = logs_query.order("created_at", desc=True).limit(50).execute()
+                    logs = res_logs.data or []
+
+                    # 日付完全一致のフォールバック
+                    if not logs and report_date_str:
+                        res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", report_date_str).order("created_at", desc=True).limit(50).execute()
+                        logs = res_logs.data or []
+
+                    # 現場名/場所でフィルタ
+                    if normalized_places:
+                        logs = [row for row in logs if normalize_place_name(row.get("place_name")) in normalized_places]
+
+                    if logs:
+                        target_staff = normalize_staff_name(staff_name)
+                        for row in logs:
+                            if normalize_staff_name(row.get("staff_name")) == target_staff and target_staff:
+                                log_row = row
+                                break
+                        if not log_row:
+                            log_row = logs[0]
 
                     if log_row:
                         detail["treatment_content"] = log_row.get("treatment")
