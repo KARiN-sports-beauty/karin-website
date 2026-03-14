@@ -235,6 +235,12 @@ def parse_time_parts(value, default_hour=7, default_minute=0):
         return default_hour, default_minute
 
 
+def normalize_staff_name(value):
+    if value is None:
+        return ""
+    return str(value).replace(" ", "").replace("　", "")
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -8727,12 +8733,32 @@ def admin_reports_edit(report_id):
                 })
 
                 try:
-                    res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).order("created_at", desc=True).limit(1).execute()
-                    if res_logs.data:
-                        log = res_logs.data[0]
-                        detail["treatment_content"] = log.get("treatment")
-                        detail["status"] = log.get("body_state")
-                        patient_id = log.get("patient_id")
+                    place_candidates = [report.get("field_name"), report.get("place")]
+                    log_row = None
+                    for place_name in place_candidates:
+                        if not place_name:
+                            continue
+                        logs_query = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date").eq("place_name", place_name)
+                        if report_date_str:
+                            logs_query = logs_query.ilike("date", f"{report_date_str}%")
+                        res_logs = logs_query.order("created_at", desc=True).limit(20).execute()
+                        if not res_logs.data:
+                            if report_date_str:
+                                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date").eq("place_name", place_name).eq("date", report_date_str).order("created_at", desc=True).limit(20).execute()
+                        if res_logs.data:
+                            target_staff = normalize_staff_name(staff_name)
+                            for row in res_logs.data:
+                                if normalize_staff_name(row.get("staff_name")) == target_staff:
+                                    log_row = row
+                                    break
+                            if not log_row:
+                                log_row = res_logs.data[0]
+                            break
+
+                    if log_row:
+                        detail["treatment_content"] = log_row.get("treatment")
+                        detail["status"] = log_row.get("body_state")
+                        patient_id = log_row.get("patient_id")
                         if patient_id:
                             res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
                             if res_patient.data:
@@ -8938,7 +8964,8 @@ def admin_reports_edit(report_id):
                     raise
         
         flash("報告書を更新しました", "success")
-        return redirect(f"/admin/reports/{report_id}/edit")
+        from urllib.parse import quote
+        return redirect(f"/admin/reports?field_name={quote(field_name)}")
     except Exception as e:
         import traceback
         print(f"❌ 報告書更新エラー: {e}")
