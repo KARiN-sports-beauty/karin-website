@@ -8727,7 +8727,7 @@ def admin_reports_edit(report_id):
                 })
 
                 try:
-                    res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).execute()
+                    res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id").eq("date", report_date_str).eq("place_name", report["field_name"]).eq("staff_name", staff_name).order("created_at", desc=True).limit(1).execute()
                     if res_logs.data:
                         log = res_logs.data[0]
                         detail["treatment_content"] = log.get("treatment")
