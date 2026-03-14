@@ -8755,22 +8755,22 @@ def admin_reports_edit(report_id):
                     place_candidates = [report.get("field_name"), report.get("place")]
                     normalized_places = [normalize_place_name(p) for p in place_candidates if p]
 
-                    logs_query = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name")
+                    logs = []
+                    # まず現場名/場所で候補を取得し、日付はPython側で正規化して照合
+                    if normalized_places:
+                        for place_name in place_candidates:
+                            if not place_name:
+                                continue
+                            res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("place_name", place_name).order("created_at", desc=True).limit(200).execute()
+                            logs.extend(res_logs.data or [])
+                    else:
+                        res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").order("created_at", desc=True).limit(200).execute()
+                        logs = res_logs.data or []
+
                     if report_date_str:
-                        logs_query = logs_query.ilike("date", f"{report_date_str}%")
-                    res_logs = logs_query.order("created_at", desc=True).limit(50).execute()
-                    logs = res_logs.data or []
+                        logs = [row for row in logs if normalize_date_string(row.get("date")) == report_date_str]
 
-                    # 日付完全一致のフォールバック（スラッシュ/ハイフン両対応）
-                    if not logs and report_date_str:
-                        candidates = [report_date_str, report_date_str.replace("-", "/")]
-                        for candidate in candidates:
-                            res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", candidate).order("created_at", desc=True).limit(50).execute()
-                            logs = res_logs.data or []
-                            if logs:
-                                break
-
-                    # 現場名/場所でフィルタ
+                    # 現場名/場所でフィルタ（正規化）
                     if normalized_places:
                         logs = [row for row in logs if normalize_place_name(row.get("place_name")) in normalized_places]
 
