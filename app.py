@@ -273,6 +273,21 @@ def normalize_karte_log_date(value):
     return s[:10]
 
 
+def place_matches(row_place, targets):
+    if not targets:
+        return True
+    norm_row = normalize_place_name(row_place)
+    if not norm_row:
+        return False
+    for target in targets:
+        norm_target = normalize_place_name(target)
+        if not norm_target:
+            continue
+        if norm_row == norm_target or norm_target in norm_row or norm_row in norm_target:
+            return True
+    return False
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -8770,24 +8785,22 @@ def admin_reports_edit(report_id):
                     normalized_places = [normalize_place_name(p) for p in place_candidates if p]
 
                     logs = []
-                    # まず日付で候補を取得し、現場名はPython側で正規化して照合
                     if report_date_str:
-                        res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").ilike("date", f"{report_date_str}%").order("created_at", desc=True).limit(300).execute()
-                        logs = res_logs.data or []
-                        if not logs:
-                            candidates = [report_date_str, report_date_str.replace("-", "/")]
-                            for candidate in candidates:
-                                res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", candidate).order("created_at", desc=True).limit(300).execute()
-                                logs = res_logs.data or []
-                                if logs:
-                                    break
+                        date_candidates = [report_date_str, report_date_str.replace("-", "/")]
+                        for candidate in date_candidates:
+                            res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").ilike("date", f"{candidate}%").order("created_at", desc=True).limit(300).execute()
+                            logs.extend(res_logs.data or [])
                     else:
                         res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").order("created_at", desc=True).limit(300).execute()
                         logs = res_logs.data or []
 
-                    # 現場名/場所でフィルタ（正規化）
+                    # 日付を正規化して完全一致
+                    if report_date_str:
+                        logs = [row for row in logs if normalize_karte_log_date(row.get("date")) == report_date_str]
+
+                    # 現場名/場所でフィルタ（正規化＆部分一致）
                     if normalized_places:
-                        logs = [row for row in logs if normalize_place_name(row.get("place_name")) in normalized_places]
+                        logs = [row for row in logs if place_matches(row.get("place_name"), place_candidates)]
 
                     if logs:
                         log_row = logs[0]
