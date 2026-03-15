@@ -78,13 +78,13 @@
           <thead>
             <tr style="background: #f5f7fb;">
               <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 70px;">時間</th>
-              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 70px;">スケジュール</th>
+              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; border-left: 2px solid #1E3A5F;">スケジュール</th>
               {% if report.staff_names|length == 1 %}
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; border-left: 2px solid #1E3A5F;">{{ report.staff_names[0] }}</th>
+                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">{{ report.staff_names[0] }}</th>
                 <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">施術内容</th>
               {% else %}
                 {% for staff_name in (report.staff_names or []) %}
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; {% if loop.index == 1 %}border-left: 2px solid #1E3A5F;{% endif %}">{{ staff_name }}</th>
+                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">{{ staff_name }}</th>
                 {% endfor %}
               {% endif %}
             </tr>
@@ -149,7 +149,7 @@
         {% endfor %}
         <div class="report-staff-card" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;">
           <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ ns.staff_detail.patient_name if ns.staff_detail and ns.staff_detail.patient_name else '（患者名未取得）' }}</h4>
-          <div class="report-staff-content" style="padding: 2px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; color: #333; white-space: pre-wrap; min-height: 60px;">
+          <div class="report-staff-content" style="padding: 6px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; color: #333; white-space: pre-wrap; min-height: 60px; line-height: 1.6;">
             {% if ns.staff_detail and ns.staff_detail.status %}
             <div class="report-staff-status">{{ ns.staff_detail.status }}</div>
             {% if ns.staff_detail.treatment_content %}
@@ -192,17 +192,17 @@
 
 .report-staff-content {
   text-align: left;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .report-staff-status {
   margin-bottom: 0;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .report-staff-treatment {
   margin-top: 0;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .report-edit-header input[type="text"],
