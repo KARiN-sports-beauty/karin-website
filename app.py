@@ -8770,6 +8770,7 @@ def admin_reports_edit(report_id):
             report_staff_names = report.get("staff_names") or []
             enriched_staff_details = []
 
+            print(f"🔎 報告書反映チェック report_id={report_id} field_name={report.get('field_name')} place={report.get('place')} report_date={report_date_str}")
             for staff_name in report_staff_names:
                 detail = staff_details_map.get(staff_name, {
                     "report_id": report_id,
@@ -8799,9 +8800,11 @@ def admin_reports_edit(report_id):
                         res_logs = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").order("created_at", desc=True).limit(300).execute()
                         logs = res_logs.data or []
 
+                    print(f"🔎 取得ログ数(日付候補): {len(logs)}")
                     # 日付を正規化して完全一致
                     if report_date_str:
                         logs = [row for row in logs if normalize_karte_log_date(row.get("date")) == report_date_str]
+                    print(f"🔎 正規化日付一致後: {len(logs)}")
 
                     # 現場名/場所でフィルタ（正規化＆部分一致）
                     if normalized_places:
@@ -8815,6 +8818,10 @@ def admin_reports_edit(report_id):
                                 logs = res_like.data or []
                                 if logs:
                                     break
+                    print(f"🔎 現場名一致後: {len(logs)}")
+                    if logs:
+                        sample = logs[0]
+                        print(f"🔎 サンプルログ place_name={sample.get('place_name')} date={sample.get('date')} staff_name={sample.get('staff_name')} patient_id={sample.get('patient_id')}")
 
                     if logs:
                         log_row = logs[0]
