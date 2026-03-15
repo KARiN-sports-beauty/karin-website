@@ -36,7 +36,7 @@
     {% endif %}
     "author": {
       "@type": "Person",
-      "name": "藤田 幸士（KARiN.代表）"
+      "name": {{ (author_info.name if author_info else "藤田 幸士（KARiN.代表）") | tojson }}
     },
     "publisher": {
       "@type": "Organization",

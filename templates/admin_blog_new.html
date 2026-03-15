@@ -27,6 +27,16 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">導入文（meta説明）</label>
     <input type="text" name="excerpt" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="記事の概要を入力">
   </div>
+
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">作成スタッフ</label>
+    <select name="author_staff_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #fff;">
+      <option value="">選択してください</option>
+      {% for staff in staff_list or [] %}
+      <option value="{{ staff.id }}">{{ staff.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
   
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">サムネイル画像URL</label>

@@ -288,6 +288,28 @@ def place_matches(row_place, targets):
     return False
 
 
+def get_staff_choices():
+    staff_list = []
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        for u in users:
+            meta = u.user_metadata or {}
+            if not meta.get("approved", False):
+                continue
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            if last_name and first_name:
+                display_name = f"{last_name} {first_name}"
+            else:
+                display_name = meta.get("name", "未設定")
+            staff_list.append({"id": u.id, "name": display_name})
+        staff_list.sort(key=lambda x: x["name"])
+    except Exception as e:
+        print(f"⚠️ スタッフ一覧取得エラー: {e}")
+        staff_list = []
+    return staff_list
+
+
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
@@ -1861,13 +1883,15 @@ def admin_blogs():
 def admin_blog_new():
     """新規ブログ作成"""
     if request.method == "GET":
-        return render_template("admin_blog_new.html")
+        staff_list = get_staff_choices()
+        return render_template("admin_blog_new.html", staff_list=staff_list)
     
     # POST処理
     title = request.form.get("title", "").strip()
     if not title:
         flash("タイトルを入力してください", "error")
-        return render_template("admin_blog_new.html")
+        staff_list = get_staff_choices()
+        return render_template("admin_blog_new.html", staff_list=staff_list)
     
     slug_input = request.form.get("slug", "").strip()
     if slug_input:
@@ -1883,11 +1907,13 @@ def admin_blog_new():
             image = upload_blog_image(image_file)
         except ValueError as e:
             flash(str(e), "error")
-            return render_template("admin_blog_new.html")
+            staff_list = get_staff_choices()
+            return render_template("admin_blog_new.html", staff_list=staff_list)
         except Exception as e:
             print("❌ ブログ画像アップロードエラー:", e)
             flash(f"画像アップロードに失敗しました: {e}", "error")
-            return render_template("admin_blog_new.html")
+            staff_list = get_staff_choices()
+            return render_template("admin_blog_new.html", staff_list=staff_list)
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
@@ -1897,7 +1923,11 @@ def admin_blog_new():
     
     # 現在ログイン中のスタッフIDを取得
     staff = session.get("staff", {})
-    author_staff_id = staff.get("id")
+    author_staff_id = request.form.get("author_staff_id") or staff.get("id")
+    if not author_staff_id:
+        flash("作成スタッフを選択してください", "error")
+        staff_list = get_staff_choices()
+        return render_template("admin_blog_new.html", staff_list=staff_list)
     
     insert_data = {
         "title": title,
@@ -1938,7 +1968,8 @@ def admin_blog_edit(blog_id):
             # bodyの<br>を\nに戻す
             if blog.get("body"):
                 blog["body"] = blog["body"].replace("<br>", "\n")
-            return render_template("admin_blog_edit.html", blog=blog)
+            staff_list = get_staff_choices()
+            return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
         except Exception as e:
             print("❌ ブログ取得エラー:", e)
             flash("ブログの取得に失敗しました", "error")
@@ -1975,6 +2006,10 @@ def admin_blog_edit(blog_id):
     body_raw = request.form.get("body", "").strip()
     body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
+    author_staff_id = request.form.get("author_staff_id")
+    if not author_staff_id:
+        flash("作成スタッフを選択してください", "error")
+        return redirect(f"/admin/blogs/edit/{blog_id}")
     
     update_data = {
         "title": title,
@@ -1985,6 +2020,7 @@ def admin_blog_edit(blog_id):
         "tags": tags,
         "body": body_html,
         "draft": draft,
+        "author_staff_id": author_staff_id,
         "updated_at": now_iso(),
     }
     
