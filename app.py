@@ -8806,6 +8806,15 @@ def admin_reports_edit(report_id):
                     # 現場名/場所でフィルタ（正規化＆部分一致）
                     if normalized_places:
                         logs = [row for row in logs if place_matches(row.get("place_name"), place_candidates)]
+                        # それでも見つからない場合、部分一致のDB検索も試す
+                        if not logs:
+                            for target in place_candidates:
+                                if not target:
+                                    continue
+                                res_like = supabase_admin.table("karte_logs").select("treatment, body_state, patient_id, staff_name, date, place_name").eq("date", report_date_str).ilike("place_name", f"%{target}%").order("created_at", desc=True).limit(50).execute()
+                                logs = res_like.data or []
+                                if logs:
+                                    break
 
                     if logs:
                         log_row = logs[0]

@@ -105,17 +105,17 @@
               {% for col_idx in range(actual_column_count) %}
                 {% set slot_key = time_range.hour ~ "_" ~ ("%02d"|format(time_range.minute)) ~ "_" ~ col_idx %}
                 {% set slot_content = time_slots_map.get(slot_key, '') %}
-                {% set slot_value = '' if slot_content is none or slot_content == 'None' else slot_content %}
+                {% set slot_value = '' if slot_content is none or slot_content|string|lower == 'none' else slot_content %}
                 {% if time_range.minute == 0 %}
               <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 100%; text-align: center; line-height: 32px;">{{ slot_value }}</textarea>
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 32px; margin-top: 3px; text-align: center; line-height: 32px; overflow: hidden;">{{ slot_value }}</textarea>
               </td>
                 {% else %}
                   {% if loop.first %}
             <tr>
                   {% endif %}
               <td style="padding: 4px; border: 1px solid #ddd; border-top: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="2" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 100%; text-align: center; line-height: 32px;">{{ slot_value }}</textarea>
+                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 32px; margin-top: 3px; text-align: center; line-height: 32px; overflow: hidden;">{{ slot_value }}</textarea>
               </td>
                 {% endif %}
               {% endfor %}
