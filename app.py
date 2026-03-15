@@ -1666,7 +1666,7 @@ def blog():
     sb = supabase.table("blogs").select("*").eq("draft", False)
 
     if category:
-        sb = sb.eq("category", category)
+        sb = sb.ilike("category", f"%{category}%")
 
     if query:
         sb = sb.ilike("title", f"%{query}%")
@@ -1680,11 +1680,14 @@ def blog():
     categories = []
     try:
         res_categories = supabase.table("blogs").select("category").eq("draft", False).execute()
-        category_set = {
-            c.get("category").strip()
-            for c in (res_categories.data or [])
-            if c.get("category") and c.get("category").strip()
-        }
+        category_set = set()
+        for c in (res_categories.data or []):
+            raw = c.get("category") or ""
+            raw = raw.replace("　", " ")
+            for token in raw.replace(",", " ").replace("、", " ").split():
+                token = token.strip()
+                if token:
+                    category_set.add(token)
         categories = sorted(category_set)
     except Exception as e:
         print(f"⚠️ WARNING - カテゴリ取得エラー: {e}")
