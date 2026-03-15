@@ -136,23 +136,23 @@
       <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">対応者情報</h3>
       <div style="display: flex; flex-direction: column; gap: 16px; max-height: 600px; overflow-y: auto;">
         {% for staff_name in (report.staff_names or []) %}
-        {% set staff_detail = None %}
+        {% set ns = namespace(staff_detail=None) %}
         {% for detail in staff_details %}
           {% if detail.staff_name == staff_name %}
-            {% set staff_detail = detail %}
+            {% set ns.staff_detail = detail %}
           {% endif %}
         {% endfor %}
         <div style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;">
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ staff_detail.patient_name if staff_detail and staff_detail.patient_name else '（患者名未取得）' }}</h4>
+          <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ ns.staff_detail.patient_name if ns.staff_detail and ns.staff_detail.patient_name else '（患者名未取得）' }}</h4>
           <div style="padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; color: #333; white-space: pre-wrap; min-height: 60px;">
-            {% if staff_detail and staff_detail.status %}
-            {{ staff_detail.status }}
-            {% if staff_detail.treatment_content %}
+            {% if ns.staff_detail and ns.staff_detail.status %}
+            {{ ns.staff_detail.status }}
+            {% if ns.staff_detail.treatment_content %}
 
-            {{ staff_detail.treatment_content }}
+            {{ ns.staff_detail.treatment_content }}
             {% endif %}
-            {% elif staff_detail and staff_detail.treatment_content %}
-            {{ staff_detail.treatment_content }}
+            {% elif ns.staff_detail and ns.staff_detail.treatment_content %}
+            {{ ns.staff_detail.treatment_content }}
             {% else %}
             （内容なし）
             {% endif %}
