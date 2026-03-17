@@ -149,14 +149,23 @@
         {% endfor %}
         <div class="report-staff-card" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;">
           <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">{{ ns.staff_detail.patient_name if ns.staff_detail and ns.staff_detail.patient_name else '（患者名未取得）' }}</h4>
-          <div class="report-staff-content" style="padding: 2px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; color: #333; white-space: pre-wrap; min-height: 0; line-height: 1.45;">
+          <div class="report-staff-content" style="padding: 2px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; color: #333; white-space: pre-line; min-height: 0; line-height: 1.3;">
             {% if ns.staff_detail and ns.staff_detail.status %}
-            <div class="report-staff-status"><strong>今日の状態：</strong><br>{{ ns.staff_detail.status }}</div>
+            <div class="report-staff-status">
+              <div class="report-staff-label">今日の状態：</div>
+              <div class="report-staff-text">{{ ns.staff_detail.status }}</div>
+            </div>
             {% if ns.staff_detail.treatment_content %}
-            <div class="report-staff-treatment"><strong>対応：</strong><br>{{ ns.staff_detail.treatment_content }}</div>
+            <div class="report-staff-treatment">
+              <div class="report-staff-label">対応：</div>
+              <div class="report-staff-text">{{ ns.staff_detail.treatment_content }}</div>
+            </div>
             {% endif %}
             {% elif ns.staff_detail and ns.staff_detail.treatment_content %}
-            <div class="report-staff-treatment"><strong>対応：</strong><br>{{ ns.staff_detail.treatment_content }}</div>
+            <div class="report-staff-treatment">
+              <div class="report-staff-label">対応：</div>
+              <div class="report-staff-text">{{ ns.staff_detail.treatment_content }}</div>
+            </div>
             {% else %}
             （内容なし）
             {% endif %}
@@ -192,17 +201,26 @@
 
 .report-staff-content {
   text-align: left;
-  line-height: 1.45;
+  line-height: 1.3;
 }
 
 .report-staff-status {
-  margin-bottom: 0;
-  line-height: 1.45;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
 }
 
 .report-staff-treatment {
-  margin-top: 0;
-  line-height: 1.45;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.report-staff-label {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.report-staff-text {
+  margin: 0;
 }
 
 .report-edit-header input[type="text"],
