@@ -1932,7 +1932,8 @@ def admin_blog_new():
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw if body_raw else "<p>(本文未入力)</p>"
+    body_clean = re.sub(r"<\s*br\s*/?\s*>", "\n", body_raw, flags=re.IGNORECASE)
+    body_html = body_clean if body_clean else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
     
     # 現在ログイン中のスタッフIDを取得
@@ -1981,7 +1982,7 @@ def admin_blog_edit(blog_id):
             blog = res.data[0]
             # bodyの<br>を\nに戻す
             if blog.get("body"):
-                blog["body"] = blog["body"].replace("<br>", "\n")
+                blog["body"] = re.sub(r"<\s*br\s*/?\s*>", "\n", blog["body"], flags=re.IGNORECASE)
             staff_list = get_staff_choices()
             return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
         except Exception as e:
@@ -2018,7 +2019,8 @@ def admin_blog_edit(blog_id):
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw if body_raw else "<p>(本文未入力)</p>"
+    body_clean = re.sub(r"<\s*br\s*/?\s*>", "\n", body_raw, flags=re.IGNORECASE)
+    body_html = body_clean if body_clean else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
     author_staff_id = request.form.get("author_staff_id")
     if not author_staff_id:
