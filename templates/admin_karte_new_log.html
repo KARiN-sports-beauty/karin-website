@@ -16,7 +16,7 @@
   <strong>患者：</strong>{{ patient.name or '未入力' }}
 </div>
 
-<form method="POST" action="/admin/karte/{{ patient.id }}/log/new" style="max-width: 800px;">
+<form method="POST" action="/admin/karte/{{ patient.id }}/log/new" class="admin-karte-log-form" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付</label>
     <input type="date" name="date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -86,5 +86,17 @@
     togglePlaceName();
   }
 </script>
+
+<style>
+@media (max-width: 767px) {
+  .admin-karte-log-form input,
+  .admin-karte-log-form select,
+  .admin-karte-log-form textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+</style>
 
 {% endblock %}
