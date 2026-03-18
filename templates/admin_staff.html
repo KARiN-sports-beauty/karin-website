@@ -59,7 +59,7 @@
       <td>{{ s.name }}</td>
       <td>{{ s.email }}</td>
       <td>{{ s.phone }}</td>
-      <td>{{ s.created_at }}</td>
+      <td>{{ s.created_at | to_jst }}</td>
       <td>
         {% if s.approved %}
           <span style="color:green;">承認済み</span>

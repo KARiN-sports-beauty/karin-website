@@ -41,13 +41,13 @@
   <div class="admin-comment-card replied">
     <div class="admin-comment-head">
       <strong>{{ c.name }}</strong>
-      <span class="admin-comment-date">{{ c.created_at }}</span>
+      <span class="admin-comment-date">{{ c.created_at | to_jst }}</span>
     </div>
 
     <p class="admin-comment-body">{{ c.body }}</p>
 
     <div class="reply-info">
-      → {{ c.reply_author }}（{{ c.reply_date }}）
+      → {{ c.reply_author }}（{{ c.reply_date | to_jst }}）
     </div>
   </div>
   {% endfor %}

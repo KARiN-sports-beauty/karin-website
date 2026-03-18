@@ -15,6 +15,15 @@ def to_jst(dt_str):
         return dt_str
 
 
+def format_blog_date_display(value):
+    if not value:
+        return ""
+    value_str = str(value)
+    if "T" in value_str or ":" in value_str:
+        return to_jst(value_str)
+    return value_str
+
+
 import json, os
 import mimetypes
 from dotenv import load_dotenv
@@ -1675,6 +1684,7 @@ def blog():
     blogs = res.data or []
     for blog_item in blogs:
         blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
+        blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
 
     # カテゴリ一覧（全公開記事から抽出）
     categories = []
@@ -1722,6 +1732,7 @@ def show_blog(slug):
 
         blog = data[0]
         blog["image"] = normalize_blog_image_url(blog.get("image"))
+        blog["date_display"] = format_blog_date_display(blog.get("date"))
         blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
         # コメント取得（新しい順）

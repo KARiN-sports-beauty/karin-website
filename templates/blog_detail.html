@@ -62,7 +62,7 @@
 <body>
   <section class="blog-detail">
     <h1 class="blog-title">{{ blog.title }}</h1>
-    <p class="blog-date">{{ blog.date }}</p>
+    <p class="blog-date">{{ blog.date_display or blog.date }}</p>
 
     {% if blog.image %}
     <figure class="blog-thumb">
@@ -92,7 +92,7 @@
           <div class="comment-bubble">
             <div class="bubble-header">
               <span class="comment-author">{{ c.name }}</span>
-              <span class="comment-date">{{ c.created_at[:-3] }}</span>
+              <span class="comment-date">{{ (c.created_at | to_jst) }}</span>
             </div>
             <p class="comment-text">{{ c.body }}</p>
             {% if session.staff %}
@@ -106,7 +106,7 @@
           <div class="comment-reply">
             <div class="reply-header">
               <span class="reply-author">{{ c.reply_author }} からの返信</span>
-              <span class="reply-date">{{ c.reply_date }}</span>
+              <span class="reply-date">{{ (c.reply_date | to_jst) }}</span>
             </div>
             <p class="reply-text">{{ c.reply }}</p>
           </div>

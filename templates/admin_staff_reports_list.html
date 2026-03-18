@@ -20,7 +20,7 @@
         <div style="font-size: 1rem; font-weight: 500; color: #1E3A5F;">{{ staff_name }}</div>
       </div>
       <div style="font-size: 0.85rem; color: #999;">
-        登録日時：{{ report.created_at[:16] if report.created_at else '' }}
+        登録日時：{{ (report.created_at | to_jst) if report.created_at else '' }}
       </div>
     </div>
     

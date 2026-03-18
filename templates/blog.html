@@ -123,7 +123,7 @@
               <h2 class="blog-title">{{ blog.title }}</h2>
 
               <div class="blog-meta">
-                {{ blog.date }}
+                {{ blog.date_display or blog.date }}
                 {% if blog.category %}
                   | <span class="blog-category">{{ blog.category }}</span>
                 {% endif %}

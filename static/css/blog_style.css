@@ -771,15 +771,15 @@ body,
    余白を詰めて間延び感を軽減（ブログ本文）
 ========================================================= */
 .blog-detail .blog-body {
-  line-height: 1.65;
+  line-height: 1.45;
 }
 
 .blog-detail .blog-body p {
-  margin: 0 0 0.85em;
+  margin: 0 0 0.6em;
 }
 
 .blog-detail .blog-body p + p {
-  margin-top: 0.3em;
+  margin-top: 0.2em;
 }
 
 .blog-detail .blog-body h2 {
