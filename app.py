@@ -1932,7 +1932,7 @@ def admin_blog_new():
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    body_html = body_raw if body_raw else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
     
     # 現在ログイン中のスタッフIDを取得
@@ -2018,7 +2018,7 @@ def admin_blog_edit(blog_id):
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    body_html = body_raw if body_raw else "<p>(本文未入力)</p>"
     draft = request.form.get("draft") == "on"
     author_staff_id = request.form.get("author_staff_id")
     if not author_staff_id:
