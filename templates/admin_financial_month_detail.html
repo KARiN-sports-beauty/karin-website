@@ -18,21 +18,21 @@
 </div>
 
 <!-- 月次収支サマリー -->
-<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+<div class="financial-summary-card" style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{{ year }}年{{ month_name }} 収支サマリー</h3>
   
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-    <div style="padding: 20px; background: #e8f5e9; border-radius: 12px;">
+  <div class="financial-summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+    <div class="financial-summary-item" style="padding: 20px; background: #e8f5e9; border-radius: 12px; min-width: 0;">
       <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">売上</div>
-      <div style="font-size: 1.8rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format(month_revenue|int) }}</div>
+      <div class="financial-summary-amount" style="font-size: 1.8rem; font-weight: 600; color: #2e7d32;">¥{{ "{:,}".format(month_revenue|int) }}</div>
     </div>
-    <div style="padding: 20px; background: #ffebee; border-radius: 12px;">
+    <div class="financial-summary-item" style="padding: 20px; background: #ffebee; border-radius: 12px; min-width: 0;">
       <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">経費</div>
-      <div style="font-size: 1.8rem; font-weight: 600; color: #c62828;">¥{{ "{:,}".format(month_expenses|int) }}</div>
+      <div class="financial-summary-amount" style="font-size: 1.8rem; font-weight: 600; color: #c62828;">¥{{ "{:,}".format(month_expenses|int) }}</div>
     </div>
-    <div style="padding: 20px; background: {% if month_profit >= 0 %}#e8f5e9{% else %}#ffebee{% endif %}; border-radius: 12px;">
+    <div class="financial-summary-item" style="padding: 20px; background: {% if month_profit >= 0 %}#e8f5e9{% else %}#ffebee{% endif %}; border-radius: 12px; min-width: 0;">
       <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">収支</div>
-      <div style="font-size: 1.8rem; font-weight: 600; color: {% if month_profit >= 0 %}#2e7d32{% else %}#c62828{% endif %};">
+      <div class="financial-summary-amount" style="font-size: 1.8rem; font-weight: 600; color: {% if month_profit >= 0 %}#2e7d32{% else %}#c62828{% endif %};">
         ¥{{ "{:,}".format(month_profit|int) }}
       </div>
     </div>

@@ -86,9 +86,9 @@
     </div>
   </div>
   
-  <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
+  <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" id="reserved_at" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
   </div>
   
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -848,5 +848,28 @@ document.querySelector('form').addEventListener('submit', function(e) {
   console.log('🔍 フォーム送信を許可');
 });
 </script>
+
+<style>
+/* モバイル：予約日時の枠を画面内に収める */
+@media (max-width: 767px) {
+  .reservation-datetime-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .reservation-datetime-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #admin-reservation-form {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+</style>
 
 {% endblock %}

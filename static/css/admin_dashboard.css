@@ -2144,3 +2144,27 @@ form .admin-news-btn {
 .admin-resv-btn:hover {
   background: #45a049;
 }
+
+/* 収支サマリー：モバイルでカード内に収める */
+@media (max-width: 767px) {
+  .financial-summary-card {
+    padding: 16px !important;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .financial-summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .financial-summary-item {
+    min-width: 0;
+    overflow: hidden;
+    padding: 16px !important;
+    box-sizing: border-box;
+  }
+  .financial-summary-amount {
+    font-size: 1.4rem !important;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+}

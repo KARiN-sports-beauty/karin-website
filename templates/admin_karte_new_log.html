@@ -17,9 +17,9 @@
 </div>
 
 <form method="POST" action="/admin/karte/{{ patient.id }}/log/new" class="admin-karte-log-form" style="max-width: 800px;">
-  <div style="margin-bottom: 20px;">
+  <div class="karte-log-date-section" style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付</label>
-    <input type="date" name="date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <input type="date" name="date" value="{{ today_date }}" required class="karte-log-date-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
   </div>
   
   <div style="margin-bottom: 20px;">
@@ -89,12 +89,30 @@
 
 <style>
 @media (max-width: 767px) {
+  .admin-karte-log-form {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
   .admin-karte-log-form input,
   .admin-karte-log-form select,
   .admin-karte-log-form textarea {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+  }
+  /* 日付入力の右はみ出し防止 */
+  .karte-log-date-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .karte-log-date-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
 }
 </style>

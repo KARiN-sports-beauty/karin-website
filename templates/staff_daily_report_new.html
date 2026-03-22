@@ -23,9 +23,9 @@
       <input type="text" value="{{ staff_name }}" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #f5f5f5; color: #666; box-sizing: border-box;">
     </div>
     
-    <div style="margin-bottom: 20px;">
+    <div class="daily-report-date-section" style="margin-bottom: 20px;">
       <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">日付（必須）</label>
-      <input type="date" name="report_date" id="report_date" value="{{ today_date }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      <input type="date" name="report_date" id="report_date" value="{{ today_date }}" required class="daily-report-date-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
     </div>
     
     <div style="margin-bottom: 20px;">
@@ -467,4 +467,30 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<style>
+/* 日付枠をスタッフ名などと同じ幅に調整（右はみ出し防止） */
+@media (max-width: 767px) {
+  .daily-report-date-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .daily-report-date-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  /* 開始時刻・終了時刻を縦に並べる（重なり防止） */
+  .work-card-time-row {
+    grid-template-columns: 1fr !important;
+  }
+  /* 休憩時間・本数も狭い画面では縦に並べる */
+  .work-card-break-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
 {% endblock %}
