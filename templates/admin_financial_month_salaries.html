@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}収支管理 - {{ year }}年{{ month_name }} スタッフ給与一覧 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">💰 収支管理 - {{ year }}年{{ month_name }} スタッフ給与一覧</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年に戻る</a>
+</div>
+
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ名一覧</h3>
+  <p style="margin: 0 0 20px 0; color: #666; font-size: 0.9rem;">スタッフ名をクリックすると給料の詳細確認・編集ができます。</p>
+
+  {% if staff_list %}
+  <div class="admin-karte-grid">
+    {% for staff in staff_list %}
+    <a href="/admin/financial/years/{{ year }}/staff/{{ staff.id | urlencode }}/months/{{ '%02d'|format(month|int) }}" class="admin-karte-card" style="text-decoration: none;">
+      <div class="admin-karte-head">
+        <strong class="admin-karte-name">{{ staff.name }}</strong>
+        {% if staff.id in registered_staff_ids %}
+        <span style="font-size: 0.8rem; color: #4CAF50; margin-left: 8px;">✓ 登録済</span>
+        {% else %}
+        <span style="font-size: 0.8rem; color: #999; margin-left: 8px;">未登録</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="padding: 20px; color: #666;">承認済みスタッフがありません。</p>
+  {% endif %}
+</div>
+
+<div style="margin-top: 20px;">
+  <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">➕ 給与を新規登録</a>
+</div>
+
+{% endblock %}

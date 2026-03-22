@@ -10541,6 +10541,48 @@ def admin_financial_expense_delete(year, expense_id):
     return redirect(f"/admin/financial/years/{year}")
 
 
+@app.route("/admin/financial/years/<year>/months/<month>/salaries")
+@admin_required
+def admin_financial_month_salaries(year, month):
+    """収支管理 - 月別スタッフ給料一覧（スタッフ名一覧）"""
+    try:
+        year_int = int(year)
+        month_int = int(month)
+        month_names = {
+            1: "1月", 2: "2月", 3: "3月", 4: "4月",
+            5: "5月", 6: "6月", 7: "7月", 8: "8月",
+            9: "9月", 10: "10月", 11: "11月", 12: "12月"
+        }
+        month_name = month_names.get(month_int, f"{month_int}月")
+
+        # 承認済みスタッフを取得
+        staff_list = get_staff_choices()
+
+        # 既に給与登録があるスタッフID
+        registered_staff_ids = set()
+        try:
+            res = supabase_admin.table("staff_salaries").select("staff_id").eq("year", year_int).eq("month", month_int).execute()
+            if res.data:
+                registered_staff_ids = {s.get("staff_id") for s in res.data if s.get("staff_id")}
+        except Exception as e:
+            print(f"⚠️ WARNING - 給与登録取得エラー: {e}")
+
+        return render_template(
+            "admin_financial_month_salaries.html",
+            year=year,
+            month=month,
+            month_name=month_name,
+            staff_list=staff_list,
+            registered_staff_ids=registered_staff_ids
+        )
+    except Exception as e:
+        import traceback
+        print(f"❌ 月別給料一覧取得エラー: {e}")
+        print(traceback.format_exc())
+        flash("月別給料一覧の取得に失敗しました", "error")
+        return redirect(f"/admin/financial/years/{year}")
+
+
 @app.route("/admin/financial/years/<year>/months/<month>/salaries/new", methods=["GET", "POST"])
 @admin_required
 def admin_financial_salary_new(year, month):

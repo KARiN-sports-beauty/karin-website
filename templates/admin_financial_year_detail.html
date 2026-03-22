@@ -69,7 +69,7 @@
       </thead>
       <tbody>
         {% set category_names = {
-          'salary': '給与',
+          'salary': '人件費',
           'transportation': '旅費交通費',
           'travel': '旅費交通費',
           'social_insurance': '社会保険料',
@@ -133,6 +133,32 @@
           </td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             <a href="/admin/financial/years/{{ year }}/months/{{ '%02d'|format(month) }}" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 6px 12px; font-size: 0.85rem;">詳細</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 月別給料 -->
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">月別給料</h3>
+  
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">月</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">詳細</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for month in range(1, 13) %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ month_names[month] }}</td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <a href="/admin/financial/years/{{ year }}/months/{{ '%02d'|format(month) }}/salaries" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 6px 12px; font-size: 0.85rem;">詳細</a>
           </td>
         </tr>
         {% endfor %}
