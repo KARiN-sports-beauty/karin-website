@@ -3126,6 +3126,44 @@ def admin_karte_log_upload_image(log_id):
 def admin_karte_delete(patient_id):
     """カルテ削除（管理者のみ）"""
     try:
+        # 外部キー制約を解消するため、参照を先に処理
+
+        # 1. staff_daily_report_patients: patient_id を NULL に更新（日報データは残す）
+        try:
+            supabase_admin.table("staff_daily_report_patients").update({"patient_id": None}).eq("patient_id", patient_id).execute()
+        except Exception as e1:
+            print(f"⚠️ staff_daily_report_patients 更新エラー（スキップ可）: {e1}")
+
+        # 2. karte_logs に紐づく karte_images を削除（Storage + レコード）
+        try:
+            res_logs = supabase_admin.table("karte_logs").select("id").eq("patient_id", patient_id).execute()
+            for log in (res_logs.data or []):
+                log_id = log.get("id")
+                if log_id:
+                    res_images = supabase_admin.table("karte_images").select("storage_path").eq("log_id", log_id).execute()
+                    for img in (res_images.data or []):
+                        if img.get("storage_path"):
+                            try:
+                                supabase_admin.storage.from_("karte-images").remove([img["storage_path"]])
+                            except Exception:
+                                pass
+                    supabase_admin.table("karte_images").delete().eq("log_id", log_id).execute()
+        except Exception as e2:
+            print(f"⚠️ karte_images 削除エラー: {e2}")
+
+        # 3. karte_logs を削除
+        try:
+            supabase_admin.table("karte_logs").delete().eq("patient_id", patient_id).execute()
+        except Exception as e3:
+            print(f"⚠️ karte_logs 削除エラー: {e3}")
+
+        # 4. この患者を紹介者とする患者の introduced_by_patient_id を NULL に
+        try:
+            supabase_admin.table("patients").update({"introduced_by_patient_id": None}).eq("introduced_by_patient_id", patient_id).execute()
+        except Exception as e4:
+            print(f"⚠️ introduced_by_patient_id 更新エラー: {e4}")
+
+        # 5. 患者を削除（reservations は ON DELETE CASCADE で自動削除）
         supabase_admin.table("patients").delete().eq("id", patient_id).execute()
         flash("カルテを削除しました", "success")
     except Exception as e:
