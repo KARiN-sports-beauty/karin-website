@@ -1932,8 +1932,11 @@ def admin_blog_new():
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_clean = re.sub(r"<\s*br\s*/?\s*>", "\n", body_raw, flags=re.IGNORECASE)
-    body_html = body_clean if body_clean else "<p>(本文未入力)</p>"
+    if not body_raw:
+        body_html = "<p>(本文未入力)</p>"
+    else:
+        # textarea の改行 → <br>。入力した <br> タグはそのまま保持（公開ページで改行として表示）
+        body_html = body_raw.replace("\n", "<br>")
     draft = request.form.get("draft") == "on"
     
     # 現在ログイン中のスタッフIDを取得
@@ -1980,9 +1983,6 @@ def admin_blog_edit(blog_id):
                 flash("ブログが見つかりません", "error")
                 return redirect("/admin/blogs")
             blog = res.data[0]
-            # bodyの<br>を\nに戻す
-            if blog.get("body"):
-                blog["body"] = re.sub(r"<\s*br\s*/?\s*>", "\n", blog["body"], flags=re.IGNORECASE)
             staff_list = get_staff_choices()
             return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
         except Exception as e:
@@ -2019,8 +2019,10 @@ def admin_blog_edit(blog_id):
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_clean = re.sub(r"<\s*br\s*/?\s*>", "\n", body_raw, flags=re.IGNORECASE)
-    body_html = body_clean if body_clean else "<p>(本文未入力)</p>"
+    if not body_raw:
+        body_html = "<p>(本文未入力)</p>"
+    else:
+        body_html = body_raw.replace("\n", "<br>")
     draft = request.form.get("draft") == "on"
     author_staff_id = request.form.get("author_staff_id")
     if not author_staff_id:

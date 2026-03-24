@@ -56,7 +56,7 @@
   </script>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260324">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260325">
 </head>
 
 <body>
@@ -71,7 +71,7 @@
     {% endif %}
 
     <div class="blog-body">
-      {{ blog.body|safe }}
+      {{ blog.body | replace('\n', '<br>') | safe }}
     </div>
 
     <!-- 💬 コメント -->
