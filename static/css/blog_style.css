@@ -768,35 +768,35 @@ body,
 }
 
 /* =========================================================
-   余白を詰めて間延び感を軽減（ブログ本文）
+   ブログ本文の行間・余白
 ========================================================= */
 .blog-detail .blog-body {
-  line-height: 1.45;
+  line-height: 1.85;
 }
 
 .blog-detail .blog-body p {
-  margin: 0 0 0.6em;
+  margin: 0 0 1.2em;
 }
 
 .blog-detail .blog-body p + p {
-  margin-top: 0.2em;
+  margin-top: 0.5em;
 }
 
 .blog-detail .blog-body h2 {
-  margin: 1.2em 0 0.6em;
+  margin: 1.6em 0 0.8em;
 }
 
 .blog-detail .blog-body h3 {
-  margin: 1.0em 0 0.5em;
+  margin: 1.3em 0 0.6em;
 }
 
 .blog-detail .blog-body ul,
 .blog-detail .blog-body ol {
-  margin: 0.3em 0 0.4em 1.1em;
+  margin: 0.6em 0 0.8em 1.1em;
 }
 
 .blog-detail .blog-body li {
-  margin: 0;
+  margin-bottom: 0.4em;
 }
 
 /* ===============================
