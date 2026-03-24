@@ -102,14 +102,19 @@
   </div>
   
   {% if session.staff and session.staff.is_admin %}
-  <!-- VIPフラグ（管理者のみ） -->
+  <!-- VIPフラグ（管理者のみ）※両方選択可 -->
   <div class="admin-form-field">
     <label class="admin-form-label">VIPフラグ</label>
-    <select name="vip_level" class="admin-form-select">
-      <option value="none">なし</option>
-      <option value="star">⭐️</option>
-      <option value="clover">🍀</option>
-    </select>
+    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+      <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="vip_star" value="1" class="admin-form-input">
+        <span>⭐️</span>
+      </label>
+      <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="vip_clover" value="1" class="admin-form-input">
+        <span>🍀</span>
+      </label>
+    </div>
   </div>
   {% endif %}
   

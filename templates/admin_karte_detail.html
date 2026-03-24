@@ -35,7 +35,7 @@
       <span class="admin-karte-detail-label">1. 名前</span>
       <span class="admin-karte-detail-value">
         {% if patient.last_name or patient.first_name %}
-          {{ patient.last_name or '' }} {{ patient.first_name or '' }}{% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
+          {{ patient.last_name or '' }} {{ patient.first_name or '' }}{% if 'star' in (patient.vip_level or '') %} ⭐️{% endif %}{% if 'clover' in (patient.vip_level or '') %} 🍀{% endif %}
           <span class="admin-karte-detail-kana">
             （{{ patient.last_kana or '' }} {{ patient.first_kana or '' }}）
           </span>
@@ -111,7 +111,7 @@
             class="admin-karte-detail-introducer-link"
           >
             {{ patient.introducer_info.last_name or '' }} {{ patient.introducer_info.first_name or '' }}
-            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）{% if patient.introducer_info.vip_level == 'star' %}⭐️{% elif patient.introducer_info.vip_level == 'clover' %}🍀{% endif %}
+            （{{ patient.introducer_info.last_kana or '' }} {{ patient.introducer_info.first_kana or '' }}）{% if 'star' in (patient.introducer_info.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (patient.introducer_info.vip_level or '') %}🍀{% endif %}
           </a>
           {% if patient.introducer_info.introduced_count and patient.introducer_info.introduced_count > 0 %}
             <span class="admin-introducer-badge">{{ patient.introducer_info.introduced_count }}</span>
@@ -210,12 +210,16 @@
     <div class="admin-karte-detail-field">
       <span class="admin-karte-detail-label">19. VIPフラグ</span>
       <span class="admin-karte-detail-value">
-        <form action="/admin/karte/{{ patient.id }}/vip" method="POST" style="display: inline;">
-          <select name="vip_level" onchange="this.form.submit()" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: #fff; cursor: pointer;">
-            <option value="none" {% if patient.vip_level == 'none' or not patient.vip_level %}selected{% endif %}>なし</option>
-            <option value="star" {% if patient.vip_level == 'star' %}selected{% endif %}>⭐️</option>
-            <option value="clover" {% if patient.vip_level == 'clover' %}selected{% endif %}>🍀</option>
-          </select>
+        <form action="/admin/karte/{{ patient.id }}/vip" method="POST" style="display: inline-flex; gap: 16px; align-items: center;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" name="vip_star" value="1" {% if 'star' in (patient.vip_level or '') %}checked{% endif %}>
+            <span>⭐️</span>
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" name="vip_clover" value="1" {% if 'clover' in (patient.vip_level or '') %}checked{% endif %}>
+            <span>🍀</span>
+          </label>
+          <button type="submit" style="padding: 4px 8px; font-size: 0.85rem;">更新</button>
         </form>
       </span>
     </div>
@@ -538,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <a href="/admin/karte/{{ introduced_patient.id }}" class="admin-introduced-card {% if introduced_patient.category == 'アーティスト・タレント' or introduced_patient.category == 'アーティスト' %}category-artist{% elif introduced_patient.category == 'スポーツ選手' %}category-sports{% elif introduced_patient.gender == '男性' or introduced_patient.gender == 'male' or introduced_patient.gender == '男' %}gender-male{% elif introduced_patient.gender == '女性' or introduced_patient.gender == 'female' or introduced_patient.gender == '女' %}gender-female{% else %}gender-other{% endif %}">
         <div class="admin-introduced-head">
           <strong class="admin-introduced-name">
-            {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}{% if introduced_patient.vip_level == 'star' %} ⭐️{% elif introduced_patient.vip_level == 'clover' %} 🍀{% endif %}
+            {{ introduced_patient.last_name or '' }} {{ introduced_patient.first_name or '' }}{% if 'star' in (introduced_patient.vip_level or '') %} ⭐️{% endif %}{% if 'clover' in (introduced_patient.vip_level or '') %} 🍀{% endif %}
           </strong>
         </div>
         <div class="admin-introduced-info">

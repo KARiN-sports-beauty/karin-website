@@ -2299,12 +2299,17 @@ def admin_karte_new():
         name = f"{last_name} {first_name}".strip()
         kana = f"{last_kana} {first_kana}".strip()
         
-        # VIPフラグ取得（管理者のみ）
+        # VIPフラグ取得（管理者のみ）※⭐️と☘️は両方選択可
         vip_level = "none"  # デフォルト値
         if session.get("staff", {}).get("is_admin"):
-            vip_level_str = request.form.get("vip_level", "none").strip()
-            if vip_level_str in ["none", "star", "clover"]:
-                vip_level = vip_level_str
+            vip_star = request.form.get("vip_star") == "1"
+            vip_clover = request.form.get("vip_clover") == "1"
+            if vip_star and vip_clover:
+                vip_level = "star,clover"
+            elif vip_star:
+                vip_level = "star"
+            elif vip_clover:
+                vip_level = "clover"
         
         data = {
             "last_name": last_name,
@@ -2804,12 +2809,19 @@ def admin_karte_detail(patient_id):
 @app.route("/admin/karte/<patient_id>/vip", methods=["POST"])
 @admin_required
 def admin_karte_vip(patient_id):
-    """VIPフラグ更新（管理者のみ）"""
+    """VIPフラグ更新（管理者のみ）※⭐️と☘️は両方選択可"""
     try:
-        vip_level = request.form.get("vip_level", "none").strip()
-        
-        # 値の検証
-        if vip_level not in ["none", "star", "clover"]:
+        vip_star = request.form.get("vip_star") == "1"
+        vip_clover = request.form.get("vip_clover") == "1"
+        if vip_star and vip_clover:
+            vip_level = "star,clover"
+        elif vip_star:
+            vip_level = "star"
+        elif vip_clover:
+            vip_level = "clover"
+        else:
+            vip_level = "none"
+        if vip_level not in ["none", "star", "clover", "star,clover", "clover,star"]:
             flash("無効なVIPフラグ値です", "error")
             return redirect(f"/admin/karte/{patient_id}")
         

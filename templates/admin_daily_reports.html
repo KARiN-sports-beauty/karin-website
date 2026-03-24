@@ -90,7 +90,7 @@
                   {% else %}
                   {{ patient.patient_name or '患者不明' }}
                   {% endif %}
-                  {% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
+                  {% if 'star' in (patient.vip_level or '') %} ⭐️{% endif %}{% if 'clover' in (patient.vip_level or '') %} 🍀{% endif %}
                 </span>
                 <!-- コース名 -->
                 {% if patient.course_name %}
@@ -194,7 +194,7 @@
                   {% else %}
                   {{ patient.patient_name or '患者不明' }}
                   {% endif %}
-                  {% if patient.vip_level == 'star' %} ⭐️{% elif patient.vip_level == 'clover' %} 🍀{% endif %}
+                  {% if 'star' in (patient.vip_level or '') %} ⭐️{% endif %}{% if 'clover' in (patient.vip_level or '') %} 🍀{% endif %}
                 </span>
                 <!-- コース名 -->
                 {% if patient.course_name %}
@@ -503,10 +503,9 @@ document.addEventListener('DOMContentLoaded', function() {
               patientsHtml += '<input type="hidden" name="patient_id[]" value="' + patientId + '">';
               patientsHtml += '<input type="hidden" name="patient_report_id[]" value="' + patientReportId + '">';
               patientsHtml += '<div style="margin-bottom: 8px;"><strong style="color: #1E3A5F;">' + patientName;
-              if (!isField && patient.vip_level === 'star') {
-                patientsHtml += ' ⭐️';
-              } else if (!isField && patient.vip_level === 'clover') {
-                patientsHtml += ' 🍀';
+              if (!isField) {
+                if ((patient.vip_level || '').includes('star')) patientsHtml += ' ⭐️';
+                if ((patient.vip_level || '').includes('clover')) patientsHtml += ' 🍀';
               }
               patientsHtml += '</strong></div>';
               // 院内・往診の場合のみコース名を表示
