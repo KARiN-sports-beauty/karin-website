@@ -1983,6 +1983,11 @@ def admin_blog_edit(blog_id):
                 flash("ブログが見つかりません", "error")
                 return redirect("/admin/blogs")
             blog = res.data[0]
+            # 編集画面では <br> を表示せず改行のみ（読みやすさのため）
+            if blog.get("body"):
+                blog["body"] = re.sub(
+                    r"<\s*br\s*/?\s*>", "\n", blog["body"], flags=re.IGNORECASE
+                )
             staff_list = get_staff_choices()
             return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
         except Exception as e:
