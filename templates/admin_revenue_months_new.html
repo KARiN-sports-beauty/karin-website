@@ -14,9 +14,11 @@
 </div>
 
 {% set other_revenue = (total_revenue or 0) - (in_house_revenue or 0) - (visit_revenue or 0) - (field_revenue or 0) %}
+
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">年間売上の内訳</h3>
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #1E3A5F;">
       <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">院内</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue or 0) }}</div>
@@ -30,6 +32,74 @@
       <div style="font-size: 1.2rem; font-weight: 600; color: #FFB6C1;">¥{{ "{:,}".format(field_revenue or 0) }}</div>
     </div>
   </div>
+
+  <!-- 支払方法・領収書別の詳細 -->
+  <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+    <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #1E3A5F;">支払方法・領収書別の詳細</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px;">
+      <!-- 院内 -->
+      <div style="padding: 12px; background: #fafbfc; border-radius: 8px; border-left: 3px solid #1E3A5F;">
+        <div style="font-size: 0.9rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">院内</div>
+        {% for pair in (breakdown_order or []) %}
+          {% set amt = (revenue_breakdown or {}).get('in_house',{}).get(pair, 0) or 0 %}
+          {% if amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(pair[0], pair[0]) or '未設定' }}（{{ (receipt_labels or {}).get(pair[1], pair[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+        {% for k, amt in (revenue_breakdown or {}).get('in_house',{}).items() %}
+          {% if (k not in (breakdown_order or [])) and amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(k[0], k[0]) or '未設定' }}（{{ (receipt_labels or {}).get(k[1], k[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <!-- 往診 -->
+      <div style="padding: 12px; background: #fafbfc; border-radius: 8px; border-left: 3px solid #4CAF50;">
+        <div style="font-size: 0.9rem; font-weight: 600; color: #4CAF50; margin-bottom: 8px;">往診</div>
+        {% for pair in (breakdown_order or []) %}
+          {% set amt = (revenue_breakdown or {}).get('visit',{}).get(pair, 0) or 0 %}
+          {% if amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(pair[0], pair[0]) or '未設定' }}（{{ (receipt_labels or {}).get(pair[1], pair[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+        {% for k, amt in (revenue_breakdown or {}).get('visit', {}).items() %}
+          {% if (k not in (breakdown_order or [])) and amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(k[0], k[0]) or '未設定' }}（{{ (receipt_labels or {}).get(k[1], k[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <!-- 帯同 -->
+      <div style="padding: 12px; background: #fafbfc; border-radius: 8px; border-left: 3px solid #FFB6C1;">
+        <div style="font-size: 0.9rem; font-weight: 600; color: #FFB6C1; margin-bottom: 8px;">帯同</div>
+        {% for pair in (breakdown_order or []) %}
+          {% set amt = (revenue_breakdown or {}).get('field',{}).get(pair, 0) or 0 %}
+          {% if amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(pair[0], pair[0]) or '未設定' }}（{{ (receipt_labels or {}).get(pair[1], pair[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+        {% for k, amt in (revenue_breakdown or {}).get('field',{}).items() %}
+          {% if (k not in (breakdown_order or [])) and amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(k[0], k[0]) or '未設定' }}（{{ (receipt_labels or {}).get(k[1], k[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <!-- 全体 -->
+      <div style="padding: 12px; background: #fef9e7; border-radius: 8px; border-left: 3px solid #856404;">
+        <div style="font-size: 0.9rem; font-weight: 600; color: #856404; margin-bottom: 8px;">全体</div>
+        {% for pair in (breakdown_order or []) %}
+          {% set amt = (total_breakdown or {}).get(pair, 0) or 0 %}
+          {% if amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(pair[0], pair[0]) or '未設定' }}（{{ (receipt_labels or {}).get(pair[1], pair[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+        {% for k, amt in (total_breakdown or {}).items() %}
+          {% if (k not in (breakdown_order or [])) and amt > 0 %}
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">{{ (payment_labels or {}).get(k[0], k[0]) or '未設定' }}（{{ (receipt_labels or {}).get(k[1], k[1]) or '未設定' }}）: ¥{{ "{:,}".format(amt) }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
   {% if other_revenue > 0 %}
   <div style="margin-top: 16px; font-size: 0.9rem; color: #666;">その他: ¥{{ "{:,}".format(other_revenue) }}</div>
   {% endif %}

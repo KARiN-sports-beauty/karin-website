@@ -5960,11 +5960,18 @@ def admin_revenue_months(year):
         
         months_list = sorted(months_set, reverse=True)
 
-        # 年間売上（全体）を集計（work_type別内訳も取得）
+        # 年間売上（全体）を集計（work_type別・支払方法別・領収書別内訳も取得）
         total_revenue = 0
         in_house_revenue = 0
         visit_revenue = 0
         field_revenue = 0
+        # 支払方法・領収書別内訳: {work_type: {(payment_method, receipt_status): amount}}
+        revenue_breakdown = {
+            "in_house": {},
+            "visit": {},
+            "field": {},
+        }
+
         try:
             res_reports_all = supabase_admin.table("staff_daily_reports").select("id").gte("report_date", year_start).lte("report_date", year_end).execute()
             report_ids = [r["id"] for r in (res_reports_all.data or [])]
@@ -5974,19 +5981,46 @@ def admin_revenue_months(year):
                 item_ids = [item["id"] for item in items]
                 work_type_map = {item["id"]: item.get("work_type") for item in items if item.get("id")}
                 if item_ids:
-                    res_patients = supabase_admin.table("staff_daily_report_patients").select("amount, item_id").in_("item_id", item_ids).execute()
+                    res_patients = supabase_admin.table("staff_daily_report_patients").select("amount, item_id, reservation_id").in_("item_id", item_ids).execute()
+                    reservation_ids = [p.get("reservation_id") for p in (res_patients.data or []) if p.get("reservation_id")]
+
+                    # 予約から支払方法・領収書を取得
+                    reservation_payment_map = {}
+                    if reservation_ids:
+                        try:
+                            res_res = supabase_admin.table("reservations").select("id, payment_method, receipt_status").in_("id", reservation_ids).execute()
+                            for r in (res_res.data or []):
+                                reservation_payment_map[r.get("id")] = (
+                                    r.get("payment_method") or "",
+                                    r.get("receipt_status") or ""
+                                )
+                        except Exception as e2:
+                            print(f"⚠️ WARNING - 予約支払情報取得エラー: {e2}")
+
                     for patient in (res_patients.data or []):
                         amount = patient.get("amount", 0) or 0
                         total_revenue += amount
                         work_type = work_type_map.get(patient.get("item_id"))
+                        pm, rcpt = reservation_payment_map.get(patient.get("reservation_id"), ("", ""))
+                        key = (pm, rcpt)
+
                         if work_type == "in_house":
                             in_house_revenue += amount
+                            revenue_breakdown["in_house"][key] = revenue_breakdown["in_house"].get(key, 0) + amount
                         elif work_type == "visit":
                             visit_revenue += amount
+                            revenue_breakdown["visit"][key] = revenue_breakdown["visit"].get(key, 0) + amount
                         elif work_type == "field":
                             field_revenue += amount
+                            revenue_breakdown["field"][key] = revenue_breakdown["field"].get(key, 0) + amount
         except Exception as e:
             print(f"⚠️ WARNING - 年間売上集計エラー: {e}")
+
+        # 全体の内訳（院内+往診+帯同の合計を支払方法・領収書別に集約）
+        total_breakdown = {}
+        for wt in ["in_house", "visit", "field"]:
+            for key, amt in revenue_breakdown[wt].items():
+                total_breakdown[key] = total_breakdown.get(key, 0) + amt
         
         month_names = {
             "01": "1月", "02": "2月", "03": "3月", "04": "4月",
@@ -6003,7 +6037,17 @@ def admin_revenue_months(year):
             total_revenue=total_revenue,
             in_house_revenue=in_house_revenue,
             visit_revenue=visit_revenue,
-            field_revenue=field_revenue
+            field_revenue=field_revenue,
+            revenue_breakdown=revenue_breakdown,
+            total_breakdown=total_breakdown,
+            payment_labels={"cash": "現金", "credit": "クレジット", "paypay": "paypay", "month_end": "月末請求"},
+            receipt_labels={"with_receipt": "領収書あり", "no_receipt": "領収書なし"},
+            breakdown_order=[
+                ("cash", "with_receipt"), ("cash", "no_receipt"),
+                ("credit", "with_receipt"), ("credit", "no_receipt"),
+                ("paypay", "with_receipt"), ("paypay", "no_receipt"),
+                ("month_end", "with_receipt"), ("month_end", "no_receipt"),
+            ],
         )
     except Exception as e:
         print(f"❌ 月一覧取得エラー: {e}")
