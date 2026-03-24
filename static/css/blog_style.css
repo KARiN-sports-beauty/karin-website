@@ -799,6 +799,22 @@ body,
   margin-bottom: 0.4em;
 }
 
+/* <br> は改行のみ（段落の余白と二重にならないようにする） */
+.blog-detail .blog-body p + br,
+.blog-detail .blog-body h2 + br,
+.blog-detail .blog-body h3 + br,
+.blog-detail .blog-body ul + br,
+.blog-detail .blog-body ol + br,
+.blog-detail .blog-body blockquote + br,
+.blog-detail .blog-body figure + br {
+  display: none;
+}
+
+/* 連続 <br> は 1 回の改行にまとめる */
+.blog-detail .blog-body br + br {
+  display: none;
+}
+
 /* ===============================
    💬 コメント欄（デザインB）
 ================================ */
