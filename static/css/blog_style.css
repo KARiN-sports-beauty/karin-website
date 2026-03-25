@@ -651,11 +651,6 @@ body,
   padding: 0 6px;
 }
 
-.blog-detail .blog-body p {
-  margin-bottom: 1.7em;
-}
-
-
 @media (max-width: 768px) {
   /* ============================
        H1 / H2 / H3 のサイズ修正
@@ -774,12 +769,13 @@ body,
   line-height: 1.85;
 }
 
+/* p の上下マージンなし（段落間の空きは本文で 2 段改行→<br> で調整） */
 .blog-detail .blog-body p {
-  margin: 0 0 1.2em;
+  margin: 0;
 }
 
 .blog-detail .blog-body p + p {
-  margin-top: 0.5em;
+  margin-top: 0;
 }
 
 .blog-detail .blog-body h2 {
