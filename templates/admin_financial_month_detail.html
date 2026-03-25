@@ -202,8 +202,28 @@
         </tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="padding: 14px 12px 8px; border-top: 2px solid #ddd; font-weight: 600; color: #1E3A5F; background: #f9fafc;">
+            カテゴリ別小計（{{ year }}年{{ month_name }}）
+          </td>
+        </tr>
+        {% for row in expense_category_rows or [] %}
+        <tr style="background: #fafbfc;">
+          <td colspan="3" style="padding: 8px 12px; text-align: right; border-bottom: 1px solid #eee; color: #555;">{{ row.label }}</td>
+          <td style="padding: 8px 12px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600; color: #333;">¥{{ "{:,}".format(row.amount|int) }}</td>
+          <td style="border-bottom: 1px solid #eee;"></td>
+        </tr>
+        {% endfor %}
+        <tr style="background: #fff5f5;">
+          <td colspan="3" style="padding: 14px 12px; text-align: right; border-top: 2px solid #e0e0e0; font-weight: 700; color: #1E3A5F;">総経費合計</td>
+          <td style="padding: 14px 12px; text-align: right; border-top: 2px solid #e0e0e0; font-weight: 700; color: #c62828; font-size: 1.05rem;">¥{{ "{:,}".format((expense_list_total or 0)|int) }}</td>
+          <td style="border-top: 2px solid #e0e0e0;"></td>
+        </tr>
+      </tfoot>
     </table>
   </div>
+  <p style="margin: 12px 0 0; font-size: 0.85rem; color: #666;">※小計・合計は上の経費一覧（手動登録・自動連携・備品発注）のみです。スタッフ給与は「スタッフ給与」欄およびページ上部の収支サマリーの経費に含まれます。</p>
   {% else %}
   <p style="padding: 20px; color: #666;">経費はありません。</p>
   {% endif %}

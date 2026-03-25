@@ -9729,6 +9729,109 @@ def admin_equipment_copy_from_previous(year):
 # ===================================================
 # ✅ 収支管理
 # ===================================================
+# 月次経費一覧のカテゴリ小計表示用（templates/admin_financial_month_detail.html と整合）
+_FINANCIAL_EXPENSE_CATEGORY_LABELS = {
+    "salary": "人件費",
+    "transportation": "旅費交通費",
+    "social_insurance": "社会保険料",
+    "rent": "地代家賃",
+    "utilities": "光熱費",
+    "communication": "通信費",
+    "insurance": "保険料",
+    "lease": "リース料",
+    "tax": "税金",
+    "accounting": "経理・税理士費用",
+    "advertising": "広告宣伝費",
+    "promotion": "プロモーション費用",
+    "supplies": "消耗品",
+    "equipment": "備品・機器",
+    "office_supplies": "事務用品費",
+    "repairs": "修繕費",
+    "maintenance": "メンテナンス費",
+    "meeting": "会議費",
+    "entertainment": "接待交際費",
+    "vehicle": "車両費",
+    "depreciation": "減価償却費",
+    "training": "研修費",
+    "subscription": "サブスクリプション",
+    "software": "ソフトウェア・システム費用",
+    "other": "その他",
+    "equipment_order": "備品発注（消耗品）",
+}
+_FINANCIAL_EXPENSE_CATEGORY_ORDER = [
+    "salary",
+    "transportation",
+    "social_insurance",
+    "rent",
+    "utilities",
+    "communication",
+    "insurance",
+    "lease",
+    "tax",
+    "accounting",
+    "advertising",
+    "promotion",
+    "supplies",
+    "equipment",
+    "office_supplies",
+    "repairs",
+    "maintenance",
+    "meeting",
+    "entertainment",
+    "vehicle",
+    "depreciation",
+    "training",
+    "subscription",
+    "software",
+    "other",
+    "equipment_order",
+]
+
+
+def _financial_expense_category_summary(expenses, equipment_expenses):
+    """経費一覧に載る行のみをカテゴリ別に集計（備品発注は equipment_order にまとめる）。"""
+    from collections import defaultdict
+
+    def _amt(v):
+        try:
+            return float(v or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    totals = defaultdict(float)
+    for exp in expenses or []:
+        cat = exp.get("category") or "other"
+        if isinstance(cat, str) and cat.strip().lower() == "travel":
+            cat = "transportation"
+        else:
+            cat = str(cat).strip() or "other"
+        totals[cat] += _amt(exp.get("amount"))
+    totals["equipment_order"] = sum(_amt(e.get("amount")) for e in (equipment_expenses or []))
+
+    order_set = set(_FINANCIAL_EXPENSE_CATEGORY_ORDER)
+    rows = []
+    for key in _FINANCIAL_EXPENSE_CATEGORY_ORDER:
+        v = totals.get(key, 0)
+        if v > 0:
+            rows.append(
+                {
+                    "label": _FINANCIAL_EXPENSE_CATEGORY_LABELS.get(key, key),
+                    "amount": v,
+                }
+            )
+    extra = []
+    for key, v in totals.items():
+        if key in order_set or v <= 0:
+            continue
+        extra.append((key, v))
+    extra.sort(key=lambda t: _FINANCIAL_EXPENSE_CATEGORY_LABELS.get(t[0], str(t[0])))
+    for key, v in extra:
+        rows.append({"label": _FINANCIAL_EXPENSE_CATEGORY_LABELS.get(key, key), "amount": v})
+
+    total = sum(totals.values())
+    return rows, total
+
+
 @app.route("/admin/financial")
 @admin_required
 def admin_financial_years():
@@ -10197,7 +10300,11 @@ def admin_financial_month_detail(year, month):
             5: "5月", 6: "6月", 7: "7月", 8: "8月",
             9: "9月", 10: "10月", 11: "11月", 12: "12月"
         }.get(month_int, f"{month_int}月")
-        
+
+        expense_category_rows, expense_list_total = _financial_expense_category_summary(
+            expenses, equipment_expenses
+        )
+
         return render_template(
             "admin_financial_month_detail.html",
             year=year,
@@ -10209,7 +10316,9 @@ def admin_financial_month_detail(year, month):
             staff_revenue=staff_revenue,
             expenses=expenses,
             equipment_expenses=equipment_expenses,
-            staff_salaries=staff_salaries
+            staff_salaries=staff_salaries,
+            expense_category_rows=expense_category_rows,
+            expense_list_total=expense_list_total,
         )
     except Exception as e:
         import traceback
