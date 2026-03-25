@@ -120,7 +120,7 @@
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">経費一覧</h3>
   
-  {% if expenses or equipment_expenses %}
+  {% if expenses or equipment_expenses or staff_salaries %}
   <div style="overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
@@ -223,7 +223,7 @@
       </tfoot>
     </table>
   </div>
-  <p style="margin: 12px 0 0; font-size: 0.85rem; color: #666;">※小計・合計は上の経費一覧（手動登録・自動連携・備品発注）のみです。スタッフ給与は「スタッフ給与」欄およびページ上部の収支サマリーの経費に含まれます。</p>
+  <p style="margin: 12px 0 0; font-size: 0.85rem; color: #666;">※人件費の小計には、上の「スタッフ給与」の総支給額を含みます。総経費合計はページ上部の収支サマリーの経費（当該月の経費＋備品発注＋給与）と一致します。</p>
   {% else %}
   <p style="padding: 20px; color: #666;">経費はありません。</p>
   {% endif %}

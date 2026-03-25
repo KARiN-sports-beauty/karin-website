@@ -9788,8 +9788,8 @@ _FINANCIAL_EXPENSE_CATEGORY_ORDER = [
 ]
 
 
-def _financial_expense_category_summary(expenses, equipment_expenses):
-    """経費一覧に載る行のみをカテゴリ別に集計（備品発注は equipment_order にまとめる）。"""
+def _financial_expense_category_summary(expenses, equipment_expenses, staff_salaries=None):
+    """経費・備品発注をカテゴリ別に集計。スタッフ給与の総支給は人件費（salary）に合算する。"""
     from collections import defaultdict
 
     def _amt(v):
@@ -9807,6 +9807,8 @@ def _financial_expense_category_summary(expenses, equipment_expenses):
             cat = str(cat).strip() or "other"
         totals[cat] += _amt(exp.get("amount"))
     totals["equipment_order"] = sum(_amt(e.get("amount")) for e in (equipment_expenses or []))
+    for sal in staff_salaries or []:
+        totals["salary"] += _amt(sal.get("total_salary"))
 
     order_set = set(_FINANCIAL_EXPENSE_CATEGORY_ORDER)
     rows = []
@@ -10302,7 +10304,7 @@ def admin_financial_month_detail(year, month):
         }.get(month_int, f"{month_int}月")
 
         expense_category_rows, expense_list_total = _financial_expense_category_summary(
-            expenses, equipment_expenses
+            expenses, equipment_expenses, staff_salaries
         )
 
         return render_template(
