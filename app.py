@@ -1879,6 +1879,21 @@ def show_blog(slug):
 # ===================================================
 # ✅ ブログ管理（/admin/blogs）
 # ===================================================
+def _textarea_body_double_newlines_to_br(body_raw):
+    """
+    ブログ・ニュース共通。テキストエリアの本文を DB 用に変換する。
+    連続 n 個の改行（\\n）に対し <br> を (n - 1) 個挿入。単独の \\n はそのまま残す。
+    （ニュースはプレーン中心、ブログは HTML タグ間の 1 行改行で余分な br を付けない）
+    """
+    if body_raw is None:
+        return ""
+    return re.sub(
+        r"\n{2,}",
+        lambda m: "<br>" * (len(m.group(0)) - 1),
+        body_raw,
+    )
+
+
 @app.route("/admin/blogs")
 @staff_required
 def admin_blogs():
@@ -1935,8 +1950,7 @@ def admin_blog_new():
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"
     else:
-        # textarea の改行 → <br>。入力した <br> タグはそのまま保持（公開ページで改行として表示）
-        body_html = body_raw.replace("\n", "<br>")
+        body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
     
     # 現在ログイン中のスタッフIDを取得
@@ -2027,7 +2041,7 @@ def admin_blog_edit(blog_id):
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"
     else:
-        body_html = body_raw.replace("\n", "<br>")
+        body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
     author_staff_id = request.form.get("author_staff_id")
     if not author_staff_id:
@@ -2143,7 +2157,10 @@ def admin_news_new():
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    if not body_raw:
+        body_html = "<p>(本文未入力)</p>"
+    else:
+        body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
     
     insert_data = {
@@ -2181,9 +2198,10 @@ def admin_news_edit(news_id):
                 flash("ニュースが見つかりません", "error")
                 return redirect("/admin/news")
             news = res.data[0]
-            # bodyの<br>を\nに戻す
             if news.get("body"):
-                news["body"] = news["body"].replace("<br>", "\n")
+                news["body"] = re.sub(
+                    r"<\s*br\s*/?\s*>", "\n", news["body"], flags=re.IGNORECASE
+                )
             return render_template("admin_news_edit.html", news=news)
         except Exception as e:
             print("❌ ニュース取得エラー:", e)
@@ -2208,7 +2226,10 @@ def admin_news_edit(news_id):
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
     body_raw = request.form.get("body", "").strip()
-    body_html = body_raw.replace("\n", "<br>") if body_raw else "<p>(本文未入力)</p>"
+    if not body_raw:
+        body_html = "<p>(本文未入力)</p>"
+    else:
+        body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
     
     update_data = {

@@ -51,8 +51,8 @@
   </div>
   
   <div style="margin-bottom: 20px;">
-    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">本文（改行は自動で&lt;br&gt;に変換されます）</label>
-    <textarea name="body" rows="15" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit;">{{ news.body.replace("<br>", "\n") if news.body else "" }}</textarea>
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">本文（プレーンテキスト。行の区切りは空行＝Enter を 2 回以上で &lt;br&gt;。連続 n 改行は &lt;br&gt; が n−1 個）</label>
+    <textarea name="body" rows="15" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit;">{{ news.body or "" }}</textarea>
   </div>
   
   <div style="display: flex; gap: 12px; margin-top: 30px;">

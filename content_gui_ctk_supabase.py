@@ -40,6 +40,20 @@ from supabase import create_client, Client
 load_dotenv()
 
 
+def _textarea_body_double_newlines_to_br(body_raw):
+    """
+    ブログ・ニュース共通（app._textarea_body_double_newlines_to_br と同じ）。
+    連続 n 改行に対し <br> を (n - 1) 個。単独改行はそのまま。
+    """
+    if body_raw is None:
+        return ""
+    return re.sub(
+        r"\n{2,}",
+        lambda m: "<br>" * (len(m.group(0)) - 1),
+        body_raw,
+    )
+
+
 # =========================
 # タイムゾーン (JST)
 # =========================
@@ -475,9 +489,14 @@ def open_edit(kind, id):
     row_idx += 1
 
     # 本文
+    _body_lbl = (
+        "本文（HTML可。タグ間の1行改行はそのまま。段落の空けは空行＝Enter2回以上→<br>）"
+        if kind == "blog"
+        else "本文（プレーンテキスト。行の区切りは空行＝Enter2回以上で<br>／連続n改行は<br>がn−1個）"
+    )
     ctk.CTkLabel(
         frm,
-        text="本文（プレーンテキスト → 改行を<br>に変換して保存）",
+        text=_body_lbl,
         text_color="#1e3a5f"
     ).grid(row=row_idx, column=0, sticky="w", padx=16, pady=(12,4))
     row_idx += 1
@@ -485,8 +504,9 @@ def open_edit(kind, id):
     txt_body = ctk.CTkTextbox(frm, height=360, corner_radius=14)
 
     raw_body = row.get("body", "") or ""
-    # DB保存時は <br> に変換している前提 → 編集時は \n に戻す
-    body_for_edit = raw_body.replace("<br>", "\n")
+    body_for_edit = re.sub(
+        r"<\s*br\s*/?\s*>", "\n", raw_body, flags=re.IGNORECASE
+    )
     if not body_for_edit.strip():
         txt_body.insert("1.0", "ここに本文を入力してください")
         txt_body.configure(text_color="#999999")
@@ -544,7 +564,11 @@ def open_edit(kind, id):
         if "ここに本文を入力してください" in raw_body and raw_body.strip() == "ここに本文を入力してください":
             body_html = "<p>(本文未入力)</p>"
         else:
-            body_html = raw_body.strip().replace("\n", "<br>") if raw_body.strip() else "<p>(本文未入力)</p>"
+            rb = raw_body.strip()
+            if not rb:
+                body_html = "<p>(本文未入力)</p>"
+            else:
+                body_html = _textarea_body_double_newlines_to_br(rb)
 
         # Supabase UPDATE
         update_data = {
@@ -829,9 +853,14 @@ def new_post(kind="blog"):
     body.grid_columnconfigure(0, weight=1)
 
     # 本文
+    _new_body_lbl = (
+        "本文（HTML可。タグ間の1行改行はそのまま。段落の空けは空行＝Enter2回以上→<br>）"
+        if kind == "blog"
+        else "本文（プレーンテキスト。行の区切りは空行＝Enter2回以上で<br>／連続n改行は<br>がn−1個）"
+    )
     ctk.CTkLabel(
         body,
-        text="本文（テキスト入力 → 改行を<br>に変換して保存）",
+        text=_new_body_lbl,
         text_color="#1e3a5f"
     ).grid(row=row_idx, column=0, sticky="w", padx=16, pady=(12,4))
     row_idx += 1
@@ -872,7 +901,7 @@ def new_post(kind="blog"):
         if not body_raw or body_raw == placeholder_text:
             body_html = "<p>(本文未入力)</p>"
         else:
-            body_html = body_raw.replace("\n", "<br>")
+            body_html = _textarea_body_double_newlines_to_br(body_raw)
 
         image_url = thumb_url_var.get().strip()
         category = ent_category.get().strip()
