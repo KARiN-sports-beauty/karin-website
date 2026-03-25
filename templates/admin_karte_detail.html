@@ -350,6 +350,9 @@
         合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
       </div>
       {% endif %}
+      {% if reservation.status == 'completed' %}
+      {% include 'admin_reservation_payment_row.html' %}
+      {% endif %}
       
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="/admin/reservations/{{ reservation.id }}/edit" 
@@ -473,6 +476,7 @@
       <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
         合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
       </div>
+      {% include 'admin_reservation_payment_row.html' %}
       
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="/admin/reservations/{{ reservation.id }}/edit" 

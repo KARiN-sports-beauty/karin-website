@@ -212,6 +212,9 @@
           合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
         </div>
         {% endif %}
+        {% if reservation.status == 'completed' %}
+        {% include 'admin_reservation_payment_row.html' %}
+        {% endif %}
         
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <a href="/admin/reservations/{{ reservation.id }}/edit" 
