@@ -299,10 +299,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
         if (completeBtn) {
-          completeBtn.disabled = !(
-            paymentInput && paymentInput.value &&
-            receiptInput && receiptInput.value
-          );
+          const pm = paymentInput && paymentInput.value;
+          const rc = receiptInput && receiptInput.value;
+          completeBtn.disabled = !(pm && (pm === 'month_end' || rc));
         }
       });
     });
