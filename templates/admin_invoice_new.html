@@ -16,9 +16,9 @@
   <a href="/admin/invoices/years" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-right: 12px;">← 請求書一覧に戻る</a>
 </div>
 
-<form method="POST" action="/admin/invoices/new" style="max-width: 1000px;">
+<form method="POST" action="/admin/invoices/new" class="invoice-new-form" style="max-width: 1000px; width: 100%; box-sizing: border-box;">
   <!-- 基本情報 -->
-  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <div class="invoice-card" style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px; max-width: 100%; box-sizing: border-box; overflow-x: hidden;">
     <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">基本情報</h3>
     
     <div style="margin-bottom: 20px;">
@@ -49,12 +49,12 @@
       <input type="text" name="place_contact_person" id="place_contact_person" placeholder="担当者名を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
     </div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-      <div>
+    <div class="invoice-year-month-row">
+      <div class="invoice-grid-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象年<span style="color: #f44336;">*</span></label>
         <input type="number" name="year" required min="2020" max="2100" value="{{ current_year or '' }}" placeholder="例：2025" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
-      <div>
+      <div class="invoice-grid-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象月<span style="color: #f44336;">*</span></label>
         <select name="month" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
           <option value="">選択してください</option>
@@ -74,14 +74,14 @@
       </div>
     </div>
     
-<div class="invoice-date-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-      <div>
+<div class="invoice-date-row">
+      <div class="invoice-date-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">発行日<span style="color: #f44336;">*</span></label>
-        <input type="date" name="issue_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="date" name="issue_date" required class="invoice-date-input">
       </div>
-      <div>
+      <div class="invoice-date-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">支払期限<span style="color: #f44336;">*</span></label>
-        <input type="date" name="due_date" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="date" name="due_date" required class="invoice-date-input">
       </div>
     </div>
     
@@ -92,28 +92,28 @@
   </div>
   
   <!-- 明細 -->
-  <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div class="invoice-card" style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px; max-width: 100%; box-sizing: border-box; overflow-x: hidden;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
       <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">請求明細</h3>
       <button type="button" onclick="addItemRow()" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 16px; font-size: 0.9rem;">+ 明細を追加</button>
     </div>
     
     <div id="items_container">
-      <div class="item-row invoice-item-row" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;">
+      <div class="item-row invoice-item-row">
         <div>
-          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">日付<span style="color: #f44336;">*</span></label>
-          <input type="date" name="item_date" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+          <label class="invoice-item-label">日付<span style="color: #f44336;">*</span></label>
+          <input type="date" name="item_date" required class="invoice-item-input">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">内容</label>
-          <input type="text" name="item_description" placeholder="例：トレーナー帯同" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+          <label class="invoice-item-label">内容</label>
+          <input type="text" name="item_description" placeholder="例：トレーナー帯同" class="invoice-item-input">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">金額<span style="color: #f44336;">*</span></label>
-          <input type="number" name="item_amount" required min="0" placeholder="例：11000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+          <label class="invoice-item-label">金額<span style="color: #f44336;">*</span></label>
+          <input type="number" name="item_amount" required min="0" placeholder="例：11000" class="invoice-item-input">
         </div>
         <div>
-          <button type="button" onclick="removeItemRow(this)" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">削除</button>
+          <button type="button" onclick="removeItemRow(this)" class="invoice-item-remove">削除</button>
         </div>
       </div>
     </div>
@@ -130,22 +130,21 @@ function addItemRow() {
   const container = document.getElementById('items_container');
   const newRow = document.createElement('div');
   newRow.className = 'item-row invoice-item-row';
-  newRow.style.cssText = 'display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 12px; background: #f5f7fb; border-radius: 8px;';
   newRow.innerHTML = `
     <div>
-      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">日付<span style="color: #f44336;">*</span></label>
-      <input type="date" name="item_date" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+      <label class="invoice-item-label">日付<span style="color: #f44336;">*</span></label>
+      <input type="date" name="item_date" required class="invoice-item-input">
     </div>
     <div>
-      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">内容</label>
-      <input type="text" name="item_description" placeholder="例：トレーナー帯同" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+      <label class="invoice-item-label">内容</label>
+      <input type="text" name="item_description" placeholder="例：トレーナー帯同" class="invoice-item-input">
     </div>
     <div>
-      <label style="display: block; margin-bottom: 4px; font-weight: 600; color: #1E3A5F; font-size: 0.9rem;">金額<span style="color: #f44336;">*</span></label>
-      <input type="number" name="item_amount" required min="0" placeholder="例：11000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+      <label class="invoice-item-label">金額<span style="color: #f44336;">*</span></label>
+      <input type="number" name="item_amount" required min="0" placeholder="例：11000" class="invoice-item-input">
     </div>
     <div>
-      <button type="button" onclick="removeItemRow(this)" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">削除</button>
+      <button type="button" onclick="removeItemRow(this)" class="invoice-item-remove">削除</button>
     </div>
   `;
   container.appendChild(newRow);
@@ -193,22 +192,116 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+.invoice-year-month-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.invoice-grid-cell {
+  min-width: 0;
+}
+
+.invoice-date-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.invoice-date-cell {
+  min-width: 0;
+}
+.invoice-date-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.invoice-item-label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #1E3A5F;
+  font-size: 0.9rem;
+}
+.invoice-item-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+.invoice-item-remove {
+  padding: 8px 16px;
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.invoice-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f5f7fb;
+  border-radius: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+.invoice-item-row > div {
+  min-width: 0;
+}
+
 @media (max-width: 767px) {
+  .invoice-year-month-row {
+    grid-template-columns: 1fr;
+  }
   .invoice-date-row {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
   }
   .invoice-item-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 0;
+    padding: 14px;
   }
-  .invoice-item-row label {
-    font-size: 0.8rem !important;
+  .invoice-item-row > div:not(:last-child) {
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.12);
   }
-  .invoice-item-row input {
-    font-size: 0.9rem !important;
+  .invoice-item-row > div:last-child {
+    align-self: stretch;
+    margin-bottom: 0;
+    padding-bottom: 0;
   }
-  .invoice-item-row button {
+  .invoice-item-row .invoice-item-label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .invoice-item-row .invoice-item-input {
+    font-size: 1rem;
+    padding: 10px;
+  }
+  .invoice-item-row .invoice-item-remove {
     width: 100%;
+    padding: 10px 16px;
   }
 }
 </style>

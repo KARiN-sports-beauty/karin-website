@@ -6658,57 +6658,91 @@ def admin_invoice_new():
             due_date = request.form.get("due_date")
             notes = request.form.get("notes", "").strip()
             
-            # 請求書を作成
+            # 請求書番号（INV-YYYY-MM-XXX）— 自動作成と同形式
+            month_str = str(month).zfill(2)
+            try:
+                res_count = supabase_admin.table("invoices").select("id", count="exact").eq("year", year).eq("month", month).execute()
+                existing_count = res_count.count or 0
+                invoice_number = f"INV-{year}-{month_str}-{str(existing_count + 1).zfill(3)}"
+            except Exception:
+                invoice_number = f"INV-{year}-{month_str}-001"
+            
+            # 請求書を作成（カラム名は add_invoices_table.sql / 自動作成と一致）
             invoice_data = {
+                "invoice_number": invoice_number,
                 "place_name": place_name,
-                "address": place_address,
-                "phone": place_phone,
-                "contact_person": place_contact_person,
+                "place_address": place_address or None,
+                "place_phone": place_phone or None,
+                "place_contact_person": place_contact_person or None,
                 "year": year,
                 "month": month,
                 "issue_date": issue_date,
                 "due_date": due_date,
-                "notes": notes,
+                "subtotal_amount": 0,
+                "tax_amount": 0,
                 "total_amount": 0,
-                "created_at": now_iso()
+                "status": "draft",
+                "notes": notes or None,
             }
             
             res_invoice = supabase_admin.table("invoices").insert(invoice_data).execute()
             invoice_id = res_invoice.data[0]["id"]
             
-            # 明細を追加
-            item_count = int(request.form.get("item_count", 0))
+            # 請求先マスタ（invoice_places）— 編集画面と同様に同期
+            if place_name:
+                try:
+                    res_existing_place = supabase_admin.table("invoice_places").select("id").eq("place_name", place_name).execute()
+                    place_payload = {
+                        "address": place_address or None,
+                        "phone": place_phone or None,
+                        "contact_person": place_contact_person or None,
+                        "updated_at": datetime.now(JST).isoformat(),
+                    }
+                    if res_existing_place.data:
+                        supabase_admin.table("invoice_places").update(place_payload).eq("id", res_existing_place.data[0]["id"]).execute()
+                    else:
+                        supabase_admin.table("invoice_places").insert({
+                            "place_name": place_name,
+                            **{k: place_payload[k] for k in ("address", "phone", "contact_person")},
+                        }).execute()
+                except Exception as ex_place:
+                    print(f"⚠️ WARNING - 請求先マスタ保存（新規作成）: {ex_place}")
+            
+            # 明細（フォームは item_date / item_description / item_amount を複数行で送信）
+            item_dates = request.form.getlist("item_date")
+            item_descriptions = request.form.getlist("item_description")
+            item_amounts = request.form.getlist("item_amount")
+            n_rows = max(len(item_dates), len(item_descriptions), len(item_amounts))
             items = []
-            for i in range(item_count):
-                description = request.form.get(f"item_description_{i}", "").strip()
-                quantity = request.form.get(f"item_quantity_{i}", "0").strip()
-                unit_price = request.form.get(f"item_unit_price_{i}", "0").strip()
-                report_date = request.form.get(f"item_report_date_{i}", "").strip()
-                
-                if description:
-                    try:
-                        qty = int(quantity) if quantity else 0
-                        price = float(unit_price) if unit_price else 0
-                        amount = qty * price
-                        
-                        items.append({
-                            "invoice_id": invoice_id,
-                            "description": description,
-                            "quantity": qty,
-                            "unit_price": price,
-                            "amount": amount,
-                            "report_date": report_date if report_date else None,
-                            "created_at": now_iso()
-                        })
-                    except:
-                        continue
+            for i in range(n_rows):
+                report_date = (item_dates[i] if i < len(item_dates) else "").strip()
+                description = (item_descriptions[i] if i < len(item_descriptions) else "").strip()
+                amt_raw = (item_amounts[i] if i < len(item_amounts) else "").strip()
+                if not report_date:
+                    continue
+                try:
+                    amount = int(float(amt_raw)) if amt_raw else 0
+                except (TypeError, ValueError):
+                    continue
+                if amount < 0:
+                    continue
+                items.append({
+                    "invoice_id": invoice_id,
+                    "report_date": report_date,
+                    "description": description or None,
+                    "amount": amount,
+                })
             
             if items:
                 supabase_admin.table("invoice_items").insert(items).execute()
-                
-                # 合計金額を計算
-                total_amount = sum(item["amount"] for item in items)
-                supabase_admin.table("invoices").update({"total_amount": total_amount}).eq("id", invoice_id).execute()
+                subtotal_amount = sum(row["amount"] for row in items)
+                tax_amount = int(subtotal_amount * 0.1)
+                total_with_tax = subtotal_amount + tax_amount
+                supabase_admin.table("invoices").update({
+                    "subtotal_amount": subtotal_amount,
+                    "tax_amount": tax_amount,
+                    "total_amount": total_with_tax,
+                }).eq("id", invoice_id).execute()
             
             flash("請求書を作成しました", "success")
             return redirect(f"/admin/invoices/{invoice_id}")
@@ -6723,16 +6757,16 @@ def admin_invoice_new():
     # 既存の請求先が取得できなくてもフォームは表示する
     existing_places = []
     try:
-        res_existing = supabase_admin.table("invoices").select("place_name, address, phone, contact_person").order("created_at", desc=True).limit(50).execute()
+        res_existing = supabase_admin.table("invoices").select("place_name, place_address, place_phone, place_contact_person").order("created_at", desc=True).limit(50).execute()
         seen_places = set()
         for inv in (res_existing.data or []):
             place = inv.get("place_name")
             if place and place not in seen_places:
                 existing_places.append({
                     "place_name": place,
-                    "address": inv.get("address", ""),
-                    "phone": inv.get("phone", ""),
-                    "contact_person": inv.get("contact_person", "")
+                    "address": inv.get("place_address") or "",
+                    "phone": inv.get("place_phone") or "",
+                    "contact_person": inv.get("place_contact_person") or "",
                 })
                 seen_places.add(place)
     except Exception as e:
@@ -11168,7 +11202,7 @@ def admin_financial_salary_delete(year, month, salary_id):
 def admin_videos():
     """セルフケア動画一覧（あいうえお順）"""
     try:
-        res = supabase_admin.table("self_care_videos").select("*").order("item_name").execute()
+        res = supabase_admin.table("self_care_videos").select("*").order("name").execute()
         videos = res.data or []
         return render_template("admin_videos.html", videos=videos)
     except Exception as e:
