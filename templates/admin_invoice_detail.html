@@ -23,10 +23,13 @@
   <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px;">
     <div>
       <div style="font-size: 1.5rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">{{ company_info.name }}</div>
+      {% if company_info.address or company_info.phone %}
       <div style="font-size: 0.9rem; color: #666; line-height: 1.6;">
-        〒{{ company_info.address }}<br>
-        TEL: {{ company_info.phone }}
+        {% if company_info.address %}〒{{ company_info.address }}{% endif %}
+        {% if company_info.address and company_info.phone %}<br>{% endif %}
+        {% if company_info.phone %}TEL: {{ company_info.phone }}{% endif %}
       </div>
+      {% endif %}
     </div>
     <div style="text-align: right;">
       <div style="font-size: 1.3rem; font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">請求書</div>
@@ -51,25 +54,27 @@
     {% endif %}
   </div>
   
-  <!-- 請求期間・支払期限 -->
+  <!-- 請求期間・支払期限・状態 -->
   <div style="margin-bottom: 30px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
-    <div style="display: flex; gap: 24px; font-size: 0.95rem; color: #333;">
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; font-size: 0.95rem; color: #333;">
       <div>
         <span style="color: #666;">請求期間：</span>
         <span style="font-weight: 600;">{{ invoice.year }}年{{ month_name }}（{{ invoice.issue_date }} 発行）</span>
       </div>
+      {% if invoice.due_date %}
       <div>
         <span style="color: #666;">支払期限：</span>
         <span style="font-weight: 600;">{{ invoice.due_date }}</span>
       </div>
+      {% endif %}
       <div>
         <span style="color: #666;">状態：</span>
         {% if invoice.status == 'draft' %}
         <span style="font-weight: 600; color: #856404;">未作成</span>
         {% elif invoice.status == 'sent' %}
-        <span style="font-weight: 600; color: #0c5460;">発送済み（{{ invoice.sent_at }}）</span>
+        <span style="font-weight: 600; color: #0c5460;">発送済み{% if invoice.sent_at %}（{{ invoice.sent_at }}）{% endif %}</span>
         {% elif invoice.status == 'paid' %}
-        <span style="font-weight: 600; color: #155724;">入金済み（{{ invoice.paid_at }}）</span>
+        <span style="font-weight: 600; color: #155724;">入金済み{% if invoice.paid_at %}（{{ invoice.paid_at }}）{% endif %}</span>
         {% endif %}
       </div>
     </div>
@@ -88,7 +93,7 @@
       {% for item in items %}
       <tr style="border-bottom: 1px solid #f0f0f0;">
         <td style="padding: 12px; border-right: 1px solid #ddd;">{{ item.report_date }}</td>
-        <td style="padding: 12px; border-right: 1px solid #ddd;">{{ item.description or 'トレーナー帯同' }}</td>
+        <td style="padding: 12px; border-right: 1px solid #ddd;">{% if item.description %}{{ item.description }}{% endif %}</td>
         <td style="padding: 12px; text-align: right; font-weight: 600;">¥{{ "{:,}".format(item.amount) }}</td>
       </tr>
       {% endfor %}
@@ -111,15 +116,19 @@
     </div>
   </div>
   
-  <!-- 振込先情報 -->
+  <!-- 振込先情報（記入がある項目のみ表示） -->
+  {% if company_info.bank or company_info.branch or company_info.account_type or company_info.account_number or company_info.account_name %}
   <div style="padding: 16px; background: #f5f7fb; border-radius: 8px; margin-bottom: 20px;">
     <div style="font-weight: 600; color: #1E3A5F; margin-bottom: 8px;">振込先情報</div>
     <div style="font-size: 0.95rem; color: #333; line-height: 1.6;">
+      {% if company_info.bank or company_info.branch or company_info.account_type %}
       {{ company_info.bank }} {{ company_info.branch }} {{ company_info.account_type }}<br>
-      口座番号：{{ company_info.account_number }}<br>
-      口座名義：{{ company_info.account_name }}
+      {% endif %}
+      {% if company_info.account_number %}口座番号：{{ company_info.account_number }}<br>{% endif %}
+      {% if company_info.account_name %}口座名義：{{ company_info.account_name }}{% endif %}
     </div>
   </div>
+  {% endif %}
   
   <!-- 備考 -->
   {% if invoice.notes %}

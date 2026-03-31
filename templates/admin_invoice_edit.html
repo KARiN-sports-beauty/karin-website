@@ -49,7 +49,7 @@
       </div>
       <div>
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">支払期限</label>
-        <input type="date" name="due_date" value="{{ invoice.due_date }}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="date" name="due_date" value="{{ invoice.due_date or '' }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
     

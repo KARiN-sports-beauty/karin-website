@@ -6655,7 +6655,7 @@ def admin_invoice_new():
             year = int(request.form.get("year"))
             month = int(request.form.get("month"))
             issue_date = request.form.get("issue_date")
-            due_date = request.form.get("due_date")
+            due_date = (request.form.get("due_date") or "").strip() or None
             notes = request.form.get("notes", "").strip()
             
             # 請求書番号（INV-YYYY-MM-XXX）— 自動作成と同形式
@@ -6879,7 +6879,7 @@ def admin_invoice_edit(invoice_id):
         place_phone = request.form.get("place_phone", "").strip()
         place_contact_person = request.form.get("place_contact_person", "").strip()
         issue_date = request.form.get("issue_date", "").strip()
-        due_date = request.form.get("due_date", "").strip()
+        due_date = (request.form.get("due_date") or "").strip() or None
         status = request.form.get("status", "draft").strip()
         sent_at = request.form.get("sent_at", "").strip() or None
         paid_at = request.form.get("paid_at", "").strip() or None
@@ -6915,7 +6915,7 @@ def admin_invoice_edit(invoice_id):
             "place_phone": place_phone or None,
             "place_contact_person": place_contact_person or None,
             "issue_date": issue_date or invoice.get("issue_date"),
-            "due_date": due_date or invoice.get("due_date"),
+            "due_date": due_date,
             "status": status,
             "sent_at": sent_at,
             "paid_at": paid_at,

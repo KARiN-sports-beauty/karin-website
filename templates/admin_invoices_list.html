@@ -34,7 +34,7 @@
           請求書番号：{{ invoice.invoice_number }}
         </div>
         <div style="font-size: 0.9rem; color: #666;">
-          請求期間：{{ year }}年{{ month_name }}（{{ invoice.issue_date }} 発行、支払期限：{{ invoice.due_date }}）
+          請求期間：{{ year }}年{{ month_name }}（{{ invoice.issue_date }} 発行{% if invoice.due_date %}、支払期限：{{ invoice.due_date }}{% endif %}）
         </div>
       </div>
       <div style="display: flex; flex-direction: column; align-items: end; gap: 8px;">

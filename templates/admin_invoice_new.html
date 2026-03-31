@@ -49,14 +49,14 @@
       <input type="text" name="place_contact_person" id="place_contact_person" placeholder="担当者名を入力" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
     </div>
     
-    <div class="invoice-year-month-row">
+    <div class="invoice-meta-grid">
       <div class="invoice-grid-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象年<span style="color: #f44336;">*</span></label>
-        <input type="number" name="year" required min="2020" max="2100" value="{{ current_year or '' }}" placeholder="例：2025" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="number" name="year" required min="2020" max="2100" value="{{ current_year or '' }}" placeholder="例：2025" class="invoice-standard-input">
       </div>
       <div class="invoice-grid-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">請求対象月<span style="color: #f44336;">*</span></label>
-        <select name="month" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <select name="month" required class="invoice-standard-input">
           <option value="">選択してください</option>
           <option value="01">1月</option>
           <option value="02">2月</option>
@@ -72,16 +72,13 @@
           <option value="12">12月</option>
         </select>
       </div>
-    </div>
-    
-<div class="invoice-date-row">
-      <div class="invoice-date-cell">
+      <div class="invoice-grid-cell">
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">発行日<span style="color: #f44336;">*</span></label>
-        <input type="date" name="issue_date" required class="invoice-date-input">
+        <input type="date" name="issue_date" required class="invoice-date-input invoice-standard-input">
       </div>
-      <div class="invoice-date-cell">
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">支払期限<span style="color: #f44336;">*</span></label>
-        <input type="date" name="due_date" required class="invoice-date-input">
+      <div class="invoice-grid-cell">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">支払期限</label>
+        <input type="date" name="due_date" class="invoice-date-input invoice-standard-input">
       </div>
     </div>
     
@@ -100,9 +97,9 @@
     
     <div id="items_container">
       <div class="item-row invoice-item-row">
-        <div>
+        <div class="invoice-item-col invoice-item-col-date">
           <label class="invoice-item-label">日付<span style="color: #f44336;">*</span></label>
-          <input type="date" name="item_date" required class="invoice-item-input">
+          <input type="date" name="item_date" required class="invoice-item-input invoice-item-input-date">
         </div>
         <div>
           <label class="invoice-item-label">内容</label>
@@ -131,9 +128,9 @@ function addItemRow() {
   const newRow = document.createElement('div');
   newRow.className = 'item-row invoice-item-row';
   newRow.innerHTML = `
-    <div>
+    <div class="invoice-item-col invoice-item-col-date">
       <label class="invoice-item-label">日付<span style="color: #f44336;">*</span></label>
-      <input type="date" name="item_date" required class="invoice-item-input">
+      <input type="date" name="item_date" required class="invoice-item-input invoice-item-input-date">
     </div>
     <div>
       <label class="invoice-item-label">内容</label>
@@ -192,9 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.invoice-year-month-row {
+.invoice-meta-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
   width: 100%;
@@ -203,20 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .invoice-grid-cell {
   min-width: 0;
 }
-
-.invoice-date-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-.invoice-date-cell {
-  min-width: 0;
-}
-.invoice-date-input {
+.invoice-standard-input {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -224,6 +208,22 @@ document.addEventListener('DOMContentLoaded', function() {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
+  min-width: 0;
+}
+.invoice-date-input {
+  /* type=date のブラウザ既定の最小幅で枠が横に伸びるのを抑える */
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.invoice-item-col-date {
+  min-width: 0;
+}
+.invoice-item-input-date {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .invoice-item-label {
@@ -235,11 +235,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 .invoice-item-input {
   width: 100%;
+  max-width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.95rem;
   box-sizing: border-box;
+  min-width: 0;
 }
 .invoice-item-remove {
   padding: 8px 16px;
@@ -268,11 +270,14 @@ document.addEventListener('DOMContentLoaded', function() {
   min-width: 0;
 }
 
-@media (max-width: 767px) {
-  .invoice-year-month-row {
-    grid-template-columns: 1fr;
+@media (max-width: 991px) {
+  .invoice-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .invoice-date-row {
+}
+
+@media (max-width: 767px) {
+  .invoice-meta-grid {
     grid-template-columns: 1fr;
   }
   .invoice-item-row {
