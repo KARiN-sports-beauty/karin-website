@@ -135,9 +135,7 @@
       background: #ffffff;
     }
 
-    section:nth-of-type(even) {
-      background: #ffffff;
-    }
+    /* 偶数セクションを白に戻す指定は、.philosophy 等より詳細度が高くグレーを潰していたため撤去 */
 
     .worries-section {
       max-width: none;
@@ -198,10 +196,11 @@
       color: #666;
     }
 
-    .philosophy {
+    .philosophy,
+    section.philosophy {
       max-width: none;
       margin: 0 auto;
-      background: #e8e8e8;
+      background-color: #cfcfcf;
       padding: 64px 60px;
     }
 
@@ -323,9 +322,10 @@
       color: #666;
     }
 
-    .faq-section {
+    .faq-section,
+    section.faq-section {
       max-width: none;
-      background: #e8e8e8;
+      background-color: #cfcfcf;
       padding: 64px 60px;
     }
 
@@ -426,9 +426,10 @@
       margin-top: 8px;
     }
 
-    .line-section {
+    .line-section,
+    section.line-section {
       max-width: none;
-      background: #e8e8e8;
+      background-color: #cfcfcf;
       padding: 96px 20px;
     }
 
