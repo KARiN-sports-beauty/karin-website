@@ -121,9 +121,13 @@
           <div style="flex: 1;">
             <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+              {% if reservation.patient_id %}
               <a href="/admin/karte/{{ reservation.patient_id }}" style="font-size: 1rem; font-weight: 500; color: #1E3A5F; text-decoration: none;">
                 {{ reservation.patient_name or '患者不明' }}{% if reservation.patient and 'star' in (reservation.patient.vip_level or '') %}⭐️{% endif %}{% if reservation.patient and 'clover' in (reservation.patient.vip_level or '') %}🍀{% endif %}
               </a>
+              {% else %}
+              <span style="font-size: 1rem; font-weight: 500; color: #666;">{{ reservation.patient_name or '患者なし' }}</span>
+              {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
               <!-- 現場区分バッジ -->
@@ -223,11 +227,13 @@
             ✏ 編集
           </a>
           
+          {% if reservation.patient_id %}
           <a href="/admin/karte/{{ reservation.patient_id }}/log/new?date={{ selected_day.strftime('%Y-%m-%d') }}" 
              class="admin-resv-btn" 
              style="padding: 6px 12px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
             📝 ログ作成
           </a>
+          {% endif %}
           
           {% if reservation.status == 'reserved' %}
           <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">

@@ -87,7 +87,7 @@
   </div>
   
   <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
+    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
     <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
   </div>
   
@@ -706,35 +706,55 @@ function updatePlaceTypeFields() {
     if (menuSection) menuSection.style.display = 'block';
     if (additionalMenuSection) additionalMenuSection.style.display = 'block';
     
-    // 患者選択、予約日時、エリア、メニューを必須に
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
     const patientIdInput = document.getElementById('patient_id');
     const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
     if (patientIdInput) patientIdInput.setAttribute('required', 'required');
-    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      if (reservedAtInput.type === 'date' && reservedAtInput.value) {
+        reservedAtInput.type = 'datetime-local';
+        reservedAtInput.value = reservedAtInput.value + 'T09:00';
+      } else if (reservedAtInput.type !== 'datetime-local') {
+        reservedAtInput.type = 'datetime-local';
+      }
+    }
     if (areaSelect) areaSelect.setAttribute('required', 'required');
     if (menuSelect) menuSelect.setAttribute('required', 'required');
   }
-  // 帯同の場合：患者選択〜追加メニューを非表示、現場名以降を表示
+  // 帯同の場合：患者選択〜追加メニューを非表示、現場名以降を表示／予約は日付のみ
   else if (placeType === 'field') {
     if (patientSection) patientSection.style.display = 'none';
-    if (datetimeSection) datetimeSection.style.display = 'block'; // 予約日時は必要
+    if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
     
-    // 患者選択、エリア、メニューを必須から解除
     const patientIdInput = document.getElementById('patient_id');
+    const patientSearch = document.getElementById('patient_search');
+    if (patientIdInput) { patientIdInput.removeAttribute('required'); patientIdInput.value = ''; }
+    if (patientSearch) patientSearch.value = '';
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
-    if (patientIdInput) patientIdInput.removeAttribute('required');
     if (areaSelect) areaSelect.removeAttribute('required');
     if (menuSelect) menuSelect.removeAttribute('required');
     
-    // 予約日時は必須のまま
     const reservedAtInput = document.getElementById('reserved_at');
-    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日（日付のみ）';
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      const cur = reservedAtInput.value;
+      if (reservedAtInput.type === 'datetime-local' && cur && cur.length >= 10) {
+        reservedAtInput.type = 'date';
+        reservedAtInput.value = cur.substring(0, 10);
+      } else if (reservedAtInput.type !== 'date') {
+        reservedAtInput.type = 'date';
+      }
+    }
   }
   // 未選択の場合：すべて非表示
   else {
@@ -743,6 +763,12 @@ function updatePlaceTypeFields() {
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    const reservedAtInput = document.getElementById('reserved_at');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
+    if (reservedAtInput && reservedAtInput.type === 'date') {
+      reservedAtInput.type = 'datetime-local';
+    }
   }
   
   // 現場名は往診/帯同の場合のみ表示
@@ -790,49 +816,46 @@ document.getElementById('place_type').addEventListener('change', function() {
 // フォーム送信時のバリデーション
 document.querySelector('form').addEventListener('submit', function(e) {
   console.log('🔍 フォーム送信開始');
+  const placeTypeSubmit = document.getElementById('place_type').value;
   const existingMode = document.getElementById('patient_mode_existing').checked;
-  console.log('🔍 患者選択モード:', existingMode ? '既存' : '新規');
+  console.log('🔍 現場区分:', placeTypeSubmit, '患者モード:', existingMode ? '既存' : '新規');
   
-  // 既存患者選択時はpatient_idが必要
-  if (existingMode) {
-    const patientId = document.getElementById('patient_id').value;
-    console.log('🔍 patient_id:', patientId);
-    if (!patientId) {
-      e.preventDefault();
-      alert('患者を選択してください。検索して患者をクリックしてください。');
-      document.getElementById('patient_search').focus();
-      return false;
-    }
-  } else {
-    // 新規患者の必須項目チェック
-    const lastName = document.getElementById('new_last_name').value.trim();
-    const firstName = document.getElementById('new_first_name').value.trim();
-    const lastKana = document.getElementById('new_last_kana').value.trim();
-    const firstKana = document.getElementById('new_first_kana').value.trim();
-    console.log('🔍 新規患者データ:', {lastName, firstName, lastKana, firstKana});
-    
-    if (!lastName || !firstName || !lastKana || !firstKana) {
-      e.preventDefault();
-      alert('姓・名・セイ・メイは必須です');
-      // 必須フィールドにrequired属性を設定してからフォーカス
-      document.getElementById('new_last_name').setAttribute('required', 'required');
-      document.getElementById('new_first_name').setAttribute('required', 'required');
-      document.getElementById('new_last_kana').setAttribute('required', 'required');
-      document.getElementById('new_first_kana').setAttribute('required', 'required');
-      if (!lastName) document.getElementById('new_last_name').focus();
-      else if (!firstName) document.getElementById('new_first_name').focus();
-      else if (!lastKana) document.getElementById('new_last_kana').focus();
-      else if (!firstKana) document.getElementById('new_first_kana').focus();
-      return false;
+  // 帯同以外では患者必須
+  if (placeTypeSubmit !== 'field') {
+    if (existingMode) {
+      const patientId = document.getElementById('patient_id').value;
+      if (!patientId) {
+        e.preventDefault();
+        alert('患者を選択してください。検索して患者をクリックしてください。');
+        document.getElementById('patient_search').focus();
+        return false;
+      }
+    } else {
+      const lastName = document.getElementById('new_last_name').value.trim();
+      const firstName = document.getElementById('new_first_name').value.trim();
+      const lastKana = document.getElementById('new_last_kana').value.trim();
+      const firstKana = document.getElementById('new_first_kana').value.trim();
+      if (!lastName || !firstName || !lastKana || !firstKana) {
+        e.preventDefault();
+        alert('姓・名・セイ・メイは必須です');
+        document.getElementById('new_last_name').setAttribute('required', 'required');
+        document.getElementById('new_first_name').setAttribute('required', 'required');
+        document.getElementById('new_last_kana').setAttribute('required', 'required');
+        document.getElementById('new_first_kana').setAttribute('required', 'required');
+        if (!lastName) document.getElementById('new_last_name').focus();
+        else if (!firstName) document.getElementById('new_first_name').focus();
+        else if (!lastKana) document.getElementById('new_last_kana').focus();
+        else if (!firstKana) document.getElementById('new_first_kana').focus();
+        return false;
+      }
     }
   }
   
-  // 予約日時のチェック
   const reservedAt = document.querySelector('input[name="reserved_at"]').value;
   console.log('🔍 予約日時:', reservedAt);
   if (!reservedAt) {
     e.preventDefault();
-    alert('予約日時を入力してください');
+    alert(placeTypeSubmit === 'field' ? '予約日を選択してください' : '予約日時を入力してください');
     return false;
   }
   

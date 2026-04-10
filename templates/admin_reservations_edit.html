@@ -16,9 +16,13 @@
   <!-- 患者情報（編集不可） -->
   <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
     <strong style="color: #1E3A5F;">患者：</strong>
+    {% if reservation.patient_id %}
     <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
       {{ reservation.patient_name or '患者不明' }}
     </a>
+    {% else %}
+    <span style="color: #666; font-weight: 500;">{{ reservation.patient_name or '患者なし' }}</span>
+    {% endif %}
   </div>
 
   <!-- 現場区分（最初に配置） -->
@@ -33,8 +37,8 @@
   </div>
 
   <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'field' %}予約日（日付のみ）{% else %}予約日時{% endif %}</label>
+    <input type="{% if reservation.place_type == 'field' %}date{% else %}datetime-local{% endif %}" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
   </div>
 
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -511,10 +515,20 @@ function updatePlaceTypeFields() {
     if (areaSection) areaSection.style.display = 'block';
     if (menuSection) menuSection.style.display = 'block';
     if (additionalMenuSection) additionalMenuSection.style.display = 'block';
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
     const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
-    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      if (reservedAtInput.type === 'date' && reservedAtInput.value) {
+        reservedAtInput.type = 'datetime-local';
+        reservedAtInput.value = reservedAtInput.value + 'T09:00';
+      } else if (reservedAtInput.type !== 'datetime-local') {
+        reservedAtInput.type = 'datetime-local';
+      }
+    }
     if (areaSelect) areaSelect.setAttribute('required', 'required');
     if (menuSelect) menuSelect.setAttribute('required', 'required');
   } else if (placeType === 'field') {
@@ -522,15 +536,34 @@ function updatePlaceTypeFields() {
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日（日付のみ）';
+    const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
     if (areaSelect) areaSelect.removeAttribute('required');
     if (menuSelect) menuSelect.removeAttribute('required');
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      const cur = reservedAtInput.value;
+      if (reservedAtInput.type === 'datetime-local' && cur && cur.length >= 10) {
+        reservedAtInput.type = 'date';
+        reservedAtInput.value = cur.substring(0, 10);
+      } else if (reservedAtInput.type !== 'date') {
+        reservedAtInput.type = 'date';
+      }
+    }
   } else {
     if (datetimeSection) datetimeSection.style.display = 'none';
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    const reservedAtInput = document.getElementById('reserved_at');
+    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
+    if (reservedAtInput && reservedAtInput.type === 'date') {
+      reservedAtInput.type = 'datetime-local';
+    }
   }
 
   if (placeType === 'visit' || placeType === 'field') {

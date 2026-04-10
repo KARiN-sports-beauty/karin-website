@@ -3761,6 +3761,10 @@ def admin_reservations():
         # 予約に患者情報を結合
         for reservation in reservations:
             patient_id = reservation.get("patient_id")
+            if not patient_id:
+                reservation["patient_name"] = "患者なし"
+                reservation["patient"] = None
+                continue
             patient = patient_map.get(patient_id)
             if patient:
                 # 名前を結合
@@ -3798,11 +3802,13 @@ def admin_reservations():
         # 時刻順にソート
         reservations_of_day.sort(key=lambda x: x.get("reserved_at", ""))
         
-        # 予約の時刻をJSTで表示用に変換
+        # 予約の時刻をJSTで表示用に変換（帯同は日付のみ入力のため時刻は表示しない）
         for r in reservations_of_day:
             try:
                 dt_str = r.get("reserved_at", "")
-                if dt_str:
+                if r.get("place_type") == "field":
+                    r["reserved_at_display"] = "日付のみ"
+                elif dt_str:
                     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                     dt_jst = dt.astimezone(JST)
                     r["reserved_at_display"] = dt_jst.strftime("%H:%M")
@@ -3989,76 +3995,80 @@ def admin_reservations_new():
     
     # POST処理
     try:
-        # 患者選択方式を確認
-        patient_mode = request.form.get("patient_mode", "existing")
-        
-        # 新規患者作成の場合
-        if patient_mode == "new":
-            # 新規患者データを作成
-            last_name = request.form.get("last_name", "").strip()
-            first_name = request.form.get("first_name", "").strip()
-            last_kana = request.form.get("last_kana", "").strip()
-            first_kana = request.form.get("first_kana", "").strip()
-            phone = request.form.get("phone", "").strip() or None
-            patient_memo = request.form.get("patient_memo", "").strip() or None
-            
-            # 必須項目チェック
-            if not last_name or not first_name or not last_kana or not first_kana:
-                flash("姓・名・セイ・メイは必須です", "error")
-                return redirect("/admin/reservations/new")
-            
-            # 名前を結合（name, kana）
-            name = f"{last_name} {first_name}".strip()
-            kana = f"{last_kana} {first_kana}".strip()
-            
-            # 新規患者を登録
-            patient_data = {
-                "last_name": last_name,
-                "first_name": first_name,
-                "last_kana": last_kana,
-                "first_kana": first_kana,
-                "name": name,
-                "kana": kana,
-                "phone": phone,
-                "note": patient_memo,
-                "visibility": "all",
-                "created_at": now_iso()
-            }
-            
-            res_patient = supabase_admin.table("patients").insert(patient_data).execute()
-            if not res_patient.data:
-                flash("患者の登録に失敗しました", "error")
-                return redirect("/admin/reservations/new")
-            
-            patient_id = res_patient.data[0]["id"]
-            redirect_to_karte = True  # 新規患者の場合はカルテ詳細へ
-        else:
-            # 既存患者選択の場合
-            patient_id = request.form.get("patient_id", "").strip()
-            if not patient_id:
-                flash("患者を選択してください。検索して患者をクリックしてください。", "error")
-                return redirect("/admin/reservations/new")
-            
-            # 患者が存在するか確認
-            res_check = supabase_admin.table("patients").select("id").eq("id", patient_id).execute()
-            if not res_check.data:
-                flash("選択された患者が見つかりません", "error")
-                return redirect("/admin/reservations/new")
-            
-            redirect_to_karte = False  # 既存患者の場合は予約一覧へ
-        
-        # 日時取得（datetime-local形式）
-        reserved_at_str = request.form.get("reserved_at", "").strip()
-        if not reserved_at_str:
-            flash("予約日時を入力してください", "error")
+        place_type = request.form.get("place_type", "").strip()
+        if place_type not in ["in_house", "visit", "field"]:
+            flash("現場区分を選択してください", "error")
             return redirect("/admin/reservations/new")
         
-        # datetime-local形式をISO形式に変換
+        patient_mode = request.form.get("patient_mode", "existing")
+        patient_id = None
+        redirect_to_karte = False
+        
+        if place_type in ("in_house", "visit"):
+            if patient_mode == "new":
+                last_name = request.form.get("last_name", "").strip()
+                first_name = request.form.get("first_name", "").strip()
+                last_kana = request.form.get("last_kana", "").strip()
+                first_kana = request.form.get("first_kana", "").strip()
+                phone = request.form.get("phone", "").strip() or None
+                patient_memo = request.form.get("patient_memo", "").strip() or None
+                if not last_name or not first_name or not last_kana or not first_kana:
+                    flash("姓・名・セイ・メイは必須です", "error")
+                    return redirect("/admin/reservations/new")
+                name = f"{last_name} {first_name}".strip()
+                kana = f"{last_kana} {first_kana}".strip()
+                patient_data = {
+                    "last_name": last_name,
+                    "first_name": first_name,
+                    "last_kana": last_kana,
+                    "first_kana": first_kana,
+                    "name": name,
+                    "kana": kana,
+                    "phone": phone,
+                    "note": patient_memo,
+                    "visibility": "all",
+                    "created_at": now_iso()
+                }
+                res_patient = supabase_admin.table("patients").insert(patient_data).execute()
+                if not res_patient.data:
+                    flash("患者の登録に失敗しました", "error")
+                    return redirect("/admin/reservations/new")
+                patient_id = res_patient.data[0]["id"]
+                redirect_to_karte = True
+            else:
+                patient_id = request.form.get("patient_id", "").strip()
+                if not patient_id:
+                    flash("患者を選択してください。検索して患者をクリックしてください。", "error")
+                    return redirect("/admin/reservations/new")
+                res_check = supabase_admin.table("patients").select("id").eq("id", patient_id).execute()
+                if not res_check.data:
+                    flash("選択された患者が見つかりません", "error")
+                    return redirect("/admin/reservations/new")
+        else:
+            # 帯同：患者は任意（未選択で patient_id なし）
+            pid = request.form.get("patient_id", "").strip()
+            if pid:
+                res_check = supabase_admin.table("patients").select("id").eq("id", pid).execute()
+                if not res_check.data:
+                    flash("選択された患者が見つかりません", "error")
+                    return redirect("/admin/reservations/new")
+                patient_id = pid
+        
+        reserved_at_str = request.form.get("reserved_at", "").strip()
+        if not reserved_at_str:
+            flash("予約日（日付）または予約日時を入力してください", "error")
+            return redirect("/admin/reservations/new")
+        
         try:
-            dt_naive = datetime.strptime(reserved_at_str, "%Y-%m-%dT%H:%M")
+            if "T" in reserved_at_str:
+                dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
+            else:
+                dpart = reserved_at_str[:10]
+                dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
+                dt_naive = dt_naive.replace(hour=9, minute=0, second=0, microsecond=0)
             dt_jst = dt_naive.replace(tzinfo=JST)
             reserved_at_iso = dt_jst.isoformat()
-        except Exception as e:
+        except Exception:
             flash("予約日時の形式が正しくありません", "error")
             return redirect("/admin/reservations/new")
         
@@ -4071,10 +4081,6 @@ def admin_reservations_new():
                 duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
         else:
             duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
-        place_type = request.form.get("place_type", "").strip()
-        if place_type not in ["in_house", "visit", "field"]:
-            flash("現場区分を選択してください", "error")
-            return redirect("/admin/reservations/new")
         
         place_name = request.form.get("place_name", "").strip() or None
         staff_name = request.form.get("staff_name", "").strip() or None
@@ -4123,7 +4129,11 @@ def admin_reservations_new():
             conflict_details = []
             for conflict in overlapping_reservations:
                 conflict_start = datetime.fromisoformat(conflict.get("reserved_at", "").replace("Z", "+00:00")).astimezone(JST)
-                conflict_patient_name = patient_map.get(conflict.get("patient_id"), "不明")
+                cid = conflict.get("patient_id")
+                if not cid:
+                    conflict_patient_name = "患者なし"
+                else:
+                    conflict_patient_name = patient_map.get(cid) or "不明"
                 conflict_details.append(f"{conflict_start.strftime('%Y-%m-%d %H:%M')} - {conflict_patient_name}")
             
             flash(f"予約が重複しています。同じスタッフの以下の予約と時間帯が被っています：\n" + "\n".join(conflict_details), "error")
@@ -4136,7 +4146,7 @@ def admin_reservations_new():
         
         # メニュー取得（施術時間を決定）
         menu = request.form.get("menu", "").strip()
-        duration_minutes = 90  # デフォルト値
+        duration_minutes = 90  # デフォルト値（帯同等メニュー未選択時）
         if menu:
             if menu == "other":
                 # 「その他」の場合はデフォルト90分
@@ -4561,23 +4571,29 @@ def admin_reservations_edit(reservation_id):
                 return redirect("/admin/reservations")
             reservation = res.data[0]
             
-            # 患者情報取得
+            # 患者情報取得（帯同等で患者未紐付けの場合あり）
             patient_id = reservation.get("patient_id")
-            res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
-            if res_patient.data:
-                patient = res_patient.data[0]
-                name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
-                reservation["patient_name"] = name or patient.get("name", "不明")
+            if patient_id:
+                res_patient = supabase_admin.table("patients").select("id, last_name, first_name, name").eq("id", patient_id).execute()
+                if res_patient.data:
+                    patient = res_patient.data[0]
+                    name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+                    reservation["patient_name"] = name or patient.get("name", "不明")
+                else:
+                    reservation["patient_name"] = "不明"
             else:
-                reservation["patient_name"] = "不明"
+                reservation["patient_name"] = "患者なし"
             
-            # reserved_atをdatetime-local形式に変換
+            # reserved_atをフォーム用に変換（帯同は date のみ）
             try:
                 dt_str = reservation.get("reserved_at", "")
                 if dt_str:
                     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                     dt_jst = dt.astimezone(JST)
-                    reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
+                    if reservation.get("place_type") == "field":
+                        reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%d")
+                    else:
+                        reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
                 else:
                     reservation["reserved_at_display_local"] = ""
             except:
@@ -4667,15 +4683,20 @@ def admin_reservations_edit(reservation_id):
         # 日時取得（datetime-local形式）
         reserved_at_str = request.form.get("reserved_at", "").strip()
         if not reserved_at_str:
-            flash("予約日時を入力してください", "error")
+            flash("予約日または予約日時を入力してください", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
-        # datetime-local形式をISO形式に変換
+        # datetime-local または 日付のみ（帯同）をISO形式に変換
         try:
-            dt_naive = datetime.strptime(reserved_at_str, "%Y-%m-%dT%H:%M")
+            if "T" in reserved_at_str:
+                dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
+            else:
+                dpart = reserved_at_str[:10]
+                dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
+                dt_naive = dt_naive.replace(hour=9, minute=0, second=0, microsecond=0)
             dt_jst = dt_naive.replace(tzinfo=JST)
             reserved_at_iso = dt_jst.isoformat()
-        except Exception as e:
+        except Exception:
             flash("予約日時の形式が正しくありません", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
@@ -4837,7 +4858,11 @@ def admin_reservations_edit(reservation_id):
             conflict_details = []
             for conflict in overlapping_reservations:
                 conflict_start = datetime.fromisoformat(conflict.get("reserved_at", "").replace("Z", "+00:00")).astimezone(JST)
-                conflict_patient_name = patient_map.get(conflict.get("patient_id"), "不明")
+                cid = conflict.get("patient_id")
+                if not cid:
+                    conflict_patient_name = "患者なし"
+                else:
+                    conflict_patient_name = patient_map.get(cid) or "不明"
                 conflict_details.append(f"{conflict_start.strftime('%Y-%m-%d %H:%M')} - {conflict_patient_name}")
             
             flash(f"予約が重複しています。同じスタッフの以下の予約と時間帯が被っています：\n" + "\n".join(conflict_details), "error")
