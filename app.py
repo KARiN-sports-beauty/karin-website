@@ -7327,7 +7327,11 @@ def admin_revenue_month_detail(staff_id, year, month):
 @app.route("/admin/daily-reports", methods=["GET"])
 @staff_required
 def admin_daily_reports_index():
-    """日報一覧のインデックス（年一覧にリダイレクト）"""
+    """日報一覧のインデックス。?date=YYYY-MM-DD のときはその日の日報画面へ（旧リンク互換）。"""
+    date_arg = request.args.get("date", "").strip()
+    if date_arg and len(date_arg) >= 10 and date_arg[4] == "-" and date_arg[7] == "-":
+        y, m = date_arg[:4], date_arg[5:7]
+        return redirect(url_for("admin_daily_reports", year=y, month=m, date=date_arg))
     return redirect("/admin/daily-reports/years")
 
 
@@ -7445,7 +7449,6 @@ def admin_daily_reports_dates(year, month):
 
 
 @app.route("/admin/daily-reports/years/<year>/months/<month>/dates/<date>", methods=["GET"])
-@app.route("/admin/daily-reports", methods=["GET"])
 @staff_required
 def admin_daily_reports(year=None, month=None, date=None):
     """
