@@ -10616,10 +10616,12 @@ def admin_financial_expense_new(year):
                     "area": meta.get("area", "tokyo")
                 })
         
+        today_date = datetime.now(JST).strftime("%Y-%m-%d")
         return render_template(
             "admin_financial_expense_new.html",
             year=year,
-            staff_list=staff_list
+            staff_list=staff_list,
+            today_date=today_date,
         )
     except Exception as e:
         print(f"❌ 経費新規作成フォーム取得エラー: {e}")
