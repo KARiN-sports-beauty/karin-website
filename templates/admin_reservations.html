@@ -5,6 +5,37 @@
 <h2 class="admin-title">📅 予定管理</h2>
 
 <style>
+  .admin-resv-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .admin-resv-calendar,
+  .admin-resv-list {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .admin-resv-calendar {
+    overflow: hidden;
+  }
+  .admin-resv-card {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+  .admin-resv-calendar-header,
+  .admin-resv-calendar-days {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .admin-resv-calendar-days {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
   .payment-method-btn {
     padding: 6px 12px;
     background: #f5f7fb;
@@ -25,6 +56,10 @@
     cursor: not-allowed;
   }
   .schedule-timeline-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     margin-bottom: 16px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
@@ -32,8 +67,13 @@
     background: #fff;
   }
   .schedule-timeline-scroll {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     overflow-x: auto;
     overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
   .schedule-timeline-header,
   .schedule-timeline-row {
@@ -106,6 +146,22 @@
   .schedule-card.place-visit { background: #4CAF50; }
   .schedule-card.place-field { background: #FF8AA8; }
   .schedule-card.place-default { background: #64748b; }
+  @media (max-width: 900px) {
+    .admin-resv-header {
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .admin-resv-nav-btn {
+      padding: 6px 10px !important;
+      font-size: 0.85rem;
+    }
+    .schedule-staff-col {
+      width: 110px;
+      min-width: 110px;
+      max-width: 110px;
+      font-size: 0.85rem;
+    }
+  }
 </style>
 
 <!-- 月移動ヘッダー -->
