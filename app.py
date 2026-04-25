@@ -4131,6 +4131,65 @@ def admin_reservations():
                             schedule_map[normalized_date] = s.get("place", "")
         except Exception as e:
             print("❌ schedule.json 読み込みエラー:", e)
+
+        # 予定タイムライン（縦軸: スタッフ / 横軸: 時間）
+        timeline_start_hour = 7
+        timeline_end_hour = 23
+        timeline_px_per_min = 2
+        timeline_start_minute = timeline_start_hour * 60
+        timeline_end_minute = timeline_end_hour * 60
+        timeline_total_minutes = timeline_end_minute - timeline_start_minute
+
+        if staff_filter != "all":
+            timeline_staff_names = [staff_filter]
+        else:
+            timeline_staff_names = []
+            for s in staff_list:
+                nm = (s.get("name") or "").strip()
+                if nm and nm not in timeline_staff_names:
+                    timeline_staff_names.append(nm)
+
+        timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
+        for r in reservations_of_day:
+            staff_name_raw = (r.get("staff_name") or "").strip()
+            staff_name_for_timeline = staff_name_raw or "未割当"
+            if staff_name_for_timeline not in timeline_cards_by_staff:
+                timeline_staff_names.append(staff_name_for_timeline)
+                timeline_cards_by_staff[staff_name_for_timeline] = []
+
+            start_minute = timeline_start_minute
+            if r.get("place_type") != "field":
+                try:
+                    dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
+                    dt_jst = dt.astimezone(JST)
+                    start_minute = dt_jst.hour * 60 + dt_jst.minute
+                except Exception:
+                    start_minute = timeline_start_minute
+
+            duration = int(r.get("duration_minutes") or 60)
+            if duration <= 0:
+                duration = 60
+
+            # 描画範囲に収まるように調整
+            if start_minute < timeline_start_minute:
+                duration -= (timeline_start_minute - start_minute)
+                start_minute = timeline_start_minute
+            if start_minute >= timeline_end_minute:
+                continue
+            if start_minute + duration > timeline_end_minute:
+                duration = timeline_end_minute - start_minute
+            if duration <= 0:
+                continue
+
+            timeline_cards_by_staff[staff_name_for_timeline].append({
+                "id": r.get("id"),
+                "start_minute": start_minute,
+                "duration": duration,
+                "reserved_at_display": r.get("reserved_at_display") or "",
+                "patient_name": r.get("patient_name") or "患者なし",
+                "status": r.get("status") or "",
+                "place_type": r.get("place_type") or "",
+            })
         
         return render_template(
             "admin_reservations.html",
@@ -4148,7 +4207,13 @@ def admin_reservations():
             first_weekday=first_weekday,
             days_in_month=days_in_month,
             now_jst=now_jst,
-            schedule_map=schedule_map
+            schedule_map=schedule_map,
+            timeline_start_hour=timeline_start_hour,
+            timeline_end_hour=timeline_end_hour,
+            timeline_px_per_min=timeline_px_per_min,
+            timeline_total_minutes=timeline_total_minutes,
+            timeline_staff_names=timeline_staff_names,
+            timeline_cards_by_staff=timeline_cards_by_staff,
         )
     except Exception as e:
         print("❌ 予約一覧取得エラー:", e)

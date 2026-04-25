@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}予約管理 | KARiN.{% endblock %}
+{% block title %}予定管理 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">📅 予約管理</h2>
+<h2 class="admin-title">📅 予定管理</h2>
 
 <style>
   .payment-method-btn {
@@ -24,6 +24,88 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  .schedule-timeline-wrap {
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .schedule-timeline-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .schedule-timeline-header,
+  .schedule-timeline-row {
+    display: flex;
+    min-width: max-content;
+  }
+  .schedule-staff-col {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    padding: 10px 8px;
+    border-right: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #1E3A5F;
+    font-weight: 600;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .schedule-timeline-header .schedule-staff-col {
+    z-index: 5;
+  }
+  .schedule-time-head {
+    position: relative;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+  }
+  .schedule-time-label {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    color: #64748b;
+    white-space: nowrap;
+  }
+  .schedule-time-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #e2e8f0;
+  }
+  .schedule-row-canvas {
+    position: relative;
+    height: 54px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fff;
+  }
+  .schedule-card {
+    position: absolute;
+    top: 8px;
+    height: 38px;
+    border-radius: 8px;
+    padding: 4px 8px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .schedule-card.place-inhouse { background: #1E3A5F; }
+  .schedule-card.place-visit { background: #4CAF50; }
+  .schedule-card.place-field { background: #FF8AA8; }
+  .schedule-card.place-default { background: #64748b; }
 </style>
 
 <!-- 月移動ヘッダー -->
@@ -60,7 +142,7 @@
     </label>
     
     <button type="submit" style="padding: 8px 16px; background: #1E3A5F; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">適用</button>
-    <a href="/admin/reservations/new?date={{ selected_day.strftime('%Y-%m-%d') }}" style="padding: 8px 16px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">➕ 新規予約</a>
+    <a href="/admin/reservations/new?date={{ selected_day.strftime('%Y-%m-%d') }}" style="padding: 8px 16px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 500;">➕ 新規予定</a>
   </form>
 </div>
 
@@ -107,11 +189,49 @@
   </div>
   {% endif %}
   
-  <!-- 選択日の予約一覧 -->
+  <!-- 選択日の予定一覧 -->
   <div class="admin-resv-list">
     <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">
-      {{ selected_day.strftime('%Y年%m月%d日') }}の予約
+      {{ selected_day.strftime('%Y年%m月%d日') }}の予定
     </h3>
+    {% if timeline_staff_names %}
+    <div class="schedule-timeline-wrap">
+      <div class="schedule-timeline-scroll">
+        <div class="schedule-timeline-header">
+          <div class="schedule-staff-col">スタッフ</div>
+          <div class="schedule-time-head" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
+            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
+            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
+            <div class="schedule-time-label" style="left: {{ x }}px;">{{ "%02d:00"|format(hour) }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        {% for staff_name in timeline_staff_names %}
+        <div class="schedule-timeline-row">
+          <div class="schedule-staff-col">{{ staff_name }}</div>
+          <div class="schedule-row-canvas" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
+            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
+            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
+            {% endfor %}
+            {% for card in timeline_cards_by_staff.get(staff_name, []) %}
+            {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
+            {% set card_width = card.duration * timeline_px_per_min %}
+            <a href="/admin/reservations/{{ card.id }}/edit"
+               class="schedule-card {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }} {{ card.patient_name }}">
+              <span>{{ card.reserved_at_display }}</span>
+              <span>{{ card.patient_name }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -274,7 +394,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p style="color: #999; text-align: center; padding: 40px 0;">この日の予約はありません</p>
+    <p style="color: #999; text-align: center; padding: 40px 0;">この日の予定はありません</p>
     {% endif %}
   </div>
 </div>
