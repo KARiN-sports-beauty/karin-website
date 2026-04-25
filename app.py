@@ -10564,7 +10564,15 @@ def admin_financial_expense_new(year):
         try:
             expense_date = request.form.get("expense_date")
             category = request.form.get("category")
-            amount = float(request.form.get("amount", 0))
+            amount_raw = request.form.get("amount", "").strip()
+            try:
+                amount = int(amount_raw, 10)
+            except (TypeError, ValueError):
+                flash("金額は整数で入力してください", "error")
+                return redirect(f"/admin/financial/years/{year}/expenses/new")
+            if amount < 0:
+                flash("金額は0以上の整数で入力してください", "error")
+                return redirect(f"/admin/financial/years/{year}/expenses/new")
             description = request.form.get("description", "").strip()
             staff_id = request.form.get("staff_id", "").strip() or None
             staff_name = request.form.get("staff_name", "").strip() or None
@@ -10651,7 +10659,15 @@ def admin_financial_expense_edit(year, expense_id):
 
             expense_date = request.form.get("expense_date")
             category = request.form.get("category")
-            amount = float(request.form.get("amount", 0))
+            amount_raw = request.form.get("amount", "").strip()
+            try:
+                amount = int(amount_raw, 10)
+            except (TypeError, ValueError):
+                flash("金額は整数で入力してください", "error")
+                return redirect(f"/admin/financial/years/{year}/expenses/{expense_id}/edit")
+            if amount < 0:
+                flash("金額は0以上の整数で入力してください", "error")
+                return redirect(f"/admin/financial/years/{year}/expenses/{expense_id}/edit")
             description = request.form.get("description", "").strip()
             staff_id = request.form.get("staff_id", "").strip() or None
             staff_name = request.form.get("staff_name", "").strip() or None
