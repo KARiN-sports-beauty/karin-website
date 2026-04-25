@@ -1352,6 +1352,7 @@ def admin_staff():
             "name": display_name,
             "phone": meta.get("phone", "未登録"),
             "approved": meta.get("approved", False),
+            "is_admin": meta.get("is_admin", False),
             "staff_role": sr,
             "created_at": str(u.created_at)[:10],
         })

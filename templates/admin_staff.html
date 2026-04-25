@@ -69,7 +69,9 @@
         {% endif %}
       </td>
       <td>
-        {% if s.approved and s.staff_role %}
+        {% if s.is_admin %}
+          <span style="color:#1E3A5F; font-weight:600;">管理者</span>
+        {% elif s.approved and s.staff_role %}
           {% if s.staff_role == 'reception' %}受付
           {% elif s.staff_role == 'regular' %}正規スタッフ
           {% elif s.staff_role == 'irregular' %}非正規スタッフ
