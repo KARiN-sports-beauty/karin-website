@@ -5,7 +5,11 @@
 <h2 class="admin-title">📋 {{ staff_name }}のスタッフ報告</h2>
 
 <div style="margin-bottom: 20px;">
+  {% if viewer_is_admin %}
   <a href="/admin/staff-reports" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← スタッフ報告一覧に戻る</a>
+  {% else %}
+  <a href="/admin/dashboard" class="admin-karte-detail-btn-back" style="text-decoration: none; display: inline-block; text-align: center; margin-bottom: 12px;">← ダッシュボードに戻る</a>
+  {% endif %}
 </div>
 
 <!-- メニューカード -->

@@ -210,6 +210,165 @@ def admin_required(f):
     return wrapper
 
 
+# 非管理者の配属（user_metadata.staff_role）。承認時に admin が設定。
+STAFF_ROLE_RECEPTION = "reception"
+STAFF_ROLE_REGULAR = "regular"
+STAFF_ROLE_IRREGULAR = "irregular"
+STAFF_ROLES_NONADMIN = frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR})
+
+# 各管理セクションへアクセス可能な配属（管理者は常に可）
+STAFF_SECTION_ALLOWED_NONADMIN = {
+    "comments": frozenset({STAFF_ROLE_RECEPTION}),
+    "contacts": frozenset({STAFF_ROLE_RECEPTION}),
+    "blogs": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "videos": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "news": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "reservations": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "daily_reports_admin": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "reports": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "karte": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR}),
+    "equipment": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+}
+
+
+def staff_section_required(section):
+    """スタッフログイン必須 + 配属別に管理画面セクションを制限（管理者は常に可）。"""
+    from functools import wraps
+
+    allowed = STAFF_SECTION_ALLOWED_NONADMIN.get(section)
+    if allowed is None:
+        raise ValueError(f"unknown staff section: {section}")
+
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if "staff" not in session:
+                return redirect("/staff/login")
+            st = session.get("staff") or {}
+            if st.get("is_admin"):
+                return f(*args, **kwargs)
+            role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+            if role not in allowed:
+                flash("権限がありません", "error")
+                return redirect("/admin/dashboard")
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def patient_row_has_vip_star(patient_row):
+    if not patient_row:
+        return False
+    v = (patient_row.get("vip_level") or "").lower()
+    return "star" in v
+
+
+def session_is_irregular_staff():
+    st = session.get("staff") or {}
+    if st.get("is_admin"):
+        return False
+    role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+    return role == STAFF_ROLE_IRREGULAR
+
+
+def session_is_reception_staff():
+    st = session.get("staff") or {}
+    if st.get("is_admin"):
+        return False
+    role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+    return role == STAFF_ROLE_RECEPTION
+
+
+def session_staff_reports_viewer_sees_index_ui():
+    """スタッフ報告まわりで「一覧に戻る」等の管理者向けナビを出すか（受付も可）。"""
+    st = session.get("staff") or {}
+    if st.get("is_admin"):
+        return True
+    return session_is_reception_staff()
+
+
+def karte_irregular_star_block_or_redirect(patient_row):
+    """非正規かつ⭐️VIP患者のカルテは不可。戻り値: None=可、それ以外は redirect。"""
+    if not session_is_irregular_staff():
+        return None
+    if not patient_row_has_vip_star(patient_row):
+        return None
+    flash("この患者のカルテを閲覧・編集する権限がありません（VIP）", "error")
+    return redirect("/admin/karte")
+
+
+def assert_staff_report_target(staff_id):
+    """スタッフ報告: 管理者・受付は全スタッフ参照可。正規・非正規は自分の UUID のみ。戻り値: None=OK、redirect=NG。"""
+    st = session.get("staff")
+    if not st:
+        return redirect("/staff/login")
+    if st.get("is_admin"):
+        return None
+    if session_is_reception_staff():
+        return None
+    if st.get("id") != staff_id:
+        flash("権限がありません", "error")
+        return redirect("/admin/dashboard")
+    return None
+
+
+def build_dashboard_permissions(staff):
+    """admin_dashboard 用の表示フラグ。"""
+    if staff.get("is_admin"):
+        return {
+            "is_admin": True,
+            "comments": True,
+            "contacts": True,
+            "blogs": True,
+            "videos": True,
+            "news": True,
+            "reservations": True,
+            "daily_reports": True,
+            "reports": True,
+            "karte": True,
+            "equipment": True,
+            "staff_list_admin": True,
+            "staff_reports_index": True,
+            "staff_reports_card": True,
+            "staff_reports_menu_href": "/admin/staff-reports",
+            "revenue": True,
+            "financial": True,
+            "invoices": True,
+            "staff_page": False,
+        }
+    role = (staff.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+
+    def R(*roles):
+        return role in roles
+
+    sid = staff.get("id") or ""
+    perm = {
+        "is_admin": False,
+        "comments": R(STAFF_ROLE_RECEPTION),
+        "contacts": R(STAFF_ROLE_RECEPTION),
+        "blogs": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "videos": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "news": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "reservations": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "daily_reports": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "reports": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "karte": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR),
+        "equipment": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "staff_list_admin": False,
+        "staff_reports_index": False,
+        "staff_reports_menu_href": f"/admin/staff-reports/{sid}/menu",
+        "revenue": False,
+        "financial": False,
+        "invoices": False,
+        "staff_page": True,
+        "staff_reports_card": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR),
+    }
+    if role == STAFF_ROLE_RECEPTION:
+        perm["staff_reports_index"] = True
+        perm["staff_reports_menu_href"] = "/admin/staff-reports"
+    return perm
 
 
 
@@ -366,7 +525,7 @@ def upload_blog_image(file):
 
 
 @app.route("/admin/blogs/body-image", methods=["POST"])
-@staff_required
+@staff_section_required("blogs")
 def admin_blog_body_image_upload():
     """ブログ本文用の画像アップロード"""
     try:
@@ -1021,7 +1180,7 @@ def submit_contact():
 # ✅ お問い合わせスタッフページ（未返信一覧、返信済み一覧、お問い合わせ詳細、返信済みにするボタン）
 # ===================================================
 @app.route("/admin/contacts")
-@admin_required
+@staff_section_required("contacts")
 def admin_contacts():
     res = supabase_admin.table("contacts") \
         .select("*") \
@@ -1033,7 +1192,7 @@ def admin_contacts():
 
 
 @app.route("/admin/contacts/replied")
-@admin_required
+@staff_section_required("contacts")
 def admin_contacts_replied():
     res = supabase_admin.table("contacts") \
         .select("*") \
@@ -1045,7 +1204,7 @@ def admin_contacts_replied():
 
 
 @app.route("/admin/contact/<contact_id>")
-@admin_required
+@staff_section_required("contacts")
 def admin_contact_detail(contact_id):
     res = supabase_admin.table("contacts").select("*").eq("id", contact_id).execute()
     if not res.data:
@@ -1055,7 +1214,7 @@ def admin_contact_detail(contact_id):
 
 
 @app.route("/admin/contact/<contact_id>/done", methods=["POST"])
-@admin_required
+@staff_section_required("contacts")
 def admin_contact_done(contact_id):
     supabase_admin.table("contacts") \
         .update({"processed": True}) \
@@ -1184,12 +1343,16 @@ def admin_staff():
             # 後方互換性：既存データはnameフィールドを使用
             display_name = meta.get("name", "未設定")
 
+        sr = (meta.get("staff_role") or "").strip()
+        if sr not in STAFF_ROLES_NONADMIN:
+            sr = ""
         staff_list.append({
             "id": u.id,
             "email": u.email,
             "name": display_name,
             "phone": meta.get("phone", "未登録"),
             "approved": meta.get("approved", False),
+            "staff_role": sr,
             "created_at": str(u.created_at)[:10],
         })
 
@@ -1217,7 +1380,11 @@ def admin_staff_approve(user_id):
         # 承認処理（既存のメタデータを保持しながらapprovedをTrueに設定）
         updated_metadata = meta.copy()
         updated_metadata["approved"] = True
-        
+        role_in = (request.form.get("staff_role") or STAFF_ROLE_REGULAR).strip()
+        if role_in not in STAFF_ROLES_NONADMIN:
+            role_in = STAFF_ROLE_REGULAR
+        updated_metadata["staff_role"] = role_in
+
         print(f"🔍 承認処理 - User ID: {user_id}, 既存メタデータ: {meta}, 更新後メタデータ: {updated_metadata}")
         
         # メール確認も完了させる（email_confirmed_atを現在時刻に設定）
@@ -1547,6 +1714,9 @@ def staff_login():
         )
 
     is_admin = metadata.get("is_admin", False)
+    staff_role_raw = (metadata.get("staff_role") or STAFF_ROLE_REGULAR).strip()
+    if staff_role_raw not in STAFF_ROLES_NONADMIN:
+        staff_role_raw = STAFF_ROLE_REGULAR
 
     # 🔹 セッション保存（承認後）
     session["staff"] = {
@@ -1555,7 +1725,8 @@ def staff_login():
         "name": full_name,
         "last_name": last_name,
         "first_name": first_name,
-        "is_admin": is_admin
+        "is_admin": is_admin,
+        "staff_role": staff_role_raw if not is_admin else "admin",
     }
 
     return redirect("/admin/dashboard")
@@ -1610,6 +1781,7 @@ def admin_dashboard():
     # ---------- スタッフ名（フルネーム） ----------
     staff = session.get("staff", {})
     staff_name = staff.get("name") or staff.get("email") or "スタッフ"
+    dash_perm = build_dashboard_permissions(staff)
 
     # ---------- テンプレートへ ----------
     return render_template(
@@ -1617,6 +1789,7 @@ def admin_dashboard():
         unreplied_comments=unreplied_comments,
         unprocessed_contacts=unprocessed_contacts,
         staff_name=staff_name,
+        dash_perm=dash_perm,
     )
 
 
@@ -1895,7 +2068,7 @@ def _textarea_body_double_newlines_to_br(body_raw):
 
 
 @app.route("/admin/blogs")
-@staff_required
+@staff_section_required("blogs")
 def admin_blogs():
     """ブログ一覧（新しい順）"""
     try:
@@ -1908,7 +2081,7 @@ def admin_blogs():
 
 
 @app.route("/admin/blogs/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("blogs")
 def admin_blog_new():
     """新規ブログ作成"""
     if request.method == "GET":
@@ -1987,7 +2160,7 @@ def admin_blog_new():
 
 
 @app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("blogs")
 def admin_blog_edit(blog_id):
     """ブログ編集"""
     if request.method == "GET":
@@ -2072,7 +2245,7 @@ def admin_blog_edit(blog_id):
 
 
 @app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
-@staff_required
+@staff_section_required("blogs")
 def admin_blog_delete(blog_id):
     """ブログ削除（関連するコメントも削除）"""
     try:
@@ -2120,7 +2293,7 @@ def admin_blog_delete(blog_id):
 # ✅ ニュース管理（/admin/news）
 # ===================================================
 @app.route("/admin/news")
-@staff_required
+@staff_section_required("news")
 def admin_news():
     """ニュース一覧（新しい順）"""
     try:
@@ -2133,7 +2306,7 @@ def admin_news():
 
 
 @app.route("/admin/news/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("news")
 def admin_news_new():
     """新規ニュース作成"""
     if request.method == "GET":
@@ -2188,7 +2361,7 @@ def admin_news_new():
 
 
 @app.route("/admin/news/edit/<news_id>", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("news")
 def admin_news_edit(news_id):
     """ニュース編集"""
     if request.method == "GET":
@@ -2255,7 +2428,7 @@ def admin_news_edit(news_id):
 
 
 @app.route("/admin/news/delete/<news_id>", methods=["POST"])
-@staff_required
+@staff_section_required("news")
 def admin_news_delete(news_id):
     """ニュース削除"""
     try:
@@ -2271,13 +2444,13 @@ def admin_news_delete(news_id):
 # ✅ カルテ管理（/admin/karte）【IN句 最適化 完全版】
 # ===================================================
 @app.route("/admin/karte/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("karte")
 def admin_karte_new():
     if request.method == "GET":
         # 全患者一覧を取得（姓名分離、生年月日、紹介者、紹介者数も取得）
         try:
             # まず基本情報を取得
-            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id").order("name").execute()
+            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id, vip_level").order("name").execute()
             all_patients = res_all.data or []
             
             # 紹介者IDの集合を取得
@@ -2309,6 +2482,13 @@ def admin_karte_new():
                 # 紹介者数を取得
                 res_introduced = supabase_admin.table("patients").select("id", count="exact").eq("introduced_by_patient_id", patient["id"]).execute()
                 patient["introduced_count"] = res_introduced.count or 0
+
+            if session_is_irregular_staff():
+                all_patients = [p for p in all_patients if not patient_row_has_vip_star(p)]
+                for p in all_patients:
+                    info = p.get("introducer_info")
+                    if info and patient_row_has_vip_star(info):
+                        p["introducer_info"] = None
         except Exception as e:
             print("❌ 患者一覧取得エラー:", e)
             all_patients = []
@@ -2338,6 +2518,13 @@ def admin_karte_new():
                 vip_level = "star"
             elif vip_clover:
                 vip_level = "clover"
+
+        intro_pid = request.form.get("introduced_by_patient_id", "").strip() or None
+        if intro_pid and session_is_irregular_staff():
+            res_intro_chk = supabase_admin.table("patients").select("vip_level").eq("id", intro_pid).execute()
+            if res_intro_chk.data and patient_row_has_vip_star(res_intro_chk.data[0]):
+                flash("⭐️VIPの紹介者は指定できません", "error")
+                return redirect("/admin/karte/new")
         
         data = {
             "last_name": last_name,
@@ -2350,7 +2537,7 @@ def admin_karte_new():
             "gender": request.form.get("gender", "").strip(),
             "category": request.form.get("category", "").strip(),
             "introducer": request.form.get("introducer", "").strip(),
-            "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "introduced_by_patient_id": intro_pid,
             "vip_level": vip_level,
             "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso()
@@ -2372,13 +2559,16 @@ def admin_karte_new():
 
 
 @app.route("/admin/karte")
-@staff_required
+@staff_section_required("karte")
 def admin_karte():
     """カルテ一覧（高速化IN句対応版）"""
     try:
         # ✅ patients 全件取得
         res_patients = supabase_admin.table("patients").select("*").execute()
-        patients = res_patients.data or []
+        all_patient_rows = res_patients.data or []
+        patients = all_patient_rows
+        if session_is_irregular_staff():
+            patients = [p for p in patients if not patient_row_has_vip_star(p)]
 
         # ✅ karte_logs 最終来院日取得
         res_logs = supabase_admin.table("karte_logs").select("patient_id, date").execute()
@@ -2604,6 +2794,11 @@ def admin_karte():
         print(f"🔍 DEBUG - reservation_ranking: {len(reservation_ranking)}件")
         print(f"🔍 DEBUG - introducer_ranking: {len(introducer_ranking)}件")
 
+        if session_is_irregular_staff():
+            vip_star_ids = {p.get("id") for p in all_patient_rows if p.get("id") and patient_row_has_vip_star(p)}
+            introducer_ranking = [x for x in introducer_ranking if x.get("patient_id") not in vip_star_ids]
+            reservation_ranking = [x for x in reservation_ranking if x.get("patient_id") not in vip_star_ids]
+
         return render_template("admin_karte.html", patients=patients, introducer_ranking=introducer_ranking, reservation_ranking=reservation_ranking)
 
     except Exception as e:
@@ -2612,7 +2807,7 @@ def admin_karte():
 
 
 @app.route("/admin/karte/<patient_id>")
-@staff_required
+@staff_section_required("karte")
 def admin_karte_detail(patient_id):
     """カルテ詳細"""
     try:
@@ -2622,7 +2817,10 @@ def admin_karte_detail(patient_id):
             flash("患者が見つかりません", "error")
             return redirect("/admin/karte")
         patient = res_patient.data[0]
-        
+        block = karte_irregular_star_block_or_redirect(patient)
+        if block:
+            return block
+
         # デバッグ: heart と under_medical の値を確認
         print(f"🔍 DEBUG - patient.heart: {patient.get('heart')} (type: {type(patient.get('heart'))})")
         print(f"🔍 DEBUG - patient.under_medical: {patient.get('under_medical')} (type: {type(patient.get('under_medical'))})")
@@ -2655,6 +2853,10 @@ def admin_karte_detail(patient_id):
         # この患者が紹介した患者一覧を取得（vip_levelも含む）
         res_introduced_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, vip_level, category, gender").eq("introduced_by_patient_id", patient_id).order("created_at", desc=True).execute()
         patient["introduced_patients"] = res_introduced_patients.data or []
+        if session_is_irregular_staff():
+            if patient.get("introducer_info") and patient_row_has_vip_star(patient["introducer_info"]):
+                patient["introducer_info"] = None
+            patient["introduced_patients"] = [ip for ip in (patient.get("introduced_patients") or []) if not patient_row_has_vip_star(ip)]
         
         # karte_logs取得（IN句で高速化）
         res_logs = supabase_admin.table("karte_logs").select("*").eq("patient_id", patient_id).order("date", desc=True).execute()
@@ -2865,7 +3067,7 @@ def admin_karte_vip(patient_id):
 
 
 @app.route("/admin/karte/<patient_id>/edit", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("karte")
 def admin_karte_edit(patient_id):
     """基本情報編集"""
     if request.method == "GET":
@@ -2875,11 +3077,16 @@ def admin_karte_edit(patient_id):
                 flash("患者が見つかりません", "error")
                 return redirect("/admin/karte")
             patient = res.data[0]
-            
+            block = karte_irregular_star_block_or_redirect(patient)
+            if block:
+                return block
+
             # 紹介者候補を取得（検索用：姓名分離、生年月日、紹介者も取得）
-            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, birthday, introducer").order("name").execute()
+            res_all = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, birthday, introducer, vip_level").order("name").execute()
             all_patients = res_all.data or []
-            
+            if session_is_irregular_staff():
+                all_patients = [p for p in all_patients if not patient_row_has_vip_star(p)]
+
             return render_template("admin_karte_edit.html", patient=patient, all_patients=all_patients)
         except Exception as e:
             print("❌ 患者取得エラー:", e)
@@ -2888,6 +3095,19 @@ def admin_karte_edit(patient_id):
     
     # POST処理
     try:
+        res_chk = supabase_admin.table("patients").select("*").eq("id", patient_id).execute()
+        if res_chk.data:
+            block = karte_irregular_star_block_or_redirect(res_chk.data[0])
+            if block:
+                return block
+
+        edit_intro_pid = request.form.get("introduced_by_patient_id", "").strip() or None
+        if edit_intro_pid and session_is_irregular_staff():
+            res_intro_chk2 = supabase_admin.table("patients").select("vip_level").eq("id", edit_intro_pid).execute()
+            if res_intro_chk2.data and patient_row_has_vip_star(res_intro_chk2.data[0]):
+                flash("⭐️VIPの紹介者は指定できません", "error")
+                return redirect(f"/admin/karte/{patient_id}/edit")
+
         # 姓名分離フィールドを取得
         last_name = request.form.get("last_name", "").strip()
         first_name = request.form.get("first_name", "").strip()
@@ -2912,7 +3132,7 @@ def admin_karte_edit(patient_id):
             "email": request.form.get("email", "").strip(),
             "postal_code": request.form.get("postal_code", "").strip(),
             "address": request.form.get("address", "").strip(),
-            "introduced_by_patient_id": request.form.get("introduced_by_patient_id", "").strip() or None,
+            "introduced_by_patient_id": edit_intro_pid,
             "chief_complaint": request.form.get("chief_complaint", "").strip(),
             "heart": request.form.get("heart", "").strip(),
             "pregnant": request.form.get("pregnant", "").strip(),
@@ -2938,7 +3158,7 @@ def admin_karte_edit(patient_id):
 
 
 @app.route("/admin/karte/<patient_id>/log/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("karte")
 def admin_karte_new_log(patient_id):
     """新規施術ログ作成"""
     if request.method == "GET":
@@ -2951,12 +3171,15 @@ def admin_karte_new_log(patient_id):
                 log_id = res_existing.data[0]["id"]
                 return redirect(f"/admin/karte/log/{log_id}/edit")
             
-            res = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
+            res = supabase_admin.table("patients").select("id, name, vip_level").eq("id", patient_id).execute()
             if not res.data:
                 flash("患者が見つかりません", "error")
                 return redirect("/admin/karte")
             patient = res.data[0]
-            
+            block = karte_irregular_star_block_or_redirect(patient)
+            if block:
+                return block
+
             staff = session.get("staff", {})
             staff_name = staff.get("name", "スタッフ")
             
@@ -3001,6 +3224,12 @@ def admin_karte_new_log(patient_id):
     
     # POST処理
     try:
+        res_p0 = supabase_admin.table("patients").select("*").eq("id", patient_id).execute()
+        if res_p0.data:
+            block = karte_irregular_star_block_or_redirect(res_p0.data[0])
+            if block:
+                return block
+
         # staff_nameはフォームから取得し、空文字の場合はNoneに変換
         staff_name = request.form.get("staff_name", "").strip() or None
         
@@ -3030,7 +3259,7 @@ def admin_karte_new_log(patient_id):
 
 
 @app.route("/admin/karte/<patient_id>/log/<log_id>/edit", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("karte")
 def admin_karte_log_edit(patient_id, log_id):
     """施術ログ編集"""
     if request.method == "GET":
@@ -3046,12 +3275,16 @@ def admin_karte_log_edit(patient_id, log_id):
                 flash("患者IDが一致しません", "error")
                 return redirect(f"/admin/karte/{patient_id}")
             
-            res_patient = supabase_admin.table("patients").select("id, name").eq("id", patient_id).execute()
+            res_patient = supabase_admin.table("patients").select("id, name, vip_level").eq("id", patient_id).execute()
             patient = res_patient.data[0] if res_patient.data else None
             
             if not patient:
                 flash("患者が見つかりません", "error")
                 return redirect("/admin/karte")
+
+            block = karte_irregular_star_block_or_redirect(patient)
+            if block:
+                return block
             
             # 画像取得
             try:
@@ -3090,6 +3323,12 @@ def admin_karte_log_edit(patient_id, log_id):
     
     # POST処理
     try:
+        res_pchk = supabase_admin.table("patients").select("*").eq("id", patient_id).execute()
+        if res_pchk.data:
+            block = karte_irregular_star_block_or_redirect(res_pchk.data[0])
+            if block:
+                return block
+
         # staff_nameはフォームから取得し、空文字の場合はNoneに変換
         staff_name = request.form.get("staff_name", "").strip() or None
         
@@ -3115,10 +3354,19 @@ def admin_karte_log_edit(patient_id, log_id):
 
 
 @app.route("/admin/karte/log/<log_id>/img", methods=["POST"])
-@staff_required
+@staff_section_required("karte")
 def admin_karte_log_upload_image(log_id):
     """画像アップロード"""
     try:
+        res_log0 = supabase_admin.table("karte_logs").select("patient_id").eq("id", log_id).execute()
+        pid0 = res_log0.data[0].get("patient_id") if res_log0.data else None
+        if pid0:
+            res_p0 = supabase_admin.table("patients").select("*").eq("id", pid0).execute()
+            if res_p0.data:
+                block = karte_irregular_star_block_or_redirect(res_p0.data[0])
+                if block:
+                    return jsonify({"error": "権限がありません"}), 403
+
         if "image" not in request.files:
             return jsonify({"error": "画像が選択されていません"}), 400
         
@@ -3486,7 +3734,7 @@ def api_comment():
 
 
 @app.route("/admin/comments")
-@staff_required
+@staff_section_required("comments")
 def admin_comments():
 
     try:
@@ -3548,7 +3796,7 @@ def admin_comments():
 
 
 @app.route("/admin/reply/<comment_id>", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("comments")
 def admin_reply(comment_id):
 
     # =========================
@@ -3675,7 +3923,7 @@ def robots_txt():
 # ==========================================
 
 @app.route("/admin/reservations", methods=["GET"])
-@staff_required
+@staff_section_required("reservations")
 def admin_reservations():
     """予約管理（カレンダー表示）"""
     try:
@@ -3908,7 +4156,7 @@ def admin_reservations():
 
 
 @app.route("/admin/reservations/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("reservations")
 def admin_reservations_new():
     """新規予約作成"""
     if request.method == "GET":
@@ -4289,7 +4537,7 @@ def admin_reservations_new():
 
 
 @app.route("/admin/reservations/<reservation_id>/status", methods=["POST"])
-@staff_required
+@staff_section_required("reservations")
 def admin_reservations_status(reservation_id):
     """予約ステータス更新"""
     try:
@@ -4559,7 +4807,7 @@ def admin_reservations_status(reservation_id):
 
 
 @app.route("/admin/reservations/<reservation_id>/edit", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("reservations")
 def admin_reservations_edit(reservation_id):
     """予約編集"""
     if request.method == "GET":
@@ -4947,7 +5195,7 @@ def admin_reservations_edit(reservation_id):
 
 
 @app.route("/admin/reservations/<reservation_id>/delete", methods=["POST"])
-@staff_required
+@staff_section_required("reservations")
 def admin_reservations_delete(reservation_id):
     """予約削除"""
     try:
@@ -5778,10 +6026,14 @@ def staff_transportations_list(year, month):
 # 管理者用：スタッフの交通費申請閲覧
 # ===================================================
 @app.route("/admin/staff-reports/<staff_id>/transportations/years")
-@admin_required
+@staff_required
 def admin_staff_transportations_years(staff_id):
     """管理者用：スタッフの交通費申請 - 年一覧ページ"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -5816,7 +6068,8 @@ def admin_staff_transportations_years(staff_id):
         
         years_list = sorted(years_set, reverse=True)  # 新しい年から順に
         
-        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+        viewer_admin = session_staff_reports_viewer_sees_index_ui()
+        return render_template("staff_transportations_years.html", years=years_list, staff_name=staff_name, staff_id=staff_id, is_admin=viewer_admin)
     except Exception as e:
         print(f"❌ 交通費年一覧取得エラー: {e}")
         flash("年一覧の取得に失敗しました", "error")
@@ -5824,10 +6077,14 @@ def admin_staff_transportations_years(staff_id):
 
 
 @app.route("/admin/staff-reports/<staff_id>/transportations/years/<year>")
-@admin_required
+@staff_required
 def admin_staff_transportations_months(staff_id, year):
     """管理者用：スタッフの交通費申請 - 月一覧ページ"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -5873,7 +6130,8 @@ def admin_staff_transportations_months(staff_id, year):
         
         months_with_names = [(m, month_names.get(m, m)) for m in months_list]
         
-        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+        viewer_admin = session_staff_reports_viewer_sees_index_ui()
+        return render_template("staff_transportations_months.html", year=year, months=months_with_names, staff_name=staff_name, staff_id=staff_id, is_admin=viewer_admin)
     except Exception as e:
         print(f"❌ 交通費月一覧取得エラー: {e}")
         flash("月一覧の取得に失敗しました", "error")
@@ -5881,10 +6139,14 @@ def admin_staff_transportations_months(staff_id, year):
 
 
 @app.route("/admin/staff-reports/<staff_id>/transportations/years/<year>/months/<month>")
-@admin_required
+@staff_required
 def admin_staff_transportations_list(staff_id, year, month):
     """管理者用：スタッフの交通費申請 - 一覧ページ（指定年月）"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -5949,7 +6211,8 @@ def admin_staff_transportations_list(staff_id, year, month):
         }
         month_name = month_names.get(month, month)
         
-        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff_name, staff_id=staff_id, is_admin=True)
+        viewer_admin = session_staff_reports_viewer_sees_index_ui()
+        return render_template("staff_transportations_list.html", year=year, month=month, month_name=month_name, transportations=transportations, month_total=month_total, staff_name=staff_name, staff_id=staff_id, is_admin=viewer_admin)
     except Exception as e:
         import traceback
         print(f"❌ 交通費一覧取得エラー: {e}")
@@ -7350,7 +7613,7 @@ def admin_revenue_month_detail(staff_id, year, month):
 
 
 @app.route("/admin/daily-reports", methods=["GET"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_index():
     """日報一覧のインデックス。?date=YYYY-MM-DD のときはその日の日報画面へ（旧リンク互換）。"""
     date_arg = request.args.get("date", "").strip()
@@ -7361,7 +7624,7 @@ def admin_daily_reports_index():
 
 
 @app.route("/admin/daily-reports/years", methods=["GET"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_years():
     """日報一覧 - 年一覧"""
     try:
@@ -7392,7 +7655,7 @@ def admin_daily_reports_years():
 
 
 @app.route("/admin/daily-reports/years/<year>", methods=["GET"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_months(year):
     """日報一覧 - 月一覧"""
     try:
@@ -7429,7 +7692,7 @@ def admin_daily_reports_months(year):
 
 
 @app.route("/admin/daily-reports/years/<year>/months/<month>", methods=["GET"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_dates(year, month):
     """日報一覧 - 日付一覧（シート選択）"""
     try:
@@ -7474,7 +7737,7 @@ def admin_daily_reports_dates(year, month):
 
 
 @app.route("/admin/daily-reports/years/<year>/months/<month>/dates/<date>", methods=["GET"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports(year=None, month=None, date=None):
     """
     会社の公式日報一覧（1日1画面、全スタッフ統合表示）
@@ -7806,7 +8069,7 @@ def admin_daily_reports(year=None, month=None, date=None):
         return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/daily-reports/patient/<patient_report_id>/amount", methods=["POST"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_patient_amount(patient_report_id):
     """日報患者の金額を更新（予約データにも同期）"""
     try:
@@ -7855,7 +8118,7 @@ def admin_daily_reports_patient_amount(patient_report_id):
 
 
 @app.route("/admin/daily-reports/item/<item_id>/update", methods=["POST"])
-@staff_required
+@staff_section_required("daily_reports_admin")
 def admin_daily_reports_item_update(item_id):
     """日報勤務カードの更新（既存レコードを更新）"""
     try:
@@ -8077,10 +8340,16 @@ def staff_daily_report_patient_update(patient_report_id):
 
 
 @app.route("/admin/staff-reports")
-@admin_required
+@staff_required
 def admin_staff_reports():
     """スタッフ報告一覧（承認済みスタッフのカード一覧）"""
     try:
+        st = session.get("staff", {})
+        if not st.get("is_admin"):
+            role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+            if role != STAFF_ROLE_RECEPTION:
+                return redirect(f"/admin/staff-reports/{st.get('id')}/menu")
+
         # 承認済みスタッフのみ取得
         users = supabase_admin.auth.admin.list_users()
         staff_list = []
@@ -8130,10 +8399,14 @@ def admin_staff_reports():
 
 
 @app.route("/admin/staff-reports/<staff_id>/menu")
-@admin_required
+@staff_required
 def admin_staff_report_menu(staff_id):
     """スタッフ報告メニューページ（管理者用）"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # 現在ログイン中のスタッフIDを取得
         current_staff = session.get("staff", {})
         current_staff_id = current_staff.get("id")
@@ -8170,7 +8443,8 @@ def admin_staff_report_menu(staff_id):
                 staff_id=staff_id,
                 staff_name=staff_name,
                 staff_email=staff_user.email,
-                staff_phone=meta.get("phone", "未登録")
+                staff_phone=meta.get("phone", "未登録"),
+                viewer_is_admin=session_staff_reports_viewer_sees_index_ui(),
             )
     except Exception as e:
         import traceback
@@ -8181,10 +8455,14 @@ def admin_staff_report_menu(staff_id):
 
 
 @app.route("/admin/staff-reports/<staff_id>/reports")
-@admin_required
+@staff_required
 def admin_staff_report_detail(staff_id):
     """各スタッフの報告閲覧ページ"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -8305,6 +8583,7 @@ def admin_staff_report_detail(staff_id):
                     
                     report["items"].append(item)
         
+        viewer_admin = session_staff_reports_viewer_sees_index_ui()
         return render_template(
             "admin_staff_report_detail.html",
             staff_id=staff_id,
@@ -8315,7 +8594,7 @@ def admin_staff_report_detail(staff_id):
             work_type_filter=work_type_filter,
             date_from=date_from,
             date_to=date_to,
-            is_admin=True  # 管理者は閲覧のみ
+            is_admin=viewer_admin,
         )
     except Exception as e:
         import traceback
@@ -8326,10 +8605,14 @@ def admin_staff_report_detail(staff_id):
 
 
 @app.route("/admin/staff-reports/<staff_id>/reports/years")
-@admin_required
+@staff_required
 def admin_staff_reports_years(staff_id):
     """管理者用：年一覧ページ"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -8370,10 +8653,14 @@ def admin_staff_reports_years(staff_id):
 
 
 @app.route("/admin/staff-reports/<staff_id>/reports/years/<year>")
-@admin_required
+@staff_required
 def admin_staff_reports_months(staff_id, year):
     """管理者用：月一覧ページ"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -8425,10 +8712,14 @@ def admin_staff_reports_months(staff_id, year):
 
 
 @app.route("/admin/staff-reports/<staff_id>/reports/years/<year>/months/<month>")
-@admin_required
+@staff_required
 def admin_staff_reports_list(staff_id, year, month):
     """管理者用：日報一覧ページ（指定年月）"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # スタッフ情報を取得
         users = supabase_admin.auth.admin.list_users()
         staff_user = next((u for u in users if u.id == staff_id), None)
@@ -8553,7 +8844,8 @@ def admin_staff_reports_list(staff_id, year, month):
         }
         month_name = month_names.get(month, month)
         
-        return render_template("admin_staff_reports_list.html", year=year, month=month, month_name=month_name, reports=reports, staff_id=staff_id, staff_name=staff_name, is_admin=True)
+        viewer_admin = session_staff_reports_viewer_sees_index_ui()
+        return render_template("admin_staff_reports_list.html", year=year, month=month, month_name=month_name, reports=reports, staff_id=staff_id, staff_name=staff_name, is_admin=viewer_admin)
     except Exception as e:
         import traceback
         print(f"❌ 日報一覧取得エラー: {e}")
@@ -8563,10 +8855,14 @@ def admin_staff_reports_list(staff_id, year, month):
 
 
 @app.route("/admin/staff-reports/<staff_id>/profile")
-@admin_required
+@staff_required
 def admin_staff_report_profile(staff_id):
     """スタッフプロフィール閲覧ページ（管理者用、閲覧のみ）"""
     try:
+        deny = assert_staff_report_target(staff_id)
+        if deny:
+            return deny
+
         # 手技リスト（treatmentページから）
         treatment_options = [
             "鍼灸治療",
@@ -8652,7 +8948,7 @@ def admin_staff_report_profile(staff_id):
 # ✅ 報告書管理（/admin/reports）
 # ===================================================
 @app.route("/admin/reports")
-@staff_required
+@staff_section_required("reports")
 def admin_reports():
     """報告書一覧（現場別）"""
     try:
@@ -8689,7 +8985,7 @@ def admin_reports():
 
 
 @app.route("/admin/reports/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("reports")
 def admin_reports_new():
     """新規報告書作成"""
     if request.method == "GET":
@@ -8928,7 +9224,7 @@ def admin_reports_new():
 
 
 @app.route("/admin/reports/<report_id>/edit", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("reports")
 def admin_reports_edit(report_id):
     """報告書編集"""
     if request.method == "GET":
@@ -9282,7 +9578,7 @@ def admin_reports_edit(report_id):
 
 
 @app.route("/admin/reports/<report_id>/delete", methods=["POST"])
-@staff_required
+@staff_section_required("reports")
 def admin_reports_delete(report_id):
     """報告書削除"""
     try:
@@ -9298,7 +9594,7 @@ def admin_reports_delete(report_id):
 # ✅ 備品管理
 # ===================================================
 @app.route("/admin/equipment")
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_years():
     """備品管理 - 年選択"""
     try:
@@ -9331,7 +9627,7 @@ def admin_equipment_years():
 
 
 @app.route("/admin/equipment/years/<year>")
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_year_detail(year):
     """備品管理 - 指定年の詳細"""
     try:
@@ -9388,7 +9684,7 @@ def admin_equipment_year_detail(year):
 
 
 @app.route("/admin/equipment/years/<year>/initial-stock/new", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_initial_stock_new(year):
     """年初備品在庫数 - 新規作成"""
     if request.method == "POST":
@@ -9444,7 +9740,7 @@ def admin_equipment_initial_stock_new(year):
 
 
 @app.route("/admin/equipment/years/<year>/initial-stock/<stock_id>/edit", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_initial_stock_edit(year, stock_id):
     """年初備品在庫数 - 編集"""
     if request.method == "POST":
@@ -9482,7 +9778,7 @@ def admin_equipment_initial_stock_edit(year, stock_id):
 
 
 @app.route("/admin/equipment/years/<year>/takeouts/new", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_takeout_new(year):
     """持ち出し備品 - 新規作成"""
     if request.method == "POST":
@@ -9523,7 +9819,7 @@ def admin_equipment_takeout_new(year):
 
 
 @app.route("/admin/equipment/years/<year>/takeouts/<takeout_id>/edit", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_takeout_edit(year, takeout_id):
     """持ち出し備品 - 編集"""
     if request.method == "POST":
@@ -9571,7 +9867,7 @@ def admin_equipment_takeout_edit(year, takeout_id):
 
 
 @app.route("/admin/equipment/years/<year>/takeouts/<takeout_id>/delete", methods=["POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_takeout_delete(year, takeout_id):
     """持ち出し備品 - 削除"""
     try:
@@ -9584,7 +9880,7 @@ def admin_equipment_takeout_delete(year, takeout_id):
 
 
 @app.route("/admin/equipment/years/<year>/orders/new", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_order_new(year):
     """発注備品 - 新規作成"""
     if request.method == "POST":
@@ -9638,7 +9934,7 @@ def admin_equipment_order_new(year):
 
 
 @app.route("/admin/equipment/years/<year>/orders/<order_id>/edit", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_order_edit(year, order_id):
     """発注備品 - 編集"""
     if request.method == "POST":
@@ -9703,7 +9999,7 @@ def admin_equipment_order_edit(year, order_id):
 
 
 @app.route("/admin/equipment/years/<year>/orders/<order_id>/delete", methods=["POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_order_delete(year, order_id):
     """発注備品 - 削除"""
     try:
@@ -9716,7 +10012,7 @@ def admin_equipment_order_delete(year, order_id):
 
 
 @app.route("/admin/equipment/items/new", methods=["GET", "POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_item_new():
     """備品マスタ - 新規作成"""
     if request.method == "POST":
@@ -9745,7 +10041,7 @@ def admin_equipment_item_new():
 
 
 @app.route("/admin/equipment/years/<year>/copy-from-previous", methods=["POST"])
-@admin_required
+@staff_section_required("equipment")
 def admin_equipment_copy_from_previous(year):
     """前年の現在庫数を年初在庫数としてコピー"""
     try:
@@ -11244,7 +11540,7 @@ def admin_financial_salary_delete(year, month, salary_id):
 # ✅ セルフケア動画管理
 # ===================================================
 @app.route("/admin/videos")
-@staff_required
+@staff_section_required("videos")
 def admin_videos():
     """セルフケア動画一覧（あいうえお順）"""
     try:
@@ -11258,7 +11554,7 @@ def admin_videos():
 
 
 @app.route("/admin/videos/new", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("videos")
 def admin_video_new():
     """セルフケア動画 - 新規作成"""
     if request.method == "POST":
@@ -11329,7 +11625,7 @@ def admin_video_new():
 
 
 @app.route("/admin/videos/<video_id>")
-@staff_required
+@staff_section_required("videos")
 def admin_video_detail(video_id):
     """セルフケア動画 - 詳細表示"""
     try:
@@ -11347,7 +11643,7 @@ def admin_video_detail(video_id):
 
 
 @app.route("/admin/videos/<video_id>/edit", methods=["GET", "POST"])
-@staff_required
+@staff_section_required("videos")
 def admin_video_edit(video_id):
     """セルフケア動画 - 編集"""
     if request.method == "POST":
@@ -11428,7 +11724,7 @@ def admin_video_edit(video_id):
 
 
 @app.route("/admin/videos/<video_id>/delete", methods=["POST"])
-@staff_required
+@staff_section_required("videos")
 def admin_video_delete(video_id):
     """セルフケア動画 - 削除"""
     try:

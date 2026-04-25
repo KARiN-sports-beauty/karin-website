@@ -29,16 +29,20 @@
   <main class="admin-main">
     <h1 class="admin-title">スタッフ用ダッシュボード</h1>
     <p class="admin-subtitle">
-      {% if session.staff and session.staff.is_admin == True %}
+      {% if dash_perm.is_admin %}
       本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」と「未返信お問い合わせ」を確認してください。
-      {% else %}
+      {% elif dash_perm.comments and dash_perm.contacts %}
+      本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」と「未返信お問い合わせ」を確認してください。
+      {% elif dash_perm.comments %}
       本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」を確認してください。
+      {% else %}
+      配属に応じたメニューから業務を行ってください。
       {% endif %}
     </p>
 
     <div class="dashboard-grid">
 
-      <!-- 🔵 上段：重要通知 -->
+      {% if dash_perm.comments %}
         <a href="/admin/comments" class="dash-card{% if unreplied_comments and unreplied_comments > 0 %} dash-card-top{% endif %}">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信コメント</span>
@@ -50,8 +54,9 @@
             ブログ記事についたコメントのうち、まだ返信していないものの件数です。
         </p>
         </a>
+      {% endif %}
 
-        {% if session.staff and session.staff.is_admin == True %}
+      {% if dash_perm.contacts %}
         <a href="/admin/contacts" class="dash-card{% if unprocessed_contacts and unprocessed_contacts > 0 %} dash-card-top{% endif %}">
         <div class="dash-card-header">
             <span class="dash-card-label">未返信お問い合わせ</span>
@@ -63,9 +68,9 @@
             フォームから届いたお問い合わせのうち、未処理の件数です。
         </p>
         </a>
-        {% endif %}
+      {% endif %}
 
-        <!-- 🔶 中段：コンテンツ管理 -->
+      {% if dash_perm.blogs %}
         <a href="/admin/blogs" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">ブログ管理</span>
@@ -74,7 +79,9 @@
             ブログ記事の新規投稿・編集・削除を行います。
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.videos %}
         <a href="/admin/videos" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">セルフケア動画</span>
@@ -83,7 +90,9 @@
             今後、セルフケア動画のアップロード・管理を行う予定のページです。
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.news %}
         <a href="/admin/news" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">ニュース管理</span>
@@ -92,8 +101,9 @@
             お知らせ（ニュース）の投稿・編集・公開状態の管理を行います。
             </p>
         </a>
+      {% endif %}
 
-        <!-- 🟩 下段：業務管理 -->
+      {% if dash_perm.reservations %}
         <a href="/admin/reservations" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">予約一覧</span>
@@ -102,7 +112,9 @@
             予約状況の確認・変更を行います。（Supabase / Sheets 連携予定）
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.daily_reports %}
         <a href="/admin/daily-reports" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">日報一覧</span>
@@ -111,7 +123,9 @@
             KARiN.日報を確認・編集します（1日1画面、全スタッフ統合表示）。
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.reports %}
         <a href="/admin/reports" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">報告書一覧</span>
@@ -120,7 +134,9 @@
             トレーナー帯同などの報告書を管理します。
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.karte %}
         <a href="/admin/karte" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">カルテ管理</span>
@@ -129,7 +145,9 @@
             初診フォームの内容と、継続施術ログを一元管理します。
             </p>
         </a>
+      {% endif %}
 
+      {% if dash_perm.equipment %}
         <a href="/admin/equipment" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">備品管理</span>
@@ -138,9 +156,9 @@
             備品の管理を行います。
             </p>
         </a>
+      {% endif %}
 
-        {% if session.staff and session.staff.is_admin == True %}
-        <!-- 🔒 管理者専用：スタッフ一覧（管理） -->
+      {% if dash_perm.staff_list_admin %}
         <a href="/admin/staff" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">スタッフ一覧(管理)</span>
@@ -149,16 +167,24 @@
             ログインできるスタッフのページです。ここで制御を行います。
             </p>
         </a>
-        <!-- 🔒 管理者専用：スタッフ報告 -->
-        <a href="/admin/staff-reports" class="dash-card">
+      {% endif %}
+
+      {% if dash_perm.staff_reports_card %}
+        <a href="{{ dash_perm.staff_reports_menu_href }}" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">スタッフ報告</span>
             </div>
             <p class="dash-card-text">
+            {% if dash_perm.is_admin or dash_perm.staff_reports_index %}
             各スタッフの情報、シフト、勤務報告などを確認・管理します。
+            {% else %}
+            あなたの日報・交通費・プロフィールを確認・管理します。
+            {% endif %}
             </p>
         </a>
-        <!-- 🔒 管理者専用：売上一覧 -->
+      {% endif %}
+
+      {% if dash_perm.revenue %}
         <a href="/admin/revenue/years" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">売上一覧</span>
@@ -167,7 +193,9 @@
             全体および各スタッフの月次売上と実働時間を確認します（日報データから集計）。
             </p>
         </a>
-        <!-- 🔒 管理者専用：収支管理 -->
+      {% endif %}
+
+      {% if dash_perm.financial %}
         <a href="/admin/financial" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">収支管理</span>
@@ -176,8 +204,9 @@
             年間・月次の収支、経費、スタッフ給与を管理します。
             </p>
         </a>
-        {% else %}
-        <!-- 👤 一般スタッフ用：本人のスタッフページ -->
+      {% endif %}
+
+      {% if dash_perm.staff_page %}
         <a href="/staff/profile" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">スタッフページ</span>
@@ -186,10 +215,9 @@
             あなたのスタッフ情報、シフト、勤務報告などを管理します。
             </p>
         </a>
-        {% endif %}
+      {% endif %}
 
-        {% if session.staff and session.staff.is_admin == True %}
-        <!-- 🔒 管理者専用：財務管理 -->
+      {% if dash_perm.invoices %}
         <a href="/admin/invoices" class="dash-card">
             <div class="dash-card-header">
             <span class="dash-card-label">請求書一覧</span>
@@ -198,7 +226,7 @@
             請求書の作成・管理・確認を行います。
             </p>
         </a>
-        {% endif %}
+      {% endif %}
 
     </div><!-- /.dashboard-grid -->
     <div style="margin-top:40px; text-align:center;">

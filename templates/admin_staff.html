@@ -51,6 +51,7 @@
       <th>電話番号</th>
       <th>登録日</th>
       <th>状態</th>
+      <th>配属</th>
       <th>操作</th>
     </tr>
 
@@ -68,9 +69,27 @@
         {% endif %}
       </td>
       <td>
+        {% if s.approved and s.staff_role %}
+          {% if s.staff_role == 'reception' %}受付
+          {% elif s.staff_role == 'regular' %}正規スタッフ
+          {% elif s.staff_role == 'irregular' %}非正規スタッフ
+          {% else %}{{ s.staff_role }}{% endif %}
+        {% elif s.approved %}
+          <span style="color:#888;">未設定（正規扱い）</span>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>
         {% if not s.approved %}
-        <form action="/admin/staff/approve/{{ s.id }}" method="POST" style="display:inline;">
-          <button class="action-btn">承認</button>
+        <form action="/admin/staff/approve/{{ s.id }}" method="POST" style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <label style="font-size:13px; color:#1E3A5F;">配属</label>
+          <select name="staff_role" required style="padding:6px 8px; border-radius:6px; border:1px solid #ccc;">
+            <option value="reception">受付</option>
+            <option value="regular" selected>正規スタッフ</option>
+            <option value="irregular">非正規スタッフ</option>
+          </select>
+          <button type="submit" class="action-btn">承認</button>
         </form>
         {% else %}
         <form action="/admin/staff/disable/{{ s.id }}" method="POST" style="display:inline;">
