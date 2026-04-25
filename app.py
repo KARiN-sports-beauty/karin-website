@@ -223,7 +223,7 @@ STAFF_SECTION_ALLOWED_NONADMIN = {
     "blogs": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
     "videos": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
     "news": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
-    "reservations": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
+    "reservations": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR}),
     "daily_reports_admin": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
     "reports": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
     "karte": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR}),
@@ -351,7 +351,7 @@ def build_dashboard_permissions(staff):
         "blogs": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
         "videos": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
         "news": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
-        "reservations": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
+        "reservations": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR),
         "daily_reports": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
         "reports": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
         "karte": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR),
@@ -3928,6 +3928,12 @@ def robots_txt():
 def admin_reservations():
     """予約管理（カレンダー表示）"""
     try:
+        viewer = session.get("staff", {}) or {}
+        viewer_name = (viewer.get("name") or "スタッフ").strip()
+        viewer_role = (viewer.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+        viewer_is_admin = bool(viewer.get("is_admin"))
+        viewer_is_irregular = (not viewer_is_admin) and viewer_role == STAFF_ROLE_IRREGULAR
+
         # クエリパラメータ取得
         ym = request.args.get("ym")  # YYYY-MM
         day = request.args.get("day")  # YYYY-MM-DD
@@ -3972,6 +3978,10 @@ def admin_reservations():
         # フィルタ適用
         if place_type_filter != "all":
             query = query.eq("place_type", place_type_filter)
+        # 非正規スタッフは本人予定のみ
+        if viewer_is_irregular:
+            staff_filter = viewer_name
+            query = query.eq("staff_name", viewer_name)
         if staff_filter != "all":
             query = query.eq("staff_name", staff_filter)
         
@@ -4066,24 +4076,51 @@ def admin_reservations():
             except:
                 r["reserved_at_display"] = "時刻不明"
         
-        # スタッフリスト取得（フィルタ用）
-        staff_list = []
+        # スタッフリスト取得（表示・フィルタ用）
+        staff_entries = []
         try:
-            try:
-                res_staff = supabase_admin.table("staff").select("id, name").execute()
-                if res_staff.data:
-                    staff_list = [{"name": s.get("name", "不明"), "id": s.get("id")} for s in res_staff.data]
-            except:
-                pass
-            # 現在のスタッフも追加
-            staff = session.get("staff", {})
-            current_staff_name = staff.get("name", "スタッフ")
-            if not any(s.get("name") == current_staff_name for s in staff_list):
-                staff_list.append({"name": current_staff_name, "id": staff.get("id")})
+            users = supabase_admin.auth.admin.list_users()
+            for u in users:
+                meta = u.user_metadata or {}
+                if not meta.get("approved", False):
+                    continue
+                if meta.get("is_admin", False):
+                    continue
+                last_name = meta.get("last_name", "")
+                first_name = meta.get("first_name", "")
+                display_name = f"{last_name} {first_name}".strip() if (last_name and first_name) else (meta.get("name", "未設定"))
+                role = (meta.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+                if role not in STAFF_ROLES_NONADMIN:
+                    role = STAFF_ROLE_REGULAR
+                created = str(u.created_at) if getattr(u, "created_at", None) else ""
+                staff_entries.append({
+                    "id": u.id,
+                    "name": display_name,
+                    "role": role,
+                    "created_at": created,
+                })
         except Exception as e:
             print("❌ スタッフリスト取得エラー:", e)
-            staff = session.get("staff", {})
-            staff_list = [{"name": staff.get("name", "スタッフ"), "id": staff.get("id")}]
+
+        if not any((s.get("name") or "").strip() == viewer_name for s in staff_entries):
+            staff_entries.append({
+                "id": viewer.get("id"),
+                "name": viewer_name,
+                "role": viewer_role if viewer_role in STAFF_ROLES_NONADMIN else STAFF_ROLE_REGULAR,
+                "created_at": "",
+            })
+
+        def staff_sort_key(x):
+            role = x.get("role") or STAFF_ROLE_REGULAR
+            group = 1 if role == STAFF_ROLE_IRREGULAR else 0  # 上:正規系(受付含む), 下:非正規
+            created = x.get("created_at") or ""
+            return (group, created, x.get("name") or "")
+
+        staff_entries.sort(key=staff_sort_key)
+        if viewer_is_irregular:
+            staff_entries = [s for s in staff_entries if (s.get("name") or "").strip() == viewer_name]
+
+        staff_list = [{"id": s.get("id"), "name": s.get("name")} for s in staff_entries]
         
         # 前月・次月の計算
         if current_date.month == 1:
@@ -4140,22 +4177,36 @@ def admin_reservations():
         timeline_end_minute = timeline_end_hour * 60
         timeline_total_minutes = timeline_end_minute - timeline_start_minute
 
+        timeline_staff_role_map = {s.get("name"): (s.get("role") or STAFF_ROLE_REGULAR) for s in staff_entries if (s.get("name") or "").strip()}
         if staff_filter != "all":
             timeline_staff_names = [staff_filter]
         else:
-            timeline_staff_names = []
-            for s in staff_list:
-                nm = (s.get("name") or "").strip()
-                if nm and nm not in timeline_staff_names:
-                    timeline_staff_names.append(nm)
+            timeline_staff_names = [s.get("name") for s in staff_entries if (s.get("name") or "").strip()]
+
+        timeline_staff_rows = []
+        if staff_filter == "all":
+            regular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) != STAFF_ROLE_IRREGULAR]
+            irregular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) == STAFF_ROLE_IRREGULAR]
+            if regular_names:
+                timeline_staff_rows.append({"type": "header", "label": "正規スタッフ"})
+                for n in regular_names:
+                    timeline_staff_rows.append({"type": "staff", "name": n})
+            if irregular_names:
+                timeline_staff_rows.append({"type": "header", "label": "非正規スタッフ"})
+                for n in irregular_names:
+                    timeline_staff_rows.append({"type": "staff", "name": n})
+        else:
+            for n in timeline_staff_names:
+                timeline_staff_rows.append({"type": "staff", "name": n})
 
         timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
         for r in reservations_of_day:
             staff_name_raw = (r.get("staff_name") or "").strip()
             staff_name_for_timeline = staff_name_raw or "未割当"
             if staff_name_for_timeline not in timeline_cards_by_staff:
-                timeline_staff_names.append(staff_name_for_timeline)
                 timeline_cards_by_staff[staff_name_for_timeline] = []
+                timeline_staff_names.append(staff_name_for_timeline)
+                timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline})
 
             start_minute = timeline_start_minute
             if r.get("place_type") != "field":
@@ -4187,8 +4238,10 @@ def admin_reservations():
                 "duration": duration,
                 "reserved_at_display": r.get("reserved_at_display") or "",
                 "patient_name": r.get("patient_name") or "患者なし",
+                "vip_level": (r.get("patient", {}) or {}).get("vip_level") if isinstance(r.get("patient"), dict) else "",
                 "status": r.get("status") or "",
                 "place_type": r.get("place_type") or "",
+                "place_label": "院内" if r.get("place_type") == "in_house" else ("往診" if r.get("place_type") == "visit" else ("帯同" if r.get("place_type") == "field" else "予定")),
             })
         
         return render_template(
@@ -4213,6 +4266,7 @@ def admin_reservations():
             timeline_px_per_min=timeline_px_per_min,
             timeline_total_minutes=timeline_total_minutes,
             timeline_staff_names=timeline_staff_names,
+            timeline_staff_rows=timeline_staff_rows,
             timeline_cards_by_staff=timeline_cards_by_staff,
         )
     except Exception as e:

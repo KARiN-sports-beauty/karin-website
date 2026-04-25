@@ -95,9 +95,41 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
   }
   .schedule-timeline-header .schedule-staff-col {
     z-index: 5;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .schedule-group-header {
+    display: flex;
+    min-width: max-content;
+    background: #f8fafc;
+  }
+  .schedule-group-staff-col {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: #f8fafc;
+  }
+  .schedule-group-label {
+    width: 100%;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1E3A5F;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .schedule-group-time-col {
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
   }
   .schedule-time-head {
     position: relative;
@@ -142,10 +174,35 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+  .schedule-card-time {
+    font-weight: 700;
+    font-size: 0.68rem;
+    opacity: 0.95;
+  }
+  .schedule-card-main {
+    font-weight: 600;
+  }
+  .schedule-card-sub {
+    font-size: 0.66rem;
+    opacity: 0.95;
+  }
   .schedule-card.place-inhouse { background: #1E3A5F; }
   .schedule-card.place-visit { background: #4CAF50; }
   .schedule-card.place-field { background: #FF8AA8; }
   .schedule-card.place-default { background: #64748b; }
+  .admin-resv-card {
+    scroll-margin-top: 12px;
+  }
+  .admin-resv-card:target {
+    outline: 3px solid #ffcc4d;
+    box-shadow: 0 0 0 6px rgba(255, 204, 77, 0.25);
+    animation: resv-target-pulse 1.2s ease-out;
+  }
+  @keyframes resv-target-pulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+  }
   @media (max-width: 900px) {
     .admin-resv-header {
       gap: 8px;
@@ -160,6 +217,11 @@
       min-width: 110px;
       max-width: 110px;
       font-size: 0.85rem;
+    }
+    .schedule-group-staff-col {
+      width: 110px;
+      min-width: 110px;
+      max-width: 110px;
     }
   }
 </style>
@@ -263,7 +325,16 @@
             {% endfor %}
           </div>
         </div>
-        {% for staff_name in timeline_staff_names %}
+        {% for row in timeline_staff_rows %}
+        {% if row.type == 'header' %}
+        <div class="schedule-group-header">
+          <div class="schedule-group-staff-col"></div>
+          <div class="schedule-group-time-col" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+            <div class="schedule-group-label">{{ row.label }}</div>
+          </div>
+        </div>
+        {% else %}
+        {% set staff_name = row.name %}
         <div class="schedule-timeline-row">
           <div class="schedule-staff-col">{{ staff_name }}</div>
           <div class="schedule-row-canvas" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
@@ -274,16 +345,18 @@
             {% for card in timeline_cards_by_staff.get(staff_name, []) %}
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
             {% set card_width = card.duration * timeline_px_per_min %}
-            <a href="/admin/reservations/{{ card.id }}/edit"
+            <a href="#resv-detail-{{ card.id }}"
                class="schedule-card {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
                style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
                title="{{ card.reserved_at_display }} {{ card.patient_name }}">
-              <span>{{ card.reserved_at_display }}</span>
-              <span>{{ card.patient_name }}</span>
+              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-main">{{ card.patient_name }}{% if 'star' in (card.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (card.vip_level or '') %}🍀{% endif %}</span>
+              <span class="schedule-card-sub">{{ card.place_label }}</span>
             </a>
             {% endfor %}
           </div>
         </div>
+        {% endif %}
         {% endfor %}
       </div>
     </div>
@@ -292,7 +365,7 @@
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for reservation in reservations_of_day %}
-      <div class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
+      <div id="resv-detail-{{ reservation.id }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
           <div style="flex: 1;">
             <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
