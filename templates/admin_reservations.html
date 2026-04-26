@@ -502,11 +502,13 @@
         {% endif %}
         
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
           <a href="/admin/reservations/{{ reservation.id }}/edit" 
              class="admin-resv-btn" 
              style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
             ✏ 編集
           </a>
+          {% endif %}
           
           {% if reservation.patient_id %}
           <a href="/admin/karte/{{ reservation.patient_id }}/log/new?date={{ selected_day.strftime('%Y-%m-%d') }}" 
@@ -516,14 +518,14 @@
           </a>
           {% endif %}
           
-          {% if reservation.status == 'reserved' %}
+          {% if reservation.viewer_may_edit and reservation.status == 'reserved' %}
           <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
             <input type="hidden" name="status" value="visited">
             <button type="submit" style="padding: 6px 12px; background: #2196F3; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 来院済</button>
           </form>
           {% endif %}
           
-          {% if reservation.status == 'visited' %}
+          {% if reservation.viewer_may_edit and reservation.status == 'visited' %}
           <div data-reservation-id="{{ reservation.id }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
             <button type="button" class="payment-method-btn" data-method="cash">現金</button>
             <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
@@ -540,16 +542,18 @@
           </div>
           {% endif %}
           
-          {% if reservation.status != 'canceled' %}
+          {% if reservation.viewer_may_edit and reservation.status != 'canceled' %}
           <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
             <input type="hidden" name="status" value="canceled">
             <button type="submit" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;" onclick="return confirm('この予約をキャンセルしますか？');">✕ キャンセル</button>
           </form>
           {% endif %}
           
+          {% if reservation.viewer_may_edit %}
           <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この予約を削除しますか？');">
             <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
           </form>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
