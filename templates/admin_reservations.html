@@ -114,6 +114,38 @@
   .schedule-timeline-row.irregular .schedule-row-canvas {
     background: #fffafb;
   }
+  .schedule-staff-col-button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .schedule-staff-col-button:hover {
+    text-decoration: underline;
+  }
+  .schedule-filter-panel {
+    margin: 0 0 12px 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: none;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .schedule-filter-panel.show {
+    display: flex;
+  }
   .schedule-time-head {
     position: relative;
     border-bottom: 1px solid #e2e8f0;
@@ -136,21 +168,21 @@
   }
   .schedule-row-canvas {
     position: relative;
-    height: 54px;
+    height: 62px;
     border-bottom: 1px solid #f1f5f9;
     background: #fff;
   }
   .schedule-card {
     position: absolute;
-    top: 8px;
-    height: 38px;
+    top: 7px;
+    height: 48px;
     border-radius: 8px;
-    padding: 4px 8px;
+    padding: 5px 8px;
     box-sizing: border-box;
     color: #fff;
     text-decoration: none;
     font-size: 0.7rem;
-    line-height: 1.15;
+    line-height: 1.2;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -161,6 +193,7 @@
   .schedule-card-time {
     font-weight: 700;
     font-size: 0.66rem;
+    line-height: 1.2;
     opacity: 0.95;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -168,6 +201,7 @@
   }
   .schedule-card-main {
     font-weight: 600;
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -188,6 +222,9 @@
     outline: 3px solid #ffcc4d;
     box-shadow: 0 0 0 6px rgba(255, 204, 77, 0.25);
     animation: resv-target-pulse 1.2s ease-out;
+  }
+  .admin-resv-card.hidden-by-staff-filter {
+    display: none !important;
   }
   @keyframes resv-target-pulse {
     0% { transform: scale(1); }
@@ -298,6 +335,20 @@
     <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">
       {{ selected_day.strftime('%Y年%m月%d日') }}の予定
     </h3>
+    <div id="schedule-filter-panel" class="schedule-filter-panel">
+      <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
+      <span style="color:#64748b; font-size:0.9rem;">勤務時間</span>
+      <input id="work-start-input" type="text" value="09:00" placeholder="09:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <span style="color:#64748b;">〜</span>
+      <input id="work-end-input" type="text" value="18:00" placeholder="18:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <label style="display:flex; align-items:center; gap:6px; color:#1E3A5F; font-size:0.9rem;">
+        <input id="work-off-input" type="checkbox">
+        休み
+      </label>
+      <button id="work-time-save-btn" type="button" style="padding:6px 10px; border:none; border-radius:6px; background:#1E3A5F; color:#fff; cursor:pointer;">保存</button>
+      <button id="schedule-filter-clear-btn" type="button" style="padding:6px 10px; border:1px solid #cfd8e3; border-radius:6px; background:#fff; color:#1E3A5F; cursor:pointer;">全員表示に戻す</button>
+      <small id="work-time-message" style="color:#64748b;"></small>
+    </div>
     {% if timeline_staff_names %}
     <div class="schedule-timeline-wrap">
       <div class="schedule-timeline-scroll">
@@ -314,7 +365,7 @@
         {% for row in timeline_staff_rows %}
         {% set staff_name = row.name %}
         <div class="schedule-timeline-row {% if row.role == 'irregular' %}irregular{% else %}regular{% endif %}">
-          <div class="schedule-staff-col">{{ staff_name }}</div>
+          <div class="schedule-staff-col"><button type="button" class="schedule-staff-col-button" data-staff-name="{{ staff_name }}">{{ staff_name }}</button></div>
           <div class="schedule-row-canvas"
                data-day="{{ selected_day.strftime('%Y-%m-%d') }}"
                data-staff-name="{{ staff_name }}"
@@ -346,7 +397,7 @@
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for reservation in reservations_of_day %}
-      <div id="resv-detail-{{ reservation.id }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
           <div style="flex: 1;">
             <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
@@ -511,6 +562,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  const SHIFT_DATA = {{ shift_map|tojson }};
+  const SHIFT_CAN_EDIT_ALL = {{ shift_can_edit_all|tojson }};
+  const VIEWER_STAFF_NAME = {{ viewer_staff_name|tojson }};
   const paymentBlocks = document.querySelectorAll('[data-reservation-id]');
   paymentBlocks.forEach(function(block) {
     const buttons = block.querySelectorAll('.payment-method-btn');
@@ -547,6 +601,180 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   const timelineCanvases = document.querySelectorAll('.schedule-row-canvas');
+  const staffButtons = document.querySelectorAll('.schedule-staff-col-button');
+  const details = document.querySelectorAll('.admin-resv-card[data-staff-name]');
+  const filterPanel = document.getElementById('schedule-filter-panel');
+  const filterStaffName = document.getElementById('schedule-filter-staff-name');
+  const workStartInput = document.getElementById('work-start-input');
+  const workEndInput = document.getElementById('work-end-input');
+  const workOffInput = document.getElementById('work-off-input');
+  const workTimeSaveBtn = document.getElementById('work-time-save-btn');
+  const filterClearBtn = document.getElementById('schedule-filter-clear-btn');
+  const workTimeMessage = document.getElementById('work-time-message');
+
+  function parseHmToMinute(s) {
+    const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    if (hh < 0 || hh > 26 || mm < 0 || mm > 59) return null;
+    return hh * 60 + mm;
+  }
+  function minuteToHm(min) {
+    const v = Math.max(0, Math.min(26 * 60, Number(min) || 0));
+    const hh = String(Math.floor(v / 60)).padStart(2, '0');
+    const mm = String(v % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  function getShift(day, staffName, startHour) {
+    const key = String(staffName || '').trim();
+    const row = SHIFT_DATA[key] || {};
+    const st = parseHmToMinute(row.start);
+    const ed = parseHmToMinute(row.end);
+    const isOff = !!row.is_off;
+    if (st !== null && ed !== null && ed > st) return { start: st, end: ed, is_off: isOff };
+    const defaultStart = 10 * 60;
+    const defaultEnd = 19 * 60;
+    return { start: defaultStart, end: defaultEnd, is_off: isOff };
+  }
+  function applyCanvasShiftBackground(canvas) {
+    const day = canvas.dataset.day || '';
+    const staffName = canvas.dataset.staffName || '';
+    const startHour = parseInt(canvas.dataset.startHour || '7', 10);
+    const pxPerMin = parseFloat(canvas.dataset.pxPerMin || '2');
+    if (!day || !staffName || !pxPerMin) return;
+    const shift = getShift(day, staffName, startHour);
+    const timelineStart = startHour * 60;
+    if (shift.is_off) {
+      canvas.style.background = '#f1f5f9';
+      return;
+    }
+    const shiftStartPx = Math.max(0, (shift.start - timelineStart) * pxPerMin);
+    const shiftEndPx = Math.max(0, (shift.end - timelineStart) * pxPerMin);
+    canvas.style.background = `linear-gradient(to right, #f1f5f9 0px, #f1f5f9 ${shiftStartPx}px, #ffffff ${shiftStartPx}px, #ffffff ${shiftEndPx}px, #f1f5f9 ${shiftEndPx}px, #f1f5f9 100%)`;
+  }
+  function applyAllCanvasShiftBackgrounds() {
+    timelineCanvases.forEach(applyCanvasShiftBackground);
+  }
+
+  function filterDetailsByStaff(staffName) {
+    details.forEach(function(el) {
+      const n = (el.dataset.staffName || '').trim();
+      if (!staffName || n === staffName) {
+        el.classList.remove('hidden-by-staff-filter');
+      } else {
+        el.classList.add('hidden-by-staff-filter');
+      }
+    });
+  }
+
+  let selectedStaffName = '';
+  function syncOffInputState() {
+    const off = !!(workOffInput && workOffInput.checked);
+    if (workStartInput) workStartInput.disabled = off;
+    if (workEndInput) workEndInput.disabled = off;
+    if (off && workTimeMessage) {
+      workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
+      workTimeMessage.style.color = '#64748b';
+    }
+  }
+  function showPanelForStaff(staffName) {
+    if (!filterPanel || !workStartInput || !workEndInput) return;
+    const anyCanvas = document.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(staffName)}"]`);
+    if (!anyCanvas) return;
+    const day = anyCanvas.dataset.day || '';
+    const startHour = parseInt(anyCanvas.dataset.startHour || '7', 10);
+    const shift = getShift(day, staffName, startHour);
+    selectedStaffName = staffName;
+    filterPanel.classList.add('show');
+    filterStaffName.textContent = `スタッフ: ${staffName}`;
+    workStartInput.value = minuteToHm(shift.start);
+    workEndInput.value = minuteToHm(shift.end);
+    if (workOffInput) workOffInput.checked = !!shift.is_off;
+    workTimeMessage.textContent = '';
+    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
+    workStartInput.disabled = !canEdit;
+    workEndInput.disabled = !canEdit;
+    workTimeSaveBtn.disabled = !canEdit;
+    workTimeSaveBtn.style.opacity = canEdit ? '1' : '0.5';
+    workTimeSaveBtn.style.cursor = canEdit ? 'pointer' : 'not-allowed';
+    if (!canEdit) {
+      workTimeMessage.textContent = 'このスタッフの勤務時間は編集できません。';
+      workTimeMessage.style.color = '#64748b';
+    }
+    syncOffInputState();
+  }
+
+  staffButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const staffName = btn.dataset.staffName || '';
+      if (!staffName) return;
+      filterDetailsByStaff(staffName);
+      showPanelForStaff(staffName);
+    });
+  });
+
+  if (workOffInput) {
+    workOffInput.addEventListener('change', syncOffInputState);
+  }
+
+  if (workTimeSaveBtn) {
+    workTimeSaveBtn.addEventListener('click', async function() {
+      if (!selectedStaffName) return;
+      const targetCanvas = document.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(selectedStaffName)}"]`);
+      if (!targetCanvas) return;
+      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+      if (!canEdit) return;
+      const day = targetCanvas.dataset.day || '';
+      const isOff = !!(workOffInput && workOffInput.checked);
+      const st = parseHmToMinute(workStartInput.value);
+      const ed = parseHmToMinute(workEndInput.value);
+      if (!isOff && (st === null || ed === null || ed <= st)) {
+        workTimeMessage.textContent = '勤務時間は HH:MM 形式で、終了は開始より後にしてください。';
+        workTimeMessage.style.color = '#b91c1c';
+        return;
+      }
+      try {
+        const res = await fetch('/admin/reservations/shifts/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: day,
+            staff_name: selectedStaffName,
+            start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
+            end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
+            is_off: isOff,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.message || '保存に失敗しました');
+        }
+        SHIFT_DATA[selectedStaffName] = {
+          start: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
+          end: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
+          is_off: isOff,
+        };
+        applyAllCanvasShiftBackgrounds();
+        workTimeMessage.textContent = isOff ? '休みを保存しました。' : '勤務時間を保存しました。';
+        workTimeMessage.style.color = '#166534';
+      } catch (e) {
+        workTimeMessage.textContent = e.message || '保存に失敗しました。';
+        workTimeMessage.style.color = '#b91c1c';
+      }
+    });
+  }
+
+  if (filterClearBtn) {
+    filterClearBtn.addEventListener('click', function() {
+      selectedStaffName = '';
+      filterDetailsByStaff('');
+      if (filterPanel) filterPanel.classList.remove('show');
+    });
+  }
+
+  applyAllCanvasShiftBackgrounds();
+
   timelineCanvases.forEach(function(canvas) {
     canvas.addEventListener('click', function(ev) {
       if (ev.target.closest('.schedule-card')) {
@@ -564,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const clickX = ev.clientX - rect.left;
       const totalMinutes = Math.max(0, Math.round(clickX / pxPerMin));
       const minuteOfDay = (startHour * 60) + totalMinutes;
-      const hour = Math.max(0, Math.min(23, Math.floor(minuteOfDay / 60)));
+      const hour = Math.max(0, Math.min(26, Math.floor(minuteOfDay / 60)));
       const minute = Math.max(0, Math.min(59, minuteOfDay % 60));
       const minuteRounded = Math.floor(minute / 5) * 5;
       const hh = String(hour).padStart(2, '0');

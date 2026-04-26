@@ -63,8 +63,8 @@
       {% for item in in_house_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #1E3A5F;" 
            data-work-type="{{ item.work_type or 'in_house' }}"
-           data-start-time="{{ item.start_time or '' }}" 
-           data-end-time="{{ item.end_time or '' }}" 
+           data-start-time="{{ item.start_time_display or item.start_time or '' }}" 
+           data-end-time="{{ item.end_time_display or item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
            data-session-count="{{ item.session_count or '' }}" 
            data-nomination-type="{{ item.nomination_type or '' }}" 
@@ -167,8 +167,8 @@
       {% for item in visit_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #4CAF50;" 
            data-work-type="{{ item.work_type or 'visit' }}"
-           data-start-time="{{ item.start_time or '' }}" 
-           data-end-time="{{ item.end_time or '' }}" 
+           data-start-time="{{ item.start_time_display or item.start_time or '' }}" 
+           data-end-time="{{ item.end_time_display or item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
            data-session-count="{{ item.session_count or '' }}" 
            data-nomination-type="{{ item.nomination_type or '' }}" 
@@ -271,8 +271,8 @@
       {% for item in field_items %}
       <div class="work-item-card" data-item-id="{{ item.id }}" style="padding: 16px; background: #f5f7fb; border-radius: 12px; border-left: 4px solid #FFB6C1;" 
            data-work-type="{{ item.work_type or 'field' }}"
-           data-start-time="{{ item.start_time or '' }}" 
-           data-end-time="{{ item.end_time or '' }}" 
+           data-start-time="{{ item.start_time_display or item.start_time or '' }}" 
+           data-end-time="{{ item.end_time_display or item.end_time or '' }}" 
            data-break-minutes="{{ item.break_minutes or 0 }}" 
            data-session-count="{{ item.session_count or '' }}" 
            data-nomination-type="{{ item.nomination_type or '' }}" 
@@ -367,12 +367,12 @@
       <!-- 基本情報 -->
       <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始時間</label>
-        <input type="time" id="edit-start-time" name="start_time" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="text" id="edit-start-time" name="start_time" placeholder="例: 18:00" maxlength="5" inputmode="numeric" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       
       <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">終了時間</label>
-        <input type="time" id="edit-end-time" name="end_time" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="text" id="edit-end-time" name="end_time" placeholder="例: 26:00（翌日は30時表記まで）" maxlength="5" inputmode="numeric" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       
       <div style="margin-bottom: 20px;">

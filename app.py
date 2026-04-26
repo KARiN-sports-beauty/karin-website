@@ -59,6 +59,53 @@ def today():
     """JST の YYYY-MM-DD 文字列を返す"""
     return datetime.now(JST).strftime("%Y-%m-%d")
 
+
+def parse_staff_daily_time_to_minutes(val):
+    """日報勤務カードの時刻を「その営業日0時からの分」に変換。30時台まで拡張可（例: 26:00 = 翌2時）。"""
+    if val is None:
+        return None
+    s = str(val).strip()
+    if not s:
+        return None
+    if "T" in s:
+        try:
+            s = s.split("T", 1)[1][:8]
+        except Exception:
+            pass
+    parts = s.replace(".", ":").split(":")
+    if not parts or parts[0] == "":
+        return None
+    try:
+        h = int(parts[0])
+        mi = int(parts[1]) if len(parts) > 1 else 0
+    except (ValueError, IndexError):
+        return None
+    if h < 0 or h > 35 or mi < 0 or mi > 59:
+        return None
+    return h * 60 + mi
+
+
+def format_staff_daily_time_hhmm(val):
+    """parse 可能な時刻を HH:MM に正規化（26:00 等）。不可なら None。"""
+    m = parse_staff_daily_time_to_minutes(val)
+    if m is None:
+        return None
+    h, mi = divmod(m, 60)
+    return f"{h:02d}:{mi:02d}"
+
+
+def staff_daily_item_working_minutes(start_time, end_time, break_minutes=0):
+    """勤務カード1件の実働分数（休憩控除後）。拡張終了（26:00等）と翌日表記（終了<開始なら+24h）に対応。"""
+    sm = parse_staff_daily_time_to_minutes(start_time)
+    em = parse_staff_daily_time_to_minutes(end_time)
+    if sm is None or em is None:
+        return 0
+    br = int(break_minutes or 0)
+    if em < sm:
+        em += 24 * 60
+    return max(0, em - sm - br)
+
+
 # =========================
 # slug生成関数
 # =========================
@@ -601,32 +648,7 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
                 
                 if start_time and end_time:
                     try:
-                        # 時刻文字列をパース（HH:MM形式）
-                        if isinstance(start_time, str):
-                            start_parts = start_time.split(":")
-                            start_hour = int(start_parts[0])
-                            start_minute = int(start_parts[1]) if len(start_parts) > 1 else 0
-                        else:
-                            start_hour = int(start_time)
-                            start_minute = 0
-                        
-                        if isinstance(end_time, str):
-                            end_parts = end_time.split(":")
-                            end_hour = int(end_parts[0])
-                            end_minute = int(end_parts[1]) if len(end_parts) > 1 else 0
-                        else:
-                            end_hour = int(end_time)
-                            end_minute = 0
-                        
-                        # 時間差を計算（分単位）
-                        start_total_minutes = start_hour * 60 + start_minute
-                        end_total_minutes = end_hour * 60 + end_minute
-                        
-                        # 日を跨ぐ場合の処理
-                        if end_total_minutes < start_total_minutes:
-                            end_total_minutes += 24 * 60
-                        
-                        item_minutes = end_total_minutes - start_total_minutes - break_minutes
+                        item_minutes = staff_daily_item_working_minutes(start_time, end_time, break_minutes)
                         if item_minutes > 0:
                             total_minutes += item_minutes
                     except Exception as e:
@@ -3932,6 +3954,7 @@ def admin_reservations():
         viewer_name = (viewer.get("name") or "スタッフ").strip()
         viewer_role = (viewer.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
         viewer_is_admin = bool(viewer.get("is_admin"))
+        viewer_is_reception = (not viewer_is_admin) and viewer_role == STAFF_ROLE_RECEPTION
         viewer_is_irregular = (not viewer_is_admin) and viewer_role == STAFF_ROLE_IRREGULAR
 
         # クエリパラメータ取得
@@ -4171,7 +4194,7 @@ def admin_reservations():
 
         # 予定タイムライン（縦軸: スタッフ / 横軸: 時間）
         timeline_start_hour = 7
-        timeline_end_hour = 23
+        timeline_end_hour = 26
         timeline_px_per_min = 2
         timeline_start_minute = timeline_start_hour * 60
         timeline_end_minute = timeline_end_hour * 60
@@ -4239,6 +4262,31 @@ def admin_reservations():
                 "place_type": r.get("place_type") or "",
                 "place_label": "院内" if r.get("place_type") == "in_house" else ("往診" if r.get("place_type") == "visit" else ("帯同" if r.get("place_type") == "field" else "予定")),
             })
+
+        # 勤務時間（DB保存）を取得
+        selected_day_str = selected_day.strftime("%Y-%m-%d")
+        shift_map = {}
+        shift_staff_names = [row.get("name") for row in timeline_staff_rows if row.get("name")]
+        if shift_staff_names:
+            try:
+                res_shifts = (
+                    supabase_admin
+                    .table("staff_work_shifts")
+                    .select("staff_name, start_time, end_time, is_off")
+                    .eq("shift_date", selected_day_str)
+                    .in_("staff_name", shift_staff_names)
+                    .execute()
+                )
+                for sh in (res_shifts.data or []):
+                    nm = (sh.get("staff_name") or "").strip()
+                    if nm:
+                        shift_map[nm] = {
+                            "start": sh.get("start_time") or "",
+                            "end": sh.get("end_time") or "",
+                            "is_off": bool(sh.get("is_off")),
+                        }
+            except Exception as e:
+                print(f"⚠️ 勤務時間取得エラー: {e}")
         
         return render_template(
             "admin_reservations.html",
@@ -4264,11 +4312,73 @@ def admin_reservations():
             timeline_staff_names=timeline_staff_names,
             timeline_staff_rows=timeline_staff_rows,
             timeline_cards_by_staff=timeline_cards_by_staff,
+            shift_map=shift_map,
+            shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
+            viewer_staff_name=viewer_name,
         )
     except Exception as e:
         print("❌ 予約一覧取得エラー:", e)
         flash("予約一覧の取得に失敗しました", "error")
         return redirect("/admin/dashboard")
+
+
+@app.route("/admin/reservations/shifts/save", methods=["POST"])
+@staff_section_required("reservations")
+def admin_reservations_shift_save():
+    """予定管理: 勤務時間を保存（DB共有）。"""
+    try:
+        data = request.get_json(silent=True) or {}
+        shift_date = (data.get("date") or "").strip()
+        staff_name = (data.get("staff_name") or "").strip()
+        start_time = (data.get("start_time") or "").strip()
+        end_time = (data.get("end_time") or "").strip()
+        is_off = bool(data.get("is_off", False))
+        if not shift_date or not staff_name:
+            return jsonify({"success": False, "message": "必須項目が不足しています"}), 400
+
+        def parse_hm(v):
+            try:
+                h_str, m_str = v.split(":")
+                h = int(h_str)
+                m = int(m_str)
+                if h < 0 or h > 35 or m < 0 or m > 59:
+                    return None
+                return h * 60 + m
+            except Exception:
+                return None
+
+        start_min = parse_hm(start_time)
+        end_min = parse_hm(end_time)
+        if is_off:
+            # 休みの場合も表示の都合で時間値は保持（未入力ならデフォルト）
+            if start_min is None:
+                start_time = "10:00"
+            if end_min is None:
+                end_time = "19:00"
+        else:
+            if start_min is None or end_min is None or end_min <= start_min:
+                return jsonify({"success": False, "message": "勤務時間の形式が不正です"}), 400
+
+        st = session.get("staff", {}) or {}
+        role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+        can_edit_all = bool(st.get("is_admin")) or role == STAFF_ROLE_RECEPTION
+        if (not can_edit_all) and ((st.get("name") or "").strip() != staff_name):
+            return jsonify({"success": False, "message": "権限がありません"}), 403
+
+        payload = {
+            "shift_date": shift_date,
+            "staff_name": staff_name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "is_off": is_off,
+            "updated_by": (st.get("name") or st.get("email") or "unknown"),
+            "updated_at": now_iso(),
+        }
+        supabase_admin.table("staff_work_shifts").upsert(payload, on_conflict="shift_date,staff_name").execute()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        print(f"❌ 勤務時間保存エラー: {e}")
+        return jsonify({"success": False, "message": "保存に失敗しました"}), 500
 
 
 @app.route("/admin/reservations/new", methods=["GET", "POST"])
@@ -5357,6 +5467,115 @@ def admin_reservations_delete(reservation_id):
 # ===================================================
 # スタッフ日報管理
 # ===================================================
+def first_work_card_defaults_from_reservations_timeline(staff_name: str, report_date: str):
+    """予定タイムラインと同じクリップで区分別合計分数が最大の区分を勤務カード1の区分に。
+    開始・終了は勝ち区分に依らず、予定管理タイムラインの勤務時間（staff_work_shifts・白背景）を反映。"""
+    timeline_start_hour = 7
+    timeline_end_hour = 26
+    timeline_start_minute = timeline_start_hour * 60
+    timeline_end_minute = timeline_end_hour * 60
+
+    if not (staff_name or "").strip() or not (report_date or "").strip():
+        return None
+    staff_name = staff_name.strip()
+    try:
+        day = datetime.strptime(report_date, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+    selected_day_start = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST)
+    selected_day_end = selected_day_start + timedelta(days=1)
+    start_iso = selected_day_start.isoformat()
+    end_iso = selected_day_end.isoformat()
+
+    start_str = None
+    end_str = None
+    try:
+        res_shift = (
+            supabase_admin.table("staff_work_shifts")
+            .select("start_time, end_time, is_off")
+            .eq("shift_date", report_date)
+            .eq("staff_name", staff_name)
+            .limit(1)
+            .execute()
+        )
+        row = (res_shift.data or [None])[0]
+        if row and not bool(row.get("is_off")):
+            start_str = format_staff_daily_time_hhmm(row.get("start_time"))
+            end_str = format_staff_daily_time_hhmm(row.get("end_time"))
+    except Exception as e:
+        print(f"⚠️ first_work_card_defaults: staff_work_shifts取得エラー: {e}")
+
+    reservation_rows = []
+    try:
+        res = (
+            supabase_admin.table("reservations")
+            .select("reserved_at, place_type, duration_minutes")
+            .eq("staff_name", staff_name)
+            .gte("reserved_at", start_iso)
+            .lt("reserved_at", end_iso)
+            .execute()
+        )
+        reservation_rows = res.data or []
+    except Exception as e:
+        print(f"⚠️ first_work_card_defaults: reservations取得エラー: {e}")
+
+    totals = {"in_house": 0, "visit": 0, "field": 0}
+
+    for r in reservation_rows:
+        pt = r.get("place_type") or ""
+        if pt not in totals:
+            continue
+
+        start_minute = timeline_start_minute
+        if pt != "field":
+            try:
+                dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
+                dt_jst = dt.astimezone(JST)
+                start_minute = dt_jst.hour * 60 + dt_jst.minute
+            except Exception:
+                start_minute = timeline_start_minute
+
+        dur = int(r.get("duration_minutes") or 60)
+        if dur <= 0:
+            dur = 60
+
+        sm = start_minute
+        d = dur
+        if sm < timeline_start_minute:
+            d -= timeline_start_minute - sm
+            sm = timeline_start_minute
+        if sm >= timeline_end_minute:
+            continue
+        if sm + d > timeline_end_minute:
+            d = timeline_end_minute - sm
+        if d <= 0:
+            continue
+
+        totals[pt] += d
+
+    order = ("in_house", "visit", "field")
+    best_pt = None
+    best_total = -1
+    for pt in order:
+        t = totals[pt]
+        if t > best_total:
+            best_total = t
+            best_pt = pt
+
+    if best_total <= 0:
+        best_pt = None
+
+    if not best_pt and not start_str and not end_str:
+        return None
+
+    return {
+        "work_type": best_pt,
+        "start_time": start_str,
+        "end_time": end_str,
+    }
+
+
 @app.route("/staff/daily-report/new", methods=["GET", "POST"])
 @staff_required
 def staff_daily_report_new():
@@ -5501,19 +5720,8 @@ def staff_daily_report_new():
                         end = item.get("end_time")
                         break_mins = item.get("break_minutes", 0) or 0
                         if start and end:
-                            try:
-                                # time型をdatetimeに変換して計算
-                                start_parts = str(start).split(":")
-                                end_parts = str(end).split(":")
-                                start_dt = datetime(2000, 1, 1, int(start_parts[0]), int(start_parts[1]))
-                                end_dt = datetime(2000, 1, 1, int(end_parts[0]), int(end_parts[1]))
-                                if end_dt < start_dt:
-                                    end_dt += timedelta(days=1)
-                                diff = end_dt - start_dt
-                                hours = diff.total_seconds() / 3600 - (break_mins / 60)
-                                weekly_hours += max(0, hours)
-                            except:
-                                pass
+                            wm = staff_daily_item_working_minutes(start, end, break_mins)
+                            weekly_hours += wm / 60.0
         except:
             weekly_hours = 0
         
@@ -5544,18 +5752,8 @@ def staff_daily_report_new():
                         end = item.get("end_time")
                         break_mins = item.get("break_minutes", 0) or 0
                         if start and end:
-                            try:
-                                start_parts = str(start).split(":")
-                                end_parts = str(end).split(":")
-                                start_dt = datetime(2000, 1, 1, int(start_parts[0]), int(start_parts[1]))
-                                end_dt = datetime(2000, 1, 1, int(end_parts[0]), int(end_parts[1]))
-                                if end_dt < start_dt:
-                                    end_dt += timedelta(days=1)
-                                diff = end_dt - start_dt
-                                hours = diff.total_seconds() / 3600 - (break_mins / 60)
-                                total_hours += max(0, hours)
-                            except:
-                                pass
+                            wm = staff_daily_item_working_minutes(start, end, break_mins)
+                            total_hours += wm / 60.0
         except:
             total_hours = 0
         
@@ -5595,13 +5793,18 @@ def staff_daily_report_new():
             except Exception as e:
                 print(f"⚠️ WARNING - 交通費情報取得エラー: {e}")
                 transportations = []
-        
+
+        first_work_card_defaults = None
+        if not existing_items:
+            first_work_card_defaults = first_work_card_defaults_from_reservations_timeline(staff_name, today_date)
+
         return render_template(
             "staff_daily_report_new.html",
             staff_name=staff_name,
             today_date=today_date,
             existing_report=existing_report,
             existing_items=existing_items,
+            first_work_card_defaults=first_work_card_defaults,
             transportations=transportations,
             weekly_hours=round(weekly_hours, 1),
             diff_hours=round(diff_hours, 1),
@@ -5670,6 +5873,10 @@ def staff_daily_report_new():
             
             start_time = request.form.get(f"start_time_{card_index}", "").strip() or None
             end_time = request.form.get(f"end_time_{card_index}", "").strip() or None
+            if start_time:
+                start_time = format_staff_daily_time_hhmm(start_time) or start_time
+            if end_time:
+                end_time = format_staff_daily_time_hhmm(end_time) or end_time
             break_minutes_str = request.form.get(f"break_minutes_{card_index}", "0").strip()
             session_count_str = request.form.get(f"session_count_{card_index}", "0").strip()
             memo = request.form.get(f"memo_{card_index}", "").strip() or None
@@ -5969,26 +6176,8 @@ def staff_daily_reports_list(year, month):
                     item_id = item["id"]
                     item["patients"] = patients_map.get(item_id, [])
                     
-                    # 時間表示用のフォーマット
-                    if item.get("start_time"):
-                        try:
-                            start_time_str = item["start_time"]
-                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
-                                item["start_time_display"] = start_time_str[:5]
-                        except:
-                            item["start_time_display"] = None
-                    else:
-                        item["start_time_display"] = None
-                    
-                    if item.get("end_time"):
-                        try:
-                            end_time_str = item["end_time"]
-                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
-                                item["end_time_display"] = end_time_str[:5]
-                        except:
-                            item["end_time_display"] = None
-                    else:
-                        item["end_time_display"] = None
+                    item["start_time_display"] = format_staff_daily_time_hhmm(item.get("start_time"))
+                    item["end_time_display"] = format_staff_daily_time_hhmm(item.get("end_time"))
                     
                     report["items"].append(item)
         
@@ -6619,21 +6808,10 @@ def admin_revenue_month_all(year, month):
             item["patients"] = patients_map.get(item_id, [])
             item["total_amount"] = sum(p.get("amount", 0) or 0 for p in item["patients"])
             
-            # 実働時間を計算
-            working_minutes = 0
-            if item.get("start_time") and item.get("end_time"):
-                try:
-                    start_parts = item["start_time"].split(":")
-                    end_parts = item["end_time"].split(":")
-                    start_minutes = int(start_parts[0]) * 60 + int(start_parts[1])
-                    end_minutes = int(end_parts[0]) * 60 + int(end_parts[1])
-                    break_minutes = item.get("break_minutes", 0) or 0
-                    working_minutes = end_minutes - start_minutes - break_minutes
-                    if working_minutes < 0:
-                        working_minutes = 0
-                except:
-                    working_minutes = 0
-            item["working_hours"] = round(working_minutes / 60, 1) if working_minutes > 0 else 0
+            wm = staff_daily_item_working_minutes(
+                item.get("start_time"), item.get("end_time"), item.get("break_minutes", 0)
+            )
+            item["working_hours"] = round(wm / 60, 1) if wm > 0 else 0
         
         # work_typeごとに集計
         in_house_items = [item for item in items if item.get("work_type") == "in_house"]
@@ -7661,21 +7839,10 @@ def admin_revenue_month_detail(staff_id, year, month):
             item["patients"] = patients_map.get(item_id, [])
             item["total_amount"] = sum(p.get("amount", 0) or 0 for p in item["patients"])
             
-            # 実働時間を計算（start_time, end_time, break_minutesから）
-            working_minutes = 0
-            if item.get("start_time") and item.get("end_time"):
-                try:
-                    start_parts = item["start_time"].split(":")
-                    end_parts = item["end_time"].split(":")
-                    start_minutes = int(start_parts[0]) * 60 + int(start_parts[1])
-                    end_minutes = int(end_parts[0]) * 60 + int(end_parts[1])
-                    break_minutes = item.get("break_minutes", 0) or 0
-                    working_minutes = end_minutes - start_minutes - break_minutes
-                    if working_minutes < 0:
-                        working_minutes = 0
-                except:
-                    working_minutes = 0
-            item["working_hours"] = round(working_minutes / 60, 1) if working_minutes > 0 else 0
+            wm = staff_daily_item_working_minutes(
+                item.get("start_time"), item.get("end_time"), item.get("break_minutes", 0)
+            )
+            item["working_hours"] = round(wm / 60, 1) if wm > 0 else 0
         
         # work_typeごとに集計（Python側で集計）
         in_house_items = [item for item in items if item.get("work_type") == "in_house"]
@@ -8063,30 +8230,8 @@ def admin_daily_reports(year=None, month=None, date=None):
                 patients = item["patients"]
                 item["total_amount"] = sum(p.get("amount", 0) or 0 for p in patients)
                 
-                # 時刻表示用に整形
-                if item.get("start_time"):
-                    try:
-                        if isinstance(item["start_time"], str):
-                            time_parts = item["start_time"].split(":")
-                            item["start_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["start_time_display"] = str(item["start_time"])[:5]
-                    except:
-                        item["start_time_display"] = item.get("start_time", "")
-                else:
-                    item["start_time_display"] = ""
-                
-                if item.get("end_time"):
-                    try:
-                        if isinstance(item["end_time"], str):
-                            time_parts = item["end_time"].split(":")
-                            item["end_time_display"] = f"{time_parts[0]}:{time_parts[1]}"
-                        else:
-                            item["end_time_display"] = str(item["end_time"])[:5]
-                    except:
-                        item["end_time_display"] = item.get("end_time", "")
-                else:
-                    item["end_time_display"] = ""
+                item["start_time_display"] = format_staff_daily_time_hhmm(item.get("start_time")) or ""
+                item["end_time_display"] = format_staff_daily_time_hhmm(item.get("end_time")) or ""
         
         # 当日小計・当月累計を計算（Python側で集計）
         # 当日小計（各itemのtotal_amountを使用）
@@ -8281,6 +8426,10 @@ def admin_daily_reports_item_update(item_id):
         # フォームデータを取得
         start_time = request.form.get("start_time", "").strip() or None
         end_time = request.form.get("end_time", "").strip() or None
+        if start_time:
+            start_time = format_staff_daily_time_hhmm(start_time) or start_time
+        if end_time:
+            end_time = format_staff_daily_time_hhmm(end_time) or end_time
         break_minutes_str = request.form.get("break_minutes", "").strip()
         break_minutes = int(break_minutes_str) if break_minutes_str and break_minutes_str.isdigit() else 0
         session_count_str = request.form.get("session_count", "").strip()
@@ -8688,26 +8837,8 @@ def admin_staff_report_detail(staff_id):
                     item_id = item["id"]
                     item["patients"] = patients_map.get(item_id, [])
                     
-                    # 時間表示用のフォーマット
-                    if item.get("start_time"):
-                        try:
-                            start_time_str = item["start_time"]
-                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
-                                item["start_time_display"] = start_time_str[:5]
-                        except:
-                            item["start_time_display"] = None
-                    else:
-                        item["start_time_display"] = None
-                    
-                    if item.get("end_time"):
-                        try:
-                            end_time_str = item["end_time"]
-                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
-                                item["end_time_display"] = end_time_str[:5]
-                        except:
-                            item["end_time_display"] = None
-                    else:
-                        item["end_time_display"] = None
+                    item["start_time_display"] = format_staff_daily_time_hhmm(item.get("start_time"))
+                    item["end_time_display"] = format_staff_daily_time_hhmm(item.get("end_time"))
                     
                     report["items"].append(item)
         
@@ -8942,26 +9073,8 @@ def admin_staff_reports_list(staff_id, year, month):
                     item_id = item["id"]
                     item["patients"] = patients_map.get(item_id, [])
                     
-                    # 時間表示用のフォーマット
-                    if item.get("start_time"):
-                        try:
-                            start_time_str = item["start_time"]
-                            if isinstance(start_time_str, str) and len(start_time_str) >= 5:
-                                item["start_time_display"] = start_time_str[:5]
-                        except:
-                            item["start_time_display"] = None
-                    else:
-                        item["start_time_display"] = None
-                    
-                    if item.get("end_time"):
-                        try:
-                            end_time_str = item["end_time"]
-                            if isinstance(end_time_str, str) and len(end_time_str) >= 5:
-                                item["end_time_display"] = end_time_str[:5]
-                        except:
-                            item["end_time_display"] = None
-                    else:
-                        item["end_time_display"] = None
+                    item["start_time_display"] = format_staff_daily_time_hhmm(item.get("start_time"))
+                    item["end_time_display"] = format_staff_daily_time_hhmm(item.get("end_time"))
                     
                     report["items"].append(item)
         

@@ -181,11 +181,11 @@ function addWorkCard() {
     <div class="work-card-time-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">開始時刻</label>
-        <input type="time" name="start_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="text" name="start_time_${workCardCount}" placeholder="例: 18:00" maxlength="5" inputmode="numeric" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1E3A5F;">終了時刻</label>
-        <input type="time" name="end_time_${workCardCount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="text" name="end_time_${workCardCount}" placeholder="例: 26:00（30時まで）" maxlength="5" inputmode="numeric" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
     
@@ -405,6 +405,25 @@ document.addEventListener('DOMContentLoaded', function() {
   loadExistingCards({{ existing_items | tojson }});
   {% else %}
   addWorkCard(); // 初期カードを1つ追加
+  (function() {
+    var d = {{ first_work_card_defaults | tojson }};
+    if (!d || (!d.work_type && !d.start_time && !d.end_time)) return;
+    var card = document.querySelector('.work-card');
+    if (!card) return;
+    var idx = card.dataset.cardIndex;
+    if (d.work_type) {
+      var sel = card.querySelector('select[name="work_type_' + idx + '"]');
+      if (sel) sel.value = d.work_type;
+    }
+    if (d.start_time) {
+      var st = card.querySelector('input[name="start_time_' + idx + '"]');
+      if (st) st.value = d.start_time;
+    }
+    if (d.end_time) {
+      var et = card.querySelector('input[name="end_time_' + idx + '"]');
+      if (et) et.value = d.end_time;
+    }
+  })();
   {% endif %}
   
   // 交通費カード関連
