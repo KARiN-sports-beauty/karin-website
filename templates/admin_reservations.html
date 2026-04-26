@@ -102,34 +102,17 @@
     z-index: 5;
     border-bottom: 1px solid #e2e8f0;
   }
-  .schedule-group-header {
-    display: flex;
-    min-width: max-content;
+  .schedule-timeline-row.regular .schedule-staff-col {
     background: #f8fafc;
   }
-  .schedule-group-staff-col {
-    width: 130px;
-    min-width: 130px;
-    max-width: 130px;
-    border-right: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
-    position: sticky;
-    left: 0;
-    z-index: 4;
-    background: #f8fafc;
+  .schedule-timeline-row.irregular .schedule-staff-col {
+    background: #fff4f6;
   }
-  .schedule-group-label {
-    width: 100%;
-    padding: 8px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #1E3A5F;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+  .schedule-timeline-row.regular .schedule-row-canvas {
+    background: #ffffff;
   }
-  .schedule-group-time-col {
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+  .schedule-timeline-row.irregular .schedule-row-canvas {
+    background: #fffafb;
   }
   .schedule-time-head {
     position: relative;
@@ -163,33 +146,41 @@
     height: 38px;
     border-radius: 8px;
     padding: 4px 8px;
+    box-sizing: border-box;
     color: #fff;
     text-decoration: none;
-    font-size: 0.72rem;
-    line-height: 1.2;
+    font-size: 0.7rem;
+    line-height: 1.15;
     display: flex;
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    white-space: normal;
+    text-overflow: clip;
   }
   .schedule-card-time {
     font-weight: 700;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     opacity: 0.95;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .schedule-card-main {
     font-weight: 600;
-  }
-  .schedule-card-sub {
-    font-size: 0.66rem;
-    opacity: 0.95;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .schedule-card.place-inhouse { background: #1E3A5F; }
   .schedule-card.place-visit { background: #4CAF50; }
   .schedule-card.place-field { background: #FF8AA8; }
   .schedule-card.place-default { background: #64748b; }
+  .schedule-card.status-visited.place-inhouse { outline: 2px solid #123157; outline-offset: -2px; }
+  .schedule-card.status-visited.place-visit { outline: 2px solid #2e7d32; outline-offset: -2px; }
+  .schedule-card.status-visited.place-field { outline: 2px solid #d86a87; outline-offset: -2px; }
+  .schedule-card.status-visited.place-default { outline: 2px solid #475569; outline-offset: -2px; }
+  .schedule-card.status-completed { opacity: 0.7; }
   .admin-resv-card {
     scroll-margin-top: 12px;
   }
@@ -217,11 +208,6 @@
       min-width: 110px;
       max-width: 110px;
       font-size: 0.85rem;
-    }
-    .schedule-group-staff-col {
-      width: 110px;
-      min-width: 110px;
-      max-width: 110px;
     }
   }
 </style>
@@ -326,18 +312,15 @@
           </div>
         </div>
         {% for row in timeline_staff_rows %}
-        {% if row.type == 'header' %}
-        <div class="schedule-group-header">
-          <div class="schedule-group-staff-col"></div>
-          <div class="schedule-group-time-col" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
-            <div class="schedule-group-label">{{ row.label }}</div>
-          </div>
-        </div>
-        {% else %}
         {% set staff_name = row.name %}
-        <div class="schedule-timeline-row">
+        <div class="schedule-timeline-row {% if row.role == 'irregular' %}irregular{% else %}regular{% endif %}">
           <div class="schedule-staff-col">{{ staff_name }}</div>
-          <div class="schedule-row-canvas" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+          <div class="schedule-row-canvas"
+               data-day="{{ selected_day.strftime('%Y-%m-%d') }}"
+               data-staff-name="{{ staff_name }}"
+               data-start-hour="{{ timeline_start_hour }}"
+               data-px-per-min="{{ timeline_px_per_min }}"
+               style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
             {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
             {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
             <div class="schedule-time-line" style="left: {{ x }}px;"></div>
@@ -346,17 +329,15 @@
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
             {% set card_width = card.duration * timeline_px_per_min %}
             <a href="#resv-detail-{{ card.id }}"
-               class="schedule-card {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
+               class="schedule-card status-{{ card.status|default('') }} {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
                style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
                title="{{ card.reserved_at_display }} {{ card.patient_name }}">
-              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-time">{{ card.reserved_at_display }} / {{ card.place_label }}</span>
               <span class="schedule-card-main">{{ card.patient_name }}{% if 'star' in (card.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (card.vip_level or '') %}🍀{% endif %}</span>
-              <span class="schedule-card-sub">{{ card.place_label }}</span>
             </a>
             {% endfor %}
           </div>
         </div>
-        {% endif %}
         {% endfor %}
       </div>
     </div>
@@ -562,6 +543,35 @@ document.addEventListener('DOMContentLoaded', function() {
           completeBtn.disabled = !(pm && (pm === 'month_end' || rc));
         }
       });
+    });
+  });
+
+  const timelineCanvases = document.querySelectorAll('.schedule-row-canvas');
+  timelineCanvases.forEach(function(canvas) {
+    canvas.addEventListener('click', function(ev) {
+      if (ev.target.closest('.schedule-card')) {
+        return;
+      }
+      const day = canvas.dataset.day || '';
+      const staffName = canvas.dataset.staffName || '';
+      const startHour = parseInt(canvas.dataset.startHour || '7', 10);
+      const pxPerMin = parseFloat(canvas.dataset.pxPerMin || '2');
+      if (!day || !pxPerMin) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = ev.clientX - rect.left;
+      const totalMinutes = Math.max(0, Math.round(clickX / pxPerMin));
+      const minuteOfDay = (startHour * 60) + totalMinutes;
+      const hour = Math.max(0, Math.min(23, Math.floor(minuteOfDay / 60)));
+      const minute = Math.max(0, Math.min(59, minuteOfDay % 60));
+      const minuteRounded = Math.floor(minute / 5) * 5;
+      const hh = String(hour).padStart(2, '0');
+      const mm = String(minuteRounded).padStart(2, '0');
+
+      const url = `/admin/reservations/new?date=${encodeURIComponent(day)}&time=${encodeURIComponent(`${hh}:${mm}`)}&staff_name=${encodeURIComponent(staffName)}`;
+      window.location.href = url;
     });
   });
 });

@@ -4187,17 +4187,13 @@ def admin_reservations():
         if staff_filter == "all":
             regular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) != STAFF_ROLE_IRREGULAR]
             irregular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) == STAFF_ROLE_IRREGULAR]
-            if regular_names:
-                timeline_staff_rows.append({"type": "header", "label": "正規スタッフ"})
-                for n in regular_names:
-                    timeline_staff_rows.append({"type": "staff", "name": n})
-            if irregular_names:
-                timeline_staff_rows.append({"type": "header", "label": "非正規スタッフ"})
-                for n in irregular_names:
-                    timeline_staff_rows.append({"type": "staff", "name": n})
+            for n in regular_names:
+                timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
+            for n in irregular_names:
+                timeline_staff_rows.append({"type": "staff", "name": n, "role": STAFF_ROLE_IRREGULAR})
         else:
             for n in timeline_staff_names:
-                timeline_staff_rows.append({"type": "staff", "name": n})
+                timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
 
         timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
         for r in reservations_of_day:
@@ -4206,7 +4202,7 @@ def admin_reservations():
             if staff_name_for_timeline not in timeline_cards_by_staff:
                 timeline_cards_by_staff[staff_name_for_timeline] = []
                 timeline_staff_names.append(staff_name_for_timeline)
-                timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline})
+                timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline, "role": timeline_staff_role_map.get(staff_name_for_timeline, STAFF_ROLE_REGULAR)})
 
             start_minute = timeline_start_minute
             if r.get("place_type") != "field":
@@ -4283,12 +4279,23 @@ def admin_reservations_new():
         try:
             # 日付パラメータを取得（初期値として使用）
             date_param = request.args.get("date", "")
+            time_param = request.args.get("time", "")
+            initial_staff_name = (request.args.get("staff_name", "") or "").strip()
             initial_date = None
             if date_param:
                 try:
-                    # YYYY-MM-DD形式をdatetime-local形式に変換（時刻は9:00をデフォルト）
+                    # YYYY-MM-DD形式をdatetime-local形式に変換
                     date_obj = datetime.strptime(date_param, "%Y-%m-%d")
-                    initial_date = date_obj.strftime("%Y-%m-%dT09:00")
+                    hour = 9
+                    minute = 0
+                    if time_param:
+                        try:
+                            hm = datetime.strptime(time_param, "%H:%M")
+                            hour = hm.hour
+                            minute = hm.minute
+                        except Exception:
+                            pass
+                    initial_date = date_obj.replace(hour=hour, minute=minute).strftime("%Y-%m-%dT%H:%M")
                 except:
                     pass
             
@@ -4355,7 +4362,8 @@ def admin_reservations_new():
                 # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            return render_template("admin_reservations_new.html", patients=patients, staff_name=staff_name, staff_list=staff_list, initial_date=initial_date)
+            selected_staff_name = initial_staff_name or staff_name
+            return render_template("admin_reservations_new.html", patients=patients, staff_name=selected_staff_name, staff_list=staff_list, initial_date=initial_date)
         except Exception as e:
             print("❌ 予約作成画面取得エラー:", e)
             flash("予約作成画面の取得に失敗しました", "error")
