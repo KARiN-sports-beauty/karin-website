@@ -55,7 +55,7 @@
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">日付（必須）</label>
           <input type="text" name="report_date" required class="report-date-input" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" placeholder="YYYY-MM-DD">
         </div>
-        <div class="report-time-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="report-time-fields">
           <div>
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">開始時間</label>
             <input type="time" name="start_time" value="{% if copy_from_report and copy_from_report.start_time %}{{ copy_from_report.start_time }}{% else %}07:00{% endif %}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
@@ -83,6 +83,12 @@
 </form>
 
 <style>
+.report-time-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 @media (max-width: 767px) {
   .report-date-field input,
   .report-time-fields input {
@@ -92,7 +98,7 @@
   }
 
   .report-time-fields {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
   }
 }
 </style>

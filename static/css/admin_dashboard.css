@@ -2098,7 +2098,7 @@ form .admin-news-btn {
 }
 
 .admin-resv-card.place-field:not(.category-artist):not(.category-sports):not(.gender-male):not(.gender-female):not(.gender-other) {
-  border-left-color: #FFB6C1; /* ピンク（明るめ） */
+  border-left-color: #1E3A5F; /* KARiN.カラー（帯同一覧は左アクセント統一） */
 }
 
 .admin-resv-status {

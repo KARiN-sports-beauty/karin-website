@@ -15,6 +15,26 @@ def to_jst(dt_str):
         return dt_str
 
 
+def field_end_time_to_duration_minutes(dt_start_jst, field_end_time_str):
+    """帯同の終了時刻（HH:MM）から開始との分差を返す。無効・終了≦開始なら None。"""
+    raw = (field_end_time_str or "").strip() or "19:00"
+    try:
+        if len(raw) >= 5 and raw[2] == ":":
+            eh, em = int(raw[0:2]), int(raw[3:5])
+        else:
+            p = raw.split(":")
+            eh = int(p[0])
+            em = int(p[1]) if len(p) > 1 else 0
+    except Exception:
+        return None
+    if eh < 0 or eh > 27 or em < 0 or em > 59:
+        return None
+    end_dt = dt_start_jst.replace(hour=eh, minute=em, second=0, microsecond=0)
+    if end_dt <= dt_start_jst:
+        return None
+    return max(15, int((end_dt - dt_start_jst).total_seconds() // 60))
+
+
 def format_blog_date_display(value):
     if not value:
         return ""
@@ -4173,19 +4193,24 @@ def admin_reservations():
         for r in reservations_of_day:
             r["viewer_may_edit"] = session_may_edit_reservation_row(r.get("staff_name"))
         
-        # 予約の時刻をJSTで表示用に変換（帯同は日付のみ入力のため時刻は表示しない）
+        # 予約の時刻をJSTで表示用に変換（帯同は開始〜終了の時間帯）
         for r in reservations_of_day:
             try:
                 dt_str = r.get("reserved_at", "")
-                if r.get("place_type") == "field":
-                    r["reserved_at_display"] = "日付のみ"
-                elif dt_str:
-                    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-                    dt_jst = dt.astimezone(JST)
-                    r["reserved_at_display"] = dt_jst.strftime("%H:%M")
-                else:
+                if not dt_str:
                     r["reserved_at_display"] = "時刻不明"
-            except:
+                    continue
+                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                dt_jst = dt.astimezone(JST)
+                if r.get("place_type") == "field":
+                    dur = int(r.get("duration_minutes") or 540)
+                    end_jst = dt_jst + timedelta(minutes=dur)
+                    r["reserved_at_display"] = (
+                        f"{dt_jst.strftime('%H:%M')}〜{end_jst.strftime('%H:%M')}"
+                    )
+                else:
+                    r["reserved_at_display"] = dt_jst.strftime("%H:%M")
+            except Exception:
                 r["reserved_at_display"] = "時刻不明"
         
         # スタッフリスト取得（表示・フィルタ用）
@@ -4317,13 +4342,12 @@ def admin_reservations():
                 timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline, "role": timeline_staff_role_map.get(staff_name_for_timeline, STAFF_ROLE_REGULAR)})
 
             start_minute = timeline_start_minute
-            if r.get("place_type") != "field":
-                try:
-                    dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
-                    dt_jst = dt.astimezone(JST)
-                    start_minute = dt_jst.hour * 60 + dt_jst.minute
-                except Exception:
-                    start_minute = timeline_start_minute
+            try:
+                dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
+                dt_jst = dt.astimezone(JST)
+                start_minute = dt_jst.hour * 60 + dt_jst.minute
+            except Exception:
+                start_minute = timeline_start_minute
 
             duration = int(r.get("duration_minutes") or 60)
             if duration <= 0:
@@ -4340,16 +4364,30 @@ def admin_reservations():
             if duration <= 0:
                 continue
 
+            _pt = r.get("place_type") or ""
+            try:
+                _rd = r.get("reserved_at", "")
+                _dtline = (
+                    datetime.fromisoformat(_rd.replace("Z", "+00:00")).astimezone(JST).strftime("%H:%M")
+                    if _rd
+                    else ""
+                )
+            except Exception:
+                _dtline = ""
+            _pn = (r.get("place_name") or "").strip()
             timeline_cards_by_staff[staff_name_for_timeline].append({
                 "id": r.get("id"),
                 "start_minute": start_minute,
                 "duration": duration,
                 "reserved_at_display": r.get("reserved_at_display") or "",
+                "timeline_time_short": _dtline,
+                "place_name": _pn,
                 "patient_name": r.get("patient_name") or "患者なし",
                 "vip_level": (r.get("patient", {}) or {}).get("vip_level") if isinstance(r.get("patient"), dict) else "",
                 "status": r.get("status") or "",
-                "place_type": r.get("place_type") or "",
-                "place_label": "院内" if r.get("place_type") == "in_house" else ("往診" if r.get("place_type") == "visit" else ("帯同" if r.get("place_type") == "field" else "予定")),
+                "place_type": _pt,
+                "is_field": _pt == "field",
+                "place_label": "院内" if _pt == "in_house" else ("往診" if _pt == "visit" else ("帯同" if _pt == "field" else "予定")),
             })
 
         # 勤務時間（DB保存）を取得
@@ -4404,6 +4442,7 @@ def admin_reservations():
             shift_map=shift_map,
             shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
             viewer_staff_name=viewer_name,
+            viewer_is_admin=viewer_is_admin,
         )
     except Exception as e:
         print("❌ 予約一覧取得エラー:", e)
@@ -4562,7 +4601,15 @@ def admin_reservations_new():
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
             selected_staff_name = initial_staff_name or staff_name
-            return render_template("admin_reservations_new.html", patients=patients, staff_name=selected_staff_name, staff_list=staff_list, initial_date=initial_date)
+            viewer_is_admin = bool(staff.get("is_admin"))
+            return render_template(
+                "admin_reservations_new.html",
+                patients=patients,
+                staff_name=selected_staff_name,
+                staff_list=staff_list,
+                initial_date=initial_date,
+                viewer_is_admin=viewer_is_admin,
+            )
         except Exception as e:
             print("❌ 予約作成画面取得エラー:", e)
             flash("予約作成画面の取得に失敗しました", "error")
@@ -4620,14 +4667,8 @@ def admin_reservations_new():
                     flash("選択された患者が見つかりません", "error")
                     return redirect("/admin/reservations/new")
         else:
-            # 帯同：患者は任意（未選択で patient_id なし）
-            pid = request.form.get("patient_id", "").strip()
-            if pid:
-                res_check = supabase_admin.table("patients").select("id").eq("id", pid).execute()
-                if not res_check.data:
-                    flash("選択された患者が見つかりません", "error")
-                    return redirect("/admin/reservations/new")
-                patient_id = pid
+            # 帯同：患者は紐付けない
+            patient_id = None
         
         reserved_at_str = request.form.get("reserved_at", "").strip()
         if not reserved_at_str:
@@ -4640,22 +4681,14 @@ def admin_reservations_new():
             else:
                 dpart = reserved_at_str[:10]
                 dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
-                dt_naive = dt_naive.replace(hour=9, minute=0, second=0, microsecond=0)
+                # 帯同で日付のみの場合は 10:00 開始（従来データ互換）
+                default_h, default_m = (10, 0) if place_type == "field" else (9, 0)
+                dt_naive = dt_naive.replace(hour=default_h, minute=default_m, second=0, microsecond=0)
             dt_jst = dt_naive.replace(tzinfo=JST)
             reserved_at_iso = dt_jst.isoformat()
         except Exception:
             flash("予約日時の形式が正しくありません", "error")
             return redirect("/admin/reservations/new")
-        
-        # 施術時間（手入力があればそれを優先）
-        duration_custom = request.form.get("duration_minutes_custom", "").strip()
-        if duration_custom:
-            try:
-                duration_minutes = int(duration_custom)
-            except:
-                duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
-        else:
-            duration_minutes = int(request.form.get("duration_minutes", "60") or "60")
         
         place_name = request.form.get("place_name", "").strip() or None
         staff_name = request.form.get("staff_name", "").strip() or None
@@ -4666,19 +4699,35 @@ def admin_reservations_new():
         if area and area not in ["tokyo", "fukuoka"]:
             area = None
         
-        # メニュー取得（施術時間を決定）
+        # メニュー取得（施術時間を決定）／帯同は終了時刻から算出（分は保存のみ・画面では非表示）
         menu = request.form.get("menu", "").strip()
-        duration_minutes = 90  # デフォルト値（帯同等メニュー未選択時）
-        if menu:
-            if menu == "other":
-                # 「その他」の場合はデフォルト90分
-                duration_minutes = 90
-            else:
-                # メニューから施術時間を取得（60/90/120など）
+        if place_type == "field":
+            fet = request.form.get("field_end_time", "").strip()
+            duration_legacy = request.form.get("duration_minutes_custom", "").strip()
+            if fet:
+                dm = field_end_time_to_duration_minutes(dt_jst, fet)
+                if dm is None:
+                    flash("帯同時間の終了時刻は、帯同日時の開始より後の時刻にしてください", "error")
+                    return redirect("/admin/reservations/new")
+                duration_minutes = dm
+            elif duration_legacy:
                 try:
-                    duration_minutes = int(menu)
-                except:
+                    duration_minutes = int(duration_legacy)
+                except Exception:
+                    duration_minutes = 540
+            else:
+                dm = field_end_time_to_duration_minutes(dt_jst, "19:00")
+                duration_minutes = dm if dm is not None else 540
+        else:
+            duration_minutes = 90
+            if menu:
+                if menu == "other":
                     duration_minutes = 90
+                else:
+                    try:
+                        duration_minutes = int(menu)
+                    except Exception:
+                        duration_minutes = 90
         
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
         nomination_type = request.form.get("nomination_type", "本指名").strip()
@@ -4757,6 +4806,16 @@ def admin_reservations_new():
                 tax = int((base_price or 0) * 0.1)
             else:
                 tax = 0
+        
+        # 料金系は admin のみ設定可（非adminはクリア）
+        _new_staff_sess = session.get("staff", {}) or {}
+        if not bool(_new_staff_sess.get("is_admin")):
+            base_price = None
+            tax = 0
+            nomination_fee = 0
+            discount = 0
+            transportation_fee = 0
+            selected_menus = []
         
         # 最終施術時間で重複チェック（メニュー反映後の duration を使用）
         reserved_end = dt_jst + timedelta(minutes=duration_minutes)
@@ -4901,6 +4960,10 @@ def admin_reservations_status(reservation_id):
         if not session_may_edit_reservation_row(reservation.get("staff_name")):
             flash("この予約を操作する権限がありません（担当の自分の予定のみ操作できます）", "error")
             return redirect("/admin/reservations")
+
+        if reservation.get("place_type") == "field":
+            flash("帯同予定には来院・完了などのステータスはありません", "error")
+            return redirect(request.referrer or "/admin/reservations")
         
         # ステータス更新
         supabase_admin.table("reservations").update({"status": new_status}).eq("id", reservation_id).execute()
@@ -5156,7 +5219,7 @@ def admin_reservations_status(reservation_id):
 @app.route("/admin/reservations/<reservation_id>/edit", methods=["GET", "POST"])
 @staff_section_required("reservations")
 def admin_reservations_edit(reservation_id):
-    """予約編集"""
+    """予定編集"""
     if request.method == "GET":
         try:
             # 予約情報取得
@@ -5182,20 +5245,25 @@ def admin_reservations_edit(reservation_id):
             else:
                 reservation["patient_name"] = "患者なし"
             
-            # reserved_atをフォーム用に変換（帯同は date のみ）
+            # reserved_atをフォーム用に変換（帯同も日時で編集）／帯同終了時刻
             try:
                 dt_str = reservation.get("reserved_at", "")
                 if dt_str:
                     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                     dt_jst = dt.astimezone(JST)
+                    reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
                     if reservation.get("place_type") == "field":
-                        reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%d")
+                        dur_m = int(reservation.get("duration_minutes") or 540)
+                        end_jst = dt_jst + timedelta(minutes=dur_m)
+                        reservation["field_end_time_display"] = end_jst.strftime("%H:%M")
                     else:
-                        reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
+                        reservation["field_end_time_display"] = "19:00"
                 else:
                     reservation["reserved_at_display_local"] = ""
-            except:
+                    reservation["field_end_time_display"] = "19:00"
+            except Exception:
                 reservation["reserved_at_display_local"] = ""
+                reservation["field_end_time_display"] = "19:00"
             
             # nominated_staff_idsをJSONからパース
             try:
@@ -5263,10 +5331,16 @@ def admin_reservations_edit(reservation_id):
                 # エラー時は現在のスタッフのみ
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
-            return render_template("admin_reservations_edit.html", reservation=reservation, staff_list=staff_list)
+            viewer_is_admin = bool(staff.get("is_admin"))
+            return render_template(
+                "admin_reservations_edit.html",
+                reservation=reservation,
+                staff_list=staff_list,
+                viewer_is_admin=viewer_is_admin,
+            )
         except Exception as e:
-            print("❌ 予約編集画面取得エラー:", e)
-            flash("予約編集画面の取得に失敗しました", "error")
+            print("❌ 予定編集画面取得エラー:", e)
+            flash("予定編集画面の取得に失敗しました", "error")
             return redirect("/admin/reservations")
     
     # POST処理
@@ -5287,21 +5361,23 @@ def admin_reservations_edit(reservation_id):
             flash("予約日または予約日時を入力してください", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
-        # datetime-local または 日付のみ（帯同）をISO形式に変換
+        form_place_type_early = request.form.get("place_type", "").strip()
+        # datetime-local または 日付のみをISO形式に変換
         try:
             if "T" in reserved_at_str:
                 dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
             else:
                 dpart = reserved_at_str[:10]
                 dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
-                dt_naive = dt_naive.replace(hour=9, minute=0, second=0, microsecond=0)
+                default_h, default_m = (10, 0) if form_place_type_early == "field" else (9, 0)
+                dt_naive = dt_naive.replace(hour=default_h, minute=default_m, second=0, microsecond=0)
             dt_jst = dt_naive.replace(tzinfo=JST)
             reserved_at_iso = dt_jst.isoformat()
         except Exception:
             flash("予約日時の形式が正しくありません", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
-        place_type = request.form.get("place_type", "").strip()
+        place_type = form_place_type_early
         if place_type not in ["in_house", "visit", "field"]:
             flash("現場区分を選択してください", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
@@ -5320,18 +5396,32 @@ def admin_reservations_edit(reservation_id):
         if area and area not in ["tokyo", "fukuoka"]:
             area = None
         
-        # メニュー取得（施術時間を決定）
+        # メニュー取得（施術時間を決定）／帯同は終了時刻から算出
         menu = request.form.get("menu", "").strip()
-        duration_minutes = existing_reservation.get("duration_minutes", 90)  # 既存値またはデフォルト
-        if menu:
+        duration_minutes = existing_reservation.get("duration_minutes", 90)
+        if place_type == "field":
+            fet = request.form.get("field_end_time", "").strip()
+            dm_custom = request.form.get("duration_minutes_custom", "").strip()
+            if fet:
+                dm = field_end_time_to_duration_minutes(dt_jst, fet)
+                if dm is None:
+                    flash("帯同時間の終了時刻は、帯同日時の開始より後の時刻にしてください", "error")
+                    return redirect(f"/admin/reservations/{reservation_id}/edit")
+                duration_minutes = dm
+            elif dm_custom:
+                try:
+                    duration_minutes = int(dm_custom)
+                except Exception:
+                    duration_minutes = int(existing_reservation.get("duration_minutes") or 540)
+            else:
+                duration_minutes = int(existing_reservation.get("duration_minutes") or 540)
+        elif menu:
             if menu == "other":
-                # 「その他」の場合は既存のduration_minutesを維持（またはデフォルト90分）
                 duration_minutes = existing_reservation.get("duration_minutes", 90)
             else:
-                # メニューから施術時間を取得（60/90/120など）
                 try:
                     duration_minutes = int(menu)
-                except:
+                except Exception:
                     duration_minutes = existing_reservation.get("duration_minutes", 90)
         
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
@@ -5404,15 +5494,35 @@ def admin_reservations_edit(reservation_id):
         tax_str = request.form.get("tax", "0").strip()
         try:
             tax = int(tax_str) if tax_str else 0
-        except:
+        except Exception:
             # 消費税が未入力の場合は自動計算 料金 × 0.1（指名料と出張費にはかからない）
             if base_price:
                 tax = int((base_price or 0) * 0.1)
             else:
                 tax = 0
+
+        st_session = session.get("staff", {}) or {}
+        viewer_is_admin = bool(st_session.get("is_admin"))
+        # 非adminは金額系を変更不可（常に既存値を維持）
+        if not viewer_is_admin:
+            base_price = existing_reservation.get("base_price")
+            tax = existing_reservation.get("tax")
+            nomination_fee = existing_reservation.get("nomination_fee") or 0
+            discount = existing_reservation.get("discount") or 0
+            transportation_fee = existing_reservation.get("transportation_fee") or 0
+            _sm_prev = existing_reservation.get("selected_menus") or []
+            if isinstance(_sm_prev, str):
+                try:
+                    selected_menus = json.loads(_sm_prev)
+                except Exception:
+                    selected_menus = []
+            else:
+                selected_menus = _sm_prev
         
         status = request.form.get("status", "").strip()
-        if status not in ["reserved", "visited", "completed", "canceled"]:
+        if place_type == "field":
+            status = "reserved"
+        elif status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
@@ -5521,6 +5631,8 @@ def admin_reservations_edit(reservation_id):
             "memo": memo,
             "updated_at": now_iso()
         }
+        if place_type == "field":
+            update_data["patient_id"] = None
         
         supabase_admin.table("reservations").update(update_data).eq("id", reservation_id).execute()
         

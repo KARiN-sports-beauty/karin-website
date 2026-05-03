@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}予約編集 | KARiN.{% endblock %}
+{% block title %}予定編集 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">✏ 予約編集</h2>
+<h2 class="admin-title">✏ 予定編集</h2>
 
 {% if get_flashed_messages() %}
   {% for message in get_flashed_messages(with_categories=true) %}
@@ -13,8 +13,8 @@
 {% endif %}
 
 <form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" id="admin-reservation-edit-form" style="max-width: 800px;">
-  <!-- 患者情報（編集不可） -->
-  <div style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px;">
+  <!-- 患者情報（帯同では非表示／現場区分変更で表示切替） -->
+  <div id="patient_info_row" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; {% if reservation.place_type == 'field' %}display: none;{% endif %}">
     <strong style="color: #1E3A5F;">患者：</strong>
     {% if reservation.patient_id %}
     <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
@@ -37,8 +37,14 @@
   </div>
 
   <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
-    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'field' %}予約日（日付のみ）{% else %}予約日時{% endif %}</label>
-    <input type="{% if reservation.place_type == 'field' %}date{% else %}datetime-local{% endif %}" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'field' %}帯同日時{% else %}予約日時{% endif %}</label>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+  </div>
+
+  <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
+    <input type="time" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。</small>
   </div>
 
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -152,6 +158,8 @@
     </select>
   </div>
 
+  {% if viewer_is_admin %}
+  <div id="admin_only_price_wrap" style="margin-bottom: 0;">
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">料金（税抜き・円）</label>
     <input type="number" name="base_price" id="base_price" value="{{ reservation.base_price or '' }}" min="0" step="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -170,10 +178,12 @@
       <span id="total_price_display" style="font-size: 1.2rem;">¥0</span>
     </div>
   </div>
+  </div>
+  {% endif %}
 
-  <div style="margin-bottom: 20px;">
+  <div id="status_select_wrap" style="margin-bottom: 20px; {% if reservation.place_type == 'field' %}display: none;{% endif %}">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">ステータス</label>
-    <select name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <select name="status" id="status_select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="reserved" {% if reservation.status == 'reserved' %}selected{% endif %}>予約中</option>
       <option value="visited" {% if reservation.status == 'visited' %}selected{% endif %}>来院済</option>
       <option value="completed" {% if reservation.status == 'completed' %}selected{% endif %}>完了</option>
@@ -193,6 +203,15 @@
 </form>
 
 <script>
+function syncStatusPlaceType(placeType) {
+  const wrap = document.getElementById('status_select_wrap');
+  const sel = document.getElementById('status_select');
+  if (!wrap) return;
+  const isField = (placeType === 'field');
+  wrap.style.display = isField ? 'none' : 'block';
+  if (sel) sel.disabled = isField;
+}
+
 // メニュー定義（エリア別・時間別・税抜き価格）
 const menuPrices = {
   tokyo: {
@@ -250,8 +269,9 @@ document.getElementById('menu').addEventListener('change', function() {
 
 // 価格更新関数
 function updatePrice() {
-  const menuSelect = document.getElementById('menu');
   const basePriceInput = document.getElementById('base_price');
+  if (!basePriceInput) return;
+  const menuSelect = document.getElementById('menu');
   const placeType = document.getElementById('place_type').value;
 
   if (menuSelect.value) {
@@ -279,13 +299,16 @@ function updatePrice() {
 
 // 合計金額更新関数
 function updateTotalPrice() {
-  const basePrice = parseInt(document.getElementById('base_price').value) || 0;
+  const basePriceEl = document.getElementById('base_price');
+  if (!basePriceEl) return;
+  const basePrice = parseInt(basePriceEl.value) || 0;
   const transportationFeeSelect = document.getElementById('transportation_fee');
   const transportationFeeOther = document.getElementById('transportation_fee_other');
   let transportationFee = 0;
 
+  if (!transportationFeeSelect) return;
   if (transportationFeeSelect.value === 'other') {
-    transportationFee = parseInt(transportationFeeOther.value) || 0;
+    transportationFee = parseInt((transportationFeeOther && transportationFeeOther.value) || '0') || 0;
   } else {
     transportationFee = parseInt(transportationFeeSelect.value) || 0;
   }
@@ -295,32 +318,41 @@ function updateTotalPrice() {
   const tax = Math.floor(basePrice * 0.1);
   const totalWithTax = basePrice + transportationFee + nominationFee - discount + tax;
 
-  document.getElementById('tax').value = tax;
-  document.getElementById('total_price_display').textContent = '¥' + totalWithTax.toLocaleString();
+  const taxEl = document.getElementById('tax');
+  const totalEl = document.getElementById('total_price_display');
+  if (taxEl) taxEl.value = tax;
+  if (totalEl) totalEl.textContent = '¥' + totalWithTax.toLocaleString();
 }
 
-document.getElementById('base_price').addEventListener('input', function() {
-  const firstTimeDiscount = document.getElementById('menu_first_time_discount');
-  if (firstTimeDiscount && firstTimeDiscount.checked) {
-    updateFirstTimeDiscount();
-  } else {
-    updateTotalPrice();
+(function bindPriceListeners() {
+  const bp = document.getElementById('base_price');
+  if (!bp) return;
+  bp.addEventListener('input', function() {
+    const firstTimeDiscount = document.getElementById('menu_first_time_discount');
+    if (firstTimeDiscount && firstTimeDiscount.checked) {
+      updateFirstTimeDiscount();
+    } else {
+      updateTotalPrice();
+    }
+  });
+  const tf = document.getElementById('transportation_fee');
+  if (tf) {
+    tf.addEventListener('change', function() {
+      const transportationFeeOther = document.getElementById('transportation_fee_other');
+      if (this.value === 'other') {
+        transportationFeeOther.style.display = 'block';
+        transportationFeeOther.setAttribute('required', 'required');
+      } else {
+        transportationFeeOther.style.display = 'none';
+        transportationFeeOther.removeAttribute('required');
+        transportationFeeOther.value = '';
+      }
+      updateTotalPrice();
+    });
   }
-});
-
-document.getElementById('transportation_fee').addEventListener('change', function() {
-  const transportationFeeOther = document.getElementById('transportation_fee_other');
-  if (this.value === 'other') {
-    transportationFeeOther.style.display = 'block';
-    transportationFeeOther.setAttribute('required', 'required');
-  } else {
-    transportationFeeOther.style.display = 'none';
-    transportationFeeOther.removeAttribute('required');
-    transportationFeeOther.value = '';
-  }
-  updateTotalPrice();
-});
-document.getElementById('transportation_fee_other').addEventListener('input', updateTotalPrice);
+  const tfo = document.getElementById('transportation_fee_other');
+  if (tfo) tfo.addEventListener('input', updateTotalPrice);
+})();
 
 // 指名料更新関数
 function updateNominationFee() {
@@ -509,8 +541,11 @@ function updatePlaceTypeFields() {
   const menuSection = document.getElementById('menu_section');
   const additionalMenuSection = document.getElementById('additional_menu_section');
   const placeNameWrapper = document.getElementById('place_name_wrapper');
+  const patientRow = document.getElementById('patient_info_row');
+  const fieldDur = document.getElementById('field_duration_section');
 
   if (placeType === 'in_house' || placeType === 'visit') {
+    if (fieldDur) fieldDur.style.display = 'none';
     if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'block';
     if (menuSection) menuSection.style.display = 'block';
@@ -537,7 +572,7 @@ function updatePlaceTypeFields() {
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
     const reservedAtLabel = document.getElementById('reserved_at_label');
-    if (reservedAtLabel) reservedAtLabel.textContent = '予約日（日付のみ）';
+    if (reservedAtLabel) reservedAtLabel.textContent = '帯同日時';
     const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
@@ -545,14 +580,18 @@ function updatePlaceTypeFields() {
     if (menuSelect) menuSelect.removeAttribute('required');
     if (reservedAtInput) {
       reservedAtInput.setAttribute('required', 'required');
-      const cur = reservedAtInput.value;
-      if (reservedAtInput.type === 'datetime-local' && cur && cur.length >= 10) {
-        reservedAtInput.type = 'date';
-        reservedAtInput.value = cur.substring(0, 10);
-      } else if (reservedAtInput.type !== 'date') {
-        reservedAtInput.type = 'date';
+      if (reservedAtInput.type === 'date' && reservedAtInput.value) {
+        reservedAtInput.type = 'datetime-local';
+        reservedAtInput.value = reservedAtInput.value + 'T10:00';
+      } else {
+        reservedAtInput.type = 'datetime-local';
+        const cur = reservedAtInput.value;
+        if (cur && cur.length === 16 && cur.includes('T') && (cur.endsWith('T00:00') || cur.endsWith('T09:00'))) {
+          reservedAtInput.value = cur.substring(0, 11) + '10:00';
+        }
       }
     }
+    if (fieldDur) fieldDur.style.display = 'block';
   } else {
     if (datetimeSection) datetimeSection.style.display = 'none';
     if (areaSection) areaSection.style.display = 'none';
@@ -564,7 +603,16 @@ function updatePlaceTypeFields() {
     if (reservedAtInput && reservedAtInput.type === 'date') {
       reservedAtInput.type = 'datetime-local';
     }
+    if (fieldDur) fieldDur.style.display = 'none';
   }
+
+  if (patientRow) {
+    patientRow.style.display = (placeType === 'field') ? 'none' : 'block';
+  }
+  if (fieldDur && placeType !== 'field') {
+    fieldDur.style.display = 'none';
+  }
+  syncStatusPlaceType(placeType);
 
   if (placeType === 'visit' || placeType === 'field') {
     placeNameWrapper.style.display = 'block';

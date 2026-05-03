@@ -209,6 +209,21 @@
   .schedule-card.place-inhouse { background: #1E3A5F; }
   .schedule-card.place-visit { background: #4CAF50; }
   .schedule-card.place-field { background: #FF8AA8; }
+  /* 帯同タイムライン：canvas内・二重クラスで .place-field の配色より優先（!important 不使用） */
+  .schedule-row-canvas .schedule-card.schedule-card-field-timeline {
+    background: #ffffff;
+    color: #1E3A5F;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #1E3A5F;
+    box-shadow: 0 1px 3px rgba(30, 58, 95, 0.08);
+  }
+  .schedule-row-canvas .schedule-card.schedule-card-field-timeline .schedule-card-time {
+    color: #1E3A5F;
+    font-weight: 700;
+    opacity: 1;
+    white-space: normal;
+    line-height: 1.25;
+  }
   .schedule-card.place-default { background: #64748b; }
   .schedule-card.status-visited.place-inhouse { outline: 2px solid #123157; outline-offset: -2px; }
   .schedule-card.status-visited.place-visit { outline: 2px solid #2e7d32; outline-offset: -2px; }
@@ -223,8 +238,8 @@
     box-shadow: 0 0 0 6px rgba(255, 204, 77, 0.25);
     animation: resv-target-pulse 1.2s ease-out;
   }
-  .admin-resv-card.hidden-by-staff-filter {
-    display: none !important;
+  .admin-resv-list .admin-resv-card.hidden-by-staff-filter {
+    display: none;
   }
   @keyframes resv-target-pulse {
     0% { transform: scale(1); }
@@ -236,8 +251,8 @@
       gap: 8px;
       flex-wrap: wrap;
     }
-    .admin-resv-nav-btn {
-      padding: 6px 10px !important;
+    .admin-resv-header .admin-resv-nav-btn {
+      padding: 6px 10px;
       font-size: 0.85rem;
     }
     .schedule-staff-col {
@@ -379,6 +394,14 @@
             {% for card in timeline_cards_by_staff.get(staff_name, []) %}
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
             {% set card_width = card.duration * timeline_px_per_min %}
+            {% if card.is_field %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card schedule-card-field-timeline"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.timeline_time_short }} {{ card.place_name }}">
+              <span class="schedule-card-time">{{ card.timeline_time_short }} {{ card.place_name or '現場名なし' }}</span>
+            </a>
+            {% else %}
             <a href="#resv-detail-{{ card.id }}"
                class="schedule-card status-{{ card.status|default('') }} {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
                style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
@@ -386,6 +409,7 @@
               <span class="schedule-card-time">{{ card.reserved_at_display }} / {{ card.place_label }}</span>
               <span class="schedule-card-main">{{ card.patient_name }}{% if 'star' in (card.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (card.vip_level or '') %}🍀{% endif %}</span>
             </a>
+            {% endif %}
             {% endfor %}
           </div>
         </div>
@@ -397,6 +421,65 @@
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for reservation in reservations_of_day %}
+      {% if reservation.place_type == 'field' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-field" style="border-left: 4px solid #1E3A5F;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">{{ reservation.place_name or '現場名未入力' }}</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
+            {% set nom_type = reservation.nomination_type %}
+            {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+            {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+            {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+            {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+            {% if nom_type == '本指名' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
+            {% elif nom_type == '枠指名' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
+            {% elif nom_type == '希望' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FF9800; color: #fff;">希望</span>
+            {% elif nom_type == 'フリー' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #9E9E9E; color: #fff;">フリー</span>
+            {% endif %}
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>帯同時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          {{ reservation.memo }}
+        </div>
+        {% endif %}
+        {% if viewer_is_admin|default(false) %}
+        {% set base_price = reservation.base_price or 0 %}
+        {% set transportation_fee = reservation.transportation_fee or 0 %}
+        {% set nomination_fee = reservation.nomination_fee or 0 %}
+        {% set discount = reservation.discount or 0 %}
+        {% set tax = reservation.tax or 0 %}
+        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit" 
+             class="admin-resv-btn" 
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この予定を削除しますか？');">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
       <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
           <div style="flex: 1;">
@@ -479,19 +562,18 @@
           <span>｜{{ reservation.duration_minutes or 60 }}分</span>
         </div>
         
-        {% set base_price = reservation.base_price or 0 %}
-        {% set transportation_fee = reservation.transportation_fee or 0 %}
-        {% set nomination_fee = reservation.nomination_fee or 0 %}
-        {% set discount = reservation.discount or 0 %}
-        {% set tax = reservation.tax or 0 %}
-        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
-
         {% if reservation.memo %}
         <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
           {{ reservation.memo }}
         </div>
         {% endif %}
 
+        {% set base_price = reservation.base_price or 0 %}
+        {% set transportation_fee = reservation.transportation_fee or 0 %}
+        {% set nomination_fee = reservation.nomination_fee or 0 %}
+        {% set discount = reservation.discount or 0 %}
+        {% set tax = reservation.tax or 0 %}
+        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
         {% if reservation.status == 'visited' or reservation.status == 'completed' %}
         <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
           合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
@@ -556,6 +638,7 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
       {% endfor %}
     </div>
     {% else %}

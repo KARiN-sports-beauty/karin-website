@@ -15,7 +15,7 @@
 <form method="POST" action="/admin/reports/{{ report.id }}/edit" style="max-width: 1400px;">
   <!-- ヘッダー -->
   <div class="report-edit-header" style="margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-    <div class="report-edit-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div class="report-edit-row">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場名（必須）</label>
         <input type="text" name="field_name" value="{{ report.field_name }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -26,12 +26,12 @@
       </div>
     </div>
     
-    <div class="report-edit-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div class="report-edit-row">
       <div>
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">場所</label>
         <input type="text" name="place" value="{{ report.place or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       </div>
-      <div class="report-time-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="report-time-row">
         <div>
           <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始時間</label>
           <input type="time" name="start_time" value="{{ report.start_time or '07:00' }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -64,27 +64,27 @@
     </div>
   </div>
   
-  <!-- メインコンテンツ -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+  <!-- メインコンテンツ（モバイルは Timeスケジュール → 対応者情報 の縦並び） -->
+  <div class="report-edit-main">
     <!-- 左側：時間軸表 -->
-    <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
-      <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F; text-align: center; padding: 12px; background: #1E3A5F; color: #fff; border-radius: 8px;">
-        <span style="display: inline-block; width: 50%;">Time</span>
-        <span style="display: inline-block; width: 50%;">スケジュール</span>
+    <div class="report-time-schedule-panel" style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); min-width: 0;">
+      <h3 class="report-time-schedule-heading" style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F; text-align: center; padding: 12px; background: #1E3A5F; color: #fff; border-radius: 8px;">
+        <span class="report-time-schedule-heading__time">Time</span>
+        <span class="report-time-schedule-heading__schedule">スケジュール</span>
       </h3>
       
-      <div style="overflow: visible;">
-        <table style="width: 100%; border-collapse: collapse;">
+      <div class="report-time-table-wrap">
+        <table class="report-schedule-table">
           <thead>
-            <tr style="background: #f5f7fb;">
-              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; width: 70px;">時間</th>
-              <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F; border-left: 2px solid #1E3A5F;">スケジュール</th>
+            <tr class="report-schedule-head-row">
+              <th class="report-schedule-th report-schedule-th--time">時間</th>
+              <th class="report-schedule-th report-schedule-th--schedule">スケジュール</th>
               {% if report.staff_names|length == 1 %}
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">{{ report.staff_names[0] }}</th>
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">施術内容</th>
+                <th class="report-schedule-th report-schedule-th--staff">{{ report.staff_names[0] }}</th>
+                <th class="report-schedule-th report-schedule-th--treatment">施術内容</th>
               {% else %}
                 {% for staff_name in (report.staff_names or []) %}
-                <th style="padding: 8px; text-align: center; border: 1px solid #ddd; font-weight: 600; color: #1E3A5F;">{{ staff_name }}</th>
+                <th class="report-schedule-th report-schedule-th--staff">{{ staff_name }}</th>
                 {% endfor %}
               {% endif %}
             </tr>
@@ -104,7 +104,7 @@
             </tr>
                   {% endif %}
             <tr>
-              <td rowspan="2" style="padding: 8px; text-align: center; border: 1px solid #ddd; background: #f5f7fb; font-weight: 600; color: #1E3A5F; vertical-align: middle; width: 80px;">{{ time_range.hour }}</td>
+              <td rowspan="2" class="report-schedule-hour-cell">{{ time_range.hour }}</td>
                 {% endif %}
               {% endif %}
               {% for col_idx in range(actual_column_count) %}
@@ -112,15 +112,15 @@
                 {% set slot_content = time_slots_map.get(slot_key, '') %}
                 {% set slot_value = '' if slot_content is none or slot_content|string|lower == 'none' else slot_content %}
                 {% if time_range.minute == 0 %}
-              <td style="padding: 4px; border: 1px solid #ddd; border-bottom: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 32px; margin-top: 3px; text-align: center; line-height: 32px; overflow: hidden;">{{ slot_value }}</textarea>
+              <td class="report-schedule-cell report-schedule-cell--upper{% if col_idx == 0 %} report-schedule-cell--staff-col{% endif %}">
+                <textarea class="report-slot-textarea" name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1">{{ slot_value }}</textarea>
               </td>
                 {% else %}
                   {% if loop.first %}
             <tr>
                   {% endif %}
-              <td style="padding: 4px; border: 1px solid #ddd; border-top: 1px dashed #d5dbe6; background: #e3f2fd; height: 40px; {% if col_idx == 0 %}border-left: 2px solid #1E3A5F;{% endif %}">
-                <textarea name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1" style="width: 100%; border: none; background: transparent; resize: none; font-size: 0.85rem; padding: 0 4px; box-sizing: border-box; height: 32px; margin-top: 3px; text-align: center; line-height: 32px; overflow: hidden;">{{ slot_value }}</textarea>
+              <td class="report-schedule-cell report-schedule-cell--lower{% if col_idx == 0 %} report-schedule-cell--staff-col{% endif %}">
+                <textarea class="report-slot-textarea" name="time_slot_{{ time_range.hour }}_{{ '%02d'|format(time_range.minute) }}_{{ col_idx }}" rows="1">{{ slot_value }}</textarea>
               </td>
                 {% endif %}
               {% endfor %}
@@ -137,7 +137,7 @@
     </div>
     
     <!-- 右側：対応者情報（患者情報） -->
-    <div style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+    <div class="report-correspondent-panel" style="padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); min-width: 0;">
       <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; font-weight: 600; color: #1E3A5F;">対応者情報</h3>
       <div class="report-staff-list" style="display: flex; flex-direction: column; gap: 16px; max-height: 600px; overflow-y: auto;">
         {% for staff_name in (report.staff_names or []) %}
@@ -237,17 +237,150 @@
   min-width: 0;
 }
 
+.report-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.report-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.report-edit-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: start;
+}
+
+.report-time-table-wrap {
+  max-width: 100%;
+  overflow: visible;
+}
+
+.report-schedule-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.report-schedule-head-row {
+  background: #f5f7fb;
+}
+
+.report-schedule-th {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+  font-weight: 600;
+  color: #1E3A5F;
+  background: #f5f7fb;
+  box-sizing: border-box;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.report-schedule-th--schedule {
+  border-left: 2px solid #1E3A5F;
+}
+
+.report-schedule-hour-cell {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+  background: #f5f7fb;
+  font-weight: 600;
+  color: #1E3A5F;
+  vertical-align: middle;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.report-schedule-cell {
+  padding: 4px;
+  border: 1px solid #ddd;
+  background: #e3f2fd;
+  min-height: 40px;
+  vertical-align: middle;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.report-schedule-cell--upper {
+  border-bottom: 1px dashed #d5dbe6;
+}
+
+.report-schedule-cell--lower {
+  border-top: 1px dashed #d5dbe6;
+}
+
+.report-schedule-cell--staff-col {
+  border-left: 2px solid #1E3A5F;
+}
+
+.report-schedule-table tbody td {
+  min-width: 0;
+}
+
+.report-time-schedule-heading {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.report-time-schedule-heading__time,
+.report-time-schedule-heading__schedule {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.report-schedule-th--time,
+.report-schedule-hour-cell {
+  width: 4.25rem;
+  max-width: 14%;
+}
+
+.report-slot-textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  resize: none;
+  box-sizing: border-box;
+  font-size: 0.85rem;
+  padding: 0 4px;
+  height: 32px;
+  margin-top: 3px;
+  text-align: center;
+  line-height: 32px;
+  overflow: hidden;
+  font-family: inherit;
+}
+
 @media (max-width: 767px) {
   .report-edit-header {
     padding: 16px;
   }
   .report-edit-row {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .report-time-row {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
   .report-edit-header input[type="text"],
   .report-edit-header input[type="date"],
@@ -259,6 +392,72 @@
   }
   .report-edit-header label {
     font-size: 0.9rem;
+  }
+
+  .report-edit-main {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .report-time-schedule-panel,
+  .report-correspondent-panel {
+    padding: 14px;
+  }
+
+  /* 横スクロールなしでビューポート幅に収める（ピンチ拡大で入力しやすくできる） */
+  .report-schedule-table {
+    font-size: clamp(0.52rem, 2.5vw, 0.72rem);
+  }
+
+  .report-time-schedule-heading {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 8px;
+    font-size: 1rem;
+  }
+
+  .report-time-schedule-heading__time,
+  .report-time-schedule-heading__schedule {
+    flex: none;
+    width: 100%;
+  }
+
+  .report-schedule-th,
+  .report-schedule-hour-cell {
+    padding: 4px 2px;
+    font-size: 1em;
+    line-height: 1.25;
+  }
+
+  .report-schedule-th--time,
+  .report-schedule-hour-cell {
+    width: 10%;
+    max-width: none;
+  }
+
+  .report-schedule-cell {
+    min-height: 34px;
+    vertical-align: top;
+    padding: 2px 1px;
+  }
+
+  .report-slot-textarea {
+    font-size: 1em;
+    line-height: 1.3;
+    height: auto;
+    min-height: 30px;
+    max-height: 52px;
+    margin-top: 0;
+    padding: 2px 1px;
+    text-align: left;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .report-staff-list {
+    max-height: none;
   }
 }
 </style>
@@ -272,6 +471,7 @@ const equalizeStaffCardHeights = () => {
   cards.forEach((card) => {
     card.style.minHeight = "";
   });
+  if (window.innerWidth < 768) return;
   if (cards.length > 1) {
     const maxHeight = Math.max(...cards.map((card) => card.offsetHeight));
     cards.forEach((card) => {
