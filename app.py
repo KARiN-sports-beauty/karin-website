@@ -4144,18 +4144,31 @@ def admin_reservations():
             except:
                 pass
         
-        # 選択日の予約一覧（その日の00:00〜24:00）
+        # 選択日の予約一覧（その日の JST 0:00〜翌0:00）
+        # ※ reserved_at は UTC で保存されることがあるため、ISO 文字列の大小比較は不可（帯同等が一覧から消える）
         selected_day_start = datetime.combine(selected_day, datetime.min.time()).replace(tzinfo=JST)
         selected_day_end = selected_day_start + timedelta(days=1)
-        selected_day_start_iso = selected_day_start.isoformat()
-        selected_day_end_iso = selected_day_end.isoformat()
-        
-        reservations_of_day = [
-            r for r in reservations
-            if selected_day_start_iso <= r.get("reserved_at", "") < selected_day_end_iso
-        ]
-        # 時刻順にソート
-        reservations_of_day.sort(key=lambda x: x.get("reserved_at", ""))
+
+        reservations_of_day = []
+        for r in reservations:
+            ra = r.get("reserved_at", "")
+            if not ra:
+                continue
+            try:
+                dt = datetime.fromisoformat(str(ra).replace("Z", "+00:00"))
+                dt_jst = dt.astimezone(JST)
+                if selected_day_start <= dt_jst < selected_day_end:
+                    reservations_of_day.append(r)
+            except Exception:
+                continue
+
+        def _sort_key_reserved_at(row):
+            try:
+                return datetime.fromisoformat(str(row.get("reserved_at", "")).replace("Z", "+00:00")).astimezone(JST)
+            except Exception:
+                return datetime.min.replace(tzinfo=JST)
+
+        reservations_of_day.sort(key=_sort_key_reserved_at)
         
         for r in reservations_of_day:
             r["viewer_may_edit"] = session_may_edit_reservation_row(r.get("staff_name"))
