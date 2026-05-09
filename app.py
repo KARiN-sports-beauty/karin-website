@@ -248,6 +248,30 @@ def age_from_birthday_filter(value):
     return age if age is not None else ""
 
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
+
+def session_staff_is_currently_active():
+    """セッション中スタッフの最新状態を確認（承認済みかつユーザー存在）。"""
+    st = session.get("staff") or {}
+    uid = (st.get("id") or "").strip()
+    if not uid:
+        return False
+    try:
+        try:
+            user_res = supabase_admin.auth.admin.get_user_by_id(uid)
+            user = getattr(user_res, "user", None)
+        except Exception:
+            users = supabase_admin.auth.admin.list_users()
+            user = next((u for u in users if u.id == uid), None)
+        if not user:
+            return False
+        meta = getattr(user, "user_metadata", {}) or {}
+        return bool(meta.get("approved", False))
+    except Exception as e:
+        print(f"⚠️ セッションスタッフ検証エラー: {e}")
+        return False
 
 
 # =====================================
@@ -258,6 +282,10 @@ def staff_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "staff" not in session:
+            return redirect("/staff/login")
+        if not session_staff_is_currently_active():
+            session.pop("staff", None)
+            flash("アカウント状態が変更されたため、再ログインが必要です", "error")
             return redirect("/staff/login")
         return f(*args, **kwargs)
     return wrapper
@@ -271,7 +299,12 @@ def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         staff = session.get("staff")
-        if not staff or staff.get("is_admin") != True:
+        if not staff:
+            return "権限がありません", 403
+        if not session_staff_is_currently_active():
+            session.pop("staff", None)
+            return "権限がありません", 403
+        if staff.get("is_admin") != True:
             return "権限がありません", 403
         return f(*args, **kwargs)
     return wrapper
@@ -310,6 +343,10 @@ def staff_section_required(section):
         @wraps(f)
         def wrapper(*args, **kwargs):
             if "staff" not in session:
+                return redirect("/staff/login")
+            if not session_staff_is_currently_active():
+                session.pop("staff", None)
+                flash("アカウント状態が変更されたため、再ログインが必要です", "error")
                 return redirect("/staff/login")
             st = session.get("staff") or {}
             if st.get("is_admin"):
@@ -1835,6 +1872,7 @@ def staff_login():
         staff_role_raw = STAFF_ROLE_REGULAR
 
     # 🔹 セッション保存（承認後）
+    session.permanent = True
     session["staff"] = {
         "id": user.id,
         "email": user.email,
