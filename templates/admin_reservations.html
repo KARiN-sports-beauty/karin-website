@@ -473,7 +473,7 @@
           </a>
           {% endif %}
           {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この予定を削除しますか？');">
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
             <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
           </form>
           {% endif %}
@@ -632,7 +632,7 @@
           {% endif %}
           
           {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この予約を削除しますか？');">
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予約を削除しますか？">
             <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
           </form>
           {% endif %}

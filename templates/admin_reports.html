@@ -43,7 +43,7 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <a href="/admin/reports/{{ report.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem;">✏ 編集</a>
-          <form action="/admin/reports/{{ report.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この報告書を削除しますか？');">
+          <form action="/admin/reports/{{ report.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この報告書を削除しますか？">
             <button type="submit" style="padding: 8px 16px; background: #f44336; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">🗑 削除</button>
           </form>
         </div>

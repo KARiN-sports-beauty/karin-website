@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="admin-karte-log-actions">
           <a href="/admin/karte/{{ patient.id }}/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
           {% if is_admin %}
-          <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
+          <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この施術ログを削除しますか？（元には戻せません）">
             <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>
           </form>
           {% endif %}
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <img src="{{ image.image_url }}" alt="画像" class="admin-karte-log-image-thumb">
               </a>
               {% if is_admin %}
-              <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この画像を削除しますか？');">
+              <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この画像を削除しますか？">
                 <button type="submit" class="admin-karte-log-image-delete">×</button>
               </form>
               {% endif %}
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="admin-karte-log-actions">
             <a href="/admin/karte/{{ patient.id }}/log/{{ log.id }}/edit" class="admin-karte-log-edit-btn">✏ 編集</a>
             {% if is_admin %}
-            <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この施術ログを削除しますか？\n（元には戻せません）');">
+            <form action="/admin/karte/log/{{ log.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この施術ログを削除しますか？（元には戻せません）">
               <button type="submit" class="admin-karte-log-delete-btn">🗑 削除</button>
             </form>
             {% endif %}
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <img src="{{ image.image_url }}" alt="画像" class="admin-karte-log-image-thumb">
                 </a>
                 {% if is_admin %}
-                <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この画像を削除しますか？');">
+                <form action="/admin/karte/image/{{ image.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この画像を削除しますか？">
                   <button type="submit" class="admin-karte-log-image-delete">×</button>
                 </form>
                 {% endif %}
@@ -726,7 +726,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <a href="/admin/karte/{{ patient.id }}/log/new" class="admin-karte-detail-btn-primary">➕ 新規施術ログ追加</a>
   <a href="/admin/karte/{{ patient.id }}/edit" class="admin-karte-detail-btn-secondary">✏ 基本情報編集</a>
   {% if is_admin %}
-  <form action="/admin/karte/{{ patient.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('このカルテを削除しますか？\n（元には戻せません）');">
+  <form action="/admin/karte/{{ patient.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="このカルテを削除しますか？（元には戻せません）">
     <button type="submit" class="admin-karte-detail-btn-danger">🗑 カルテ削除</button>
   </form>
   {% endif %}
@@ -759,6 +759,7 @@ function closeImageModal() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeImageModal();
+    closeDeleteConfirmModal();
   }
 });
 

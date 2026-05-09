@@ -104,7 +104,7 @@
           </td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ salary.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
-            <form method="POST" action="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ salary.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+            <form method="POST" action="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ salary.id }}/delete" style="display: inline;" data-delete-confirm="true" data-delete-message="この給与データを削除しますか？">
               <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
             </form>
           </td>
@@ -175,7 +175,7 @@
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             {% if expense.linked_type in ['manual', 'salary', 'reservation_discount', 'daily_report_transportation'] %}
             <a href="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
-            <form method="POST" action="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+            <form method="POST" action="/admin/financial/years/{{ year }}/expenses/{{ expense.id }}/delete" style="display: inline;" data-delete-confirm="true" data-delete-message="この経費データを削除しますか？">
               <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
             </form>
             {% else %}

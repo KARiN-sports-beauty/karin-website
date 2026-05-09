@@ -54,7 +54,7 @@
     
     <div class="admin-news-buttons">
       <a href="/admin/news/edit/{{ news.id }}" class="reply-btn">✏ 編集</a>
-      <form action="/admin/news/delete/{{ news.id }}" method="POST" style="display: inline;" onsubmit="return confirm('このニュースを削除しますか？\n（元には戻せません）');">
+      <form action="/admin/news/delete/{{ news.id }}" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="このニュースを削除しますか？（元には戻せません）">
         <button type="submit" class="admin-news-delete-btn">🗑 削除</button>
       </form>
     </div>

@@ -96,7 +96,7 @@
           <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ takeout.memo or '' }}</td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             <a href="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
-            <form method="POST" action="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+            <form method="POST" action="/admin/equipment/years/{{ year }}/takeouts/{{ takeout.id }}/delete" style="display: inline;" data-delete-confirm="true" data-delete-message="この持ち出し備品データを削除しますか？">
               <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
             </form>
           </td>
@@ -159,7 +159,7 @@
           <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ order.arrival_date or '-' }}</td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             <a href="/admin/equipment/years/{{ year }}/orders/{{ order.id }}/edit" style="color: #1E3A5F; text-decoration: none; margin-right: 8px;">✏️</a>
-            <form method="POST" action="/admin/equipment/years/{{ year }}/orders/{{ order.id }}/delete" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+            <form method="POST" action="/admin/equipment/years/{{ year }}/orders/{{ order.id }}/delete" style="display: inline;" data-delete-confirm="true" data-delete-message="この発注データを削除しますか？">
               <button type="submit" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 0;">🗑️</button>
             </form>
           </td>

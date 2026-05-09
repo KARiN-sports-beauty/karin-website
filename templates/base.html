@@ -43,5 +43,64 @@
     <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
     <span>ダッシュボードに戻る</span>
     </a>
+
+  <div id="delete-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2200; align-items:center; justify-content:center; padding:16px;" onclick="closeDeleteConfirmModal()">
+    <div style="width:min(460px, 100%); background:#fff; border-radius:14px; padding:18px; box-shadow:0 12px 30px rgba(0,0,0,0.2);" onclick="event.stopPropagation();">
+      <h4 style="margin:0 0 10px 0; font-size:1.05rem; color:#1E3A5F;">削除確認</h4>
+      <p id="delete-confirm-message" style="margin:0 0 16px 0; color:#333; line-height:1.5;">本当に削除しますか？</p>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="admin-karte-detail-btn-secondary" onclick="closeDeleteConfirmModal()">キャンセル</button>
+        <button type="button" class="admin-karte-detail-btn-danger" onclick="confirmDeleteAction()">削除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    let pendingDeleteForm = null;
+
+    window.openDeleteConfirmModal = (form) => {
+      pendingDeleteForm = form;
+      const modal = document.getElementById('delete-confirm-modal');
+      const msg = document.getElementById('delete-confirm-message');
+      if (!modal || !msg) return;
+      msg.textContent = form?.dataset?.deleteMessage || '本当に削除しますか？';
+      modal.style.display = 'flex';
+    };
+
+    window.closeDeleteConfirmModal = () => {
+      const modal = document.getElementById('delete-confirm-modal');
+      if (modal) modal.style.display = 'none';
+      pendingDeleteForm = null;
+    };
+
+    window.confirmDeleteAction = () => {
+      if (!pendingDeleteForm) return;
+      const form = pendingDeleteForm;
+      window.closeDeleteConfirmModal();
+      form.dataset.deleteConfirmed = '1';
+      form.requestSubmit();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('form[data-delete-confirm="true"]').forEach((form) => {
+        form.addEventListener('submit', (e) => {
+          if (form.dataset.deleteConfirmed === '1') {
+            form.dataset.deleteConfirmed = '';
+            return;
+          }
+          e.preventDefault();
+          window.openDeleteConfirmModal(form);
+        });
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.closeDeleteConfirmModal();
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

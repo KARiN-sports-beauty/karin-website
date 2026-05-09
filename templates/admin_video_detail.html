@@ -60,7 +60,7 @@
   
   <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee;">
     <a href="/admin/videos/{{ video.id }}/edit" class="admin-karte-detail-btn-primary" style="text-decoration: none; display: inline-block; margin-right: 12px;">✏ 編集</a>
-    <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('この動画を削除しますか？\n（元には戻せません）');">
+    <form action="/admin/videos/{{ video.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この動画を削除しますか？（元には戻せません）">
       <button type="submit" class="admin-blog-delete-btn" style="padding: 12px 24px; font-size: 1rem;">🗑 削除</button>
     </form>
   </div>
