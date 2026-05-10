@@ -75,6 +75,41 @@ def now_iso():
     """JST の ISO8601 文字列を返す"""
     return datetime.now(JST).isoformat()
 
+
+def session_audit_actor():
+    """監査用：ログイン中スタッフの表示名（メールがあれば併記）。Supabase の created_by / updated_by に保存する。"""
+    st = session.get("staff") or {}
+    name = (st.get("name") or "").strip()
+    email = (st.get("email") or "").strip()
+    if name and email:
+        return f"{name} ({email})"
+    return name or email or "unknown"
+
+
+def reservation_audit_for_insert():
+    """reservations 新規：作成者・更新者・更新時刻（created_at も同一タイムスタンプで統一）"""
+    actor = session_audit_actor()
+    t = now_iso()
+    return {"created_by": actor, "updated_by": actor, "created_at": t, "updated_at": t}
+
+
+def reservation_audit_for_update():
+    """reservations 更新：最終更新者・更新時刻"""
+    return {"updated_by": session_audit_actor(), "updated_at": now_iso()}
+
+
+def staff_daily_report_audit_for_insert():
+    """staff_daily_reports 新規"""
+    actor = session_audit_actor()
+    t = now_iso()
+    return {"created_by": actor, "updated_by": actor, "created_at": t, "updated_at": t}
+
+
+def staff_daily_report_audit_for_update():
+    """staff_daily_reports 更新"""
+    return {"updated_by": session_audit_actor(), "updated_at": now_iso()}
+
+
 def today():
     """JST の YYYY-MM-DD 文字列を返す"""
     return datetime.now(JST).strftime("%Y-%m-%d")
@@ -4945,7 +4980,7 @@ def admin_reservations_new():
             "tax": tax,
             "status": "reserved",
             "memo": memo,
-            "created_at": now_iso()
+            **reservation_audit_for_insert(),
         }
         
         try:
@@ -5004,7 +5039,7 @@ def admin_reservations_status(reservation_id):
             return redirect(request.referrer or "/admin/reservations")
         
         # ステータス更新
-        supabase_admin.table("reservations").update({"status": new_status}).eq("id", reservation_id).execute()
+        supabase_admin.table("reservations").update({"status": new_status, **reservation_audit_for_update()}).eq("id", reservation_id).execute()
 
         # 支払い方法（任意）を保存
         if new_status == "completed":
@@ -5015,6 +5050,7 @@ def admin_reservations_status(reservation_id):
                 update_fields["receipt_status"] = receipt_status
             if update_fields:
                 try:
+                    update_fields.update(reservation_audit_for_update())
                     supabase_admin.table("reservations").update(update_fields).eq("id", reservation_id).execute()
                 except Exception as e:
                     print(f"⚠️ payment/receipt 更新エラー: {e}")
@@ -5051,8 +5087,7 @@ def admin_reservations_status(reservation_id):
                             "report_date": date_str,
                             "week_key": week_key,
                             "memo": None,
-                            "created_at": now_iso(),
-                            "updated_at": now_iso()
+                            **staff_daily_report_audit_for_insert(),
                         }
                         res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
                         if res_new_report.data:
@@ -5186,8 +5221,7 @@ def admin_reservations_status(reservation_id):
                                             "report_date": date_str,
                                             "week_key": week_key,
                                             "memo": None,
-                                            "created_at": now_iso(),
-                                            "updated_at": now_iso()
+                                            **staff_daily_report_audit_for_insert(),
                                         }
                                         res_new_nom_report = supabase_admin.table("staff_daily_reports").insert(nom_report_data).execute()
                                         if res_new_nom_report.data:
@@ -5667,7 +5701,7 @@ def admin_reservations_edit(reservation_id):
             "tax": tax,
             "status": status,
             "memo": memo,
-            "updated_at": now_iso()
+            **reservation_audit_for_update(),
         }
         if place_type == "field":
             update_data["patient_id"] = None
@@ -6140,7 +6174,7 @@ def staff_daily_report_new():
             report_id = res_existing.data[0]["id"]
             supabase_admin.table("staff_daily_reports").update({
                 "memo": report_memo,
-                "updated_at": now_iso()
+                **staff_daily_report_audit_for_update(),
             }).eq("id", report_id).execute()
         else:
             # 新規日報を作成
@@ -6154,8 +6188,7 @@ def staff_daily_report_new():
                 "report_date": report_date,
                 "week_key": week_key,
                 "memo": report_memo,
-                "created_at": now_iso(),
-                "updated_at": now_iso()
+                **staff_daily_report_audit_for_insert(),
             }
             res_new_report = supabase_admin.table("staff_daily_reports").insert(report_data).execute()
             if not res_new_report.data:
@@ -8675,7 +8708,7 @@ def admin_daily_reports_patient_amount(patient_report_id):
         # 予約データにも同期（base_priceを更新）
         if reservation_id:
             try:
-                supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
+                supabase_admin.table("reservations").update({"base_price": amount, **reservation_audit_for_update()}).eq("id", reservation_id).execute()
             except Exception as e:
                 print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
                 # 日報更新は成功しているので警告のみ
@@ -8686,12 +8719,6 @@ def admin_daily_reports_patient_amount(patient_report_id):
         print("❌ 日報患者金額更新エラー:", e)
         flash("金額の更新に失敗しました", "error")
         return redirect("/admin/daily-reports")
-    except Exception as e:
-        import traceback
-        print(f"❌ 日報一覧取得エラー: {e}")
-        print(f"❌ トレースバック: {traceback.format_exc()}")
-        flash("日報一覧の取得に失敗しました", "error")
-        return redirect("/admin/dashboard")
 
 
 @app.route("/admin/daily-reports/item/<item_id>/update", methods=["POST"])
@@ -8813,10 +8840,10 @@ def admin_daily_reports_item_update(item_id):
                     if reservation_id and work_type in ["in_house", "visit"]:
                         try:
                             # 予約データのbase_priceを更新
-                            supabase_admin.table("reservations").update({"base_price": patient_amount}).eq("id", reservation_id).execute()
+                            supabase_admin.table("reservations").update({"base_price": patient_amount, **reservation_audit_for_update()}).eq("id", reservation_id).execute()
                             # 予約データのcourse_nameを更新（編集時に変更があった場合）
                             if patient_course_name:
-                                supabase_admin.table("reservations").update({"course_name": patient_course_name}).eq("id", reservation_id).execute()
+                                supabase_admin.table("reservations").update({"course_name": patient_course_name, **reservation_audit_for_update()}).eq("id", reservation_id).execute()
                         except Exception as e:
                             print(f"⚠️ WARNING - 予約データの同期エラー: {e}")
                     elif work_type == "field":
@@ -8906,7 +8933,7 @@ def staff_daily_report_patient_update(patient_report_id):
         # 予約データにも同期（base_priceを更新）
         if reservation_id:
             try:
-                supabase_admin.table("reservations").update({"base_price": amount}).eq("id", reservation_id).execute()
+                supabase_admin.table("reservations").update({"base_price": amount, **reservation_audit_for_update()}).eq("id", reservation_id).execute()
                 print(f"✅ 日報患者と予約データを更新しました: patient_report_id={patient_report_id}, reservation_id={reservation_id}, amount={amount}, course_name={course_name}")
             except Exception as e:
                 print(f"⚠️ WARNING - 予約データの同期エラー: {e}")

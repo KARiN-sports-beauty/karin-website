@@ -284,6 +284,12 @@
   }
 }
 
+/* 予定編集：帯同終了時刻（デスクトップでは幅を抑える／モバイルは下記メディアクエリで全幅） */
+#admin-reservation-edit-form #field_end_time {
+  max-width: 200px;
+  box-sizing: border-box;
+}
+
 @media (max-width: 768px) {
   #daily-report-form input,
   #daily-report-form textarea,
@@ -309,12 +315,46 @@
     max-width: 100%;
   }
 
-  #admin-reservation-edit-form input,
+  #admin-reservation-edit-form input:not([type="radio"]):not([type="checkbox"]),
   #admin-reservation-edit-form textarea,
   #admin-reservation-edit-form select {
     box-sizing: border-box;
     max-width: 100%;
     width: 100%;
+  }
+
+  /* ラジオ／チェックは内容幅（width:100% だとラベル文字が枠外に押し出される） */
+  #admin-reservation-edit-form input[type="radio"],
+  #admin-reservation-edit-form input[type="checkbox"] {
+    width: auto;
+    max-width: none;
+    flex-shrink: 0;
+  }
+
+  #admin-reservation-edit-form input[type="datetime-local"],
+  #admin-reservation-edit-form input.reservation-datetime-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #admin-reservation-edit-form input[type="time"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #admin-reservation-edit-form #field_end_time {
+    max-width: 100%;
+  }
+
+  #admin-reservation-edit-form #reservation_datetime_section,
+  #admin-reservation-edit-form #field_duration_section {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   #admin-reservation-form input[type="datetime-local"] {
