@@ -284,6 +284,33 @@
   }
 }
 
+/* 予定編集フォーム（インライン max-width 廃止・モバイルで 100% に収める） */
+#admin-reservation-edit-form.admin-reservation-edit-form {
+  max-width: 800px;
+  box-sizing: border-box;
+}
+
+/* datetime-local / time は OS ネイティブ UI の最小幅が広く、単独では親を押し広げることがある */
+.admin-reservation-native-input-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#admin-reservation-edit-form .admin-reservation-native-input-wrap .reservation-datetime-input,
+#admin-reservation-edit-form .admin-reservation-native-input-wrap .admin-field-end-time-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
 /* 予定編集：帯同終了時刻（デスクトップでは幅を抑える／モバイルは下記メディアクエリで全幅） */
 #admin-reservation-edit-form #field_end_time {
   max-width: 200px;
@@ -291,6 +318,11 @@
 }
 
 @media (max-width: 768px) {
+  /* flex/grid 子でよくある「子の最小幅で親が横に伸びる」を抑える */
+  .admin-main {
+    min-width: 0;
+  }
+
   #daily-report-form input,
   #daily-report-form textarea,
   #daily-report-form select {
@@ -331,6 +363,18 @@
     flex-shrink: 0;
   }
 
+  /* フォーム全体をビューポート幅に縛る（子の datetime が親を無限に広げない） */
+  #admin-reservation-edit-form.admin-reservation-edit-form {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #admin-reservation-edit-form .admin-reservation-native-input-wrap {
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
   #admin-reservation-edit-form input[type="datetime-local"],
   #admin-reservation-edit-form input.reservation-datetime-input {
     width: 100%;
@@ -354,6 +398,7 @@
   #admin-reservation-edit-form #field_duration_section {
     min-width: 0;
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
   }
 
