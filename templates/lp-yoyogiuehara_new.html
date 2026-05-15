@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KARiN.｜代々木上原 出張対応 鍼灸・ボディケア</title>
+  <meta name="description" content="代々木上原で出張対応の鍼灸・ボディケア。心と身体をやさしく整えるKARiN.。初回体験あり。無理な継続提案はありません。ご予約・ご相談は公式LINEから。">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       Design tokens
+       ============================================================ */
+    :root {
+      --cream:       #FAF8F5;
+      --stone-50:    #F5F3EF;
+      --stone-100:   #EBE8E3;
+      --stone-200:   #D6D2CB;
+      --stone-400:   #9E9890;
+      --stone-600:   #6B6560;
+      --stone-800:   #3A3631;
+      --ink:         #1E1C1A;
+      --sage:        #7A9E87;
+      --sage-light:  #A8C4B0;
+      --sage-pale:   #EEF4F0;
+      --navy:        #2C3E55;
+      --section-pad: clamp(48px, 8vw, 80px);
+      --container:   900px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      color: var(--stone-600);
+      line-height: 1.9;
+      background-color: var(--cream);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Cormorant — section titles & decorative type only (not brand logo) */
+    .section-label,
+    .section-title,
+    .philosophy-num,
+    .flow-badge-num,
+    .faq-question::before,
+    .trial-price-value,
+    .philosophy-deco {
+      font-family: "Cormorant Garamond", Georgia, serif;
+    }
+
+    .section-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(22px, 3vw, 28px);
+      font-weight: 300;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+
+    .section-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--sage);
+      margin: 20px 0 32px;
+    }
+
+    .section-divider--center {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ============================================================
+       Announce bar
+       ============================================================ */
+    .announce-bar {
+      background: var(--navy);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      padding: 10px 20px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .announce-bar strong {
+      color: var(--sage-light);
+      font-weight: 500;
+    }
+
+    /* ============================================================
+       Sticky header
+       ============================================================ */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px clamp(20px, 4vw, 40px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--stone-100);
+    }
+
+    .site-logo {
+      font-family: "Noto Sans JP", system-ui, sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: 0.06em;
+      text-decoration: none;
+    }
+
+    .header-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--sage);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      border-radius: 100px;
+      transition: background 0.25s ease, color 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .header-cta:hover {
+      background: var(--navy);
+    }
+
+    .header-cta svg {
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       Buttons (LINE)
+       ============================================================ */
+  .btn-line {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 32px;
+      background-color: var(--sage);
+      border: 1px solid var(--sage);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-align: center;
+      border-radius: 6px;
+      transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+      text-decoration: none;
+    }
+
+    .btn-line:hover {
+      background-color: var(--navy);
+      border-color: var(--navy);
+    }
+
+    .btn-line svg {
+      flex-shrink: 0;
+    }
+
+    .line-section .btn-line:hover {
+      background: #fff;
+      color: var(--navy);
+      border-color: #fff;
+    }
+
+    .line-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ============================================================
+       Hero
+       ============================================================ */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: min(88vh, 720px);
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+    .hero-content {
+      flex: 0 0 40%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(48px, 6vw, 80px) clamp(28px, 4vw, 60px);
+      background-color: var(--cream);
+      z-index: 2;
+    }
+
+    .hero-content::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 120px;
+      background: linear-gradient(to bottom, var(--sage), transparent);
+    }
+
+    .hero h1 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(30px, 3.8vw, 48px);
+      font-weight: 300;
+      color: var(--ink);
+      margin-bottom: 16px;
+      letter-spacing: 0.04em;
+      line-height: 1.45;
+      text-align: left;
+      width: 100%;
+    }
+
+    .hero .sub-copy {
+      font-size: clamp(14px, 1.6vw, 16px);
+      color: var(--stone-600);
+      line-height: 1.8;
+      letter-spacing: 0.02em;
+      margin-bottom: 40px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .hero-cta {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-image-wrapper {
+      flex: 0 0 60%;
+      position: relative;
+      min-height: 400px;
+      overflow: hidden;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      filter: brightness(0.92);
+    }
+
+    .hero-image-gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 28%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        var(--cream) 0%,
+        rgba(250, 248, 245, 0.85) 40%,
+        transparent 100%
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .hero-info {
+      position: absolute;
+      bottom: 32px;
+      right: 32px;
+      left: auto;
+      z-index: 2;
+      text-align: right;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.8;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .hero-cta-note {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--stone-400);
+      letter-spacing: 0.01em;
+      text-align: left;
+    }
+
+    /* ============================================================
+       Section base
+       ============================================================ */
+    section {
+      max-width: none;
+      margin: 0 auto;
+      padding: var(--section-pad) clamp(20px, 5vw, 60px);
+    }
+
+    .sp-only {
+      display: none;
+    }
+
+    /* ============================================================
+       Worries
+       ============================================================ */
+    .worries-section {
+      background: var(--cream);
+    }
+
+    .worries-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+    }
+
+    .worries-header {
+      max-width: var(--container);
+      margin: 0 auto 40px;
+    }
+
+    .worries-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .worries-list li {
+      position: relative;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--stone-600);
+      padding: 20px 22px 20px 38px;
+      background: var(--stone-50);
+      border-radius: 12px;
+      border: 1px solid var(--stone-100);
+      white-space: normal;
+      margin-bottom: 0;
+      transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+    }
+
+    .worries-list li::before {
+      content: "";
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--stone-200);
+    }
+
+    .worries-list li:nth-child(n+6)::before {
+      background: var(--sage-light);
+    }
+
+    .worries-list li:hover {
+      border-color: var(--sage-light);
+      background: var(--sage-pale);
+      transform: translateY(-2px);
+    }
+
+    .worries-message {
+      max-width: var(--container);
+      margin: 40px auto 0;
+      font-size: 17px;
+      color: var(--stone-600);
+      line-height: 1.85;
+    }
+
+    /* ============================================================
+       Philosophy
+       ============================================================ */
+    .philosophy,
+    section.philosophy {
+      background-color: var(--stone-50);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .philosophy-deco {
+      position: absolute;
+      top: -20px;
+      right: clamp(-20px, 2vw, 40px);
+      font-size: clamp(100px, 18vw, 180px);
+      font-weight: 300;
+      color: var(--stone-100);
+      line-height: 1;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+
+    .philosophy-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .philosophy-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .philosophy-lead {
+      text-align: center;
+      color: var(--stone-600);
+      line-height: 1.8;
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .philosophy-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .philosophy-item {
+      position: relative;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 36px 28px;
+      border: 1px solid var(--stone-100);
+      box-shadow: none;
+      overflow: hidden;
+      transition: box-shadow 0.25s ease;
+    }
+
+    .philosophy-item::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--sage-light), var(--sage));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+
+    .philosophy-item:hover::after {
+      transform: scaleX(1);
+    }
+
+    .philosophy-num {
+      display: block;
+      font-size: 40px;
+      font-weight: 300;
+      color: var(--stone-100);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .philosophy-item h3 {
+      font-size: 15px;
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: 0.01em;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+
+    .philosophy-item p {
+      color: var(--stone-600);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .philosophy-message {
+      text-align: center;
+      color: var(--stone-600);
+      line-height: 1.8;
+      font-size: 17px;
+    }
+
+    /* ============================================================
+       Flow
+       ============================================================ */
+    .flow-section {
+      background: var(--cream);
+    }
+
+    .flow-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+    }
+
+    .flow-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    .flow-step {
+      position: relative;
+      background: transparent;
+      border-radius: 0;
+      padding: 0 16px 24px;
+      border: none;
+      text-align: center;
+    }
+
+    .flow-step::before {
+      content: "";
+      position: absolute;
+      top: 32px;
+      left: calc(50% + 32px);
+      width: calc(100% - 64px);
+      height: 1px;
+      background: linear-gradient(90deg, var(--stone-200), var(--sage-light));
+      z-index: 0;
+    }
+
+    .flow-step:last-child::before {
+      display: none;
+    }
+
+    .flow-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid var(--stone-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      background: var(--cream);
+      position: relative;
+      z-index: 1;
+    }
+
+    .flow-badge-num {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--sage);
+      letter-spacing: 0.04em;
+    }
+
+    .flow-step-number {
+      display: none;
+    }
+
+    .flow-step-title {
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      font-family: "Noto Sans JP", sans-serif;
+    }
+
+    .flow-step-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--stone-600);
+    }
+
+    .flow-note {
+      margin-top: 48px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--stone-600);
+    }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .faq-section,
+    section.faq-section {
+      background-color: var(--stone-50);
+    }
+
+    .faq-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .faq-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .faq-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px 24px 24px 56px;
+      border: 1px solid var(--stone-100);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .faq-item:hover {
+      border-color: var(--sage-light);
+      box-shadow: 0 8px 24px rgba(44, 62, 85, 0.06);
+    }
+
+    .faq-question {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 500;
+      color: var(--ink);
+      font-family: "Noto Sans JP", sans-serif;
+      position: relative;
+    }
+
+    .faq-question::before {
+      content: "Q";
+      position: absolute;
+      left: -36px;
+      top: -2px;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--sage);
+    }
+
+    .faq-q-prefix {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .faq-answer {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--stone-600);
+      margin: 0;
+    }
+
+    /* ============================================================
+       Trial
+       ============================================================ */
+    .trial-section {
+      background: var(--cream);
+    }
+
+    .trial-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .trial-left .trial-title {
+      text-align: left;
+    }
+
+    .trial-left .section-divider {
+      margin-left: 0;
+    }
+
+    .trial-text p {
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--stone-600);
+      margin-bottom: 20px;
+    }
+
+    .trial-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--stone-100);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(30, 28, 26, 0.06);
+    }
+
+    .trial-card-accent {
+      height: 4px;
+      background: linear-gradient(90deg, var(--sage-light), var(--sage), var(--navy));
+    }
+
+    .trial-card-body {
+      padding: 32px 28px;
+    }
+
+    .trial-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: var(--sage-pale);
+      border: 1px solid var(--sage-light);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--sage);
+      letter-spacing: 0.06em;
+      margin-bottom: 24px;
+    }
+
+    .trial-price {
+      margin-top: 0;
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      text-align: left;
+      border: none;
+    }
+
+    .trial-price-label {
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--stone-600);
+      font-size: 14px;
+    }
+
+    .trial-price-value {
+      font-size: 36px;
+      font-weight: 400;
+      color: var(--navy);
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    .trial-price-note {
+      font-size: 13px;
+      color: var(--stone-400);
+      margin-top: 12px;
+    }
+
+    .trial-card-cta {
+      width: 100%;
+      margin-top: 28px;
+    }
+
+    /* ============================================================
+       LINE CTA
+       ============================================================ */
+    .line-section,
+    section.line-section {
+      max-width: none;
+      background-color: var(--navy);
+      padding: clamp(64px, 10vw, 96px) clamp(20px, 5vw, 40px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .line-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 80% at 50% 120%, rgba(122, 158, 135, 0.22), transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .line-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .line-title {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(24px, 3vw, 28px);
+      font-weight: 300;
+      margin-bottom: 24px;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .line-text {
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(255, 255, 255, 0.88);
+      margin-bottom: 40px;
+    }
+
+    .line-button-area {
+      margin-bottom: 16px;
+    }
+
+    .line-note {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+  .line-section .btn-line {
+      padding: 16px 48px;
+      font-size: 16px;
+    }
+
+    /* ============================================================
+       Footer
+       ============================================================ */
+    footer {
+      padding: 60px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.45);
+      background-color: var(--ink);
+      line-height: 2;
+    }
+
+    footer p {
+      margin-bottom: 4px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .footer-logos {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .footer-logos img {
+      height: 120px;
+      width: auto;
+      display: block;
+      opacity: 0.7;
+    }
+
+    .footer-copy {
+      margin-top: 24px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.04em;
+    }
+
+    /* ============================================================
+       Scroll reveal
+       ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      will-change: opacity, transform;
+    }
+
+    .reveal-left {
+      transform: translateX(-18px);
+    }
+
+    .reveal-right {
+      transform: translateX(18px);
+    }
+
+    .reveal.is-visible,
+    .reveal-left.is-visible,
+    .reveal-right.is-visible {
+      opacity: 1;
+      transform: translate(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal,
+      .reveal-left,
+      .reveal-right {
+        transition: none !important;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ============================================================
+       Responsive — tablet (max 900px)
+       ============================================================ */
+    @media (max-width: 900px) {
+      .philosophy-list {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-steps {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .flow-step::before {
+        display: none;
+      }
+
+      .flow-step {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 20px;
+        text-align: left;
+        padding: 0;
+      }
+
+      .flow-badge {
+        margin: 0;
+      }
+
+      .trial-inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+
+    /* ============================================================
+       Responsive — mobile (max 640px)
+       ============================================================ */
+    @media (max-width: 640px) {
+      .sp-only {
+        display: inline;
+      }
+
+      .site-header {
+        padding: 12px 16px;
+      }
+
+      .site-logo {
+        font-size: 17px;
+      }
+
+      .header-cta {
+        padding: 8px 14px;
+        font-size: 11px;
+      }
+
+      .header-cta span {
+        display: none;
+      }
+
+      .hero {
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .hero-image-wrapper {
+        flex: none;
+        order: -1;
+        min-height: 52vw;
+        max-height: 340px;
+      }
+
+      .hero-content {
+        flex: none;
+        order: 1;
+        padding: 36px 24px 48px;
+      }
+
+      .hero-content::before {
+        height: 80px;
+      }
+
+      .hero-image-gradient {
+        width: 100%;
+        height: 40%;
+        top: auto;
+        bottom: 0;
+        background: linear-gradient(to top, var(--cream), transparent);
+      }
+
+      .hero-info {
+        bottom: 16px;
+        right: 16px;
+        font-size: 10px;
+      }
+
+      .hero-cta {
+        align-items: stretch;
+      }
+
+      .hero-cta .btn-line,
+      .trial-card-cta,
+      .line-section .btn-line {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .worries-list {
+        grid-template-columns: 1fr;
+      }
+
+      .worries-list li {
+        font-size: 14px;
+        padding: 18px 18px 18px 34px;
+      }
+
+      .section-divider--center {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .philosophy-header,
+      .flow-header,
+      .faq-header {
+        text-align: center;
+      }
+
+      .philosophy-header .section-divider,
+      .flow-header .section-divider,
+      .faq-header .section-divider {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .trial-left .section-divider {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .trial-left .trial-title {
+        text-align: center;
+      }
+
+      .trial-price {
+        text-align: center;
+      }
+
+      .trial-card-cta {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- アナウンスバー -->
+  <div class="announce-bar">
+    <strong>初回体験</strong>　通常料金より30%OFF　｜　完全予約制・無理な継続提案なし
+  </div>
+
+  <!-- スティッキーヘッダー -->
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-logo">KARiN.</a>
+    <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="header-cta">
+      <svg class="line-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      <span>LINEで相談</span>
+    </a>
+  </header>
+
+  <!-- LINE icon (reused via same SVG in CTAs) -->
+
+  <!-- フレーム1：ファーストビュー -->
+  <div class="hero">
+    <div class="hero-content reveal">
+      <h1>その一歩が、身体の変わる瞬間。</h1>
+      <p class="sub-copy">
+        がんばる日々に、やさしい選択を。
+      </p>
+      <div class="hero-cta">
+        <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="btn-line">
+          <svg class="line-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          まずはLINEで相談する
+        </a>
+        <div class="hero-cta-note">※ご相談のみでも大丈夫です</div>
+      </div>
+    </div>
+    <div class="hero-image-wrapper">
+      <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero-image">
+      <div class="hero-image-gradient"></div>
+      <div class="hero-info">
+        東京で受けられる<br>
+        出張対応の鍼灸・ボディケア<br>
+        （完全予約制）
+      </div>
+    </div>
+  </div>
+
+  <!-- フレーム2：悩み（共感） -->
+  <section class="worries-section">
+    <div class="worries-header reveal">
+      <span class="section-label">Pain Points</span>
+      <h2 class="worries-title section-title">こんなことで悩んでいませんか？</h2>
+      <div class="section-divider"></div>
+    </div>
+
+    <div class="worries-inner">
+      <ul class="worries-list">
+        <li class="reveal-left">慢性的な疲れが、なかなか抜けない</li>
+        <li class="reveal-right">気づいたら、首や肩がずっと重い</li>
+        <li class="reveal-left">マッサージに行っても、その場しのぎに感じる</li>
+        <li class="reveal-right">運動したい気持ちはあるけど、身体がついてこない</li>
+        <li class="reveal-left">忙しくて、通う時間を作るのが難しい</li>
+        <li class="reveal-right">不調だけど、病院に行くほどでもない気がしている</li>
+        <li class="reveal-left">痛みはあるけど、もう仕方ないと諦めている</li>
+        <li class="reveal-right">鍼灸が初めてで、少し不安がある</li>
+      </ul>
+    </div>
+
+    <p class="worries-message reveal">
+      その違和感は、これまで頑張ってきた身体からのサインかもしれません。
+    </p>
+  </section>
+
+  <!-- フレーム3：解決（KARiN.がどう向き合うか） -->
+  <section class="philosophy">
+    <span class="philosophy-deco" aria-hidden="true">CARE</span>
+    <div class="philosophy-inner">
+      <div class="philosophy-header reveal">
+        <span class="section-label">Our Philosophy</span>
+        <h2 class="philosophy-title section-title">KARiN.が大切にしていること</h2>
+        <div class="section-divider section-divider--center"></div>
+
+        <p class="philosophy-lead">
+          KARiN.は、<br class="sp-only">
+          「つらさを我慢させる施術」や<br class="sp-only">
+          「無理に変えようとするケア」は行いません。
+        </p>
+      </div>
+
+      <div class="philosophy-list">
+        <div class="philosophy-item reveal">
+          <span class="philosophy-num" aria-hidden="true">01</span>
+          <h3>無理をさせないこと</h3>
+          <p>
+            その日の体調や状態を大切にし、今の身体にとって負担の少ない施術およびより良いものを選びます。
+          </p>
+        </div>
+
+        <div class="philosophy-item reveal">
+          <span class="philosophy-num" aria-hidden="true">02</span>
+          <h3>話を聞くこと</h3>
+          <p>
+            痛みや不調だけでなく、<br>
+            生活リズムやこれまでの経過も含めて伺い、根本の原因を探ります。
+          </p>
+        </div>
+
+        <div class="philosophy-item reveal">
+          <span class="philosophy-num" aria-hidden="true">03</span>
+          <h3>戻りにくいを目的にする</h3>
+          <p>
+            「治すこと」「すぐに良くする」はもちろんですが、整った後に戻りにくい状態を目指します。
+          </p>
+        </div>
+      </div>
+
+      <p class="philosophy-message reveal">
+        まずは、今感じている違和感や不安を<br class="sp-only">
+        そのまま聞かせてください。
+      </p>
+    </div>
+  </section>
+
+  <!-- フレーム4：施術の流れ -->
+  <section class="flow-section">
+    <div class="flow-inner">
+      <div class="flow-header reveal">
+        <span class="section-label">How It Works</span>
+        <h2 class="flow-title section-title">施術の流れ</h2>
+        <div class="section-divider section-divider--center"></div>
+      </div>
+
+      <div class="flow-steps">
+        <div class="flow-step reveal">
+          <div class="flow-badge"><span class="flow-badge-num">01</span></div>
+          <div class="flow-step-number">01</div>
+          <h3 class="flow-step-title">LINEでご相談</h3>
+          <p class="flow-step-text">
+            まずは、今の不調や気になることをLINEでご相談ください。<br>
+            「相談だけ」でも大丈夫です。
+          </p>
+        </div>
+
+        <div class="flow-step reveal">
+          <div class="flow-badge"><span class="flow-badge-num">02</span></div>
+          <div class="flow-step-number">02</div>
+          <h3 class="flow-step-title">状態のヒアリング</h3>
+          <p class="flow-step-text">
+            当日、身体の状態や生活背景を丁寧にお伺いします。<br>
+            初めての方にも分かりやすくご説明します。
+          </p>
+        </div>
+
+        <div class="flow-step reveal">
+          <div class="flow-badge"><span class="flow-badge-num">03</span></div>
+          <div class="flow-step-number">03</div>
+          <h3 class="flow-step-title">施術</h3>
+          <p class="flow-step-text">
+            その日の状態に合わせた、鍼灸・ボディケアを行います。<br>
+            強い刺激や、無理な施術は行いません。
+          </p>
+        </div>
+
+        <div class="flow-step reveal">
+          <div class="flow-badge"><span class="flow-badge-num">04</span></div>
+          <div class="flow-step-number">04</div>
+          <h3 class="flow-step-title">アフターケア</h3>
+          <p class="flow-step-text">
+            日常で気をつけるポイントや、簡単なセルフケアをお伝えします。<br>
+            必要に応じて、次回のご提案も行います。
+          </p>
+        </div>
+      </div>
+
+      <div class="flow-note reveal">
+        不安なことがあれば、どの段階でも遠慮なくご相談ください。
+      </div>
+    </div>
+  </section>
+
+  <!-- フレーム5：よくある質問 -->
+  <section class="faq-section">
+    <div class="faq-inner">
+      <div class="faq-header reveal">
+        <span class="section-label">FAQ</span>
+        <h2 class="faq-title section-title">よくある質問</h2>
+        <div class="section-divider section-divider--center"></div>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item reveal">
+          <h3 class="faq-question"><span class="faq-q-prefix" aria-hidden="true">Q. </span>鍼は痛いですか？</h3>
+          <p class="faq-answer">
+            刺激はとてもやさしく、痛みを感じにくい施術を行っています。<br>
+            初めての方には、必ず状態を確認しながら進めますのでご安心ください。
+          </p>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-question"><span class="faq-q-prefix" aria-hidden="true">Q. </span>鍼灸が初めてでも受けられますか？</h3>
+          <p class="faq-answer">
+            はい、初めての方も多くいらっしゃいます。<br>
+            不安なことがあれば、施術前にしっかりご説明します。
+          </p>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-question"><span class="faq-q-prefix" aria-hidden="true">Q. </span>出張施術はどんな場所で受けられますか？</h3>
+          <p class="faq-answer">
+            ご自宅やご指定の場所での施術が可能です。<br>
+            詳細はご相談時に確認させていただきます。
+          </p>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-question"><span class="faq-q-prefix" aria-hidden="true">Q. </span>無理に通わされたりしませんか？</h3>
+          <p class="faq-answer">
+            無理な継続提案や回数券の販売などは行っておりません。<br>
+            今のお身体に必要なケアをご提案するだけです。
+          </p>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-question"><span class="faq-q-prefix" aria-hidden="true">Q. </span>相談だけでも大丈夫ですか？</h3>
+          <p class="faq-answer">
+            もちろん大丈夫です。<br>
+            「自分に合うか聞きたい」など、お気軽にご相談ください。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- フレーム6：初回体験 -->
+  <section class="trial-section">
+    <div class="trial-inner">
+      <div class="trial-left reveal">
+        <span class="section-label">First Session</span>
+        <h2 class="trial-title section-title">初回体験について</h2>
+        <div class="section-divider"></div>
+
+        <div class="trial-text">
+          <p>
+            初めての方には、今のお身体の状態を丁寧に確認しながら、<br>
+            鍼灸やボディケアを組み合わせた施術を行います。
+          </p>
+
+          <p>
+            「合うかどうか分からない」「まずは試してみたい」<br>
+            そんな方のために、初回体験は
+            <strong>通常料金より30%OFF</strong>でご案内しています。
+          </p>
+
+          <p>
+            無理な継続提案や、回数券の販売は行っておりません。<br>
+            ご自身のペースで、必要なケアを選んでいただけます。
+          </p>
+        </div>
+      </div>
+
+      <div class="trial-card reveal">
+        <div class="trial-card-accent"></div>
+        <div class="trial-card-body">
+          <span class="trial-badge">初回体験プラン</span>
+          <div class="trial-price">
+            <p class="trial-price-label">【初回体験】</p>
+            <p class="trial-price-value">通常料金より 30%OFF</p>
+            <p class="trial-price-note">
+              ※施術時間・内容はご相談時にご案内します
+            </p>
+          </div>
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="btn-line trial-card-cta">
+            <svg class="line-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+            LINEで相談してみる
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- フレーム7：LINE導線（CTA） -->
+  <section class="line-section">
+    <div class="line-inner reveal">
+      <span class="section-label" style="color: var(--sage-light);">Contact</span>
+      <h2 class="line-title">まずは、LINEでご相談ください</h2>
+
+      <p class="line-text">
+        施術を受けるかどうかは、相談してから決めていただいて大丈夫です。<br>
+        今のお身体のこと、不安に思っていることがあれば、<br>
+        LINEでお気軽にご相談ください。
+      </p>
+
+      <div class="line-button-area">
+        <a
+          href="https://lin.ee/rVEbNhl5"
+          class="btn-line"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="line-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          LINEで相談してみる
+        </a>
+      </div>
+
+      <p class="line-note">
+        ※ご相談のみでも問題ありません
+      </p>
+    </div>
+  </section>
+
+  <!-- フッター -->
+  <footer>
+    <p>出張対応 鍼灸・ボディケア</p>
+    <p>代々木上原</p>
+    <a href="{{ url_for('index') }}" class="footer-logos">
+      <img src="{{ url_for('static', filename='images/logoname.jpg') }}" alt="KARiN. ロゴネーム">
+      <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. ロゴ">
+    </a>
+    <p class="footer-copy">© KARiN. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!prefersReducedMotion) {
+      const revealTargets = Array.from(document.querySelectorAll(".reveal, .reveal-left, .reveal-right"));
+      const observer = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              obs.unobserve(entry.target);
+            }
+          });
+        },
+        { root: null, threshold: 0.15 }
+      );
+      revealTargets.forEach((el) => observer.observe(el));
+    } else {
+      document.querySelectorAll(".reveal, .reveal-left, .reveal-right").forEach((el) => {
+        el.classList.add("is-visible");
+      });
+    }
+  </script>
+
+</body>
+</html>
