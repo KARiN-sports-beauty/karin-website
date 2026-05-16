@@ -1161,6 +1161,13 @@ def yakuin_shinkyu():
 def lp_yoyogiuehara():
     return render_template("lp-yoyogiuehara.html")
 
+
+# プレビュー用（本番反映後に削除可）
+@app.route("/lp-yoyogiuehara_new")
+def lp_yoyogiuehara_new_preview():
+    return render_template("lp-yoyogiuehara_new.html")
+
+
 @app.route("/price")
 def price():
     return render_template("price.html")
