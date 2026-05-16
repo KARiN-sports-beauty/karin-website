@@ -458,7 +458,7 @@
     .philosophy__bg-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(250, 248, 245, 0.52);
+      background: rgba(250, 248, 245, 0.42);
     }
 
     .philosophy__care {
@@ -545,7 +545,7 @@
       font-family: var(--font-display);
       font-size: 40px;
       font-weight: 300;
-      color: var(--stone-100);
+      color: var(--stone-400);
       line-height: 1;
       margin-bottom: 16px;
     }
@@ -1097,25 +1097,56 @@
       }
 
       .philosophy__bg-overlay {
-        background: rgba(250, 248, 245, 0.58);
+        background: rgba(250, 248, 245, 0.48);
       }
 
       .flow__steps {
         grid-template-columns: 1fr;
-        gap: 28px;
+        gap: 14px;
       }
 
       .flow-step {
         text-align: left;
         display: grid;
-        grid-template-columns: 64px 1fr;
+        grid-template-columns: 56px 1fr;
+        grid-template-rows: auto auto;
         align-items: start;
-        column-gap: 16px;
+        column-gap: 14px;
+        row-gap: 6px;
+        padding: 18px 16px;
+        background: var(--stone-50);
+        border: 1px solid var(--stone-100);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        border-left: 3px solid var(--sage-light);
       }
 
       .flow-step__circle {
         margin: 0;
         grid-row: 1 / 3;
+        grid-column: 1;
+        width: 56px;
+        height: 56px;
+        background: var(--warm-white);
+        border-color: var(--sage-light);
+      }
+
+      .flow-step__num {
+        font-size: 18px;
+        color: var(--sage);
+      }
+
+      .flow-step__title {
+        grid-column: 2;
+        grid-row: 1;
+        margin-bottom: 0;
+        font-size: 14px;
+      }
+
+      .flow-step__body {
+        grid-column: 2;
+        grid-row: 2;
+        font-size: 13px;
       }
 
       .faq-item {
