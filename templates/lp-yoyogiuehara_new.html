@@ -129,7 +129,7 @@
     .logo-brand {
       font-family: var(--font-logo);
       font-weight: 700;
-      font-size: 2rem;
+      font-size: 2.25rem;
       letter-spacing: 0.04em;
       color: var(--brand-navy);
       line-height: 1;
@@ -140,9 +140,9 @@
       background: var(--navy);
       color: rgba(255,255,255,0.88);
       text-align: center;
-      font-size: 12px;
+      font-size: 14px;
       letter-spacing: 0.08em;
-      padding: 10px 20px;
+      padding: 12px 20px;
       font-weight: 300;
     }
 
@@ -163,9 +163,10 @@
     }
 
     .site-header__inner {
-      max-width: var(--max-w);
+      width: 100%;
+      max-width: none;
       margin-inline: auto;
-      padding: 18px 40px;
+      padding: 20px 4%;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -174,11 +175,11 @@
     .header-cta {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 9px 22px;
+      gap: 10px;
+      padding: 11px 28px;
       background: var(--sage);
       color: #fff;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 400;
       letter-spacing: 0.1em;
       border-radius: 100px;
@@ -193,46 +194,49 @@
 
     .header-cta svg {
       flex-shrink: 0;
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
     }
 
-    /* ─── ヒーロー ─── */
+    /* ─── ヒーロー（lp-yoyogiuehara.html 同様の白背景＋グラデーション） ─── */
     .hero {
       position: relative;
-      min-height: 88vh;
+      min-height: 600px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 60% 40%;
       overflow: hidden;
-      background: var(--cream);
+      background: #ffffff;
     }
 
     .hero__media {
       position: relative;
       overflow: hidden;
+      min-height: 600px;
     }
 
     .hero__img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
-      filter: brightness(0.92) saturate(0.9);
-      transition: transform 8s ease;
+      object-position: left center;
+      filter: brightness(0.9);
     }
 
-    .hero:hover .hero__img {
-      transform: scale(1.04);
-    }
-
-    .hero__media::after {
-      content: '';
+    .hero__gradient {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg,
-        rgba(122, 158, 135, 0.08) 0%,
-        transparent 60%
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 55%,
+        rgba(255, 255, 255, 0.35) 70%,
+        rgba(255, 255, 255, 0.7) 85%,
+        rgba(255, 255, 255, 1) 100%
       );
+      z-index: 1;
       pointer-events: none;
     }
 
@@ -240,38 +244,60 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding: 80px 60px;
+      align-items: flex-start;
+      padding: 80px 48px 80px 40px;
       position: relative;
       z-index: 2;
+      background: #ffffff;
     }
 
-    .hero__body::before {
+    .hero__eyebrow {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero__eyebrow::after {
       content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 3px;
-      height: 120px;
-      background: linear-gradient(to bottom, var(--sage), transparent);
+      display: inline-block;
+      width: 32px;
+      height: 1px;
+      background: var(--sage);
     }
 
     .hero__title {
       font-family: var(--font-display);
       font-size: clamp(30px, 3.8vw, 48px);
       font-weight: 300;
-      line-height: 1.5;
+      line-height: 1.55;
       letter-spacing: 0.04em;
       color: var(--ink);
       margin-bottom: 20px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .hero__title em {
+      font-style: normal;
+      color: var(--sage);
     }
 
     .hero__lead {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 300;
       color: var(--stone-600);
       line-height: 1.9;
       margin-bottom: 40px;
       letter-spacing: 0.04em;
+      text-align: left;
+      width: 100%;
     }
 
     .hero__ctas {
@@ -318,13 +344,12 @@
     .hero__meta {
       position: absolute;
       bottom: 32px;
-      left: 32px;
+      left: 48px;
       text-align: left;
-      font-size: 10px;
-      color: rgba(255,255,255,0.92);
-      letter-spacing: 0.06em;
-      line-height: 1.7;
-      text-shadow: 0 1px 8px rgba(0,0,0,0.25);
+      font-size: 11px;
+      color: #777;
+      letter-spacing: 0.01em;
+      line-height: 1.8;
       z-index: 2;
     }
 
@@ -843,19 +868,20 @@
       letter-spacing: 0.06em;
     }
 
-    /* ─── フッター（lp-yoyogiuehara.html と同構造） ─── */
+    /* ─── フッター（白背景） ─── */
     footer {
-      background: var(--ink);
-      color: rgba(255,255,255,0.45);
+      background: #ffffff;
+      color: var(--stone-600);
       text-align: center;
       padding: 48px 24px;
-      font-size: 11px;
+      font-size: 12px;
       line-height: 2;
       letter-spacing: 0.06em;
+      border-top: 1px solid var(--stone-100);
     }
 
     footer > p {
-      color: rgba(255,255,255,0.45);
+      color: var(--stone-600);
       margin-bottom: 4px;
       font-family: var(--font-body);
     }
@@ -871,13 +897,13 @@
     .footer-logos img {
       height: 120px;
       width: auto;
-      opacity: 0.7;
-      filter: brightness(1.2);
+      opacity: 1;
+      filter: none;
     }
 
     .footer-copy {
       margin-top: 8px;
-      color: rgba(255,255,255,0.35);
+      color: var(--stone-400);
     }
 
     /* ─── Scroll reveal ─── */
@@ -899,7 +925,6 @@
 
     @media (prefers-reduced-motion: reduce) {
       .reveal { opacity: 1; transform: none; transition: none; }
-      .hero:hover .hero__img { transform: none; }
     }
 
     @media (max-width: 900px) {
@@ -939,17 +964,22 @@
         padding: 8px 16px;
       }
 
+      .announce-bar {
+        font-size: 12px;
+        padding: 10px 16px;
+      }
+
       .site-header__inner {
-        padding: 14px 20px;
+        padding: 16px 4%;
       }
 
       .logo-brand {
-        font-size: 1.35rem;
+        font-size: 1.5rem;
       }
 
       .header-cta {
-        font-size: 10.5px;
-        padding: 8px 16px;
+        font-size: 11px;
+        padding: 9px 18px;
       }
 
       .sp-only {
@@ -963,7 +993,20 @@
 
       .hero__media {
         order: 1;
-        height: 260px;
+        min-height: 260px;
+        height: 52vw;
+        max-height: 340px;
+      }
+
+      .hero__gradient {
+        left: 0;
+        right: auto;
+        background: linear-gradient(
+          to bottom,
+          transparent 0%,
+          rgba(255, 255, 255, 0.15) 60%,
+          rgba(255, 255, 255, 0.85) 100%
+        );
       }
 
       .hero__body {
@@ -971,17 +1014,22 @@
         padding: 40px 24px 48px;
       }
 
-      .hero__body::before { display: none; }
+      .hero__eyebrow {
+        font-size: 10px;
+        margin-bottom: 18px;
+      }
 
       .hero__title {
         font-size: 26px;
       }
 
       .hero__lead {
-        font-size: 13px;
+        font-size: 14px;
       }
 
-      .hero__meta { display: none; }
+      .hero__meta {
+        display: none;
+      }
 
       .btn-primary {
         font-size: 13px;
@@ -1052,7 +1100,7 @@
 
   <!-- アナウンスバー -->
   <div class="announce-bar">
-    <strong>初回体験</strong>　通常料金より30%OFF　｜　完全予約制・無理な継続提案なし
+    <strong>初回体験</strong>　通常料金より30%OFF　｜　完全予約制
   </div>
 
   <!-- スティッキーヘッダー（ロゴは index.html のテキストロゴと同じ書体） -->
@@ -1072,6 +1120,7 @@
   <section class="hero" aria-label="ファーストビュー">
     <div class="hero__media">
       <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero__img" loading="eager">
+      <div class="hero__gradient"></div>
       <div class="hero__meta">
         東京で受けられる<br>
         出張対応の鍼灸・ボディケア<br>
@@ -1079,7 +1128,8 @@
       </div>
     </div>
     <div class="hero__body">
-      <h1 class="hero__title">その一歩が、身体の変わる瞬間。</h1>
+      <p class="hero__eyebrow" aria-hidden="true">Acupuncture &amp; Body Care</p>
+      <h1 class="hero__title">その一歩が、<br>身体の変わる<em>瞬間</em>。</h1>
       <p class="hero__lead">がんばる日々に、やさしい選択を。</p>
       <div class="hero__ctas">
         <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="btn-primary">
