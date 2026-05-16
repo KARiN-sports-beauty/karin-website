@@ -285,7 +285,7 @@
     }
 
     .hero__title em {
-      font-style: normal;
+      font-style: italic;
       color: var(--sage);
     }
 
@@ -433,8 +433,32 @@
       overflow: hidden;
     }
 
-    .philosophy::before {
-      content: 'CARE';
+    .philosophy__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .philosophy__bg::before {
+      content: '';
+      position: absolute;
+      inset: -28px;
+      background: url('/static/images/lp-philosophy.jpg') center / cover no-repeat;
+      filter: blur(10px);
+      transform: scale(1.06);
+      opacity: 0.5;
+    }
+
+    .philosophy__bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(250, 248, 245, 0.82);
+    }
+
+    .philosophy__care {
       position: absolute;
       top: -20px;
       right: -10px;
@@ -456,6 +480,13 @@
     .philosophy__head {
       text-align: center;
       margin-bottom: 56px;
+    }
+
+    /* 見出し内の KARiN. はヘッダーロゴと同じ書体 */
+    .brand-name {
+      font-family: var(--font-logo);
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
 
     .philosophy__lead {
@@ -1050,7 +1081,12 @@
         gap: 8px;
       }
 
-      .philosophy::before { display: none; }
+      .philosophy__care { display: none; }
+
+      .philosophy__bg::before {
+        filter: blur(8px);
+        opacity: 0.4;
+      }
 
       .flow__steps {
         grid-template-columns: 1fr;
@@ -1193,10 +1229,12 @@
 
   <!-- ─── PHILOSOPHY ─── -->
   <section class="philosophy">
+    <div class="philosophy__bg" aria-hidden="true"></div>
+    <span class="philosophy__care" aria-hidden="true">CARE</span>
     <div class="inner">
       <div class="philosophy__head reveal">
         <span class="section-label">Our Philosophy</span>
-        <h2 class="section-title">KARiN.が大切にしていること</h2>
+        <h2 class="section-title"><span class="brand-name">KARiN.</span>が大切にしていること</h2>
         <div class="divider divider--center"></div>
         <p class="philosophy__lead">
           KARiN.は、<br class="sp-only">
@@ -1293,7 +1331,7 @@
         </div>
         <div class="faq-item reveal">
           <h3 class="faq-item__q">Q. 出張施術はどんな場所で受けられますか？</h3>
-          <p class="faq-item__a">ご自宅やご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
+          <p class="faq-item__a">ご自宅やレンタルスペース等ご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
         </div>
         <div class="faq-item reveal">
           <h3 class="faq-item__q">Q. 無理に通わされたりしませんか？</h3>
