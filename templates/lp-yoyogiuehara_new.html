@@ -441,21 +441,24 @@
       overflow: hidden;
     }
 
-    .philosophy__bg::before {
-      content: '';
+    .philosophy__bg img {
       position: absolute;
-      inset: -28px;
-      background: url('/static/images/lp-philosophy.jpg') center / cover no-repeat;
-      filter: blur(10px);
-      transform: scale(1.06);
-      opacity: 0.5;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      height: 110%;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transform: translate(-50%, -50%);
+      filter: blur(4px);
     }
 
-    .philosophy__bg::after {
-      content: '';
+    .philosophy__bg-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(250, 248, 245, 0.82);
+      background: rgba(250, 248, 245, 0.52);
     }
 
     .philosophy__care {
@@ -1081,11 +1084,20 @@
         gap: 8px;
       }
 
-      .philosophy__care { display: none; }
+      .philosophy__care {
+        top: 8px;
+        right: 4px;
+        font-size: clamp(56px, 16vw, 80px);
+        letter-spacing: 0.08em;
+        opacity: 0.85;
+      }
 
-      .philosophy__bg::before {
-        filter: blur(8px);
-        opacity: 0.4;
+      .philosophy__bg img {
+        filter: blur(3px);
+      }
+
+      .philosophy__bg-overlay {
+        background: rgba(250, 248, 245, 0.58);
       }
 
       .flow__steps {
@@ -1229,7 +1241,10 @@
 
   <!-- ─── PHILOSOPHY ─── -->
   <section class="philosophy">
-    <div class="philosophy__bg" aria-hidden="true"></div>
+    <div class="philosophy__bg" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/lp-philosophy.jpg') }}" alt="">
+      <div class="philosophy__bg-overlay"></div>
+    </div>
     <span class="philosophy__care" aria-hidden="true">CARE</span>
     <div class="inner">
       <div class="philosophy__head reveal">
