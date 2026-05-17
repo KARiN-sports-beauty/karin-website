@@ -670,33 +670,21 @@
       position: relative;
       overflow: hidden;
       padding: var(--space-xl) 0;
+      background-color: var(--stone-100);
+      background-image: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
-    .faq__bg {
+    /* 確認用：背景が見えるよう白膜を薄め（確定後は 0.82 に戻す） */
+    .faq::before {
+      content: '';
       position: absolute;
       inset: 0;
       z-index: 0;
+      background: rgba(255, 255, 255, 0.42);
       pointer-events: none;
-      overflow: hidden;
-    }
-
-    .faq__bg img {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 110%;
-      height: 110%;
-      min-width: 100%;
-      min-height: 100%;
-      object-fit: cover;
-      object-position: center;
-      transform: translate(-50%, -50%);
-    }
-
-    .faq__bg-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(255, 255, 255, 0.82);
     }
 
     .faq .inner {
@@ -1524,10 +1512,6 @@
 
   <!-- ─── FAQ ─── -->
   <section class="faq">
-    <div class="faq__bg" aria-hidden="true">
-      <img src="{{ url_for('static', filename='images/faq-bg.jpg') }}" alt="">
-      <div class="faq__bg-overlay"></div>
-    </div>
     <div class="inner">
       <div class="faq__head reveal">
         <span class="section-label">FAQ</span>
