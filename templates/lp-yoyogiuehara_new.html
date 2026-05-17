@@ -667,8 +667,34 @@
 
     /* ─── FAQ ─── */
     .faq {
-      background: var(--stone-50);
+      position: relative;
       padding: var(--space-xl) 0;
+      overflow: hidden;
+    }
+
+    .faq__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .faq__bg img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .faq__bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .faq .inner {
+      position: relative;
+      z-index: 1;
     }
 
     .faq__head {
@@ -676,41 +702,166 @@
       margin-bottom: 56px;
     }
 
-    .faq__list {
-      display: grid;
-      gap: 16px;
-      max-width: 760px;
-      margin-inline: auto;
+    /* DEV: FAQ見比べ用（確認後どちらか削除） */
+    .faq-compare {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
 
-    .faq-item {
-      background: var(--warm-white);
-      border-radius: var(--radius-md);
-      padding: 28px 32px;
-      border: 1px solid var(--stone-100);
-      box-shadow: var(--shadow-sm);
-      transition: var(--transition);
-    }
-
-    .faq-item:hover {
-      border-color: var(--sage-light);
-      box-shadow: var(--shadow-md);
-    }
-
-    .faq-item__q {
-      font-size: 14.5px;
-      font-weight: 500;
-      color: var(--navy);
-      margin-bottom: 12px;
+    .faq-compare-label {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 10px 16px;
       font-family: var(--font-body);
-      line-height: 1.6;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-align: center;
+      color: var(--stone-600);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px dashed var(--stone-200);
+      border-radius: var(--radius-sm);
     }
 
-    .faq-item__a {
-      font-size: 13.5px;
+    .faq-compare-label--spaced {
+      margin-top: 56px;
+    }
+
+    .faq-border,
+    .faq-accordion {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .faq-compare .faq-border {
+      margin-top: 20px;
+    }
+
+    .faq-compare .faq-accordion {
+      margin-top: 20px;
+    }
+
+    .faq-q-label {
+      flex-shrink: 0;
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--sage);
+      line-height: 1.4;
+      transition: color 0.25s ease;
+    }
+
+    .faq-q-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.6;
+      font-family: var(--font-body);
+    }
+
+    .faq-a-text {
+      font-size: 14px;
       color: var(--stone-600);
-      line-height: 1.85;
       font-weight: 300;
+      line-height: 1.85;
+      padding-left: 34px;
+      margin: 0;
+    }
+
+    /* 案C: ボーダーライン型 */
+    .faq-border-item {
+      padding: 28px 0;
+      border-top: 1px solid var(--stone-200);
+      transition: transform 0.25s ease;
+    }
+
+    .faq-border-item:last-child {
+      border-bottom: 1px solid var(--stone-200);
+    }
+
+    .faq-border-item:hover {
+      transform: translateX(4px);
+    }
+
+    .faq-border-item:hover .faq-q-label {
+      color: var(--sage-light);
+    }
+
+    .faq-border-q {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .faq-border-item .faq-a-text {
+      margin-top: 0;
+    }
+
+    /* 案A: アコーディオン型 */
+    .faq-accordion-item {
+      border-top: 1px solid var(--stone-200);
+    }
+
+    .faq-accordion-item:last-child {
+      border-bottom: 1px solid var(--stone-200);
+    }
+
+    .faq-accordion-trigger {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      padding: 28px 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .faq-accordion-q {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .faq-accordion-icon {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-top: 2px;
+      font-size: 20px;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--stone-400);
+      transition: transform 0.35s ease, color 0.25s ease;
+    }
+
+    .faq-accordion-item.is-open .faq-accordion-icon {
+      transform: rotate(45deg);
+      color: var(--stone-600);
+    }
+
+    .faq-accordion-panel {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+    }
+
+    .faq-accordion-item.is-open .faq-accordion-panel {
+      opacity: 1;
+    }
+
+    .faq-accordion-panel-inner {
+      padding-bottom: 28px;
     }
 
     /* ─── Trial ─── */
@@ -1149,8 +1300,23 @@
         font-size: 13px;
       }
 
-      .faq-item {
-        padding: 20px 22px;
+      .faq-border-item,
+      .faq-accordion-trigger {
+        padding-top: 22px;
+        padding-bottom: 22px;
+      }
+
+      .faq-accordion-panel-inner {
+        padding-bottom: 22px;
+      }
+
+      .faq-a-text {
+        padding-left: 28px;
+        font-size: 13px;
+      }
+
+      .faq-q-text {
+        font-size: 14px;
       }
 
       .trial__card {
@@ -1359,6 +1525,10 @@
 
   <!-- ─── FAQ ─── -->
   <section class="faq">
+    <div class="faq__bg" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/faq-bg.jpg') }}" alt="">
+      <div class="faq__bg-overlay"></div>
+    </div>
     <div class="inner">
       <div class="faq__head reveal">
         <span class="section-label">FAQ</span>
@@ -1366,28 +1536,122 @@
         <div class="divider divider--center"></div>
       </div>
 
-      <div class="faq__list">
-        <div class="faq-item reveal">
-          <h3 class="faq-item__q">Q. 鍼は痛いですか？</h3>
-          <p class="faq-item__a">刺激はとてもやさしく、痛みを感じにくい施術を行っています。<br>初めての方には、必ず状態を確認しながら進めますのでご安心ください。</p>
+      <!-- DEV: FAQ見比べ用（確認後どちらか削除） -->
+      <div class="faq-compare">
+        <p class="faq-compare-label">案C：ボーダーライン型</p>
+        <div class="faq-border reveal">
+        <div class="faq-border-item">
+          <div class="faq-border-q">
+            <span class="faq-q-label">Q.</span>
+            <span class="faq-q-text">鍼は痛いですか？</span>
+          </div>
+          <p class="faq-a-text">刺激はとてもやさしく、痛みを感じにくい施術を行っています。<br>初めての方には、必ず状態を確認しながら進めますのでご安心ください。</p>
         </div>
-        <div class="faq-item reveal">
-          <h3 class="faq-item__q">Q. 鍼灸が初めてでも受けられますか？</h3>
-          <p class="faq-item__a">はい、初めての方も多くいらっしゃいます。<br>不安なことがあれば、施術前にしっかりご説明します。</p>
+        <div class="faq-border-item">
+          <div class="faq-border-q">
+            <span class="faq-q-label">Q.</span>
+            <span class="faq-q-text">鍼灸が初めてでも受けられますか？</span>
+          </div>
+          <p class="faq-a-text">はい、初めての方も多くいらっしゃいます。<br>不安なことがあれば、施術前にしっかりご説明します。</p>
         </div>
-        <div class="faq-item reveal">
-          <h3 class="faq-item__q">Q. 出張施術はどんな場所で受けられますか？</h3>
-          <p class="faq-item__a">ご自宅やレンタルスペース等ご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
+        <div class="faq-border-item">
+          <div class="faq-border-q">
+            <span class="faq-q-label">Q.</span>
+            <span class="faq-q-text">出張施術はどんな場所で受けられますか？</span>
+          </div>
+          <p class="faq-a-text">ご自宅やレンタルスペース等ご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
         </div>
-        <div class="faq-item reveal">
-          <h3 class="faq-item__q">Q. 無理に通わされたりしませんか？</h3>
-          <p class="faq-item__a">無理な継続提案や回数券の販売などは行っておりません。<br>今のお身体に必要なケアをご提案するだけです。</p>
+        <div class="faq-border-item">
+          <div class="faq-border-q">
+            <span class="faq-q-label">Q.</span>
+            <span class="faq-q-text">無理に通わされたりしませんか？</span>
+          </div>
+          <p class="faq-a-text">無理な継続提案や回数券の販売などは行っておりません。<br>今のお身体に必要なケアをご提案するだけです。</p>
         </div>
-        <div class="faq-item reveal">
-          <h3 class="faq-item__q">Q. 相談だけでも大丈夫ですか？</h3>
-          <p class="faq-item__a">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
+        <div class="faq-border-item">
+          <div class="faq-border-q">
+            <span class="faq-q-label">Q.</span>
+            <span class="faq-q-text">相談だけでも大丈夫ですか？</span>
+          </div>
+          <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
         </div>
       </div>
+
+        <p class="faq-compare-label faq-compare-label--spaced">案A：アコーディオン型</p>
+        <div class="faq-accordion">
+        <div class="faq-accordion-item">
+          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
+            <span class="faq-accordion-q">
+              <span class="faq-q-label">Q.</span>
+              <span class="faq-q-text">鍼は痛いですか？</span>
+            </span>
+            <span class="faq-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-accordion-panel">
+            <div class="faq-accordion-panel-inner">
+              <p class="faq-a-text">刺激はとてもやさしく、痛みを感じにくい施術を行っています。<br>初めての方には、必ず状態を確認しながら進めますのでご安心ください。</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-accordion-item">
+          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
+            <span class="faq-accordion-q">
+              <span class="faq-q-label">Q.</span>
+              <span class="faq-q-text">鍼灸が初めてでも受けられますか？</span>
+            </span>
+            <span class="faq-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-accordion-panel">
+            <div class="faq-accordion-panel-inner">
+              <p class="faq-a-text">はい、初めての方も多くいらっしゃいます。<br>不安なことがあれば、施術前にしっかりご説明します。</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-accordion-item">
+          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
+            <span class="faq-accordion-q">
+              <span class="faq-q-label">Q.</span>
+              <span class="faq-q-text">出張施術はどんな場所で受けられますか？</span>
+            </span>
+            <span class="faq-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-accordion-panel">
+            <div class="faq-accordion-panel-inner">
+              <p class="faq-a-text">ご自宅やレンタルスペース等ご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-accordion-item">
+          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
+            <span class="faq-accordion-q">
+              <span class="faq-q-label">Q.</span>
+              <span class="faq-q-text">無理に通わされたりしませんか？</span>
+            </span>
+            <span class="faq-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-accordion-panel">
+            <div class="faq-accordion-panel-inner">
+              <p class="faq-a-text">無理な継続提案や回数券の販売などは行っておりません。<br>今のお身体に必要なケアをご提案するだけです。</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-accordion-item">
+          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
+            <span class="faq-accordion-q">
+              <span class="faq-q-label">Q.</span>
+              <span class="faq-q-text">相談だけでも大丈夫ですか？</span>
+            </span>
+            <span class="faq-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-accordion-panel">
+            <div class="faq-accordion-panel-inner">
+              <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <!-- /DEV -->
     </div>
   </section>
 
@@ -1481,6 +1745,26 @@
       }, { threshold: 0.15 });
       els.forEach(function (el) { obs.observe(el); });
     })();
+
+    /* FAQ: アコーディオン開閉 */
+    (function () {
+      var items = document.querySelectorAll('.faq-accordion-item');
+      items.forEach(function (item) {
+        var trigger = item.querySelector('.faq-accordion-trigger');
+        var panel = item.querySelector('.faq-accordion-panel');
+        if (!trigger || !panel) return;
+        trigger.addEventListener('click', function () {
+          var isOpen = item.classList.toggle('is-open');
+          trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          if (isOpen) {
+            panel.style.maxHeight = panel.scrollHeight + 'px';
+          } else {
+            panel.style.maxHeight = '0';
+          }
+        });
+      });
+    })();
+
   </script>
 
 </body>
