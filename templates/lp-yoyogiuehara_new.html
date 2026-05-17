@@ -667,14 +667,34 @@
 
     /* ─── FAQ ─── */
     .faq {
+      --faq-deco-img: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
       position: relative;
       overflow: hidden;
       padding: var(--space-xl) 0;
-      background-color: var(--stone-100);
-      background-image: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
-      background-size: contain;
-      background-position: center;
+      background-color: var(--cream);
+    }
+
+    /* 左右の葉（faq-bg.jpg の左端・右端をセクション高さいっぱいに表示） */
+    .faq__deco {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: clamp(100px, 24vw, 280px);
+      background-image: var(--faq-deco-img);
       background-repeat: no-repeat;
+      background-size: auto 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .faq__deco--left {
+      left: 0;
+      background-position: left center;
+    }
+
+    .faq__deco--right {
+      right: 0;
+      background-position: right center;
     }
 
     /* 確認用：背景が見えるよう白膜を薄め（確定後は 0.82 に戻す） */
@@ -682,14 +702,14 @@
       content: '';
       position: absolute;
       inset: 0;
-      z-index: 0;
+      z-index: 1;
       background: rgba(255, 255, 255, 0.42);
       pointer-events: none;
     }
 
     .faq .inner {
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
 
     .faq__head {
@@ -1287,6 +1307,11 @@
         font-size: 13px;
       }
 
+      .faq__deco {
+        width: clamp(64px, 20vw, 120px);
+        opacity: 0.9;
+      }
+
       .faq-border-item,
       .faq-accordion-trigger {
         padding-top: 22px;
@@ -1512,6 +1537,8 @@
 
   <!-- ─── FAQ ─── -->
   <section class="faq">
+    <div class="faq__deco faq__deco--left" aria-hidden="true"></div>
+    <div class="faq__deco faq__deco--right" aria-hidden="true"></div>
     <div class="inner">
       <div class="faq__head reveal">
         <span class="section-label">FAQ</span>
