@@ -680,19 +680,27 @@
     .faq-panel {
       position: relative;
       overflow: hidden;
+      isolation: isolate;
+      width: 100%;
       max-width: 960px;
       margin: 20px auto 0;
       padding: 48px 5%;
+      background-color: var(--stone-100);
+      background-image: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
-    .faq-panel__bg {
+    .faq-panel__visual {
       position: absolute;
       inset: 0;
       z-index: 0;
       pointer-events: none;
+      overflow: hidden;
     }
 
-    .faq-panel__bg img {
+    .faq-panel__visual img {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -710,9 +718,10 @@
       inset: 0;
       z-index: 1;
       background: rgba(255, 255, 255, 0.82);
+      pointer-events: none;
     }
 
-    .faq-panel__body {
+    .faq-panel__content {
       position: relative;
       z-index: 2;
     }
@@ -1548,12 +1557,12 @@
       <div class="faq-compare">
         <p class="faq-compare-label">案C：ボーダーライン型</p>
         <div class="faq-panel">
-          <div class="faq-panel__bg" aria-hidden="true">
+          <div class="faq-panel__visual" aria-hidden="true">
             <img src="{{ url_for('static', filename='images/faq-bg.jpg') }}" alt="">
-            <div class="faq-panel__overlay"></div>
           </div>
-          <div class="faq-panel__body">
-        <div class="faq-border reveal">
+          <div class="faq-panel__overlay" aria-hidden="true"></div>
+          <div class="faq-panel__content">
+            <div class="faq-border">
         <div class="faq-border-item">
           <div class="faq-border-q">
             <span class="faq-q-label">Q.</span>
@@ -1589,17 +1598,17 @@
           </div>
           <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
         </div>
-      </div>
+            </div>
           </div>
         </div>
 
         <p class="faq-compare-label faq-compare-label--spaced">案A：アコーディオン型</p>
         <div class="faq-panel">
-          <div class="faq-panel__bg" aria-hidden="true">
+          <div class="faq-panel__visual" aria-hidden="true">
             <img src="{{ url_for('static', filename='images/faq-bg.jpg') }}" alt="">
-            <div class="faq-panel__overlay"></div>
           </div>
-          <div class="faq-panel__body">
+          <div class="faq-panel__overlay" aria-hidden="true"></div>
+          <div class="faq-panel__content">
         <div class="faq-accordion">
         <div class="faq-accordion-item">
           <button type="button" class="faq-accordion-trigger" aria-expanded="false">
@@ -1671,7 +1680,7 @@
             </div>
           </div>
         </div>
-      </div>
+            </div>
           </div>
         </div>
       </div>
