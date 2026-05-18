@@ -668,53 +668,44 @@
     /* ─── FAQ ─── */
     .faq {
       --faq-deco-img: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
-      position: relative;
-      overflow: hidden;
       padding: var(--space-xl) 0;
-      background-color: var(--cream);
+      background-color: var(--stone-100);
     }
 
-    /* 左右の葉（faq-bg.jpg の左端・右端をセクション高さいっぱいに表示） */
+    /* 左｜中央（文章）｜右 — 葉はサイドのみ、中央は画像の白い部分相当 */
+    .faq__layout {
+      display: grid;
+      grid-template-columns: clamp(72px, 15vw, 200px) minmax(0, 1fr) clamp(72px, 15vw, 200px);
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: stretch;
+    }
+
     .faq__deco {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: clamp(100px, 24vw, 280px);
+      min-height: 100%;
       background-image: var(--faq-deco-img);
       background-repeat: no-repeat;
       background-size: auto 100%;
       pointer-events: none;
-      z-index: 0;
     }
 
     .faq__deco--left {
-      left: 0;
       background-position: left center;
     }
 
     .faq__deco--right {
-      right: 0;
       background-position: right center;
     }
 
-    /* 確認用：背景が見えるよう白膜を薄め（確定後は 0.82 に戻す） */
-    .faq::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.42);
-      pointer-events: none;
-    }
-
-    .faq .inner {
-      position: relative;
-      z-index: 2;
+    .faq__main {
+      background: rgba(255, 255, 255, 0.94);
+      padding: 0 clamp(20px, 4vw, 40px);
     }
 
     .faq__head {
       text-align: center;
-      margin-bottom: 56px;
+      margin-bottom: 48px;
+      padding-top: 8px;
     }
 
     /* DEV: FAQ見比べ用（確認後どちらか削除） */
@@ -724,9 +715,23 @@
       gap: 0;
     }
 
+    .faq-compare-block {
+      padding: 28px 0 36px;
+    }
+
+    .faq-compare-block + .faq-compare-block {
+      margin-top: 8px;
+      padding-top: 40px;
+      border-top: 1px solid var(--stone-200);
+      background: rgba(250, 248, 245, 0.65);
+      margin-left: calc(-1 * clamp(20px, 4vw, 40px));
+      margin-right: calc(-1 * clamp(20px, 4vw, 40px));
+      padding-left: clamp(20px, 4vw, 40px);
+      padding-right: clamp(20px, 4vw, 40px);
+    }
+
     .faq-compare-label {
-      max-width: 720px;
-      margin: 0 auto 20px;
+      margin: 0 0 24px;
       padding: 10px 16px;
       font-family: var(--font-body);
       font-size: 11px;
@@ -734,18 +739,14 @@
       letter-spacing: 0.12em;
       text-align: center;
       color: var(--stone-600);
-      background: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.85);
       border: 1px dashed var(--stone-200);
       border-radius: var(--radius-sm);
     }
 
-    .faq-compare-label--spaced {
-      margin-top: 56px;
-    }
-
     .faq-border,
     .faq-accordion {
-      max-width: 720px;
+      max-width: 100%;
       margin: 0 auto;
     }
 
@@ -1307,9 +1308,24 @@
         font-size: 13px;
       }
 
-      .faq__deco {
-        width: clamp(64px, 20vw, 120px);
-        opacity: 0.9;
+      .faq {
+        padding: var(--space-lg) 0;
+      }
+
+      .faq__layout {
+        grid-template-columns: clamp(48px, 12vw, 80px) minmax(0, 1fr) clamp(48px, 12vw, 80px);
+        max-width: 100%;
+      }
+
+      .faq__main {
+        padding: 0 16px;
+      }
+
+      .faq-compare-block + .faq-compare-block {
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
       }
 
       .faq-border-item,
@@ -1537,9 +1553,9 @@
 
   <!-- ─── FAQ ─── -->
   <section class="faq">
-    <div class="faq__deco faq__deco--left" aria-hidden="true"></div>
-    <div class="faq__deco faq__deco--right" aria-hidden="true"></div>
-    <div class="inner">
+    <div class="faq__layout">
+      <div class="faq__deco faq__deco--left" aria-hidden="true"></div>
+      <div class="faq__main">
       <div class="faq__head reveal">
         <span class="section-label">FAQ</span>
         <h2 class="section-title">よくある質問</h2>
@@ -1548,8 +1564,9 @@
 
       <!-- DEV: FAQ見比べ用（確認後どちらか削除） -->
       <div class="faq-compare">
-        <p class="faq-compare-label">案C：ボーダーライン型</p>
-            <div class="faq-border">
+        <div class="faq-compare-block">
+          <p class="faq-compare-label">案C：ボーダーライン型</p>
+          <div class="faq-border">
         <div class="faq-border-item">
           <div class="faq-border-q">
             <span class="faq-q-label">Q.</span>
@@ -1585,10 +1602,12 @@
           </div>
           <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
         </div>
-            </div>
+          </div>
+        </div>
 
-        <p class="faq-compare-label faq-compare-label--spaced">案A：アコーディオン型</p>
-        <div class="faq-accordion">
+        <div class="faq-compare-block">
+          <p class="faq-compare-label">案A：アコーディオン型</p>
+          <div class="faq-accordion">
         <div class="faq-accordion-item">
           <button type="button" class="faq-accordion-trigger" aria-expanded="false">
             <span class="faq-accordion-q">
@@ -1659,9 +1678,12 @@
             </div>
           </div>
         </div>
+          </div>
         </div>
       </div>
       <!-- /DEV -->
+      </div>
+      <div class="faq__deco faq__deco--right" aria-hidden="true"></div>
     </div>
   </section>
 
