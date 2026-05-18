@@ -665,47 +665,48 @@
       letter-spacing: 0.04em;
     }
 
-    /* ─── FAQ ─── */
+    /* ─── FAQ（PHILOSOPHYと同様：セクション全体を背景で覆う） ─── */
     .faq {
-      --faq-deco-img: url("{{ url_for('static', filename='images/faq-bg.jpg') }}");
       padding: var(--space-xl) 0;
-      background-color: var(--stone-100);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* 左｜中央（文章）｜右 — 葉はサイドのみ、中央は画像の白い部分相当 */
-    .faq__layout {
-      display: grid;
-      grid-template-columns: clamp(72px, 15vw, 200px) minmax(0, 1fr) clamp(72px, 15vw, 200px);
-      max-width: 1100px;
-      margin: 0 auto;
-      align-items: stretch;
-    }
-
-    .faq__deco {
-      min-height: 100%;
-      background-image: var(--faq-deco-img);
-      background-repeat: no-repeat;
-      background-size: auto 100%;
+    .faq__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
       pointer-events: none;
+      overflow: hidden;
     }
 
-    .faq__deco--left {
-      background-position: left center;
+    .faq__bg img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      height: 110%;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transform: translate(-50%, -50%);
     }
 
-    .faq__deco--right {
-      background-position: right center;
+    .faq__bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.82);
     }
 
-    .faq__main {
-      background: rgba(255, 255, 255, 0.94);
-      padding: 0 clamp(20px, 4vw, 40px);
+    .faq .inner {
+      position: relative;
+      z-index: 1;
     }
 
     .faq__head {
       text-align: center;
-      margin-bottom: 48px;
-      padding-top: 8px;
+      margin-bottom: 56px;
     }
 
     /* DEV: FAQ見比べ用（確認後どちらか削除） */
@@ -716,18 +717,15 @@
     }
 
     .faq-compare-block {
-      padding: 28px 0 36px;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8px 0 40px;
     }
 
     .faq-compare-block + .faq-compare-block {
-      margin-top: 8px;
-      padding-top: 40px;
+      padding-top: 48px;
+      margin-top: 16px;
       border-top: 1px solid var(--stone-200);
-      background: rgba(250, 248, 245, 0.65);
-      margin-left: calc(-1 * clamp(20px, 4vw, 40px));
-      margin-right: calc(-1 * clamp(20px, 4vw, 40px));
-      padding-left: clamp(20px, 4vw, 40px);
-      padding-right: clamp(20px, 4vw, 40px);
     }
 
     .faq-compare-label {
@@ -739,14 +737,14 @@
       letter-spacing: 0.12em;
       text-align: center;
       color: var(--stone-600);
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.55);
       border: 1px dashed var(--stone-200);
       border-radius: var(--radius-sm);
     }
 
     .faq-border,
     .faq-accordion {
-      max-width: 100%;
+      max-width: 720px;
       margin: 0 auto;
     }
 
@@ -1308,26 +1306,6 @@
         font-size: 13px;
       }
 
-      .faq {
-        padding: var(--space-lg) 0;
-      }
-
-      .faq__layout {
-        grid-template-columns: clamp(48px, 12vw, 80px) minmax(0, 1fr) clamp(48px, 12vw, 80px);
-        max-width: 100%;
-      }
-
-      .faq__main {
-        padding: 0 16px;
-      }
-
-      .faq-compare-block + .faq-compare-block {
-        margin-left: -16px;
-        margin-right: -16px;
-        padding-left: 16px;
-        padding-right: 16px;
-      }
-
       .faq-border-item,
       .faq-accordion-trigger {
         padding-top: 22px;
@@ -1553,9 +1531,11 @@
 
   <!-- ─── FAQ ─── -->
   <section class="faq">
-    <div class="faq__layout">
-      <div class="faq__deco faq__deco--left" aria-hidden="true"></div>
-      <div class="faq__main">
+    <div class="faq__bg" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/faq-bg.jpg') }}" alt="">
+      <div class="faq__bg-overlay"></div>
+    </div>
+    <div class="inner">
       <div class="faq__head reveal">
         <span class="section-label">FAQ</span>
         <h2 class="section-title">よくある質問</h2>
@@ -1682,8 +1662,6 @@
         </div>
       </div>
       <!-- /DEV -->
-      </div>
-      <div class="faq__deco faq__deco--right" aria-hidden="true"></div>
     </div>
   </section>
 
