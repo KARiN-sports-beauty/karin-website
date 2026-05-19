@@ -681,16 +681,16 @@
       overflow: hidden;
     }
 
-    /* 横長画像（左右に葉）→ containで全体表示。coverだと縦長セクションで中央だけ拡大し葉が消える */
     .faq__bg img {
       position: absolute;
+      top: 0;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
       height: 100%;
+      width: auto;
+      max-width: none;
+      transform: translateX(-50%);
       object-fit: contain;
-      object-position: center;
+      object-position: center top;
     }
 
     .faq__bg-overlay {
@@ -709,41 +709,7 @@
       margin-bottom: 56px;
     }
 
-    /* DEV: FAQ見比べ用（確認後どちらか削除） */
-    .faq-compare {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .faq-compare-block {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 8px 0 40px;
-    }
-
-    .faq-compare-block + .faq-compare-block {
-      padding-top: 48px;
-      margin-top: 16px;
-      border-top: 1px solid var(--stone-200);
-    }
-
-    .faq-compare-label {
-      margin: 0 0 24px;
-      padding: 10px 16px;
-      font-family: var(--font-body);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-align: center;
-      color: var(--stone-600);
-      background: rgba(255, 255, 255, 0.55);
-      border: 1px dashed var(--stone-200);
-      border-radius: var(--radius-sm);
-    }
-
-    .faq-border,
-    .faq-accordion {
+    .faq-border {
       max-width: 720px;
       margin: 0 auto;
     }
@@ -802,72 +768,6 @@
 
     .faq-border-item .faq-a-text {
       margin-top: 0;
-    }
-
-    /* 案A: アコーディオン型 */
-    .faq-accordion-item {
-      border-top: 1px solid var(--stone-200);
-    }
-
-    .faq-accordion-item:last-child {
-      border-bottom: 1px solid var(--stone-200);
-    }
-
-    .faq-accordion-trigger {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      width: 100%;
-      padding: 28px 0;
-      border: none;
-      background: none;
-      cursor: pointer;
-      text-align: left;
-      font-family: inherit;
-    }
-
-    .faq-accordion-q {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .faq-accordion-icon {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      margin-top: 2px;
-      font-size: 20px;
-      font-weight: 300;
-      line-height: 1;
-      color: var(--stone-400);
-      transition: transform 0.35s ease, color 0.25s ease;
-    }
-
-    .faq-accordion-item.is-open .faq-accordion-icon {
-      transform: rotate(45deg);
-      color: var(--stone-600);
-    }
-
-    .faq-accordion-panel {
-      max-height: 0;
-      overflow: hidden;
-      opacity: 0;
-      transition: max-height 0.4s ease, opacity 0.4s ease;
-    }
-
-    .faq-accordion-item.is-open .faq-accordion-panel {
-      opacity: 1;
-    }
-
-    .faq-accordion-panel-inner {
-      padding-bottom: 28px;
     }
 
     /* ─── Trial ─── */
@@ -1306,13 +1206,8 @@
         font-size: 13px;
       }
 
-      .faq-border-item,
-      .faq-accordion-trigger {
+      .faq-border-item {
         padding-top: 22px;
-        padding-bottom: 22px;
-      }
-
-      .faq-accordion-panel-inner {
         padding-bottom: 22px;
       }
 
@@ -1542,11 +1437,7 @@
         <div class="divider divider--center"></div>
       </div>
 
-      <!-- DEV: FAQ見比べ用（確認後どちらか削除） -->
-      <div class="faq-compare">
-        <div class="faq-compare-block">
-          <p class="faq-compare-label">案C：ボーダーライン型</p>
-          <div class="faq-border">
+      <div class="faq-border reveal">
         <div class="faq-border-item">
           <div class="faq-border-q">
             <span class="faq-q-label">Q.</span>
@@ -1582,86 +1473,7 @@
           </div>
           <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
         </div>
-          </div>
-        </div>
-
-        <div class="faq-compare-block">
-          <p class="faq-compare-label">案A：アコーディオン型</p>
-          <div class="faq-accordion">
-        <div class="faq-accordion-item">
-          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
-            <span class="faq-accordion-q">
-              <span class="faq-q-label">Q.</span>
-              <span class="faq-q-text">鍼は痛いですか？</span>
-            </span>
-            <span class="faq-accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="faq-accordion-panel">
-            <div class="faq-accordion-panel-inner">
-              <p class="faq-a-text">刺激はとてもやさしく、痛みを感じにくい施術を行っています。<br>初めての方には、必ず状態を確認しながら進めますのでご安心ください。</p>
-            </div>
-          </div>
-        </div>
-        <div class="faq-accordion-item">
-          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
-            <span class="faq-accordion-q">
-              <span class="faq-q-label">Q.</span>
-              <span class="faq-q-text">鍼灸が初めてでも受けられますか？</span>
-            </span>
-            <span class="faq-accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="faq-accordion-panel">
-            <div class="faq-accordion-panel-inner">
-              <p class="faq-a-text">はい、初めての方も多くいらっしゃいます。<br>不安なことがあれば、施術前にしっかりご説明します。</p>
-            </div>
-          </div>
-        </div>
-        <div class="faq-accordion-item">
-          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
-            <span class="faq-accordion-q">
-              <span class="faq-q-label">Q.</span>
-              <span class="faq-q-text">出張施術はどんな場所で受けられますか？</span>
-            </span>
-            <span class="faq-accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="faq-accordion-panel">
-            <div class="faq-accordion-panel-inner">
-              <p class="faq-a-text">ご自宅やレンタルスペース等ご指定の場所での施術が可能です。<br>詳細はご相談時に確認させていただきます。</p>
-            </div>
-          </div>
-        </div>
-        <div class="faq-accordion-item">
-          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
-            <span class="faq-accordion-q">
-              <span class="faq-q-label">Q.</span>
-              <span class="faq-q-text">無理に通わされたりしませんか？</span>
-            </span>
-            <span class="faq-accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="faq-accordion-panel">
-            <div class="faq-accordion-panel-inner">
-              <p class="faq-a-text">無理な継続提案や回数券の販売などは行っておりません。<br>今のお身体に必要なケアをご提案するだけです。</p>
-            </div>
-          </div>
-        </div>
-        <div class="faq-accordion-item">
-          <button type="button" class="faq-accordion-trigger" aria-expanded="false">
-            <span class="faq-accordion-q">
-              <span class="faq-q-label">Q.</span>
-              <span class="faq-q-text">相談だけでも大丈夫ですか？</span>
-            </span>
-            <span class="faq-accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="faq-accordion-panel">
-            <div class="faq-accordion-panel-inner">
-              <p class="faq-a-text">もちろん大丈夫です。<br>「自分に合うか聞きたい」など、お気軽にご相談ください。</p>
-            </div>
-          </div>
-        </div>
-          </div>
-        </div>
       </div>
-      <!-- /DEV -->
     </div>
   </section>
 
@@ -1754,25 +1566,6 @@
         });
       }, { threshold: 0.15 });
       els.forEach(function (el) { obs.observe(el); });
-    })();
-
-    /* FAQ: アコーディオン開閉 */
-    (function () {
-      var items = document.querySelectorAll('.faq-accordion-item');
-      items.forEach(function (item) {
-        var trigger = item.querySelector('.faq-accordion-trigger');
-        var panel = item.querySelector('.faq-accordion-panel');
-        if (!trigger || !panel) return;
-        trigger.addEventListener('click', function () {
-          var isOpen = item.classList.toggle('is-open');
-          trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-          if (isOpen) {
-            panel.style.maxHeight = panel.scrollHeight + 'px';
-          } else {
-            panel.style.maxHeight = '0';
-          }
-        });
-      });
     })();
 
   </script>
