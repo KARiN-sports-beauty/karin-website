@@ -670,6 +670,7 @@
       padding: var(--space-xl) 0;
       position: relative;
       overflow: hidden;
+      background-color: var(--cream);
     }
 
     .faq__bg {
@@ -680,17 +681,16 @@
       overflow: hidden;
     }
 
+    /* 横長画像（左右に葉）→ containで全体表示。coverだと縦長セクションで中央だけ拡大し葉が消える */
     .faq__bg img {
       position: absolute;
-      top: 50%;
       left: 50%;
-      width: 110%;
-      height: 110%;
-      min-width: 100%;
-      min-height: 100%;
-      object-fit: cover;
-      object-position: center;
+      top: 50%;
       transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
     }
 
     .faq__bg-overlay {
