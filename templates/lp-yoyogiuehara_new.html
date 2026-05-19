@@ -683,20 +683,22 @@
 
     .faq__bg img {
       position: absolute;
-      top: 0;
+      top: 50%;
       left: 50%;
+      width: 100%;
       height: 100%;
-      width: auto;
-      max-width: none;
-      transform: translateX(-50%);
-      object-fit: contain;
-      object-position: center top;
+      min-width: 100%;
+      min-height: 100%;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      object-position: center center;
     }
 
     .faq__bg-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(255, 255, 255, 0.82);
+      /* 文字の可読性を保ちつつ、左右の葉が透けて見える程度に */
+      background: rgba(255, 255, 255, 0.58);
     }
 
     .faq .inner {
