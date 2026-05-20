@@ -679,7 +679,7 @@
       z-index: 0;
       pointer-events: none;
       overflow: hidden;
-      background-image: url("{{ url_for('static', filename='images/faq-bg-sp.png') }}");
+      background-image: url("{{ url_for('static', filename='images/faq-bg-sp.jpg') }}");
       background-repeat: no-repeat;
       background-position: center center;
       background-size: cover;
@@ -687,21 +687,20 @@
 
     @media (min-width: 641px) {
       .faq__bg {
-        background-image: url("{{ url_for('static', filename='images/faq-bg-tablet.png') }}");
+        background-image: url("{{ url_for('static', filename='images/faq-bg-tablet.jpg') }}");
       }
     }
 
     @media (min-width: 901px) {
       .faq__bg {
-        background-image: url("{{ url_for('static', filename='images/faq-bg-pc.png') }}");
+        background-image: url("{{ url_for('static', filename='images/faq-bg-pc.jpg') }}");
       }
     }
 
     .faq__bg-overlay {
       position: absolute;
       inset: 0;
-      /* 文字の可読性を保ちつつ、左右の葉が透けて見える程度に */
-      background: rgba(255, 255, 255, 0.58);
+      background: rgba(255, 255, 255, 0.18);
     }
 
     .faq .inner {
@@ -1046,7 +1045,7 @@
       }
 
       .faq__bg-overlay {
-        background: rgba(255, 255, 255, 0.52);
+        background: rgba(255, 255, 255, 0.16);
       }
     }
 
@@ -1216,7 +1215,7 @@
       }
 
       .faq__bg-overlay {
-        background: rgba(255, 255, 255, 0.48);
+        background: rgba(255, 255, 255, 0.14);
       }
 
       .faq-border-item {
