@@ -136,7 +136,7 @@
       <a href="#initial-section">初診案内</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表・コース</a>
-      <a href="{{ url_for('index') }}#blog">ブログ</a>
+      <a href="{{ url_for('index') }}#blog">KARiN.NOTES</a>
       <!-- <a href="{{ url_for('login') }}">会員ログイン</a> -->
       <a href="#access">アクセス・営業時間</a>
       <a href="{{ url_for('contact') }}">ご予約・お問い合わせ</a>
@@ -314,10 +314,10 @@
   </section>
 
   <!-- ==========================
-       ブログ
+       KARiN.NOTES
   =========================== -->
   <section id="blog" class="blog-section" data-aos="fade-up">
-    <h2 class="section-title">KARiN. ブログ</h2>
+    <h2 class="section-title">KARiN.NOTES</h2>
     <p class="section-subtitle">日々のケア・体づくりのヒントをお届けします</p>
     <div class="blog-container">
       {% for blog in latest_blogs %}
@@ -449,7 +449,7 @@
         <li><a href="{{ url_for('index') }}">ホーム</a></li>
         <li><a href="#treatment-overview">施術内容</a></li>
         <li><a href="{{ url_for('price') }}">料金表・コース</a></li>
-        <li><a href="#blog">ブログ</a></li>
+        <li><a href="#blog">KARiN.NOTES</a></li>
         <li><a href="#access">アクセス</a></li>
         <li><a href="#contact-section">お問い合わせ</a></li>
       </ul>

@@ -739,7 +739,7 @@ def upload_blog_image(file):
 @app.route("/admin/blogs/body-image", methods=["POST"])
 @staff_section_required("blogs")
 def admin_blog_body_image_upload():
-    """ブログ本文用の画像アップロード"""
+    """KARiN.NOTES 記事本文用の画像アップロード"""
     try:
         if "image" not in request.files:
             return jsonify({"error": "画像が選択されていません"}), 400
@@ -752,7 +752,7 @@ def admin_blog_body_image_upload():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        print("❌ ブログ本文画像アップロードエラー:", e)
+        print("❌ 記事本文画像アップロードエラー:", e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -2019,7 +2019,7 @@ def mypage():
     return render_template("mypage.html")
 
 # ===================================================
-# ✅ ブログ・ニュース
+# ✅ KARiN.NOTES・ニュース
 # ===================================================
 @app.route("/test_supabase")
 def test_supabase():
@@ -2071,13 +2071,13 @@ def blog():
 
 
 # ===========================
-# ブログ詳細（slug 版）
+# 記事詳細（KARiN.NOTES / slug 版）
 # ===========================
 @app.route("/blog/<slug>")
 def show_blog(slug):
     try:
-        # 対象ブログ取得（slug で検索）
-        # 公開されているブログのみ取得（draft=False）
+        # 対象記事取得（slug で検索）
+        # 公開されている記事のみ取得（draft=False）
         res = supabase.table("blogs").select("*").eq("slug", slug).eq("draft", False).execute()
         data = res.data
 
@@ -2120,7 +2120,7 @@ def show_blog(slug):
         author_info = None
         author_staff_id = blog.get("author_staff_id")
         
-        print(f"🔍 ブログ著者情報デバッグ - author_staff_id: {author_staff_id}")
+        print(f"🔍 記事著者情報デバッグ - author_staff_id: {author_staff_id}")
         
         if author_staff_id:
             try:
@@ -2177,14 +2177,14 @@ def show_blog(slug):
                 print(traceback.format_exc())
                 author_info = None
         else:
-            print("⚠️ ブログにauthor_staff_idが設定されていません")
-            # author_staff_idが設定されていない場合、最新のブログ作成者を取得（フォールバック）
+            print("⚠️ 記事に author_staff_id が設定されていません")
+            # author_staff_idが設定されていない場合、最新の記事作成者を取得（フォールバック）
             try:
-                # 同じslugまたは最新のブログからauthor_staff_idを取得
+                # 同じslugまたは最新の記事から author_staff_idを取得
                 res_latest = supabase_admin.table("blogs").select("author_staff_id").eq("slug", slug).order("created_at", desc=True).limit(1).execute()
                 if res_latest.data and res_latest.data[0].get("author_staff_id"):
                     author_staff_id = res_latest.data[0]["author_staff_id"]
-                    print(f"🔍 フォールバック: 最新のブログからauthor_staff_idを取得 - {author_staff_id}")
+                    print(f"🔍 フォールバック: 最新の記事から author_staff_idを取得 - {author_staff_id}")
                     
                     # 再度著者情報を取得
                     users = supabase_admin.auth.admin.list_users()
@@ -2234,19 +2234,19 @@ def show_blog(slug):
         )
     except Exception as e:
         import traceback
-        print(f"❌ ブログ表示エラー: {e}")
+        print(f"❌ 記事表示エラー: {e}")
         print(f"❌ トレースバック: {traceback.format_exc()}")
         return render_template("404.html"), 500
 
 
 # ===================================================
-# ✅ ブログ管理（/admin/blogs）
+# ✅ KARiN.NOTES 管理（/admin/blogs）
 # ===================================================
 def _textarea_body_double_newlines_to_br(body_raw):
     """
-    ブログ・ニュース共通。テキストエリアの本文を DB 用に変換する。
+    KARiN.NOTES・ニュース共通。テキストエリアの本文を DB 用に変換する。
     連続 n 個の改行（\\n）に対し <br> を (n - 1) 個挿入。単独の \\n はそのまま残す。
-    （ニュースはプレーン中心、ブログは HTML タグ間の 1 行改行で余分な br を付けない）
+    （ニュースはプレーン中心、記事（KARiN.NOTES）は HTML タグ間の 1 行改行で余分な br を付けない）
     """
     if body_raw is None:
         return ""
@@ -2260,20 +2260,20 @@ def _textarea_body_double_newlines_to_br(body_raw):
 @app.route("/admin/blogs")
 @staff_section_required("blogs")
 def admin_blogs():
-    """ブログ一覧（新しい順）"""
+    """KARiN.NOTES 一覧（新しい順）"""
     try:
         res = supabase_admin.table("blogs").select("*").order("created_at", desc=True).execute()
         blogs = res.data or []
         return render_template("admin_blogs.html", blogs=blogs)
     except Exception as e:
-        print("❌ ブログ一覧取得エラー:", e)
-        return "ブログ一覧の取得に失敗しました", 500
+        print("❌ KARiN.NOTES 一覧取得エラー:", e)
+        return "KARiN.NOTES の一覧の取得に失敗しました", 500
 
 
 @app.route("/admin/blogs/new", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_new():
-    """新規ブログ作成"""
+    """新規記事作成（KARiN.NOTES）"""
     if request.method == "GET":
         staff_list = get_staff_choices()
         return render_template("admin_blog_new.html", staff_list=staff_list)
@@ -2302,7 +2302,7 @@ def admin_blog_new():
             staff_list = get_staff_choices()
             return render_template("admin_blog_new.html", staff_list=staff_list)
         except Exception as e:
-            print("❌ ブログ画像アップロードエラー:", e)
+            print("❌ 記事画像アップロードエラー:", e)
             flash(f"画像アップロードに失敗しました: {e}", "error")
             staff_list = get_staff_choices()
             return render_template("admin_blog_new.html", staff_list=staff_list)
@@ -2341,23 +2341,23 @@ def admin_blog_new():
     
     try:
         supabase_admin.table("blogs").insert(insert_data).execute()
-        flash("ブログを作成しました", "success")
+            flash("記事を作成しました", "success")
         return redirect("/admin/blogs")
     except Exception as e:
-        print("❌ ブログ作成エラー:", e)
-        flash(f"ブログの作成に失敗しました: {e}", "error")
+        print("❌ 記事作成エラー:", e)
+            flash(f"記事の作成に失敗しました: {e}", "error")
         return render_template("admin_blog_new.html")
 
 
 @app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_edit(blog_id):
-    """ブログ編集"""
+    """記事編集（KARiN.NOTES）"""
     if request.method == "GET":
         try:
             res = supabase_admin.table("blogs").select("*").eq("id", blog_id).execute()
             if not res.data:
-                flash("ブログが見つかりません", "error")
+                flash("記事が見つかりません", "error")
                 return redirect("/admin/blogs")
             blog = res.data[0]
             # 編集画面では <br> を表示せず改行のみ（読みやすさのため）
@@ -2368,8 +2368,8 @@ def admin_blog_edit(blog_id):
             staff_list = get_staff_choices()
             return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
         except Exception as e:
-            print("❌ ブログ取得エラー:", e)
-            flash("ブログの取得に失敗しました", "error")
+            print("❌ 記事取得エラー:", e)
+            flash("記事の取得に失敗しました", "error")
             return redirect("/admin/blogs")
     
     # POST処理
@@ -2394,7 +2394,7 @@ def admin_blog_edit(blog_id):
             flash(str(e), "error")
             return redirect(f"/admin/blogs/edit/{blog_id}")
         except Exception as e:
-            print("❌ ブログ画像アップロードエラー:", e)
+            print("❌ 記事画像アップロードエラー:", e)
             flash(f"画像アップロードに失敗しました: {e}", "error")
             return redirect(f"/admin/blogs/edit/{blog_id}")
     category = request.form.get("category", "").strip()
@@ -2426,18 +2426,18 @@ def admin_blog_edit(blog_id):
     
     try:
         supabase_admin.table("blogs").update(update_data).eq("id", blog_id).execute()
-        flash("ブログを更新しました", "success")
+            flash("記事を更新しました", "success")
         return redirect("/admin/blogs")
     except Exception as e:
-        print("❌ ブログ更新エラー:", e)
-        flash(f"ブログの更新に失敗しました: {e}", "error")
+        print("❌ 記事更新エラー:", e)
+            flash(f"記事の更新に失敗しました: {e}", "error")
         return redirect(f"/admin/blogs/edit/{blog_id}")
 
 
 @app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
 @staff_section_required("blogs")
 def admin_blog_delete(blog_id):
-    """ブログ削除（関連するコメントも削除）"""
+    """記事削除（関連コメントも削除 / KARiN.NOTES）"""
     try:
         # blog_idを数値に変換（UUIDの場合はそのまま）
         try:
@@ -2456,26 +2456,26 @@ def admin_blog_delete(blog_id):
                 # コメントを削除
                 res_delete = supabase_admin.table("comments").delete().eq("blog_id", blog_id_int).execute()
                 deleted_comments = comment_count
-                print(f"✅ ブログID {blog_id_int} のコメント {deleted_comments} 件を削除しました")
+                print(f"✅ 記事ID {blog_id_int} のコメント {deleted_comments} 件を削除しました")
             else:
-                print(f"ℹ️ ブログID {blog_id_int} に関連するコメントはありませんでした")
+                print(f"ℹ️ 記事ID {blog_id_int} に関連するコメントはありませんでした")
         except Exception as e:
             import traceback
             print(f"⚠️ コメント削除エラー: {e}")
             print(f"⚠️ トレースバック: {traceback.format_exc()}")
         
-        # 最後にブログを削除
+        # 最後に記事を削除
         supabase_admin.table("blogs").delete().eq("id", blog_id_int).execute()
         
         if deleted_comments > 0:
-            flash(f"ブログと関連するコメント {deleted_comments} 件を削除しました", "success")
+            flash(f"記事と関連するコメント {deleted_comments} 件を削除しました", "success")
         else:
-            flash("ブログを削除しました", "success")
+            flash("記事を削除しました", "success")
     except Exception as e:
         import traceback
-        print("❌ ブログ削除エラー:", e)
+        print("❌ 記事削除エラー:", e)
         print(f"❌ トレースバック: {traceback.format_exc()}")
-        flash(f"ブログの削除に失敗しました: {e}", "error")
+            flash(f"記事の削除に失敗しました: {e}", "error")
     return redirect("/admin/blogs")
 
 
@@ -3759,7 +3759,7 @@ def news_list():
 def index():
 
     # ----------------------------------------
-    # 最新ブログ 3件
+    # 最新 KARiN.NOTES 3件
     # ----------------------------------------
     latest_blogs = []
     try:
@@ -3940,7 +3940,7 @@ def admin_comments():
 
         unreplied = res_unreplied.data or []
 
-        # ✅ blog_id からブログ情報を後から付与
+        # ✅ blog_id から記事情報を後から付与
         for c in unreplied:
             blog_id = c.get("blog_id")
             if blog_id:
@@ -4034,7 +4034,7 @@ def admin_reply(comment_id):
 
     print("UPDATE_RES:", update_res)
 
-    # ✅ 返信後は「元のブログ」ではなく「管理画面の一覧」に戻す
+    # ✅ 返信後は「元の記事」ではなく「管理画面の一覧」に戻す
     return redirect("/admin/comments")
 
 
@@ -4060,7 +4060,7 @@ def sitemap():
                 f"<url><loc>{base_url}{url}</loc><changefreq>weekly</changefreq></url>"
             )
 
-        # --- ブログ ---
+        # --- KARiN.NOTES ---
         if os.path.exists("static/data/blogs.json"):
             with open("static/data/blogs.json", encoding="utf-8") as f:
                 blogs = json.load(f)

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}ブログ管理 | KARiN.{% endblock %}
+{% block title %}KARiN.NOTES 管理 | KARiN.{% endblock %}
 
 {% block content %}
-<h2 class="admin-title">📝 ブログ管理</h2>
+<h2 class="admin-title">📝 KARiN.NOTES 管理</h2>
 
 {% if get_flashed_messages() %}
   {% for message in get_flashed_messages(with_categories=true) %}
@@ -13,7 +13,7 @@
 {% endif %}
 
 <div style="margin-bottom: 20px;">
-  <a href="/admin/blogs/new" class="admin-blog-btn">🆕 新規ブログ作成</a>
+  <a href="/admin/blogs/new" class="admin-blog-btn">🆕 新規記事作成</a>
 </div>
 
 {% if blogs %}
@@ -54,7 +54,7 @@
     
     <div class="admin-blog-buttons">
       <a href="/admin/blogs/edit/{{ blog.id }}" class="reply-btn">✏ 編集</a>
-      <form action="/admin/blogs/delete/{{ blog.id }}" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="このブログを削除しますか？（元には戻せません）">
+      <form action="/admin/blogs/delete/{{ blog.id }}" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この記事を削除しますか？（元には戻せません）">
         <button type="submit" class="admin-blog-delete-btn">🗑 削除</button>
       </form>
     </div>
@@ -62,7 +62,7 @@
   {% endfor %}
 </div>
 {% else %}
-<p>ブログがありません。</p>
+<p>公開中の記事はありません。</p>
 {% endif %}
 
 {% endblock %}

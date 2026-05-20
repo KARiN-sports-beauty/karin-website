@@ -723,7 +723,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ブログ管理用スタイル */
+/* KARiN.NOTES管理用スタイル */
 .admin-blog-category {
   font-size: 0.8rem;
   color: #666;
@@ -786,7 +786,7 @@
   transform: translateY(-1px);
 }
 
-/* ブログ管理用グリッド・カード（contactと同じデザイン） */
+/* KARiN.NOTES管理用グリッド・カード（contactと同じデザイン） */
 .admin-blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -806,7 +806,7 @@
   min-height: 130px;
 }
 
-/* 未公開ブログカード */
+/* 未公開記事カード */
 .admin-blog-card.unread {
   border-left: 6px solid #C97A3D;
 }
@@ -834,13 +834,13 @@
   margin-bottom: 8px;
 }
 
-/* 返信済みブログカード（下書き） */
+/* 返信済み記事カード（下書き） */
 .admin-blog-card.replied {
   opacity: 0.7;
   border-left-color: #aaa;
 }
 
-/* ブログ管理用ボタン（contactと同じデザイン） */
+/* KARiN.NOTES管理用ボタン（contactと同じデザイン） */
 .admin-blog-btn {
   display: inline-flex;
   align-items: center;
@@ -872,7 +872,7 @@ form .admin-blog-btn {
   margin-top: 0;
 }
 
-/* 白背景のブログ管理用ボタン（contactと同じデザイン） */
+/* 白背景の KARiN.NOTES管理用ボタン（contactと同じデザイン） */
 .admin-blog-btn-white {
   display: inline-flex;
   align-items: center;
@@ -898,7 +898,7 @@ form .admin-blog-btn {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ニュース管理用スタイル（ブログ管理と同じデザイン） */
+/* ニュース管理用スタイル（KARiN.NOTES管理と同じデザイン） */
 .admin-news-category {
   font-size: 0.8rem;
   color: #666;
@@ -961,7 +961,7 @@ form .admin-blog-btn {
   transform: translateY(-1px);
 }
 
-/* ニュース管理用グリッド・カード（ブログ管理と同じデザイン） */
+/* ニュース管理用グリッド・カード（KARiN.NOTES管理と同じデザイン） */
 .admin-news-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -1015,7 +1015,7 @@ form .admin-blog-btn {
   border-left-color: #aaa;
 }
 
-/* ニュース管理用ボタン（ブログ管理と同じデザイン） */
+/* ニュース管理用ボタン（KARiN.NOTES管理と同じデザイン） */
 .admin-news-btn {
   display: inline-flex;
   align-items: center;
@@ -1047,7 +1047,7 @@ form .admin-news-btn {
   margin-top: 0;
 }
 
-/* 白背景のニュース管理用ボタン（ブログ管理と同じデザイン） */
+/* 白背景のニュース管理用ボタン（KARiN.NOTES管理と同じデザイン） */
 .admin-news-btn-white {
   display: inline-flex;
   align-items: center;
@@ -1096,7 +1096,7 @@ form .admin-news-btn {
 
 /* 区分による色分け（優先） */
 .admin-karte-card.category-artist {
-  border-left-color: #c0a062; /* ゴールド（ブログのアンダーラインと同じ） */
+  border-left-color: #c0a062; /* ゴールド（KARiN.NOTES一覧のアンダーラインと同じ） */
 }
 
 .admin-karte-card.category-sports {
@@ -1861,7 +1861,7 @@ form .admin-news-btn {
 /* 紹介患者カードの色分け（カルテカードと同じロジック） */
 /* 区分による色分け（優先） */
 .admin-introduced-card.category-artist {
-  border-left-color: #c0a062 !important; /* ゴールド（ブログのアンダーラインと同じ） */
+  border-left-color: #c0a062 !important; /* ゴールド（KARiN.NOTES一覧のアンダーラインと同じ） */
 }
 
 .admin-introduced-card.category-sports {
@@ -2144,7 +2144,7 @@ form .admin-news-btn {
 /* 現場区分による色分け */
 /* 予約カードの色分け（区分による色分けを最優先） */
 .admin-resv-card.category-artist {
-  border-left-color: #c0a062 !important; /* ゴールド（ブログのアンダーラインと同じ） */
+  border-left-color: #c0a062 !important; /* ゴールド（KARiN.NOTES一覧のアンダーラインと同じ） */
 }
 
 .admin-resv-card.category-sports {

@@ -42,7 +42,7 @@ load_dotenv()
 
 def _textarea_body_double_newlines_to_br(body_raw):
     """
-    ブログ・ニュース共通（app._textarea_body_double_newlines_to_br と同じ）。
+    KARiN.NOTES・ニュース共通（app._textarea_body_double_newlines_to_br と同じ）。
     連続 n 改行に対し <br> を (n - 1) 個。単独改行はそのまま。
     """
     if body_raw is None:
@@ -290,7 +290,7 @@ def fetch_articles_from_supabase(mode="public", search_query=""):
             }
             articles.append(rec)
     except Exception as e:
-        messagebox.showerror("エラー", f"blogs の取得に失敗しました。\n{e}")
+        messagebox.showerror("エラー", f"KARiN.NOTES（blogs）の取得に失敗しました。\n{e}")
 
     # news
     try:
@@ -360,7 +360,7 @@ def delete_article_from_supabase(kind: str, article_id: int):
         messagebox.showerror("削除エラー", f"{table} の削除に失敗しました。\n{e}")
 
 # =====================================================
-# ✏ ブログ / お知らせ 編集ウィンドウ（Supabase版）
+# ✏ KARiN.NOTES / お知らせ 編集ウィンドウ（Supabase版）
 # =====================================================
 def open_edit(kind, id):
     table = "blogs" if kind == "blog" else "news"
@@ -378,7 +378,7 @@ def open_edit(kind, id):
     head.pack(fill="x", padx=20, pady=(15,5))
     ctk.CTkLabel(
         head,
-        text=("ブログ編集" if kind=="blog" else "お知らせ編集"),
+        text=("KARiN.NOTES 編集" if kind=="blog" else "お知らせ編集"),
         font=("Noto Sans JP", 18, "bold"),
         text_color="#1e3a5f"
     ).pack(side="left")
@@ -609,11 +609,11 @@ def open_edit(kind, id):
     add_main_button(footer, "💾 投稿 / 保存", do_save)
 
 # =====================================================
-# 📚 一覧（ブログ + お知らせ）Supabase版
+# 📚 一覧（KARiN.NOTES + お知らせ）Supabase版
 # =====================================================
 def open_list(mode="public"):
     """
-    ブログ/ニュース 一覧 + 検索機能。
+    KARiN.NOTES/ニュース 一覧 + 検索機能。
     Supabase から blogs/news を取得して表示。
     """
     win = ctk.CTkToplevel(root)
@@ -728,7 +728,7 @@ def open_list(mode="public"):
     draw_rows()
 
 # =====================================================
-# 🆕 新規ブログ / お知らせ 作成（Supabase版）
+# 🆕 新規 KARiN.NOTES / お知らせ 作成（Supabase版）
 # =====================================================
 def new_post(kind="blog"):
     """
@@ -736,7 +736,7 @@ def new_post(kind="blog"):
     kind: "blog" or "news"
     """
     table = "blogs" if kind == "blog" else "news"
-    title_txt = "📝 新規ブログ投稿" if kind == "blog" else "🗞️ 新規お知らせ投稿"
+    title_txt = "📝 KARiN.NOTES 新規投稿" if kind == "blog" else "🗞️ 新規お知らせ投稿"
 
     win = ctk.CTkToplevel(root)
     win.title(title_txt)
@@ -1206,17 +1206,17 @@ add_small_chip(chipbar, "白ボタン=追加/実行")
 add_small_chip(chipbar, "ネイビーボタン=編集/保存", "#16304A")
 add_small_chip(chipbar, "赤ボタン=削除", "#b94a48")
 
-# ---- ブログ/お知らせ 管理 ----
+# ---- KARiN.NOTES / お知らせ 管理 ----
 sec1 = ctk.CTkFrame(root, fg_color="#fafafa", corner_radius=0)
 sec1.pack(fill="x", padx=12, pady=(6,2))
 ctk.CTkLabel(
     sec1,
-    text="📚 ブログ / 🗞️ お知らせ（Supabase管理）",
+    text="📚 KARiN.NOTES / 🗞️ お知らせ（Supabase管理）",
     font=("Noto Sans JP", 18, "bold"),
     text_color="#1e3a5f"
 ).pack(anchor="w", padx=12, pady=(6,2))
 
-add_main_button(root, "🆕 新規ブログ投稿",        lambda: new_post("blog"))
+add_main_button(root, "🆕 KARiN.NOTES 新規投稿",        lambda: new_post("blog"))
 add_main_button(root, "🗞️ 新規お知らせ投稿",    lambda: new_post("news"))
 add_main_button(root, "📚 公開中の記事一覧（検索/編集/削除）", lambda: open_list("public"))
 add_main_button(root, "📝 下書き一覧（公開前の記事）",       lambda: open_list("draft"))

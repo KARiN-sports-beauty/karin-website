@@ -329,7 +329,7 @@ section, header, footer {
 
 /* ===============================
    🩵 お知らせセクション（2025.11再整理版）
-   ※ブログデザインと完全統一トーン
+   ※KARiN.NOTES（記事）デザインと完全統一トーン
 =============================== */
 .news-section {
   background-color: #ffffff;
@@ -775,7 +775,7 @@ section, header, footer {
 
 
 /* ===============================
-   🩵 ブログセクション（KARiN.ブログ）
+   🩵 KARiN.NOTES セクション（トップ）
    2025.11 トップページ用
 =============================== */
 .blog-section {
@@ -827,7 +827,7 @@ section, header, footer {
   margin: 0 auto;
 }
 
-/* 各ブログカード */
+/* KARiN.NOTES一覧の各カード */
 .blog-card {
   width: 100%;
   border-bottom: 1px solid #eaeaea;
@@ -848,7 +848,7 @@ section, header, footer {
   color: #1E3A5F;
 }
 
-/* ブログタイトル */
+/* 記事タイトル（トップ一覧） */
 .blog-title {
   text-align: left;
   font-weight: 500;
@@ -1521,7 +1521,7 @@ section[id],
     padding-top: 50px; /* 上余白を少し狭く */
   }
 
-  /* ---------- ブログ ---------- */
+  /* ---------- KARiN.NOTES ---------- */
   .blog-section {
     padding-top: 50px;
     padding-bottom: 25px !important; /* 下余白さらに少し詰める */
@@ -2153,7 +2153,7 @@ section[id],
   }
 
   /* ==========================
-     ブログ
+     KARiN.NOTES（トップ）
   ========================== */
   .blog-section {
     padding: 70px 7% 80px;
@@ -2378,7 +2378,7 @@ section[id],
 
 
   /* ==========================
-      ブログ
+      KARiN.NOTES（トップ）
   ========================== */
   .blog-section {
     padding: 65px 6% 80px;
@@ -2739,7 +2739,7 @@ section[id],
   }
 
   /* ==========================
-        ブログ
+        KARiN.NOTES（トップ）
   ========================== */
   .blog-section {
     padding: 55px 5% 70px;
