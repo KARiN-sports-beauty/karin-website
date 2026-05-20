@@ -1041,6 +1041,20 @@
       .worries__grid {
         grid-template-columns: 1fr;
       }
+
+      /* 狭い画面では cover が中央だけ切り取り葉が消えるため contain に */
+      .faq__bg img {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        object-fit: contain;
+        object-position: center center;
+      }
+
+      .faq__bg-overlay {
+        background: rgba(255, 255, 255, 0.52);
+      }
     }
 
     @media (max-width: 640px) {
@@ -1206,6 +1220,16 @@
         grid-column: 2;
         grid-row: 2;
         font-size: 13px;
+      }
+
+      .faq__bg img {
+        /* スマホでも左右の葉が収まるよう、幅基準で全体を表示 */
+        object-fit: contain;
+        object-position: center center;
+      }
+
+      .faq__bg-overlay {
+        background: rgba(255, 255, 255, 0.48);
       }
 
       .faq-border-item {
