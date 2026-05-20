@@ -2341,11 +2341,11 @@ def admin_blog_new():
     
     try:
         supabase_admin.table("blogs").insert(insert_data).execute()
-            flash("記事を作成しました", "success")
+        flash("記事を作成しました", "success")
         return redirect("/admin/blogs")
     except Exception as e:
         print("❌ 記事作成エラー:", e)
-            flash(f"記事の作成に失敗しました: {e}", "error")
+        flash(f"記事の作成に失敗しました: {e}", "error")
         return render_template("admin_blog_new.html")
 
 
@@ -2426,11 +2426,11 @@ def admin_blog_edit(blog_id):
     
     try:
         supabase_admin.table("blogs").update(update_data).eq("id", blog_id).execute()
-            flash("記事を更新しました", "success")
+        flash("記事を更新しました", "success")
         return redirect("/admin/blogs")
     except Exception as e:
         print("❌ 記事更新エラー:", e)
-            flash(f"記事の更新に失敗しました: {e}", "error")
+        flash(f"記事の更新に失敗しました: {e}", "error")
         return redirect(f"/admin/blogs/edit/{blog_id}")
 
 
@@ -2475,7 +2475,7 @@ def admin_blog_delete(blog_id):
         import traceback
         print("❌ 記事削除エラー:", e)
         print(f"❌ トレースバック: {traceback.format_exc()}")
-            flash(f"記事の削除に失敗しました: {e}", "error")
+        flash(f"記事の削除に失敗しました: {e}", "error")
     return redirect("/admin/blogs")
 
 
