@@ -965,6 +965,7 @@
 
     /* ─── フッター（白背景） ─── */
     footer {
+      position: relative;
       background: #ffffff;
       color: var(--stone-600);
       text-align: center;
@@ -972,7 +973,6 @@
       font-size: 12px;
       line-height: 2;
       letter-spacing: 0.06em;
-      border-top: 1px solid var(--stone-100);
     }
 
     footer > p {
@@ -999,6 +999,120 @@
     .footer-copy {
       margin-top: 8px;
       color: var(--stone-400);
+    }
+
+    /* ─── セクション間のゆるやかなつながり ─── */
+    .worries,
+    .flow,
+    .trial {
+      position: relative;
+    }
+
+    .hero::after,
+    .worries::after,
+    .philosophy::after,
+    .flow::after,
+    .faq::after,
+    .trial::after,
+    .line-cta::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: clamp(80px, 14vw, 140px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .hero::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.55) 45%,
+        var(--warm-white) 100%
+      );
+    }
+
+    .worries::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(245, 243, 239, 0.5) 50%,
+        var(--stone-50) 100%
+      );
+    }
+
+    .philosophy::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(245, 243, 239, 0) 0%,
+        rgba(255, 255, 255, 0.45) 50%,
+        var(--warm-white) 100%
+      );
+    }
+
+    .flow::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(250, 248, 245, 0.55) 50%,
+        var(--cream) 100%
+      );
+    }
+
+    .faq::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(250, 248, 245, 0) 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        var(--warm-white) 100%
+      );
+    }
+
+    .trial::after {
+      height: clamp(96px, 18vw, 168px);
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(44, 62, 85, 0.35) 55%,
+        var(--navy) 100%
+      );
+    }
+
+    .line-cta::after {
+      background: linear-gradient(
+        to bottom,
+        rgba(44, 62, 85, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        #ffffff 100%
+      );
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: clamp(72px, 12vw, 120px);
+      background: linear-gradient(
+        to bottom,
+        var(--navy) 0%,
+        rgba(255, 255, 255, 0.6) 60%,
+        #ffffff 100%
+      );
+      pointer-events: none;
+    }
+
+    .worries .inner,
+    .philosophy .inner,
+    .flow .inner,
+    .faq .inner,
+    .trial .inner,
+    .line-cta .inner {
+      position: relative;
+      z-index: 3;
     }
 
     /* ─── Scroll reveal ─── */
