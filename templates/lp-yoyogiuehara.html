@@ -433,6 +433,24 @@
       overflow: hidden;
     }
 
+    /* 背景画像が上端でいきなり始まると境目がくっきりするため、上だけ色でフェード */
+    .philosophy::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: clamp(56px, 10vw, 100px);
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        var(--stone-50) 0%,
+        rgba(245, 243, 239, 0.75) 55%,
+        transparent 100%
+      );
+    }
+
     .philosophy__bg {
       position: absolute;
       inset: 0;
@@ -671,6 +689,23 @@
       position: relative;
       overflow: hidden;
       background-color: var(--cream);
+    }
+
+    .faq::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: clamp(56px, 10vw, 100px);
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        var(--cream) 0%,
+        rgba(250, 248, 245, 0.75) 55%,
+        transparent 100%
+      );
     }
 
     .faq__bg {
