@@ -1,0 +1,24 @@
+<div id="feature-html-guide" style="display: none; margin-bottom: 24px; padding: 16px 18px; background: #f5f8fb; border: 1px solid #dde3ec; border-radius: 12px; font-size: 0.85rem; color: #334;">
+  <strong style="display: block; margin-bottom: 8px; color: #1E3A5F;">Feature 記事用 HTML クラス（本文に直接記述）</strong>
+  <ul style="margin: 0; padding-left: 1.2em; line-height: 1.7;">
+    <li><code>&lt;div class="notes-section notes-section--cream"&gt;</code> … 背景付きセクション</li>
+    <li><code>&lt;div class="notes-cta"&gt;&lt;a href="..."&gt;テキスト&lt;/a&gt;&lt;/div&gt;</code> … CTA</li>
+    <li><code>&lt;div class="notes-balloon"&gt;…&lt;/div&gt;</code> … 吹き出し</li>
+    <li><code>&lt;div class="notes-cols-2"&gt;…&lt;/div&gt;</code> … 画像2列</li>
+    <li><code>&lt;div class="notes-highlight"&gt;…&lt;/div&gt;</code> … 強調ブロック</li>
+    <li><code>&lt;div class="notes-case-card"&gt;…&lt;/div&gt;</code> … 症例カード</li>
+    <li><code>&lt;hr class="notes-divider"&gt;</code> … セクション区切り</li>
+  </ul>
+</div>
+<script>
+(function () {
+  var select = document.getElementById("article-type-select");
+  var guide = document.getElementById("feature-html-guide");
+  if (!select || !guide) return;
+  function toggleGuide() {
+    guide.style.display = select.value === "feature" ? "block" : "none";
+  }
+  select.addEventListener("change", toggleGuide);
+  toggleGuide();
+})();
+</script>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ blog.title }} | KARiN.NOTES</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="description" content="{{ blog.excerpt }}">
+  <link rel="canonical" href="{{ request.url }}">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ blog.title }} | KARiN.NOTES">
+  <meta property="og:description" content="{{ blog.excerpt }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  {% if blog.image %}
+  <meta property="og:image" content="{{ blog.image }}">
+  {% else %}
+  <meta property="og:image" content="https://karin-sb.jp/static/images/common/ogp_default.jpg">
+  {% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260327">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260327">
+</head>
+<body class="notes-page notes-page--feature">
+  <section class="notes-feature">
+    <header class="notes-feature-hero{% if not blog.image %} notes-feature-hero--no-image{% endif %}">
+      {% if blog.image %}
+      <div class="notes-feature-hero__media">
+        <img src="{{ blog.image }}" alt="{{ blog.title }}">
+      </div>
+      {% endif %}
+      <div class="notes-feature-hero__content">
+        <p class="notes-feature-hero__label">Feature / 特集</p>
+        {% if blog.category %}
+        <p class="notes-feature-hero__category">{{ blog.category }}</p>
+        {% endif %}
+        <h1 class="notes-feature-hero__title">{{ blog.title }}</h1>
+        {% if blog.excerpt %}
+        <p class="notes-feature-hero__lead">{{ blog.excerpt }}</p>
+        {% endif %}
+        <p class="notes-feature-hero__date">{{ blog.date_display or blog.date }}</p>
+        {% if blog.tags_list %}
+        <div class="notes-tags">
+          {% for tag in blog.tags_list %}
+          <span class="notes-tag">{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="notes-feature-body blog-body">
+      {{ blog.body | safe }}
+    </div>
+
+{% include "notes/_detail_tail.html" %}

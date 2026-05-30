@@ -584,6 +584,7 @@ def open_edit(kind, id):
         if kind == "blog":
             update_data["excerpt"] = excerpt
             update_data["tags"] = tags
+            update_data["article_type"] = row.get("article_type") or "standard"
 
         try:
             supabase.table(table).update(update_data).eq("id", id).execute()
@@ -930,6 +931,7 @@ def new_post(kind="blog"):
             insert_data["excerpt"] = excerpt
             insert_data["tags"] = tags
             insert_data["date"] = today()  # 既存構造との整合性のため残す
+            insert_data["article_type"] = "standard"
 
         try:
             res = supabase.table(table).insert(insert_data).execute()

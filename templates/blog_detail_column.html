@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ blog.title }} | KARiN.NOTES</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="description" content="{{ blog.excerpt }}">
+  <link rel="canonical" href="{{ request.url }}">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ blog.title }} | KARiN.NOTES">
+  <meta property="og:description" content="{{ blog.excerpt }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  {% if blog.image %}
+  <meta property="og:image" content="{{ blog.image }}">
+  {% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260327">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260327">
+</head>
+<body class="notes-page notes-page--column">
+  <section class="notes-column">
+    <header class="notes-column-head">
+      <p class="notes-column-label">Column</p>
+      <h1 class="notes-column-title">{{ blog.title }}</h1>
+      <div class="notes-column-meta">
+        <time>{{ blog.date_display or blog.date }}</time>
+        {% if blog.category %}
+        <span class="notes-column-category">{{ blog.category }}</span>
+        {% endif %}
+      </div>
+      {% if blog.tags_list %}
+      <div class="notes-tags notes-tags--column">
+        {% for tag in blog.tags_list %}
+        <span class="notes-tag">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="notes-column-body blog-body">
+      {{ blog.body | safe }}
+    </div>
+
+{% include "notes/_detail_tail.html" %}

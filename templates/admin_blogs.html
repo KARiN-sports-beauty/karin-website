@@ -29,6 +29,10 @@
     {% if blog.category %}
     <p class="admin-blog-category">カテゴリ: {{ blog.category }}</p>
     {% endif %}
+
+    <p class="admin-blog-category">
+      タイプ: {{ article_type_labels.get(blog.article_type, blog.article_type or 'standard') }}
+    </p>
     
     <p class="admin-blog-body">
       {% if blog.excerpt %}

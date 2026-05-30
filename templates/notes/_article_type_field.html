@@ -1,0 +1,13 @@
+<div style="margin-bottom: 20px;">
+  <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">記事タイプ</label>
+  <select name="article_type" id="article-type-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #fff;">
+    {% for type_key in article_types or ['standard', 'feature', 'column'] %}
+    <option value="{{ type_key }}" {% if (blog.article_type if blog is defined else 'standard') == type_key %}selected{% endif %}>
+      {{ article_type_labels.get(type_key, type_key) if article_type_labels else type_key }}
+    </option>
+    {% endfor %}
+  </select>
+  <p style="margin: 6px 0 0; font-size: 0.8rem; color: #666;">
+    Standard＝通常 / Feature＝特集LP風 / Column＝短文コラム
+  </p>
+</div>

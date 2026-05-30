@@ -80,22 +80,25 @@
   <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260201">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_list.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_list.css') }}?v=20260327">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260327">
 </head>
 
 
 
-<body>
-    <!-- 検索フォームをつける -->
+<body class="notes-list-page">
+  <header class="notes-list-header">
+    <p class="notes-list-eyebrow">Media</p>
+    <h1 class="blog-heading">KARiN.NOTES</h1>
+    <p class="notes-list-lead">身体づくり・セルフケア・ブランドの想いを、読み物としてお届けします。</p>
+  </header>
+
   <form action="{{ url_for('blog') }}" method="get" class="blog-search">
     <input type="text" name="q" placeholder="キーワードで検索" value="{{ query or '' }}">
     <button type="submit">検索</button>
   </form>
 
   <section class="blog-wrapper" data-aos="fade-up">
-    <h1 class="blog-heading">KARiN.NOTES</h1>
-
-    <!-- カテゴリフィルタ -->
     <div class="blog-filter">
       <a href="{{ url_for('blog') }}" class="filter-btn {% if not current_category %}active{% endif %}">すべて</a>
       {% for c in categories %}
@@ -103,49 +106,81 @@
       {% endfor %}
     </div>
 
-    <div class="blog-list">
-      {% if blogs %}
-        {% for blog in blogs %}
-        <div class="blog-item">
-          <a href="{{ url_for('show_blog', slug=blog.slug) }}">
-
-            <!-- サムネ：横長フル幅 -->
+    {% if feature_blogs %}
+    <div class="notes-feature-section">
+      <h2 class="notes-section-title">Feature</h2>
+      <div class="notes-feature-grid">
+        {% for blog in feature_blogs %}
+        <article class="notes-card notes-card--feature{% if loop.first %} notes-card--feature-hero{% endif %}">
+          <a href="{{ url_for('show_blog', slug=blog.slug) }}" class="notes-card-link">
             {% if blog.image %}
-            <div class="blog-thumb-wide">
+            <div class="notes-card-thumb">
+              <img src="{{ blog.image }}" alt="{{ blog.title }}">
+            </div>
+            {% endif %}
+            <div class="notes-card-body">
+              <span class="notes-card-badge">特集</span>
+              {% if blog.category %}<span class="notes-card-category">{{ blog.category }}</span>{% endif %}
+              <h3 class="notes-card-title">{{ blog.title }}</h3>
+              <p class="notes-card-meta">{{ blog.date_display or blog.date }}</p>
+              {% if blog.excerpt %}<p class="notes-card-excerpt">{{ blog.excerpt }}</p>{% endif %}
+              {% if blog.tags_list %}
+              <div class="notes-tags">
+                {% for tag in blog.tags_list[:4] %}
+                <span class="notes-tag">{{ tag }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </a>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if grid_blogs %}
+    <div class="notes-grid-section">
+      {% if feature_blogs %}
+      <h2 class="notes-section-title">Articles</h2>
+      {% endif %}
+      <div class="blog-list notes-grid">
+        {% for blog in grid_blogs %}
+        <article class="notes-card notes-card--{{ blog.article_type }}">
+          <a href="{{ url_for('show_blog', slug=blog.slug) }}" class="notes-card-link">
+            {% if blog.image %}
+            <div class="notes-card-thumb notes-card-thumb--wide">
               <img src="{{ blog.image }}" alt="{{ blog.title }}">
             </div>
             {% else %}
-            <div class="blog-thumb-wide no-image"></div>
+            <div class="notes-card-thumb notes-card-thumb--wide no-image"></div>
             {% endif %}
-
-            <!-- タイトル・カテゴリ・日付 -->
-            <div class="blog-content">
-              <h2 class="blog-title">{{ blog.title }}</h2>
-
-              <div class="blog-meta">
-                {{ blog.date_display or blog.date }}
-                {% if blog.category %}
-                  | <span class="blog-category">{{ blog.category }}</span>
-                {% endif %}
+            <div class="notes-card-body">
+              {% if blog.article_type == 'column' %}
+              <span class="notes-card-badge notes-card-badge--column">Column</span>
+              {% endif %}
+              {% if blog.category %}<span class="notes-card-category">{{ blog.category }}</span>{% endif %}
+              <h3 class="notes-card-title">{{ blog.title }}</h3>
+              <p class="notes-card-meta">{{ blog.date_display or blog.date }}</p>
+              {% if blog.excerpt %}<p class="notes-card-excerpt">{{ blog.excerpt }}</p>{% endif %}
+              {% if blog.tags_list %}
+              <div class="notes-tags">
+                {% for tag in blog.tags_list[:3] %}
+                <span class="notes-tag">{{ tag }}</span>
+                {% endfor %}
               </div>
-
-              <!-- 抜粋 -->
-              <p class="blog-excerpt">{{ blog.excerpt }}</p>
+              {% endif %}
             </div>
-
           </a>
-        </div>
+        </article>
         {% endfor %}
-      {% else %}
-        <p class="no-results">該当する記事はありませんでした。</p>
-        <div class="blog-cta">
-          <a href="{{ url_for('blog') }}" class="btn">📚 一覧に戻る</a>
-        </div>
-      {% endif %}
+      </div>
     </div>
+    {% elif not feature_blogs %}
+      <p class="no-results">該当する記事はありませんでした。</p>
+    {% endif %}
   </section>
 
-  <!-- ホームボタン -->
   <a href="{{ url_for('index') }}" class="home-btn">
     <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
     <span>ホームに戻る</span>

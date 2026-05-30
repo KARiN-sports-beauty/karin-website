@@ -28,6 +28,9 @@
     <input type="text" name="excerpt" value="{{ blog.excerpt or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
 
+  {% include "notes/_article_type_field.html" %}
+  {% include "notes/_feature_html_guide.html" %}
+
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">作成スタッフ</label>
     <select name="author_staff_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: #fff;">

@@ -709,6 +709,57 @@ def normalize_blog_image_url(image_url):
     return image_url
 
 
+ARTICLE_TYPES = ("standard", "feature", "column")
+ARTICLE_TYPE_LABELS = {
+    "standard": "Standard（通常）",
+    "feature": "Feature（特集）",
+    "column": "Column（コラム）",
+}
+BLOG_DETAIL_TEMPLATES = {
+    "standard": "blog_detail.html",
+    "feature": "blog_detail_feature.html",
+    "column": "blog_detail_column.html",
+}
+
+
+def normalize_article_type(value):
+    """未設定・不正値は standard（既存記事互換）"""
+    normalized = (value or "standard").strip().lower()
+    return normalized if normalized in ARTICLE_TYPES else "standard"
+
+
+def normalize_blog_tags(tags):
+    if not tags:
+        return []
+    if isinstance(tags, list):
+        return [str(t).strip() for t in tags if str(t).strip()]
+    if isinstance(tags, str):
+        return [t.strip() for t in tags.split(",") if t.strip()]
+    return []
+
+
+def prepare_blog_item(blog_item):
+    if not blog_item:
+        return blog_item
+    blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
+    blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
+    blog_item["article_type"] = normalize_article_type(blog_item.get("article_type"))
+    blog_item["tags_list"] = normalize_blog_tags(blog_item.get("tags"))
+    return blog_item
+
+
+def split_blogs_for_notes_list(blogs):
+    """一覧用: Feature を上部、それ以外を下部グリッドへ"""
+    feature_blogs = []
+    grid_blogs = []
+    for item in blogs:
+        if item.get("article_type") == "feature":
+            feature_blogs.append(item)
+        else:
+            grid_blogs.append(item)
+    return feature_blogs, grid_blogs
+
+
 def upload_blog_image(file):
     if not file or file.filename == "":
         return ""
@@ -1943,7 +1994,7 @@ def admin_dashboard():
     # ---------- 未返信コメント数 ----------
     try:
         res_unreplied = (
-            supabase
+            supabase_admin
             .table("comments")
             .select("id", count="exact")
             .is_("reply", None)
@@ -2044,10 +2095,8 @@ def blog():
         sb = sb.ilike("title", f"%{query}%")
 
     res = sb.order("created_at", desc=True).execute()
-    blogs = res.data or []
-    for blog_item in blogs:
-        blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
-        blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
+    blogs = [prepare_blog_item(dict(item)) for item in (res.data or [])]
+    feature_blogs, grid_blogs = split_blogs_for_notes_list(blogs)
 
     # カテゴリ一覧（全公開記事から抽出）
     categories = []
@@ -2066,7 +2115,15 @@ def blog():
         print(f"⚠️ WARNING - カテゴリ取得エラー: {e}")
         categories = []
 
-    return render_template("blog.html", blogs=blogs, categories=categories, current_category=category, query=query)
+    return render_template(
+        "blog.html",
+        blogs=blogs,
+        feature_blogs=feature_blogs,
+        grid_blogs=grid_blogs,
+        categories=categories,
+        current_category=category,
+        query=query,
+    )
 
 
 
@@ -2093,9 +2150,7 @@ def show_blog(slug):
         if not data:
             return render_template("404.html"), 404
 
-        blog = data[0]
-        blog["image"] = normalize_blog_image_url(blog.get("image"))
-        blog["date_display"] = format_blog_date_display(blog.get("date"))
+        blog = prepare_blog_item(dict(data[0]))
         blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
         # コメント取得（新しい順）
@@ -2226,11 +2281,15 @@ def show_blog(slug):
             except Exception as e:
                 print(f"⚠️ フォールバック著者情報取得エラー: {e}")
 
+        detail_template = BLOG_DETAIL_TEMPLATES.get(
+            blog["article_type"], BLOG_DETAIL_TEMPLATES["standard"]
+        )
         return render_template(
-            "blog_detail.html",
+            detail_template,
             blog=blog,
             comments=comments,
-            author_info=author_info
+            author_info=author_info,
+            article_type_label=ARTICLE_TYPE_LABELS.get(blog["article_type"], "Standard"),
         )
     except Exception as e:
         import traceback
@@ -2263,8 +2322,12 @@ def admin_blogs():
     """KARiN.NOTES 一覧（新しい順）"""
     try:
         res = supabase_admin.table("blogs").select("*").order("created_at", desc=True).execute()
-        blogs = res.data or []
-        return render_template("admin_blogs.html", blogs=blogs)
+        blogs = [prepare_blog_item(dict(item)) for item in (res.data or [])]
+        return render_template(
+            "admin_blogs.html",
+            blogs=blogs,
+            article_type_labels=ARTICLE_TYPE_LABELS,
+        )
     except Exception as e:
         print("❌ KARiN.NOTES 一覧取得エラー:", e)
         return "KARiN.NOTES の一覧の取得に失敗しました", 500
@@ -2276,14 +2339,24 @@ def admin_blog_new():
     """新規記事作成（KARiN.NOTES）"""
     if request.method == "GET":
         staff_list = get_staff_choices()
-        return render_template("admin_blog_new.html", staff_list=staff_list)
+        return render_template(
+            "admin_blog_new.html",
+            staff_list=staff_list,
+            article_types=ARTICLE_TYPES,
+            article_type_labels=ARTICLE_TYPE_LABELS,
+        )
     
     # POST処理
     title = request.form.get("title", "").strip()
     if not title:
         flash("タイトルを入力してください", "error")
         staff_list = get_staff_choices()
-        return render_template("admin_blog_new.html", staff_list=staff_list)
+        return render_template(
+            "admin_blog_new.html",
+            staff_list=staff_list,
+            article_types=ARTICLE_TYPES,
+            article_type_labels=ARTICLE_TYPE_LABELS,
+        )
     
     slug_input = request.form.get("slug", "").strip()
     if slug_input:
@@ -2300,12 +2373,22 @@ def admin_blog_new():
         except ValueError as e:
             flash(str(e), "error")
             staff_list = get_staff_choices()
-            return render_template("admin_blog_new.html", staff_list=staff_list)
+            return render_template(
+                "admin_blog_new.html",
+                staff_list=staff_list,
+                article_types=ARTICLE_TYPES,
+                article_type_labels=ARTICLE_TYPE_LABELS,
+            )
         except Exception as e:
             print("❌ 記事画像アップロードエラー:", e)
             flash(f"画像アップロードに失敗しました: {e}", "error")
             staff_list = get_staff_choices()
-            return render_template("admin_blog_new.html", staff_list=staff_list)
+            return render_template(
+                "admin_blog_new.html",
+                staff_list=staff_list,
+                article_types=ARTICLE_TYPES,
+                article_type_labels=ARTICLE_TYPE_LABELS,
+            )
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
@@ -2315,6 +2398,7 @@ def admin_blog_new():
     else:
         body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
+    article_type = normalize_article_type(request.form.get("article_type"))
     
     # 現在ログイン中のスタッフIDを取得
     staff = session.get("staff", {})
@@ -2322,7 +2406,12 @@ def admin_blog_new():
     if not author_staff_id:
         flash("作成スタッフを選択してください", "error")
         staff_list = get_staff_choices()
-        return render_template("admin_blog_new.html", staff_list=staff_list)
+        return render_template(
+            "admin_blog_new.html",
+            staff_list=staff_list,
+            article_types=ARTICLE_TYPES,
+            article_type_labels=ARTICLE_TYPE_LABELS,
+        )
     
     insert_data = {
         "title": title,
@@ -2337,8 +2426,9 @@ def admin_blog_new():
         "created_at": now_iso(),
         "updated_at": now_iso(),
         "author_staff_id": author_staff_id,
+        "article_type": article_type,
     }
-    
+
     try:
         supabase_admin.table("blogs").insert(insert_data).execute()
         flash("記事を作成しました", "success")
@@ -2346,7 +2436,13 @@ def admin_blog_new():
     except Exception as e:
         print("❌ 記事作成エラー:", e)
         flash(f"記事の作成に失敗しました: {e}", "error")
-        return render_template("admin_blog_new.html")
+        staff_list = get_staff_choices()
+        return render_template(
+            "admin_blog_new.html",
+            staff_list=staff_list,
+            article_types=ARTICLE_TYPES,
+            article_type_labels=ARTICLE_TYPE_LABELS,
+        )
 
 
 @app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
@@ -2359,14 +2455,20 @@ def admin_blog_edit(blog_id):
             if not res.data:
                 flash("記事が見つかりません", "error")
                 return redirect("/admin/blogs")
-            blog = res.data[0]
+            blog = prepare_blog_item(dict(res.data[0]))
             # 編集画面では <br> を表示せず改行のみ（読みやすさのため）
             if blog.get("body"):
                 blog["body"] = re.sub(
                     r"<\s*br\s*/?\s*>", "\n", blog["body"], flags=re.IGNORECASE
                 )
             staff_list = get_staff_choices()
-            return render_template("admin_blog_edit.html", blog=blog, staff_list=staff_list)
+            return render_template(
+                "admin_blog_edit.html",
+                blog=blog,
+                staff_list=staff_list,
+                article_types=ARTICLE_TYPES,
+                article_type_labels=ARTICLE_TYPE_LABELS,
+            )
         except Exception as e:
             print("❌ 記事取得エラー:", e)
             flash("記事の取得に失敗しました", "error")
@@ -2406,6 +2508,7 @@ def admin_blog_edit(blog_id):
     else:
         body_html = _textarea_body_double_newlines_to_br(body_raw)
     draft = request.form.get("draft") == "on"
+    article_type = normalize_article_type(request.form.get("article_type"))
     author_staff_id = request.form.get("author_staff_id")
     if not author_staff_id:
         flash("作成スタッフを選択してください", "error")
@@ -2421,9 +2524,10 @@ def admin_blog_edit(blog_id):
         "body": body_html,
         "draft": draft,
         "author_staff_id": author_staff_id,
+        "article_type": article_type,
         "updated_at": now_iso(),
     }
-    
+
     try:
         supabase_admin.table("blogs").update(update_data).eq("id", blog_id).execute()
         flash("記事を更新しました", "success")
@@ -3724,7 +3828,7 @@ def admin_karte_image_delete(image_id):
 # ===========================
 @app.route("/news/<slug>")
 def show_news(slug):
-    res = supabase.table("news").select("*").eq("slug", slug).execute()
+    res = supabase.table("news").select("*").eq("slug", slug).eq("draft", False).execute()
     if not res.data:
         return render_template("404.html"), 404
 
@@ -3740,7 +3844,13 @@ def show_news(slug):
 @app.route("/news")
 def news_list():
     # Supabase から取得（下書き以外）
-    res = supabase.table("news").select("*").order("created_at", desc=True).execute()
+    res = (
+        supabase.table("news")
+        .select("*")
+        .eq("draft", False)
+        .order("created_at", desc=True)
+        .execute()
+    )
     items = res.data or []
 
     # 日付整形（blogs と合わせる）
@@ -3767,6 +3877,7 @@ def index():
             supabase
             .table("blogs")
             .select("*")
+            .eq("draft", False)
             .order("created_at", desc=True)
             .limit(3)
             .execute()
@@ -3786,6 +3897,7 @@ def index():
             supabase
             .table("news")
             .select("*")
+            .eq("draft", False)
             .order("created_at", desc=True)
             .limit(3)
             .execute()
@@ -3902,7 +4014,13 @@ def api_comment():
         return {"error": "コメントが空です"}, 400
 
     # blog_id を取得
-    res = supabase.table("blogs").select("id").eq("slug", slug).execute()
+    res = (
+        supabase.table("blogs")
+        .select("id")
+        .eq("slug", slug)
+        .eq("draft", False)
+        .execute()
+    )
     if not res.data:
         return {"error": "記事が見つかりません"}, 404
 
@@ -3930,7 +4048,7 @@ def admin_comments():
     try:
         # ✅ 未返信コメント（reply が NULL）
         res_unreplied = (
-            supabase
+            supabase_admin
             .table("comments")
             .select("*")
             .is_("reply", None)
@@ -3944,7 +4062,7 @@ def admin_comments():
         for c in unreplied:
             blog_id = c.get("blog_id")
             if blog_id:
-                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                b = supabase_admin.table("blogs").select("title, slug").eq("id", blog_id).execute()
                 if b.data:
                     c["blog"] = b.data[0]
                 else:
@@ -3952,7 +4070,7 @@ def admin_comments():
 
 
         res_replied = (
-            supabase
+            supabase_admin
             .table("comments")
             .select("*")
             .not_.is_("reply", None) 
@@ -3966,7 +4084,7 @@ def admin_comments():
         for c in replied:
             blog_id = c.get("blog_id")
             if blog_id:
-                b = supabase.table("blogs").select("title, slug").eq("id", blog_id).execute()
+                b = supabase_admin.table("blogs").select("title, slug").eq("id", blog_id).execute()
                 if b.data:
                     c["blog"] = b.data[0]
                 else:
@@ -3994,7 +4112,7 @@ def admin_reply(comment_id):
     # =========================
     if request.method == "GET":
         res = (
-            supabase
+            supabase_admin
             .table("comments")
             .select("*")
             .eq("id", str(comment_id))
@@ -4021,7 +4139,7 @@ def admin_reply(comment_id):
 
     # ✅ コメント更新（返信内容 + 日付 + 返信者）
     update_res = (
-        supabase
+        supabase_admin
         .table("comments")
         .update({
             "reply": reply_text,
