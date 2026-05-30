@@ -29,32 +29,14 @@
   <main class="admin-main">
     <h1 class="admin-title">スタッフ用ダッシュボード</h1>
     <p class="admin-subtitle">
-      {% if dash_perm.is_admin %}
-      本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」と「未返信お問い合わせ」を確認してください。
-      {% elif dash_perm.comments and dash_perm.contacts %}
-      本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」と「未返信お問い合わせ」を確認してください。
-      {% elif dash_perm.comments %}
-      本日の業務状況とコンテンツ管理の入口です。まずは「未返信コメント」を確認してください。
+      {% if dash_perm.is_admin or dash_perm.contacts %}
+      本日の業務状況とコンテンツ管理の入口です。{% if dash_perm.contacts %}まずは「未返信お問い合わせ」を確認してください。{% endif %}
       {% else %}
       配属に応じたメニューから業務を行ってください。
       {% endif %}
     </p>
 
     <div class="dashboard-grid">
-
-      {% if dash_perm.comments %}
-        <a href="/admin/comments" class="dash-card{% if unreplied_comments and unreplied_comments > 0 %} dash-card-top{% endif %}">
-        <div class="dash-card-header">
-            <span class="dash-card-label">未返信コメント</span>
-            <span class="dash-card-badge{% if unreplied_comments and unreplied_comments > 0 %} dash-card-badge-alert{% else %} dash-card-badge-warning{% endif %}">
-            {{ unreplied_comments if unreplied_comments is not none else 0 }}件
-            </span>
-        </div>
-        <p class="dash-card-text">
-            KARiN.NOTES の記事についたコメントのうち、まだ返信していないものの件数です。
-        </p>
-        </a>
-      {% endif %}
 
       {% if dash_perm.contacts %}
         <a href="/admin/contacts" class="dash-card{% if unprocessed_contacts and unprocessed_contacts > 0 %} dash-card-top{% endif %}">

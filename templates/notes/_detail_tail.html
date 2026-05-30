@@ -1,43 +1,40 @@
     <div class="notes-detail-tail">
-    <!-- 💬 コメント -->
-    <div class="comment-section">
-      <h3 class="comment-title">💬 コメント（{{ comments|length }}）</h3>
-
-      <div class="comment-input-area">
-        <input id="comment-name" type="text" placeholder="お名前（任意）">
-        <textarea id="comment-body" placeholder="コメントを入力..."></textarea>
-        <input type="hidden" id="comment-slug" value="{{ blog.slug }}">
-        <button id="comment-submit" class="submit-btn">送信</button>
-      </div>
-
-      <div class="comment-list">
-        {% for c in comments %}
-        <div class="comment-item">
-          <div class="comment-bubble">
-            <div class="bubble-header">
-              <span class="comment-author">{{ c.name }}</span>
-              <span class="comment-date">{{ (c.created_at | to_jst) }}</span>
+    {% if related_blogs %}
+    <section class="notes-related-section" aria-labelledby="notes-related-heading">
+      <h2 id="notes-related-heading" class="notes-related-heading">おすすめの記事</h2>
+      <div class="notes-related-grid">
+        {% for item in related_blogs %}
+        <article class="notes-related-card notes-related-card--{{ item.article_type }}">
+          <a href="{{ url_for('show_blog', slug=item.slug) }}" class="notes-related-card__link">
+            {% if item.image %}
+            <div class="notes-related-card__thumb">
+              <img src="{{ item.image }}" alt="{{ item.title }}">
             </div>
-            <p class="comment-text">{{ c.body }}</p>
-            {% if session.staff %}
-            <div class="admin-reply-btn">
-              <a href="/admin/reply/{{ c.id }}" class="reply-btn">↩ 管理者返信</a>
-            </div>
+            {% else %}
+            <div class="notes-related-card__thumb notes-related-card__thumb--empty"></div>
             {% endif %}
-          </div>
-
-          {% if c.reply %}
-          <div class="comment-reply">
-            <div class="reply-header">
-              <span class="reply-author">{{ c.reply_author }} からの返信</span>
-              <span class="reply-date">{{ (c.reply_date | to_jst) }}</span>
+            <div class="notes-related-card__body">
+              {% if item.article_type == 'feature' %}
+              <span class="notes-related-card__badge">特集</span>
+              {% elif item.article_type == 'column' %}
+              <span class="notes-related-card__badge notes-related-card__badge--column">Column</span>
+              {% endif %}
+              {% if item.category %}
+              <span class="notes-related-card__category">{{ item.category }}</span>
+              {% endif %}
+              <h3 class="notes-related-card__title">{{ item.title }}</h3>
+              <p class="notes-related-card__meta">{{ item.date_display or item.date }}</p>
             </div>
-            <p class="reply-text">{{ c.reply }}</p>
-          </div>
-          {% endif %}
-        </div>
+          </a>
+        </article>
         {% endfor %}
       </div>
+    </section>
+    {% endif %}
+
+    <div class="notes-line-cta">
+      <p class="notes-line-cta__text">身体の悩みや記事内容について相談したい方は、LINEからお気軽にご連絡ください。</p>
+      <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="notes-line-cta__btn">LINEで相談する</a>
     </div>
 
     <div class="author-profile">
@@ -65,8 +62,8 @@
         </p>
         {% endif %}
         <div class="author-links">
-          <a href="https://lin.ee/rVEbNhl5" target="_blank" class="mini-btn line">LINE</a>
-          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" class="mini-btn insta">Instagram</a>
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="mini-btn line">LINE</a>
+          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" rel="noopener noreferrer" class="mini-btn insta">Instagram</a>
         </div>
       </div>
     </div>
@@ -79,54 +76,12 @@
   </section>
   {% if session.staff %}
     <div class="blog-admin-back" style="margin-top:40px; text-align:center;">
-      <a href="/admin/comments" class="admin-back-btn">
-        ← 管理画面（コメント一覧）へ戻る
+      <a href="/admin/blogs" class="admin-back-btn">
+        ← 管理画面（KARiN.NOTES）へ戻る
       </a>
     </div>
   {% endif %}
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <script>
-    const submitBtn = document.getElementById("comment-submit");
-    const nameInput = document.getElementById("comment-name");
-    const bodyInput = document.getElementById("comment-body");
-    const slug = document.getElementById("comment-slug").value;
-
-    submitBtn.addEventListener("click", async () => {
-      const name = nameInput.value.trim() || "匿名";
-      const body = bodyInput.value.trim();
-
-      if (!body) {
-        alert("コメントを入力してください。");
-        return;
-      }
-
-      submitBtn.disabled = true;
-
-      try {
-        const formData = new FormData();
-        formData.append("name", name);
-        formData.append("body", body);
-        formData.append("slug", slug);
-
-        const res = await fetch("/api/comment", {
-          method: "POST",
-          body: formData
-        });
-
-        if (res.redirected) {
-          window.location.href = res.url;
-          return;
-        }
-
-        location.reload();
-      } catch (e) {
-        alert("送信エラーが発生しました。");
-        console.error("COMMENT ERROR:", e);
-      } finally {
-        submitBtn.disabled = false;
-      }
-    });
-  </script>
 </body>
 </html>

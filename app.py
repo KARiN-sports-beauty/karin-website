@@ -353,7 +353,6 @@ STAFF_ROLES_NONADMIN = frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAF
 
 # 各管理セクションへアクセス可能な配属（管理者は常に可）
 STAFF_SECTION_ALLOWED_NONADMIN = {
-    "comments": frozenset({STAFF_ROLE_RECEPTION}),
     "contacts": frozenset({STAFF_ROLE_RECEPTION}),
     "blogs": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
     "videos": frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR}),
@@ -531,7 +530,6 @@ def build_dashboard_permissions(staff):
     if staff.get("is_admin"):
         return {
             "is_admin": True,
-            "comments": True,
             "contacts": True,
             "blogs": True,
             "videos": True,
@@ -558,7 +556,6 @@ def build_dashboard_permissions(staff):
     sid = staff.get("id") or ""
     perm = {
         "is_admin": False,
-        "comments": R(STAFF_ROLE_RECEPTION),
         "contacts": R(STAFF_ROLE_RECEPTION),
         "blogs": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
         "videos": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR),
@@ -758,6 +755,79 @@ def split_blogs_for_notes_list(blogs):
         else:
             grid_blogs.append(item)
     return feature_blogs, grid_blogs
+
+
+def blog_category_tokens(category_str):
+    """カテゴリ文字列をトークン集合に分解（一覧フィルタと同じルール）"""
+    if not category_str:
+        return set()
+    raw = category_str.replace("　", " ")
+    return {
+        token.strip()
+        for token in raw.replace(",", " ").replace("、", " ").split()
+        if token.strip()
+    }
+
+
+def get_related_blogs(current_blog, limit=6):
+    """
+    関連記事を取得（優先: 同カテゴリ → 共通タグ → 最新）。
+    公開記事のみ。自分自身は除外。
+    """
+    blog_id = current_blog.get("id")
+    if not blog_id:
+        return []
+
+    current_categories = blog_category_tokens(current_blog.get("category"))
+    current_tags = set(normalize_blog_tags(current_blog.get("tags")))
+
+    try:
+        res = (
+            supabase.table("blogs")
+            .select("*")
+            .eq("draft", False)
+            .neq("id", blog_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        candidates = [prepare_blog_item(dict(item)) for item in (res.data or [])]
+    except Exception as e:
+        print(f"⚠️ 関連記事取得エラー: {e}")
+        return []
+
+    related = []
+    seen = set()
+
+    def add_from(pool):
+        for item in pool:
+            item_id = item.get("id")
+            if not item_id or item_id in seen:
+                continue
+            related.append(item)
+            seen.add(item_id)
+            if len(related) >= limit:
+                break
+
+    if current_categories:
+        same_category = [
+            item
+            for item in candidates
+            if blog_category_tokens(item.get("category")) & current_categories
+        ]
+        add_from(same_category)
+
+    if len(related) < limit and current_tags:
+        shared_tags = [
+            item
+            for item in candidates
+            if current_tags & set(normalize_blog_tags(item.get("tags")))
+        ]
+        add_from(shared_tags)
+
+    if len(related) < limit:
+        add_from(candidates)
+
+    return related[:limit]
 
 
 def upload_blog_image(file):
@@ -1986,24 +2056,8 @@ def staff_logout():
 def admin_dashboard():
     """
     スタッフログイン後に表示する管理ダッシュボード。
-    - 未返信コメント数（comments.reply IS NULL）
-    - 未処理お問い合わせ数（contacts.processed = False）
-    を Supabase から取得してテンプレートに渡す。
+    未処理お問い合わせ数（contacts.processed = False）を Supabase から取得してテンプレートに渡す。
     """
-
-    # ---------- 未返信コメント数 ----------
-    try:
-        res_unreplied = (
-            supabase_admin
-            .table("comments")
-            .select("id", count="exact")
-            .is_("reply", None)
-            .execute()
-        )
-        unreplied_comments = res_unreplied.count or 0
-    except Exception as e:
-        print("❌ 未返信コメント数取得エラー:", e)
-        unreplied_comments = 0
 
     # ---------- 未処理お問い合わせ数（contacts） ----------
     try:
@@ -2027,7 +2081,6 @@ def admin_dashboard():
     # ---------- テンプレートへ ----------
     return render_template(
         "admin_dashboard.html",
-        unreplied_comments=unreplied_comments,
         unprocessed_contacts=unprocessed_contacts,
         staff_name=staff_name,
         dash_perm=dash_perm,
@@ -2151,26 +2204,9 @@ def show_blog(slug):
             return render_template("404.html"), 404
 
         blog = prepare_blog_item(dict(data[0]))
-        blog_id = blog["id"]  # ← コメント・いいね取得用に必要
 
-        # コメント取得（新しい順）
-        comments = []
-        try:
-            comments_res = (
-                supabase
-                .table("comments")
-                .select("*")
-                .eq("blog_id", blog_id)
-                .order("created_at", desc=True)
-                .execute()
-            )
-            comments = comments_res.data or []
-        except Exception as e:
-            print(f"⚠️ コメント取得エラー: {e}")
-            comments = []
+        related_blogs = get_related_blogs(blog, limit=6)
 
-        print("💬 COMMENTS_DEBUG:", comments)  # ← これ追加
-        
         # 著者情報を取得
         author_info = None
         author_staff_id = blog.get("author_staff_id")
@@ -2287,7 +2323,7 @@ def show_blog(slug):
         return render_template(
             detail_template,
             blog=blog,
-            comments=comments,
+            related_blogs=related_blogs,
             author_info=author_info,
             article_type_label=ARTICLE_TYPE_LABELS.get(blog["article_type"], "Standard"),
         )
@@ -2541,7 +2577,7 @@ def admin_blog_edit(blog_id):
 @app.route("/admin/blogs/delete/<blog_id>", methods=["POST"])
 @staff_section_required("blogs")
 def admin_blog_delete(blog_id):
-    """記事削除（関連コメントも削除 / KARiN.NOTES）"""
+    """記事削除（KARiN.NOTES）"""
     try:
         # blog_idを数値に変換（UUIDの場合はそのまま）
         try:
@@ -2549,32 +2585,14 @@ def admin_blog_delete(blog_id):
         except ValueError:
             blog_id_int = blog_id  # UUIDの場合は文字列のまま
         
-        # まず、関連するコメントを削除
-        deleted_comments = 0
+        # 関連コメントがあれば先に削除（DB アーカイブ整理）
         try:
-            # 削除前にコメント数を確認
-            res_comments = supabase_admin.table("comments").select("id", count="exact").eq("blog_id", blog_id_int).execute()
-            comment_count = res_comments.count or 0
-            
-            if comment_count > 0:
-                # コメントを削除
-                res_delete = supabase_admin.table("comments").delete().eq("blog_id", blog_id_int).execute()
-                deleted_comments = comment_count
-                print(f"✅ 記事ID {blog_id_int} のコメント {deleted_comments} 件を削除しました")
-            else:
-                print(f"ℹ️ 記事ID {blog_id_int} に関連するコメントはありませんでした")
+            supabase_admin.table("comments").delete().eq("blog_id", blog_id_int).execute()
         except Exception as e:
-            import traceback
             print(f"⚠️ コメント削除エラー: {e}")
-            print(f"⚠️ トレースバック: {traceback.format_exc()}")
-        
-        # 最後に記事を削除
+
         supabase_admin.table("blogs").delete().eq("id", blog_id_int).execute()
-        
-        if deleted_comments > 0:
-            flash(f"記事と関連するコメント {deleted_comments} 件を削除しました", "success")
-        else:
-            flash("記事を削除しました", "success")
+        flash("記事を削除しました", "success")
     except Exception as e:
         import traceback
         print("❌ 記事削除エラー:", e)
@@ -3991,169 +4009,6 @@ def index():
         schedule=upcoming,
         today=today
     )
-
-
-
-
-# ===================================================
-# 💬 Supabase コメント API
-# ===================================================
-@app.route("/api/comment", methods=["POST"])
-def api_comment():
-    # JSON かフォームデータかを自動判定
-    if request.is_json:
-        req = request.get_json()
-    else:
-        req = request.form
-
-    slug = req.get("slug", "").strip()
-    name = req.get("name", "匿名").strip()
-    body = req.get("body", "").strip()
-
-    if not slug or not body:
-        return {"error": "コメントが空です"}, 400
-
-    # blog_id を取得
-    res = (
-        supabase.table("blogs")
-        .select("id")
-        .eq("slug", slug)
-        .eq("draft", False)
-        .execute()
-    )
-    if not res.data:
-        return {"error": "記事が見つかりません"}, 404
-
-    blog_id = res.data[0]["id"]
-
-    # コメント保存（分までの時刻）
-    created_at = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
-
-    supabase.table("comments").insert({
-        "blog_id": blog_id,
-        "name": name,
-        "body": body,
-        "created_at": created_at
-    }).execute()
-
-    # 🔥 ここがポイント：記事ページに戻す（即最新コメント反映！）
-    return redirect(url_for("show_blog", slug=slug))
-
-
-
-@app.route("/admin/comments")
-@staff_section_required("comments")
-def admin_comments():
-
-    try:
-        # ✅ 未返信コメント（reply が NULL）
-        res_unreplied = (
-            supabase_admin
-            .table("comments")
-            .select("*")
-            .is_("reply", None)
-            .order("created_at", desc=True)
-            .execute()
-        )
-
-        unreplied = res_unreplied.data or []
-
-        # ✅ blog_id から記事情報を後から付与
-        for c in unreplied:
-            blog_id = c.get("blog_id")
-            if blog_id:
-                b = supabase_admin.table("blogs").select("title, slug").eq("id", blog_id).execute()
-                if b.data:
-                    c["blog"] = b.data[0]
-                else:
-                    c["blog"] = None
-
-
-        res_replied = (
-            supabase_admin
-            .table("comments")
-            .select("*")
-            .not_.is_("reply", None) 
-            .order("reply_date", desc=True)
-            .limit(6)
-            .execute()
-        )
-
-        replied = res_replied.data or []
-
-        for c in replied:
-            blog_id = c.get("blog_id")
-            if blog_id:
-                b = supabase_admin.table("blogs").select("title, slug").eq("id", blog_id).execute()
-                if b.data:
-                    c["blog"] = b.data[0]
-                else:
-                    c["blog"] = None
-
-
-        return render_template(
-            "admin_comments.html",
-            unreplied=unreplied,
-            replied=replied
-        )
-
-    except Exception as e:
-        print("❌ ADMIN COMMENTS ERROR:", e)
-        return "コメント取得エラー", 500
-    
-
-
-@app.route("/admin/reply/<comment_id>", methods=["GET", "POST"])
-@staff_section_required("comments")
-def admin_reply(comment_id):
-
-    # =========================
-    # ✅ GET：返信画面の表示
-    # =========================
-    if request.method == "GET":
-        res = (
-            supabase_admin
-            .table("comments")
-            .select("*")
-            .eq("id", str(comment_id))
-            .execute()
-        )
-
-        if not res.data:
-            return "コメントが見つかりません", 404
-
-        comment = res.data[0]
-        return render_template("comment_reply.html", comment=comment)
-
-    # =========================
-    # ✅ POST：返信の保存
-    # =========================
-    reply_text = request.form.get("reply")
-    if not reply_text:
-        return "返信内容が空です", 400
-
-    reply_date = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
-
-    # ✅ ログイン中スタッフ名をそのまま使用
-    reply_author = session["staff"]["name"]
-
-    # ✅ コメント更新（返信内容 + 日付 + 返信者）
-    update_res = (
-        supabase_admin
-        .table("comments")
-        .update({
-            "reply": reply_text,
-            "reply_date": reply_date,
-            "reply_author": reply_author
-        })
-        .eq("id", str(comment_id))
-        .execute()
-    )
-
-    print("UPDATE_RES:", update_res)
-
-    # ✅ 返信後は「元の記事」ではなく「管理画面の一覧」に戻す
-    return redirect("/admin/comments")
 
 
 

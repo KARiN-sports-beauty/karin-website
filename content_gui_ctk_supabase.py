@@ -11,7 +11,7 @@
 # Supabase 前提:
 #   blogs テーブル
 #   news  テーブル
-#   comments テーブル（後でコメント管理UIで使用）
+#   comments テーブル（アーカイブ保持・公開 UI なし）
 #   storage バケット: blog-images（public = true）
 #
 # JSON で管理するもの（従来どおり維持）:

@@ -474,54 +474,7 @@
   margin: 30px 0 14px;
 }
 
-/* グリッドレイアウト */
-.admin-comment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-}
-
-/* 共通カード */
-.admin-comment-card {
-  background: #fff;
-  border-radius: 18px;
-  padding: 14px;
-  min-height: 130px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-}
-
-/* 未返信 */
-.admin-comment-card.unread {
-  border-left: 6px solid #C97A3D;
-}
-
-/* 返信済み */
-.admin-comment-card.replied {
-  opacity: 0.7;
-  border-left: 6px solid #aaa;
-}
-
-/* ヘッダー */
-.admin-comment-head {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85em;
-  margin-bottom: 6px;
-}
-
-.admin-comment-date {
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-/* 本文 */
-.admin-comment-body {
-  font-size: 0.85em;
-  line-height: 1.4;
-  margin-bottom: 8px;
-}
-
-/* 返信ボタン */
+/* 管理画面ボタン（KARiN.NOTES 等） */
 .reply-btn {
   display: inline-block;
   padding: 6px 14px;
@@ -530,37 +483,6 @@
   border-radius: 12px;
   font-size: 13px;
   text-decoration: none;
-}
-
-/* 返信情報 */
-.reply-info {
-  font-size: 13px;
-  color: #555;
-  margin-top: 10px;
-}
-
-/* 区切り線 */
-.admin-line {
-  margin: 40px 0;
-  border: none;
-  border-top: 1px solid #ddd;
-}
-
-
-.admin-comment-blog-title {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 6px;
-}
-
-.admin-comment-blog-title a {
-  color: #1E3A5F;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.admin-comment-blog-title a:hover {
-  text-decoration: underline;
 }
 
 .admin-user-name {

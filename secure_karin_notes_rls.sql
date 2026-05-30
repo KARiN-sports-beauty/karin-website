@@ -1,14 +1,13 @@
 -- ============================================================
--- KARiN.NOTES / NEWS / comments — RLS・GRANT（Supabase SQL Editor）
+-- KARiN.NOTES / NEWS — RLS・GRANT（Supabase SQL Editor）
 -- ============================================================
 -- 実行前:
 --   1. 本番 DB のバックアップを取得
 --   2. Flask は server-side のみ service_role（SUPABASE_SERVICE_KEY）を使用
---      → blogs / news / comments の管理 CRUD は supabase_admin 経由
---   3. anon key（supabase）は公開 read + コメント投稿のみ
+--      → blogs / news の管理 CRUD は supabase_admin 経由
+--   3. anon key（supabase）は公開 read のみ（comments テーブルは非公開・データは保持）
 --
 -- 実行後:
---   - deploy 済み app.py が admin comments を supabase_admin 使用に更新されていること
 --   - /blog /news / トップの公開記事取得は draft=false でフィルタされること
 -- ============================================================
 
@@ -45,7 +44,6 @@ REVOKE ALL ON TABLE public.comments FROM anon, authenticated;
 REVOKE ALL ON TABLE public.news FROM anon, authenticated;
 
 GRANT SELECT ON TABLE public.blogs TO anon, authenticated;
-GRANT SELECT, INSERT ON TABLE public.comments TO anon, authenticated;
 GRANT SELECT ON TABLE public.news TO anon, authenticated;
 
 -- シーケンス（id が serial / identity の場合）
@@ -101,35 +99,9 @@ CREATE POLICY blogs_public_select_published
 
 
 -- ============================================================
--- 6. comments — 公開記事へのコメントのみ
+-- 6. comments — 公開アクセスなし（テーブル・データは保持、service_role のみ）
+--    既存の公開ポリシーは削除のみ（再作成しない）
 -- ============================================================
-CREATE POLICY comments_public_select_published
-  ON public.comments
-  AS PERMISSIVE
-  FOR SELECT
-  TO anon, authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.blogs b
-      WHERE b.id = comments.blog_id
-        AND b.draft IS NOT TRUE
-    )
-  );
-
-CREATE POLICY comments_public_insert_published
-  ON public.comments
-  AS PERMISSIVE
-  FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1
-      FROM public.blogs b
-      WHERE b.id = comments.blog_id
-        AND b.draft IS NOT TRUE
-    )
-  );
 
 
 -- ============================================================
