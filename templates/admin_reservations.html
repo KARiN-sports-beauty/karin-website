@@ -224,6 +224,7 @@
     white-space: normal;
     line-height: 1.25;
   }
+  .schedule-card.place-break { background: #94a3b8; color: #fff; }
   .schedule-card.place-default { background: #64748b; }
   .schedule-card.status-visited.place-inhouse { outline: 2px solid #123157; outline-offset: -2px; }
   .schedule-card.status-visited.place-visit { outline: 2px solid #2e7d32; outline-offset: -2px; }
@@ -284,6 +285,7 @@
         <option value="in_house" {% if place_type_filter == 'in_house' %}selected{% endif %}>院内</option>
         <option value="visit" {% if place_type_filter == 'visit' %}selected{% endif %}>往診</option>
         <option value="field" {% if place_type_filter == 'field' %}selected{% endif %}>帯同</option>
+        <option value="break" {% if place_type_filter == 'break' %}selected{% endif %}>休憩</option>
       </select>
     </label>
     
@@ -353,9 +355,9 @@
     <div id="schedule-filter-panel" class="schedule-filter-panel">
       <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
       <span style="color:#64748b; font-size:0.9rem;">勤務時間</span>
-      <input id="work-start-input" type="text" value="09:00" placeholder="09:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <input id="work-start-input" type="text" value="" placeholder="10:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
       <span style="color:#64748b;">〜</span>
-      <input id="work-end-input" type="text" value="18:00" placeholder="18:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <input id="work-end-input" type="text" value="" placeholder="19:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
       <label style="display:flex; align-items:center; gap:6px; color:#1E3A5F; font-size:0.9rem;">
         <input id="work-off-input" type="checkbox">
         休み
@@ -394,7 +396,15 @@
             {% for card in timeline_cards_by_staff.get(staff_name, []) %}
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
             {% set card_width = card.duration * timeline_px_per_min %}
-            {% if card.is_field %}
+            {% if card.is_break %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card place-break"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
+              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-main">休憩{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
+            </a>
+            {% elif card.is_field %}
             <a href="#resv-detail-{{ card.id }}"
                class="schedule-card schedule-card-field-timeline"
                style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
@@ -421,7 +431,40 @@
     {% if reservations_of_day %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for reservation in reservations_of_day %}
-      {% if reservation.place_type == 'field' %}
+      {% if reservation.place_type == 'break' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-break" style="border-left: 4px solid #94a3b8;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">休憩</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #94a3b8; color: #fff;">休憩</span>
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>休憩時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          理由：{{ reservation.memo }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit"
+             class="admin-resv-btn"
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この休憩を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% elif reservation.place_type == 'field' %}
       <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-field" style="border-left: 4px solid #1E3A5F;">
         <div style="margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
@@ -715,14 +758,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function getShift(day, staffName, startHour) {
     const key = String(staffName || '').trim();
-    const row = SHIFT_DATA[key] || {};
+    const row = SHIFT_DATA[key];
+    if (!row) {
+      return { start: null, end: null, is_off: true, unset: true };
+    }
     const st = parseHmToMinute(row.start);
     const ed = parseHmToMinute(row.end);
     const isOff = !!row.is_off;
-    if (st !== null && ed !== null && ed > st) return { start: st, end: ed, is_off: isOff };
-    const defaultStart = 10 * 60;
-    const defaultEnd = 19 * 60;
-    return { start: defaultStart, end: defaultEnd, is_off: isOff };
+    if (isOff) {
+      return { start: st, end: ed, is_off: true, unset: false };
+    }
+    if (st !== null && ed !== null && ed > st) {
+      return { start: st, end: ed, is_off: false, unset: false };
+    }
+    return { start: null, end: null, is_off: true, unset: true };
   }
   function applyCanvasShiftBackground(canvas) {
     const day = canvas.dataset.day || '';
@@ -732,7 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!day || !staffName || !pxPerMin) return;
     const shift = getShift(day, staffName, startHour);
     const timelineStart = startHour * 60;
-    if (shift.is_off) {
+    if (shift.is_off || shift.start === null || shift.end === null || shift.end <= shift.start) {
       canvas.style.background = '#f1f5f9';
       return;
     }
@@ -760,7 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const off = !!(workOffInput && workOffInput.checked);
     if (workStartInput) workStartInput.disabled = off;
     if (workEndInput) workEndInput.disabled = off;
-    if (off && workTimeMessage) {
+    if (off && workTimeMessage && !workTimeMessage.textContent) {
       workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
       workTimeMessage.style.color = '#64748b';
     }
@@ -775,10 +824,10 @@ document.addEventListener('DOMContentLoaded', function() {
     selectedStaffName = staffName;
     filterPanel.classList.add('show');
     filterStaffName.textContent = `スタッフ: ${staffName}`;
-    workStartInput.value = minuteToHm(shift.start);
-    workEndInput.value = minuteToHm(shift.end);
+    workStartInput.value = (shift.start !== null) ? minuteToHm(shift.start) : '';
+    workEndInput.value = (shift.end !== null) ? minuteToHm(shift.end) : '';
     if (workOffInput) workOffInput.checked = !!shift.is_off;
-    workTimeMessage.textContent = '';
+    workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。開始・終了を入力して保存するとオープンになります。' : '';
     const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
     workStartInput.disabled = !canEdit;
     workEndInput.disabled = !canEdit;

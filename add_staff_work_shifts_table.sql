@@ -18,39 +18,6 @@ CREATE INDEX IF NOT EXISTS idx_staff_work_shifts_staff ON staff_work_shifts (sta
 ALTER TABLE staff_work_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff_work_shifts ADD COLUMN IF NOT EXISTS is_off BOOLEAN NOT NULL DEFAULT FALSE;
 
--- 初期投入（一括・本日〜365日先、承認済み・非管理者スタッフを 10:00-19:00）
-INSERT INTO staff_work_shifts (
-    shift_date,
-    staff_name,
-    start_time,
-    end_time,
-    is_off,
-    updated_by
-)
-SELECT
-    d.shift_date,
-    TRIM(
-        COALESCE(u.raw_user_meta_data->>'last_name', '') || ' ' ||
-        COALESCE(u.raw_user_meta_data->>'first_name', '')
-    ) AS staff_name,
-    '10:00' AS start_time,
-    '19:00' AS end_time,
-    FALSE AS is_off,
-    'system-init' AS updated_by
-FROM auth.users u
-CROSS JOIN (
-    SELECT generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '365 days', INTERVAL '1 day')::date AS shift_date
-) d
-WHERE COALESCE((u.raw_user_meta_data->>'approved')::boolean, false) = true
-  AND COALESCE((u.raw_user_meta_data->>'is_admin')::boolean, false) = false
-  AND TRIM(
-        COALESCE(u.raw_user_meta_data->>'last_name', '') || ' ' ||
-        COALESCE(u.raw_user_meta_data->>'first_name', '')
-      ) <> ''
-ON CONFLICT (shift_date, staff_name) DO UPDATE
-SET
-    start_time = EXCLUDED.start_time,
-    end_time = EXCLUDED.end_time,
-    is_off = EXCLUDED.is_off,
-    updated_by = EXCLUDED.updated_by,
-    updated_at = NOW();
+-- 勤務時間は各スタッフが予定管理画面で入力するまで未設定（CLOSE）とする。
+-- 過去に system-init で投入した 10:00-19:00 データがある場合は
+-- update_staff_work_shifts_remove_system_init.sql を実行してください。

@@ -21,6 +21,7 @@
       <option value="in_house">院内</option>
       <option value="visit">往診</option>
       <option value="field">帯同</option>
+      <option value="break">休憩</option>
     </select>
   </div>
   
@@ -92,9 +93,9 @@
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
+    <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
     <input type="time" name="field_end_time" id="field_end_time" value="19:00" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。</small>
+    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。</small>
   </div>
   
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -167,7 +168,7 @@
     <input type="text" name="place_name" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
   
-  <div style="margin-bottom: 20px;">
+  <div id="nomination_section" style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名タイプ（必須）</label>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -231,9 +232,9 @@
   </div>
   {% endif %}
   
-  <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
-    <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+  <div id="memo_section" style="margin-bottom: 20px;">
+    <label id="memo_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
+    <textarea name="memo" id="memo_input" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
   </div>
   
   <div style="display: flex; gap: 12px; margin-top: 30px;">
@@ -707,6 +708,18 @@ document.getElementById('add_frame_staff_btn').addEventListener('click', functio
   });
 });
 
+function setBreakEndTimeDefault() {
+  const reservedAtInput = document.getElementById('reserved_at');
+  const fend = document.getElementById('field_end_time');
+  if (!reservedAtInput || !fend || !reservedAtInput.value || reservedAtInput.value.length < 16) return;
+  const hm = reservedAtInput.value.substring(11, 16).split(':');
+  const startMin = parseInt(hm[0], 10) * 60 + parseInt(hm[1], 10);
+  const endMin = Math.min(26 * 60, startMin + 60);
+  const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
+  const em = String(endMin % 60).padStart(2, '0');
+  fend.value = `${eh}:${em}`;
+}
+
 // 現場区分に応じてフィールドを表示/非表示
 function updatePlaceTypeFields() {
   const placeType = document.getElementById('place_type').value;
@@ -717,7 +730,20 @@ function updatePlaceTypeFields() {
   const additionalMenuSection = document.getElementById('additional_menu_section');
   const placeNameWrapper = document.getElementById('place_name_wrapper');
   const fieldDur = document.getElementById('field_duration_section');
-  
+  const nominationSection = document.getElementById('nomination_section');
+  const adminPriceWrap = document.getElementById('admin_only_price_wrap_new');
+  const memoLabel = document.getElementById('memo_label');
+  const memoInput = document.getElementById('memo_input');
+  const fieldEndLabel = document.getElementById('field_end_time_label');
+  const fieldDurHint = document.getElementById('field_duration_hint');
+  const staffNameSelect = document.getElementById('staff_name');
+
+  if (memoLabel) memoLabel.textContent = placeType === 'break' ? '理由（空欄も可）' : 'メモ';
+  if (memoInput) memoInput.placeholder = placeType === 'break' ? '例：昼食、移動など' : 'メモを入力';
+  if (nominationSection) nominationSection.style.display = (placeType === 'break') ? 'none' : 'block';
+  if (adminPriceWrap) adminPriceWrap.style.display = (placeType === 'break' || placeType === 'field') ? 'none' : 'block';
+  if (staffNameSelect) staffNameSelect.setAttribute('required', 'required');
+
   // 院内/往診の場合：患者選択以降を表示
   if (placeType === 'in_house' || placeType === 'visit') {
     if (fieldDur) fieldDur.style.display = 'none';
@@ -781,9 +807,37 @@ function updatePlaceTypeFields() {
       }
     }
     const fend = document.getElementById('field_end_time');
+    if (fieldEndLabel) fieldEndLabel.textContent = '帯同時間（終了）';
+    if (fieldDurHint) fieldDurHint.textContent = '開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。';
     if (fend && !fend.value) {
       fend.value = '19:00';
     }
+  }
+  // 休憩：休憩時間・担当スタッフ・理由
+  else if (placeType === 'break') {
+    if (patientSection) patientSection.style.display = 'none';
+    if (datetimeSection) datetimeSection.style.display = 'block';
+    if (areaSection) areaSection.style.display = 'none';
+    if (menuSection) menuSection.style.display = 'none';
+    if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    if (fieldDur) fieldDur.style.display = 'block';
+    if (placeNameWrapper) placeNameWrapper.style.display = 'none';
+
+    const patientIdInput = document.getElementById('patient_id');
+    const patientSearch = document.getElementById('patient_search');
+    if (patientIdInput) { patientIdInput.removeAttribute('required'); patientIdInput.value = ''; }
+    if (patientSearch) patientSearch.value = '';
+
+    const reservedAtInput = document.getElementById('reserved_at');
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '休憩時間（開始）';
+    if (fieldEndLabel) fieldEndLabel.textContent = '休憩時間（終了）';
+    if (fieldDurHint) fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「休憩（理由）」と表示されます）。';
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      reservedAtInput.type = 'datetime-local';
+    }
+    setBreakEndTimeDefault();
   }
   // 未選択の場合：すべて非表示
   else {
@@ -850,8 +904,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
   const existingMode = document.getElementById('patient_mode_existing').checked;
   console.log('🔍 現場区分:', placeTypeSubmit, '患者モード:', existingMode ? '既存' : '新規');
   
-  // 帯同以外では患者必須
-  if (placeTypeSubmit !== 'field') {
+  // 帯同・休憩以外では患者必須
+  if (placeTypeSubmit !== 'field' && placeTypeSubmit !== 'break') {
     if (existingMode) {
       const patientId = document.getElementById('patient_id').value;
       if (!patientId) {
@@ -885,7 +939,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
   console.log('🔍 予約日時:', reservedAt);
   if (!reservedAt) {
     e.preventDefault();
-    alert(placeTypeSubmit === 'field' ? '帯同日時を入力してください' : '予約日時を入力してください');
+    alert(placeTypeSubmit === 'field' ? '帯同日時を入力してください' : (placeTypeSubmit === 'break' ? '休憩時間（開始）を入力してください' : '予約日時を入力してください'));
     return false;
   }
   

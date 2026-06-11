@@ -14,7 +14,7 @@
 
 <form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" id="admin-reservation-edit-form" class="admin-reservation-edit-form">
   <!-- 患者情報（帯同では非表示／現場区分変更で表示切替） -->
-  <div id="patient_info_row" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; {% if reservation.place_type == 'field' %}display: none;{% endif %}">
+  <div id="patient_info_row" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; {% if reservation.place_type in ['field', 'break'] %}display: none;{% endif %}">
     <strong style="color: #1E3A5F;">患者：</strong>
     {% if reservation.patient_id %}
     <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
@@ -33,22 +33,23 @@
       <option value="in_house" {% if reservation.place_type == 'in_house' %}selected{% endif %}>院内</option>
       <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>往診</option>
       <option value="field" {% if reservation.place_type == 'field' %}selected{% endif %}>帯同</option>
+      <option value="break" {% if reservation.place_type == 'break' %}selected{% endif %}>休憩</option>
     </select>
   </div>
 
   <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
-    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'field' %}帯同日時{% else %}予約日時{% endif %}</label>
+    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（開始）{% elif reservation.place_type == 'field' %}帯同日時{% else %}予約日時{% endif %}</label>
     <div class="admin-reservation-native-input-wrap">
       <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input">
     </div>
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
+    <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（終了）{% else %}帯同時間（終了）{% endif %}</label>
     <div class="admin-reservation-native-input-wrap">
       <input type="time" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}" class="admin-field-end-time-input">
     </div>
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。</small>
+    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">{% if reservation.place_type == 'break' %}開始・終了を指定します（タイムテーブルに「休憩（理由）」と表示されます）。{% else %}開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。{% endif %}</small>
   </div>
 
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -122,7 +123,7 @@
     <input type="text" name="place_name" value="{{ reservation.place_name or '' }}" placeholder="現場名を入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
 
-  <div style="margin-bottom: 20px;">
+  <div id="nomination_section" style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">指名タイプ（必須）</label>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -185,7 +186,7 @@
   </div>
   {% endif %}
 
-  <div id="status_select_wrap" style="margin-bottom: 20px; {% if reservation.place_type == 'field' %}display: none;{% endif %}">
+  <div id="status_select_wrap" style="margin-bottom: 20px; {% if reservation.place_type in ['field', 'break'] %}display: none;{% endif %}">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">ステータス</label>
     <select name="status" id="status_select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="reserved" {% if reservation.status == 'reserved' %}selected{% endif %}>予約中</option>
@@ -195,9 +196,9 @@
     </select>
   </div>
 
-  <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メモ</label>
-    <textarea name="memo" rows="3" placeholder="メモを入力" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ reservation.memo or '' }}</textarea>
+  <div id="memo_section" style="margin-bottom: 20px;">
+    <label id="memo_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}理由（空欄も可）{% else %}メモ{% endif %}</label>
+    <textarea name="memo" id="memo_input" rows="3" placeholder="{% if reservation.place_type == 'break' %}例：昼食、移動など{% else %}メモを入力{% endif %}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ reservation.memo or '' }}</textarea>
   </div>
 
   <div style="display: flex; gap: 12px; margin-top: 30px;">
@@ -211,9 +212,9 @@ function syncStatusPlaceType(placeType) {
   const wrap = document.getElementById('status_select_wrap');
   const sel = document.getElementById('status_select');
   if (!wrap) return;
-  const isField = (placeType === 'field');
-  wrap.style.display = isField ? 'none' : 'block';
-  if (sel) sel.disabled = isField;
+  const hideStatus = (placeType === 'field' || placeType === 'break');
+  wrap.style.display = hideStatus ? 'none' : 'block';
+  if (sel) sel.disabled = hideStatus;
 }
 
 // メニュー定義（エリア別・時間別・税抜き価格）
@@ -537,6 +538,18 @@ document.getElementById('add_frame_staff_btn').addEventListener('click', functio
   addFrameStaff();
 });
 
+function setBreakEndTimeDefault() {
+  const reservedAtInput = document.getElementById('reserved_at');
+  const fend = document.getElementById('field_end_time');
+  if (!reservedAtInput || !fend || !reservedAtInput.value || reservedAtInput.value.length < 16) return;
+  const hm = reservedAtInput.value.substring(11, 16).split(':');
+  const startMin = parseInt(hm[0], 10) * 60 + parseInt(hm[1], 10);
+  const endMin = Math.min(26 * 60, startMin + 60);
+  const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
+  const em = String(endMin % 60).padStart(2, '0');
+  fend.value = `${eh}:${em}`;
+}
+
 // 現場区分に応じてフィールドを表示/非表示
 function updatePlaceTypeFields() {
   const placeType = document.getElementById('place_type').value;
@@ -547,6 +560,19 @@ function updatePlaceTypeFields() {
   const placeNameWrapper = document.getElementById('place_name_wrapper');
   const patientRow = document.getElementById('patient_info_row');
   const fieldDur = document.getElementById('field_duration_section');
+  const nominationSection = document.getElementById('nomination_section');
+  const frameSection = document.getElementById('frame_nomination_section');
+  const adminPriceWrap = document.getElementById('admin_only_price_wrap');
+  const memoLabel = document.getElementById('memo_label');
+  const memoInput = document.getElementById('memo_input');
+  const fieldEndLabel = document.getElementById('field_end_time_label');
+  const fieldDurHint = document.getElementById('field_duration_hint');
+
+  if (memoLabel) memoLabel.textContent = placeType === 'break' ? '理由（空欄も可）' : 'メモ';
+  if (memoInput) memoInput.placeholder = placeType === 'break' ? '例：昼食、移動など' : 'メモを入力';
+  if (nominationSection) nominationSection.style.display = (placeType === 'break') ? 'none' : 'block';
+  if (frameSection && placeType === 'break') frameSection.style.display = 'none';
+  if (adminPriceWrap) adminPriceWrap.style.display = (placeType === 'break' || placeType === 'field') ? 'none' : 'block';
 
   if (placeType === 'in_house' || placeType === 'visit') {
     if (fieldDur) fieldDur.style.display = 'none';
@@ -596,6 +622,27 @@ function updatePlaceTypeFields() {
       }
     }
     if (fieldDur) fieldDur.style.display = 'block';
+    if (fieldEndLabel) fieldEndLabel.textContent = '帯同時間（終了）';
+    if (fieldDurHint) fieldDurHint.textContent = '開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。';
+  } else if (placeType === 'break') {
+    if (datetimeSection) datetimeSection.style.display = 'block';
+    if (areaSection) areaSection.style.display = 'none';
+    if (menuSection) menuSection.style.display = 'none';
+    if (additionalMenuSection) additionalMenuSection.style.display = 'none';
+    if (fieldDur) fieldDur.style.display = 'block';
+    const reservedAtLabel = document.getElementById('reserved_at_label');
+    if (reservedAtLabel) reservedAtLabel.textContent = '休憩時間（開始）';
+    if (fieldEndLabel) fieldEndLabel.textContent = '休憩時間（終了）';
+    if (fieldDurHint) fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「休憩（理由）」と表示されます）。';
+    const reservedAtInput = document.getElementById('reserved_at');
+    const areaSelect = document.getElementById('area');
+    const menuSelect = document.getElementById('menu');
+    if (areaSelect) areaSelect.removeAttribute('required');
+    if (menuSelect) menuSelect.removeAttribute('required');
+    if (reservedAtInput) {
+      reservedAtInput.setAttribute('required', 'required');
+      reservedAtInput.type = 'datetime-local';
+    }
   } else {
     if (datetimeSection) datetimeSection.style.display = 'none';
     if (areaSection) areaSection.style.display = 'none';
@@ -611,9 +658,9 @@ function updatePlaceTypeFields() {
   }
 
   if (patientRow) {
-    patientRow.style.display = (placeType === 'field') ? 'none' : 'block';
+    patientRow.style.display = (placeType === 'field' || placeType === 'break') ? 'none' : 'block';
   }
-  if (fieldDur && placeType !== 'field') {
+  if (fieldDur && placeType !== 'field' && placeType !== 'break') {
     fieldDur.style.display = 'none';
   }
   syncStatusPlaceType(placeType);
