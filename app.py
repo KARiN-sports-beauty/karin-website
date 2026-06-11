@@ -1270,17 +1270,22 @@ def treatment():
     ]
     return render_template("treatment.html", items=items)
 
-@app.route("/yoyogiuehara/shinkyu")
-def yoyogiuehara_shinkyu():
-    return render_template("yoyogiuehara_shinkyu.html")
-
-@app.route("/yakuin/shinkyu")
-def yakuin_shinkyu():
-    return render_template("yakuin_shinkyu.html")
-
 @app.route("/lp-yoyogiuehara")
 def lp_yoyogiuehara():
     return render_template("lp-yoyogiuehara.html")
+
+@app.route("/lp-yakuin")
+def lp_yakuin():
+    return render_template("lp-yakuin.html")
+
+# 旧エリアページ → 新LP（SEO維持のため 301 リダイレクト）
+@app.route("/yoyogiuehara/shinkyu")
+def yoyogiuehara_shinkyu_redirect():
+    return redirect(url_for("lp_yoyogiuehara"), code=301)
+
+@app.route("/yakuin/shinkyu")
+def yakuin_shinkyu_redirect():
+    return redirect(url_for("lp_yakuin"), code=301)
 
 
 @app.route("/price")
@@ -4026,7 +4031,7 @@ def sitemap():
         # --- 固定ページ ---
         static_urls = [
             "/", "/treatment", "/price", "/contact",
-            "/form", "/login", "/register", "/blog", "/news", "/yoyogiuehara/shinkyu", "/yakuin/shinkyu"
+            "/form", "/login", "/register", "/blog", "/news", "/lp-yoyogiuehara", "/lp-yakuin"
         ]
         for url in static_urls:
             pages.append(

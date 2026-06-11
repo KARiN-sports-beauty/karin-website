@@ -307,8 +307,8 @@
       <a href="{{ url_for('treatment') }}" class="cta-btn">詳しく見る</a>
       </div>
       <div style="text-align: center; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="{{ url_for('yoyogiuehara_shinkyu') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">代々木上原で鍼灸をお探しの方へ</a>
-        <a href="{{ url_for('yakuin_shinkyu') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">薬院で鍼灸をお探しの方へ</a>
+        <a href="{{ url_for('lp_yoyogiuehara') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">代々木上原で鍼灸をお探しの方へ</a>
+        <a href="{{ url_for('lp_yakuin') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">薬院で鍼灸をお探しの方へ</a>
       </div>
     </div>
   </section>
@@ -441,9 +441,9 @@
         KARiN. <span>~Sports & Beauty~</span>
       </div>
       <div class="footer-area-links" style="text-align: center; margin: 10px 0; font-size: 0.85rem; color: #999;">
-        <a href="/yoyogiuehara/shinkyu" aria-label="代々木上原で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">代々木上原</a>
+        <a href="{{ url_for('lp_yoyogiuehara') }}" aria-label="代々木上原で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">代々木上原</a>
         <span style="color: #ccc;">|</span>
-        <a href="/yakuin/shinkyu" aria-label="薬院で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">薬院</a>
+        <a href="{{ url_for('lp_yakuin') }}" aria-label="薬院で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">薬院</a>
       </div>
       <ul class="footer-links">
         <li><a href="{{ url_for('index') }}">ホーム</a></li>
