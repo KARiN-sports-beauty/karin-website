@@ -146,6 +146,29 @@
   .schedule-filter-panel.show {
     display: flex;
   }
+  .work-area-toggle {
+    display: inline-flex;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .work-area-toggle button {
+    padding: 5px 12px;
+    border: none;
+    background: #fff;
+    color: #64748b;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .work-area-toggle button.active {
+    background: #1E3A5F;
+    color: #fff;
+    font-weight: 600;
+  }
+  .work-area-toggle button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
   .schedule-time-head {
     position: relative;
     border-bottom: 1px solid #e2e8f0;
@@ -354,6 +377,10 @@
     </h3>
     <div id="schedule-filter-panel" class="schedule-filter-panel">
       <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
+      <div id="work-area-toggle" class="work-area-toggle" title="この日の勤務エリア（東京出張など）">
+        <button type="button" data-area="fukuoka" id="work-area-fukuoka">福岡</button>
+        <button type="button" data-area="tokyo" id="work-area-tokyo">東京</button>
+      </div>
       <span style="color:#64748b; font-size:0.9rem;">勤務時間</span>
       <input id="work-start-input" type="text" value="" placeholder="10:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
       <span style="color:#64748b;">〜</span>
@@ -693,6 +720,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const SHIFT_DATA = {{ shift_map|tojson }};
+  const STAFF_DEFAULT_AREA = {{ staff_area_map|tojson }};
   const SHIFT_CAN_EDIT_ALL = {{ shift_can_edit_all|tojson }};
   const VIEWER_STAFF_NAME = {{ viewer_staff_name|tojson }};
   const paymentBlocks = document.querySelectorAll('[data-reservation-id]');
@@ -741,6 +769,32 @@ document.addEventListener('DOMContentLoaded', function() {
   const workTimeSaveBtn = document.getElementById('work-time-save-btn');
   const filterClearBtn = document.getElementById('schedule-filter-clear-btn');
   const workTimeMessage = document.getElementById('work-time-message');
+  const workAreaFukuoka = document.getElementById('work-area-fukuoka');
+  const workAreaTokyo = document.getElementById('work-area-tokyo');
+  let selectedShiftArea = 'fukuoka';
+
+  function getStaffDefaultArea(staffName) {
+    const key = String(staffName || '').trim();
+    return STAFF_DEFAULT_AREA[key] || 'tokyo';
+  }
+  function getShiftArea(staffName) {
+    const key = String(staffName || '').trim();
+    const row = SHIFT_DATA[key];
+    if (row && row.area) return row.area;
+    return getStaffDefaultArea(key);
+  }
+  function syncAreaToggleUI(area, canEdit) {
+    const a = (area === 'tokyo') ? 'tokyo' : 'fukuoka';
+    selectedShiftArea = a;
+    if (workAreaFukuoka) {
+      workAreaFukuoka.classList.toggle('active', a === 'fukuoka');
+      workAreaFukuoka.disabled = !canEdit;
+    }
+    if (workAreaTokyo) {
+      workAreaTokyo.classList.toggle('active', a === 'tokyo');
+      workAreaTokyo.disabled = !canEdit;
+    }
+  }
 
   function parseHmToMinute(s) {
     const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -824,11 +878,12 @@ document.addEventListener('DOMContentLoaded', function() {
     selectedStaffName = staffName;
     filterPanel.classList.add('show');
     filterStaffName.textContent = `スタッフ: ${staffName}`;
+    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
+    syncAreaToggleUI(getShiftArea(staffName), canEdit);
     workStartInput.value = (shift.start !== null) ? minuteToHm(shift.start) : '';
     workEndInput.value = (shift.end !== null) ? minuteToHm(shift.end) : '';
     if (workOffInput) workOffInput.checked = !!shift.is_off;
     workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。開始・終了を入力して保存するとオープンになります。' : '';
-    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
     workStartInput.disabled = !canEdit;
     workEndInput.disabled = !canEdit;
     workTimeSaveBtn.disabled = !canEdit;
@@ -853,6 +908,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if (workOffInput) {
     workOffInput.addEventListener('change', syncOffInputState);
   }
+
+  function bindAreaToggle(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      if (btn.disabled || !selectedStaffName) return;
+      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+      if (!canEdit) return;
+      syncAreaToggleUI(btn.dataset.area || 'fukuoka', true);
+    });
+  }
+  bindAreaToggle(workAreaFukuoka);
+  bindAreaToggle(workAreaTokyo);
 
   if (workTimeSaveBtn) {
     workTimeSaveBtn.addEventListener('click', async function() {
@@ -880,6 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
             start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
             end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
             is_off: isOff,
+            area: selectedShiftArea,
           }),
         });
         const json = await res.json();
@@ -890,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
           start: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
           end: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
           is_off: isOff,
+          area: selectedShiftArea,
         };
         applyAllCanvasShiftBackgrounds();
         workTimeMessage.textContent = isOff ? '休みを保存しました。' : '勤務時間を保存しました。';

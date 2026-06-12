@@ -17,6 +17,7 @@
   padding: 12px 10px;
   border-bottom: 1px solid #ddd;
   text-align: left;
+  vertical-align: middle;
 }
 .staff-table th {
   background: #f5f7fb;
@@ -36,6 +37,21 @@
 }
 .action-btn.delete {
   background: #888;
+}
+.staff-inline-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.staff-area-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e8eef5;
+  color: #1E3A5F;
 }
 </style>
 </head>
@@ -71,25 +87,40 @@
       <td>
         {% if s.is_admin %}
           <span style="color:#1E3A5F; font-weight:600;">管理者</span>
-        {% elif s.approved and s.staff_role %}
-          {% if s.staff_role == 'reception' %}受付
-          {% elif s.staff_role == 'regular' %}正規スタッフ
-          {% elif s.staff_role == 'irregular' %}非正規スタッフ
-          {% else %}{{ s.staff_role }}{% endif %}
         {% elif s.approved %}
-          <span style="color:#888;">未設定（正規扱い）</span>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>
+              {% if s.staff_role == 'reception' %}受付
+              {% elif s.staff_role == 'regular' %}正規スタッフ
+              {% elif s.staff_role == 'irregular' %}非正規スタッフ
+              {% else %}正規スタッフ{% endif %}
+            </span>
+            <form action="/admin/staff/update-area/{{ s.id }}" method="POST" class="staff-inline-form">
+              <label style="font-size:12px; color:#64748b;">拠点</label>
+              <select name="area" style="padding:4px 6px; border-radius:6px; border:1px solid #ccc; font-size:13px;">
+                <option value="fukuoka" {% if s.area == 'fukuoka' %}selected{% endif %}>福岡</option>
+                <option value="tokyo" {% if s.area == 'tokyo' %}selected{% endif %}>東京</option>
+              </select>
+              <button type="submit" class="action-btn" style="font-size:12px; padding:4px 10px;">更新</button>
+            </form>
+          </div>
         {% else %}
           —
         {% endif %}
       </td>
       <td>
         {% if not s.approved %}
-        <form action="/admin/staff/approve/{{ s.id }}" method="POST" style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <form action="/admin/staff/approve/{{ s.id }}" method="POST" class="staff-inline-form">
           <label style="font-size:13px; color:#1E3A5F;">配属</label>
           <select name="staff_role" required style="padding:6px 8px; border-radius:6px; border:1px solid #ccc;">
             <option value="reception">受付</option>
             <option value="regular" selected>正規スタッフ</option>
             <option value="irregular">非正規スタッフ</option>
+          </select>
+          <label style="font-size:13px; color:#1E3A5F;">拠点</label>
+          <select name="area" required style="padding:6px 8px; border-radius:6px; border:1px solid #ccc;">
+            <option value="fukuoka" selected>福岡</option>
+            <option value="tokyo">東京</option>
           </select>
           <button type="submit" class="action-btn">承認</button>
         </form>

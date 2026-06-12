@@ -216,20 +216,31 @@ def generate_unique_slug(table: str, title: str, current_id=None) -> str:
 # LINE通知（Messaging API）
 # ===============================
 
+def line_notify_user_ids():
+    """Push 通知先 userId の一覧（重複除去・空除外）。"""
+    ids = []
+    for key in ("LINE_USER_ID", "LINE_RECEPTION_USER_ID"):
+        uid = (os.getenv(key) or "").strip()
+        if uid and uid not in ids:
+            ids.append(uid)
+    return ids
+
+
 def send_line_message(text: str):
     """
-    LINE Messaging API の pushメッセージ送信用（正しい版）
+    LINE Messaging API の pushメッセージ送信用。
+    LINE_USER_ID（管理者）と LINE_RECEPTION_USER_ID（受付）の両方に送る。
     """
     try:
         line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-        user_id = os.getenv("LINE_USER_ID")
+        user_ids = line_notify_user_ids()
 
         if not line_token:
             print("❌ LINE_CHANNEL_ACCESS_TOKEN が設定されていません")
             return
 
-        if not user_id:
-            print("❌ LINE_USER_ID が設定されていません")
+        if not user_ids:
+            print("❌ LINE_USER_ID / LINE_RECEPTION_USER_ID が設定されていません")
             return
 
         url = "https://api.line.me/v2/bot/message/push"
@@ -238,20 +249,18 @@ def send_line_message(text: str):
             "Authorization": f"Bearer {line_token}"
         }
 
-        payload = {
-            "to": user_id,
-            "messages": [
-                {"type": "text", "text": text}
-            ]
-        }
-
-        response = requests.post(url, headers=headers, json=payload)
-        print("📩 LINE送信結果:", response.status_code, response.text)
+        for user_id in user_ids:
+            payload = {
+                "to": user_id,
+                "messages": [
+                    {"type": "text", "text": text}
+                ]
+            }
+            response = requests.post(url, headers=headers, json=payload)
+            print(f"📩 LINE送信 ({user_id[:8]}…):", response.status_code, response.text)
 
     except Exception as e:
         print("❌ LINE通知エラー:", e)
-
-
 
 
 # =====================================
@@ -268,6 +277,43 @@ def to_jst_filter(value):
         return value
 
 app.jinja_env.filters["to_jst"] = to_jst_filter
+
+
+@app.route("/line/webhook", methods=["POST"])
+def line_webhook():
+    """
+    LINE Messaging API Webhook（受付アカウント等の userId 取得用）。
+    受付LINEから公式アカウントへ任意のメッセージを送ると、サーバーログに userId が出力されます。
+    LINE_CHANNEL_SECRET 設定時は署名検証を行う。
+    """
+    try:
+        body = request.get_data(as_text=True)
+        channel_secret = (os.getenv("LINE_CHANNEL_SECRET") or "").strip()
+        if channel_secret:
+            import hashlib
+            import hmac
+            import base64
+            signature = request.headers.get("X-Line-Signature", "")
+            digest = hmac.new(channel_secret.encode(), body.encode(), hashlib.sha256).digest()
+            expected = base64.b64encode(digest).decode()
+            if not hmac.compare_digest(expected, signature):
+                print("⚠️ LINE Webhook: 署名不一致")
+                return "invalid signature", 403
+
+        events = request.get_json(silent=True) or {}
+        for ev in events.get("events") or []:
+            source = ev.get("source") or {}
+            uid = source.get("userId")
+            ev_type = ev.get("type")
+            if uid:
+                print(f"📱 LINE Webhook userId={uid} type={ev_type}")
+                if ev_type == "message":
+                    msg = (ev.get("message") or {}).get("text", "")
+                    print(f"   message={msg!r} → 受付用なら .env に LINE_RECEPTION_USER_ID={uid}")
+        return "ok", 200
+    except Exception as e:
+        print(f"❌ LINE Webhook エラー: {e}")
+        return "error", 500
 
 
 def calc_age(birthday_str):
@@ -350,6 +396,20 @@ STAFF_ROLE_RECEPTION = "reception"
 STAFF_ROLE_REGULAR = "regular"
 STAFF_ROLE_IRREGULAR = "irregular"
 STAFF_ROLES_NONADMIN = frozenset({STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR})
+
+
+def normalize_staff_area(area_raw):
+    """user_metadata.area を tokyo / fukuoka に正規化。"""
+    area = (area_raw or "tokyo").strip().lower()
+    return area if area in ("tokyo", "fukuoka") else "tokyo"
+
+
+def staff_display_sort_key(entry):
+    """予定管理タイムライン等：福岡→東京、同エリア内は登録が古い順。"""
+    area_grp = 0 if normalize_staff_area(entry.get("area")) == "fukuoka" else 1
+    created = entry.get("created_at") or ""
+    return (area_grp, created, entry.get("name") or "")
+
 
 # 各管理セクションへアクセス可能な配属（管理者は常に可）
 STAFF_SECTION_ALLOWED_NONADMIN = {
@@ -1668,12 +1728,40 @@ def admin_staff():
             "approved": meta.get("approved", False),
             "is_admin": meta.get("is_admin", False),
             "staff_role": sr,
+            "area": normalize_staff_area(meta.get("area")),
             "created_at": str(u.created_at)[:10],
         })
 
     return render_template("admin_staff.html", staff=staff_list)
 
 
+
+
+@app.route("/admin/staff/update-area/<user_id>", methods=["POST"])
+@admin_required
+def admin_staff_update_area(user_id):
+    """承認済みスタッフの拠点エリア（東京/福岡）を更新。"""
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        user = next((u for u in users if u.id == user_id), None)
+        if not user:
+            flash("ユーザーが見つかりません", "error")
+            return redirect("/admin/staff")
+        meta = user.user_metadata or {}
+        if not meta.get("approved", False):
+            flash("承認済みスタッフのみエリアを変更できます", "error")
+            return redirect("/admin/staff")
+        if meta.get("is_admin", False):
+            flash("管理者のエリアは変更できません", "error")
+            return redirect("/admin/staff")
+        updated_metadata = meta.copy()
+        updated_metadata["area"] = normalize_staff_area(request.form.get("area"))
+        supabase_admin.auth.admin.update_user_by_id(user_id, {"user_metadata": updated_metadata})
+        flash("エリアを更新しました", "success")
+    except Exception as e:
+        print(f"❌ スタッフエリア更新エラー: {e}")
+        flash("エリアの更新に失敗しました", "error")
+    return redirect("/admin/staff")
 
 
 # 承認
@@ -1699,6 +1787,7 @@ def admin_staff_approve(user_id):
         if role_in not in STAFF_ROLES_NONADMIN:
             role_in = STAFF_ROLE_REGULAR
         updated_metadata["staff_role"] = role_in
+        updated_metadata["area"] = normalize_staff_area(request.form.get("area"))
 
         print(f"🔍 承認処理 - User ID: {user_id}, 既存メタデータ: {meta}, 更新後メタデータ: {updated_metadata}")
         
@@ -4286,6 +4375,7 @@ def admin_reservations():
                     "id": u.id,
                     "name": display_name,
                     "role": role,
+                    "area": normalize_staff_area(meta.get("area")),
                     "created_at": created,
                 })
         except Exception as e:
@@ -4296,16 +4386,11 @@ def admin_reservations():
                 "id": viewer.get("id"),
                 "name": viewer_name,
                 "role": viewer_role if viewer_role in STAFF_ROLES_NONADMIN else STAFF_ROLE_REGULAR,
+                "area": normalize_staff_area(viewer.get("area")),
                 "created_at": "",
             })
 
-        def staff_sort_key(x):
-            role = x.get("role") or STAFF_ROLE_REGULAR
-            group = 1 if role == STAFF_ROLE_IRREGULAR else 0  # 上:正規系(受付含む), 下:非正規
-            created = x.get("created_at") or ""
-            return (group, created, x.get("name") or "")
-
-        staff_entries.sort(key=staff_sort_key)
+        staff_entries.sort(key=staff_display_sort_key)
         if viewer_is_irregular:
             staff_entries = [s for s in staff_entries if (s.get("name") or "").strip() == viewer_name]
 
@@ -4374,12 +4459,16 @@ def admin_reservations():
 
         timeline_staff_rows = []
         if staff_filter == "all":
-            regular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) != STAFF_ROLE_IRREGULAR]
-            irregular_names = [n for n in timeline_staff_names if timeline_staff_role_map.get(n) == STAFF_ROLE_IRREGULAR]
-            for n in regular_names:
-                timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
-            for n in irregular_names:
-                timeline_staff_rows.append({"type": "staff", "name": n, "role": STAFF_ROLE_IRREGULAR})
+            for s in staff_entries:
+                n = (s.get("name") or "").strip()
+                if not n:
+                    continue
+                timeline_staff_rows.append({
+                    "type": "staff",
+                    "name": n,
+                    "role": s.get("role") or STAFF_ROLE_REGULAR,
+                    "area": s.get("area") or "tokyo",
+                })
         else:
             for n in timeline_staff_names:
                 timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
@@ -4454,7 +4543,7 @@ def admin_reservations():
                 res_shifts = (
                     supabase_admin
                     .table("staff_work_shifts")
-                    .select("staff_name, start_time, end_time, is_off")
+                    .select("staff_name, start_time, end_time, is_off, area")
                     .eq("shift_date", selected_day_str)
                     .in_("staff_name", shift_staff_names)
                     .execute()
@@ -4462,13 +4551,21 @@ def admin_reservations():
                 for sh in (res_shifts.data or []):
                     nm = (sh.get("staff_name") or "").strip()
                     if nm:
+                        shift_area = sh.get("area")
                         shift_map[nm] = {
                             "start": sh.get("start_time") or "",
                             "end": sh.get("end_time") or "",
                             "is_off": bool(sh.get("is_off")),
+                            "area": normalize_staff_area(shift_area) if shift_area else None,
                         }
             except Exception as e:
                 print(f"⚠️ 勤務時間取得エラー: {e}")
+
+        staff_area_map = {
+            (s.get("name") or "").strip(): s.get("area") or "tokyo"
+            for s in staff_entries
+            if (s.get("name") or "").strip()
+        }
         
         return render_template(
             "admin_reservations.html",
@@ -4495,6 +4592,7 @@ def admin_reservations():
             timeline_staff_rows=timeline_staff_rows,
             timeline_cards_by_staff=timeline_cards_by_staff,
             shift_map=shift_map,
+            staff_area_map=staff_area_map,
             shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
             viewer_staff_name=viewer_name,
             viewer_is_admin=viewer_is_admin,
@@ -4516,6 +4614,8 @@ def admin_reservations_shift_save():
         start_time = (data.get("start_time") or "").strip()
         end_time = (data.get("end_time") or "").strip()
         is_off = bool(data.get("is_off", False))
+        area_raw = (data.get("area") or "").strip()
+        shift_area = normalize_staff_area(area_raw) if area_raw else None
         if not shift_date or not staff_name:
             return jsonify({"success": False, "message": "必須項目が不足しています"}), 400
 
@@ -4557,6 +4657,8 @@ def admin_reservations_shift_save():
             "updated_by": (st.get("name") or st.get("email") or "unknown"),
             "updated_at": now_iso(),
         }
+        if shift_area:
+            payload["area"] = shift_area
         supabase_admin.table("staff_work_shifts").upsert(payload, on_conflict="shift_date,staff_name").execute()
         return jsonify({"success": True}), 200
     except Exception as e:
