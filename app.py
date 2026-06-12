@@ -552,6 +552,407 @@ def fetch_in_house_bed_conflicting_reservations(new_start_jst, new_end_jst, excl
     return out
 
 
+# ===============================
+# 院内Web予約（クライアント向け Phase 1）
+# ===============================
+BOOKING_SLOT_STEP_MINUTES = 15
+BOOKING_MIN_LEAD_MINUTES = 120
+BOOKING_DAYS_AHEAD = 14
+BOOKING_TIMELINE_START_MINUTE = 7 * 60
+BOOKING_TIMELINE_END_MINUTE = 26 * 60
+BOOKING_FREE_STAFF_KEY = "__free__"
+OFFICIAL_LINE_URL = "https://lin.ee/rVEbNhl5"
+
+# 院内Web予約のエリア（福岡は UI 表示のみ・選択不可。準備完了後に selectable を true に）
+BOOKING_AREA_OPTIONS = [
+    {"id": "tokyo", "label": "東京", "selectable": True},
+    {"id": "fukuoka", "label": "福岡", "selectable": False, "badge": "準備中"},
+]
+
+
+def booking_area_option(area_id):
+    for opt in BOOKING_AREA_OPTIONS:
+        if opt["id"] == normalize_staff_area(area_id):
+            return opt
+    return None
+
+
+def booking_area_selectable(area_id):
+    opt = booking_area_option(area_id)
+    return bool(opt and opt.get("selectable"))
+
+
+def assert_booking_area_selectable(area_id):
+    if not booking_area_selectable(area_id):
+        return jsonify({"success": False, "message": "このエリアは現在Web予約を受け付けていません"}), 400
+    return None
+
+BOOKING_COURSE_OPTIONS = {
+    "tokyo": [
+        {"minutes": 60, "label": "60分"},
+        {"minutes": 90, "label": "90分"},
+        {"minutes": 120, "label": "120分"},
+    ],
+    "fukuoka": [
+        {"minutes": 60, "label": "60分"},
+        {"minutes": 90, "label": "90分"},
+        {"minutes": 120, "label": "120分"},
+    ],
+}
+
+
+def public_booking_enabled():
+    return os.getenv("PUBLIC_BOOKING_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+
+
+def normalize_phone_digits(phone):
+    return "".join(c for c in str(phone or "") if c.isdigit())
+
+
+def parse_booking_hm_to_minutes(hm_str):
+    try:
+        h_str, m_str = str(hm_str or "").strip().split(":")
+        h, m = int(h_str), int(m_str)
+        if h < 0 or h > 26 or m < 0 or m > 59:
+            return None
+        return h * 60 + m
+    except Exception:
+        return None
+
+
+def load_approved_staff_entries_for_booking():
+    staff_entries = []
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        for u in users:
+            meta = u.user_metadata or {}
+            if not meta.get("approved", False) or meta.get("is_admin", False):
+                continue
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            display_name = f"{last_name} {first_name}".strip() if (last_name and first_name) else (meta.get("name") or "").strip()
+            if not display_name:
+                continue
+            staff_entries.append({
+                "id": u.id,
+                "name": display_name,
+                "area": normalize_staff_area(meta.get("area")),
+                "created_at": str(u.created_at) if getattr(u, "created_at", None) else "",
+            })
+    except Exception as e:
+        print(f"⚠️ booking staff list error: {e}")
+    staff_entries.sort(key=staff_display_sort_key)
+    return staff_entries
+
+
+def fetch_booking_day_reservations(day_str):
+    try:
+        day = datetime.strptime(day_str, "%Y-%m-%d").date()
+    except ValueError:
+        return []
+    win_start = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST)
+    win_end = win_start + timedelta(days=1)
+    try:
+        res = (
+            supabase_admin.table("reservations")
+            .select("id, staff_name, reserved_at, duration_minutes, place_type, status")
+            .gte("reserved_at", win_start.isoformat())
+            .lt("reserved_at", win_end.isoformat())
+            .neq("status", "canceled")
+            .execute()
+        )
+        return res.data or []
+    except Exception as e:
+        print(f"⚠️ booking reservations fetch error: {e}")
+        return []
+
+
+def fetch_booking_day_shifts(day_str, staff_names):
+    if not staff_names:
+        return {}
+    try:
+        res = (
+            supabase_admin.table("staff_work_shifts")
+            .select("staff_name, start_time, end_time, is_off, area")
+            .eq("shift_date", day_str)
+            .in_("staff_name", staff_names)
+            .execute()
+        )
+        out = {}
+        for row in res.data or []:
+            nm = (row.get("staff_name") or "").strip()
+            if nm:
+                out[nm] = row
+        return out
+    except Exception as e:
+        print(f"⚠️ booking shifts fetch error: {e}")
+        return {}
+
+
+def staff_field_only_on_day(staff_name, day_reservations):
+    rows = [r for r in day_reservations if (r.get("staff_name") or "").strip() == staff_name]
+    if not rows:
+        return False
+    return all((r.get("place_type") or "") == "field" for r in rows)
+
+
+def reservation_interval_jst(row):
+    try:
+        start = datetime.fromisoformat(str(row.get("reserved_at", "")).replace("Z", "+00:00")).astimezone(JST)
+    except Exception:
+        return None, None
+    dur = int(row.get("duration_minutes") or 60)
+    if dur <= 0:
+        dur = 60
+    return start, start + timedelta(minutes=dur)
+
+
+def booking_intervals_overlap(s1, e1, s2, e2):
+    return s1 < e2 and e1 > s2
+
+
+def effective_staff_area_on_day(staff_entry, shift_row):
+    if shift_row and shift_row.get("area"):
+        return normalize_staff_area(shift_row.get("area"))
+    return normalize_staff_area(staff_entry.get("area"))
+
+
+def shift_open_minutes(shift_row):
+    if not shift_row or bool(shift_row.get("is_off")):
+        return None, None
+    st = parse_booking_hm_to_minutes(shift_row.get("start_time"))
+    ed = parse_booking_hm_to_minutes(shift_row.get("end_time"))
+    if st is None or ed is None or ed <= st:
+        return None, None
+    return st, ed
+
+
+def working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations):
+    area = normalize_staff_area(area)
+    working = []
+    for s in staff_entries:
+        name = (s.get("name") or "").strip()
+        if not name:
+            continue
+        if staff_field_only_on_day(name, day_reservations):
+            continue
+        shift_row = shifts_map.get(name)
+        st_min, ed_min = shift_open_minutes(shift_row)
+        if st_min is None:
+            continue
+        if effective_staff_area_on_day(s, shift_row) != area:
+            continue
+        working.append({
+            "name": name,
+            "created_at": s.get("created_at") or "",
+            "shift_start": st_min,
+            "shift_end": ed_min,
+        })
+    return working
+
+
+def is_booking_slot_available(staff_name, slot_start_jst, duration_minutes, shift_start_min, shift_end_min, day_reservations, now_jst):
+    if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
+        return False
+    slot_end_jst = slot_start_jst + timedelta(minutes=duration_minutes)
+    slot_start_min = slot_start_jst.hour * 60 + slot_start_jst.minute
+    slot_end_min = slot_end_jst.hour * 60 + slot_end_jst.minute
+    if slot_end_min > 26 * 60:
+        return False
+    if slot_start_min < shift_start_min or slot_end_min > shift_end_min:
+        return False
+    for r in day_reservations:
+        if (r.get("staff_name") or "").strip() != staff_name:
+            continue
+        rs, re = reservation_interval_jst(r)
+        if rs is None:
+            continue
+        if booking_intervals_overlap(slot_start_jst, slot_end_jst, rs, re):
+            return False
+    if fetch_in_house_bed_conflicting_reservations(slot_start_jst, slot_end_jst):
+        return False
+    return True
+
+
+def build_booking_slot_list(working_staff, day_str, duration_minutes, day_reservations, now_jst):
+    staff_rows = []
+    free_slots = []
+    try:
+        day = datetime.strptime(day_str, "%Y-%m-%d").date()
+    except ValueError:
+        return [], []
+
+    for ws in working_staff:
+        slots = []
+        st_min, ed_min = ws["shift_start"], ws["shift_end"]
+        for minute in range(st_min, ed_min, BOOKING_SLOT_STEP_MINUTES):
+            if minute + duration_minutes > ed_min:
+                break
+            hh, mm = divmod(minute, 60)
+            slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+            available = is_booking_slot_available(
+                ws["name"], slot_start_jst, duration_minutes, st_min, ed_min, day_reservations, now_jst
+            )
+            time_label = f"{hh:02d}:{mm:02d}"
+            slot_info = {"time": time_label, "available": available}
+            slots.append(slot_info)
+            if available:
+                free_slots.append((ws["created_at"], ws["name"], time_label, slot_start_jst))
+        staff_rows.append({"staff_name": ws["name"], "slots": slots})
+
+    free_by_time = {}
+    for created_at, name, time_label, slot_start_jst in free_slots:
+        if time_label not in free_by_time or created_at < free_by_time[time_label][0]:
+            free_by_time[time_label] = (created_at, name, slot_start_jst)
+
+    all_times = sorted({sl["time"] for row in staff_rows for sl in row["slots"]})
+    free_row_slots = []
+    for t in all_times:
+        hh, mm = map(int, t.split(":"))
+        minute = hh * 60 + mm
+        any_staff = next((ws for ws in working_staff if ws["shift_start"] <= minute < ws["shift_end"]), None)
+        available = t in free_by_time
+        free_row_slots.append({"time": t, "available": available})
+    return staff_rows, free_row_slots
+
+
+def pick_free_staff_for_slot(day_str, time_hm, duration_minutes, area):
+    staff_entries = load_approved_staff_entries_for_booking()
+    day_reservations = fetch_booking_day_reservations(day_str)
+    names = [s["name"] for s in staff_entries]
+    shifts_map = fetch_booking_day_shifts(day_str, names)
+    working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+    working_sorted = sorted(working, key=lambda x: (x.get("created_at") or "", x.get("name") or ""))
+    try:
+        day = datetime.strptime(day_str, "%Y-%m-%d").date()
+        hh, mm = map(int, time_hm.split(":"))
+        slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+    except Exception:
+        return None
+    now_jst = datetime.now(JST)
+    for ws in working_sorted:
+        if is_booking_slot_available(
+            ws["name"], slot_start_jst, duration_minutes,
+            ws["shift_start"], ws["shift_end"], day_reservations, now_jst
+        ):
+            return ws["name"]
+    return None
+
+
+def find_patient_by_name_phone(last_name, first_name, phone):
+    norm_phone = normalize_phone_digits(phone)
+    if not norm_phone or not last_name or not first_name:
+        return None
+    try:
+        res = supabase_admin.table("patients").select("id, last_name, first_name, phone").execute()
+        for p in res.data or []:
+            ln = (p.get("last_name") or "").strip()
+            fn = (p.get("first_name") or "").strip()
+            if ln == last_name.strip() and fn == first_name.strip():
+                if normalize_phone_digits(p.get("phone")) == norm_phone:
+                    return p.get("id")
+    except Exception as e:
+        print(f"⚠️ patient lookup error: {e}")
+    return None
+
+
+def load_patients_for_autocomplete():
+    """予定作成・編集フォームの患者検索用リスト"""
+    res_patients = (
+        supabase_admin.table("patients")
+        .select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    patients = res_patients.data or []
+    introducer_ids = list({
+        p.get("introduced_by_patient_id")
+        for p in patients
+        if p.get("introduced_by_patient_id")
+    })
+    introducer_map = {}
+    if introducer_ids:
+        res_introducers = (
+            supabase_admin.table("patients")
+            .select("id, last_name, first_name, last_kana, first_kana, vip_level")
+            .in_("id", introducer_ids)
+            .execute()
+        )
+        if res_introducers.data:
+            introducer_map = {intro["id"]: intro for intro in res_introducers.data}
+    for patient in patients:
+        intro_id = patient.get("introduced_by_patient_id")
+        patient["introducer_info"] = introducer_map.get(intro_id) if intro_id else None
+    return patients
+
+
+def send_booking_confirmation_email(to_email, last_name, first_name, day_str, time_hm, duration_minutes, area, staff_name, course_label, note):
+    api_key = (os.getenv("SENDGRID_API_KEY") or "").strip()
+    from_email = (os.getenv("BOOKING_FROM_EMAIL") or "info@karin-sb.jp").strip()
+    if not api_key or not to_email:
+        print("⚠️ SENDGRID_API_KEY または宛先メールが未設定のため予約確認メールをスキップ")
+        return False
+    try:
+        end_h = end_m = None
+        try:
+            day = datetime.strptime(day_str, "%Y-%m-%d").date()
+            hh, mm = map(int, time_hm.split(":"))
+            start_dt = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+            end_dt = start_dt + timedelta(minutes=duration_minutes)
+            end_h, end_m = end_dt.hour, end_dt.minute
+        except Exception:
+            pass
+        area_label = "東京" if area == "tokyo" else "福岡"
+        time_range = f"{time_hm}〜{end_h:02d}:{end_m:02d}" if end_h is not None else time_hm
+        name = f"{last_name} {first_name}".strip()
+        body = f"""{name} 様
+
+この度は KARiN. ~Sports & Beauty~ をご予約いただき、
+誠にありがとうございます。
+
+以下の内容でご予約を承りました。
+
+━━━━━━━━━━━━━━
+■ ご予約内容
+日時　：{day_str} {time_range}
+場所　：{area_label}（院内）
+コース：{course_label}
+担当　：{staff_name}
+
+■ ご連絡先
+メール：{to_email}
+━━━━━━━━━━━━━━
+"""
+        if note:
+            body += f"\n■ ご要望\n{note}\n━━━━━━━━━━━━━━\n"
+        body += f"""
+当日は開始時刻の5分前までにご来院ください。
+キャンセル・変更はお早めにご連絡ください。
+
+▼ お問い合わせ
+LINE：{OFFICIAL_LINE_URL}
+メール：info@karin-sb.jp
+電話：090-8154-9313
+
+KARiN. ~Sports & Beauty~
+"""
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+        message = Mail(
+            from_email=from_email,
+            to_emails=to_email,
+            subject=f"【KARiN.】ご予約ありがとうございます（{day_str} {time_hm}）",
+            plain_text_content=body,
+        )
+        sg = SendGridAPIClient(api_key)
+        response = sg.send(message)
+        print(f"📧 予約確認メール送信: {response.status_code}")
+        return 200 <= response.status_code < 300
+    except Exception as e:
+        print(f"❌ 予約確認メール送信エラー: {e}")
+        return False
+
+
 def session_staff_reports_viewer_sees_index_ui():
     """スタッフ報告まわりで「一覧に戻る」等の管理者向けナビを出すか（受付も可）。"""
     st = session.get("staff") or {}
@@ -1383,7 +1784,7 @@ def submit_form():
         phone = request.form.get("phone", "").strip()
         email = request.form.get("email", "").strip()
         postal_code = request.form.get("postal_code", "").strip()
-        address = request.form.get("address", "").strip()
+        address = request.form.get("address", "").strip() or None
         introducer = request.form.get("introducer", "").strip()
         chief_complaint = request.form.get("chief_complaint", "").strip()
         onset = request.form.get("onset", "").strip()
@@ -1468,7 +1869,7 @@ def submit_form():
 性別：{gender}
 電話番号：{phone}
 メール：{email}
-住所：{address}
+住所：{address if address else '未入力'}
 紹介者：{introducer if introducer else 'なし'}
 第1希望：{to_jst(preferred_date1) if preferred_date1 else "未入力"}
 主訴：{chief_complaint}
@@ -4101,13 +4502,236 @@ def index():
         latest_blogs=latest_blogs,
         latest_news=latest_news,
         schedule=upcoming,
-        today=today
+        today=today,
+        public_booking_enabled=public_booking_enabled(),
     )
 
 
 
 
 
+
+
+@app.route("/book")
+def book_page():
+    """院内Web予約（クライアント向け）"""
+    return render_template("book.html")
+
+
+@app.route("/book/complete")
+def book_complete():
+    return render_template("book_complete.html")
+
+
+@app.route("/api/book/meta")
+def api_book_meta():
+    return jsonify({
+        "areas": BOOKING_AREA_OPTIONS,
+        "courses": BOOKING_COURSE_OPTIONS,
+        "days_ahead": BOOKING_DAYS_AHEAD,
+        "slot_step_minutes": BOOKING_SLOT_STEP_MINUTES,
+        "min_lead_minutes": BOOKING_MIN_LEAD_MINUTES,
+        "free_staff_label": "フリー",
+        "default_area": "tokyo",
+    })
+
+
+@app.route("/api/book/dates")
+def api_book_dates():
+    area = normalize_staff_area(request.args.get("area"))
+    blocked = assert_booking_area_selectable(area)
+    if blocked:
+        return blocked
+    try:
+        duration = int(request.args.get("duration") or 90)
+    except ValueError:
+        duration = 90
+    if duration not in (60, 90, 120):
+        duration = 90
+
+    staff_entries = load_approved_staff_entries_for_booking()
+    today = datetime.now(JST).date()
+    dates_out = []
+    for i in range(BOOKING_DAYS_AHEAD + 1):
+        d = today + timedelta(days=i)
+        day_str = d.strftime("%Y-%m-%d")
+        names = [s["name"] for s in staff_entries]
+        shifts_map = fetch_booking_day_shifts(day_str, names)
+        day_reservations = fetch_booking_day_reservations(day_str)
+        working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+        dates_out.append({
+            "date": day_str,
+            "label": d.strftime("%m/%d"),
+            "weekday": "月火水木金土日"[d.weekday()],
+            "selectable": len(working) > 0,
+            "working_staff": [w["name"] for w in working],
+        })
+    return jsonify({"area": area, "duration_minutes": duration, "dates": dates_out})
+
+
+@app.route("/api/book/slots")
+def api_book_slots():
+    area = normalize_staff_area(request.args.get("area"))
+    blocked = assert_booking_area_selectable(area)
+    if blocked:
+        return blocked
+    day_str = (request.args.get("date") or "").strip()
+    try:
+        duration = int(request.args.get("duration") or 90)
+    except ValueError:
+        duration = 90
+    if not day_str:
+        return jsonify({"success": False, "message": "日付が必要です"}), 400
+
+    staff_entries = load_approved_staff_entries_for_booking()
+    names = [s["name"] for s in staff_entries]
+    shifts_map = fetch_booking_day_shifts(day_str, names)
+    day_reservations = fetch_booking_day_reservations(day_str)
+    working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+    now_jst = datetime.now(JST)
+    staff_rows, free_row_slots = build_booking_slot_list(working, day_str, duration, day_reservations, now_jst)
+    return jsonify({
+        "date": day_str,
+        "area": area,
+        "duration_minutes": duration,
+        "staff": staff_rows,
+        "free_row": {"staff_name": "フリー", "slots": free_row_slots},
+    })
+
+
+@app.route("/api/book", methods=["POST"])
+def api_book_create():
+    try:
+        data = request.get_json(silent=True) or {}
+        area = normalize_staff_area(data.get("area"))
+        blocked = assert_booking_area_selectable(area)
+        if blocked:
+            return blocked
+        day_str = (data.get("date") or "").strip()
+        time_hm = (data.get("time") or "").strip()
+        staff_key = (data.get("staff_name") or "").strip()
+        last_name = (data.get("last_name") or "").strip()
+        first_name = (data.get("first_name") or "").strip()
+        phone = (data.get("phone") or "").strip()
+        email = (data.get("email") or "").strip()
+        course_label = (data.get("course_request") or "").strip()
+        note = (data.get("web_note") or data.get("note") or "").strip() or None
+        try:
+            duration = int(data.get("duration_minutes") or 90)
+        except ValueError:
+            duration = 90
+
+        if not all([day_str, time_hm, last_name, first_name, phone, email]):
+            return jsonify({"success": False, "message": "必須項目を入力してください"}), 400
+        if duration not in (60, 90, 120):
+            return jsonify({"success": False, "message": "コースが不正です"}), 400
+
+        assigned_staff = staff_key
+        if staff_key == BOOKING_FREE_STAFF_KEY or staff_key == "フリー":
+            assigned_staff = pick_free_staff_for_slot(day_str, time_hm, duration, area)
+            if not assigned_staff:
+                return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
+            nomination_type = "フリー"
+        else:
+            assigned_staff = staff_key
+            nomination_type = "本指名"
+
+        try:
+            day = datetime.strptime(day_str, "%Y-%m-%d").date()
+            hh, mm = map(int, time_hm.split(":"))
+            slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+        except Exception:
+            return jsonify({"success": False, "message": "日時の形式が不正です"}), 400
+
+        staff_entries = load_approved_staff_entries_for_booking()
+        names = [s["name"] for s in staff_entries]
+        shifts_map = fetch_booking_day_shifts(day_str, names)
+        day_reservations = fetch_booking_day_reservations(day_str)
+        working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+        ws = next((w for w in working if w["name"] == assigned_staff), None)
+        if not ws:
+            return jsonify({"success": False, "message": "担当スタッフが見つかりません"}), 400
+        now_jst = datetime.now(JST)
+        if not is_booking_slot_available(
+            assigned_staff, slot_start_jst, duration,
+            ws["shift_start"], ws["shift_end"], day_reservations, now_jst
+        ):
+            return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
+
+        patient_id = find_patient_by_name_phone(last_name, first_name, phone)
+        if not patient_id:
+            name = f"{last_name} {first_name}".strip()
+            patient_data = {
+                "last_name": last_name,
+                "first_name": first_name,
+                "last_kana": "",
+                "first_kana": "",
+                "name": name,
+                "kana": "",
+                "phone": phone,
+                "email": email,
+                "visibility": "all",
+                "created_at": now_iso(),
+            }
+            res_p = supabase_admin.table("patients").insert(patient_data).execute()
+            if not res_p.data:
+                return jsonify({"success": False, "message": "患者情報の登録に失敗しました"}), 500
+            patient_id = res_p.data[0]["id"]
+
+        if not course_label:
+            course_label = f"{duration}分"
+
+        reservation_data = {
+            "patient_id": patient_id,
+            "reserved_at": slot_start_jst.isoformat(),
+            "duration_minutes": duration,
+            "place_type": "in_house",
+            "place_name": None,
+            "staff_name": assigned_staff,
+            "area": area,
+            "nomination_type": nomination_type,
+            "nominated_staff_ids": [],
+            "nomination_priority": None,
+            "status": "reserved",
+            "source": "web",
+            "client_email": email,
+            "web_course_request": course_label,
+            "web_note": note,
+            "memo": note,
+            "payment_status": "not_required",
+            **reservation_audit_for_insert(),
+        }
+        res_r = supabase_admin.table("reservations").insert(reservation_data).execute()
+        if not res_r.data:
+            return jsonify({"success": False, "message": "予約の作成に失敗しました"}), 500
+
+        area_label = "東京" if area == "tokyo" else "福岡"
+        slot_end = slot_start_jst + timedelta(minutes=duration)
+        line_message = f"""【院内Web予約】
+日時：{slot_start_jst.strftime('%Y/%m/%d %H:%M')}〜{slot_end.strftime('%H:%M')}
+エリア：{area_label}
+担当：{assigned_staff}{'（フリー自動割当）' if nomination_type == 'フリー' else ''}
+お名前：{last_name} {first_name}
+電話：{phone}
+メール：{email}
+コース：{course_label}
+要望：{note or 'なし'}
+"""
+        send_line_message(line_message)
+        send_booking_confirmation_email(
+            email, last_name, first_name, day_str, time_hm,
+            duration, area, assigned_staff, course_label, note or ""
+        )
+
+        return jsonify({
+            "success": True,
+            "booking_id": res_r.data[0].get("id"),
+            "staff_name": assigned_staff,
+            "redirect": "/book/complete",
+        })
+    except Exception as e:
+        print(f"❌ Web予約作成エラー: {e}")
+        return jsonify({"success": False, "message": "予約の作成に失敗しました"}), 500
 
 
 @app.route("/sitemap.xml")
@@ -4694,34 +5318,8 @@ def admin_reservations_new():
                 except:
                     pass
             
-            # 患者一覧取得（autocomplete用に姓名分離フィールド・生年月日・紹介者も取得）
-            res_patients = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, name, kana, birthday, introducer, introduced_by_patient_id").order("created_at", desc=True).execute()
-            patients = res_patients.data or []
-            
-            # 紹介者IDの集合を取得
-            introducer_ids = list({
-                p.get("introduced_by_patient_id")
-                for p in patients
-                if p.get("introduced_by_patient_id")
-            })
-            
-            # 紹介者情報を一括取得（vip_levelも含む）
-            introducer_map = {}
-            if introducer_ids:
-                res_introducers = supabase_admin.table("patients").select("id, last_name, first_name, last_kana, first_kana, vip_level").in_("id", introducer_ids).execute()
-                if res_introducers.data:
-                    introducer_map = {
-                        intro["id"]: intro for intro in res_introducers.data
-                    }
-            
-            # 各患者に紹介者情報を結合
-            for patient in patients:
-                intro_id = patient.get("introduced_by_patient_id")
-                if intro_id and intro_id in introducer_map:
-                    introducer_info = introducer_map[intro_id]
-                    patient["introducer_info"] = introducer_info
-                else:
-                    patient["introducer_info"] = None
+            # 患者一覧取得（autocomplete用）
+            patients = load_patients_for_autocomplete()
             
             # スタッフリスト取得（承認済みスタッフ全員）
             staff = session.get("staff", {})
@@ -5501,11 +6099,13 @@ def admin_reservations_edit(reservation_id):
                 staff_list = [{"name": staff_name, "id": staff.get("id")}]
             
             viewer_is_admin = bool(staff.get("is_admin"))
+            patients = load_patients_for_autocomplete()
             return render_template(
                 "admin_reservations_edit.html",
                 reservation=reservation,
                 staff_list=staff_list,
                 viewer_is_admin=viewer_is_admin,
+                patients=patients,
             )
         except Exception as e:
             print("❌ 予定編集画面取得エラー:", e)
@@ -5553,6 +6153,21 @@ def admin_reservations_edit(reservation_id):
         
         place_name = request.form.get("place_name", "").strip() or None
         staff_name = request.form.get("staff_name", "").strip() or None
+
+        patient_id = existing_reservation.get("patient_id")
+        if place_type in ("in_house", "visit"):
+            form_patient_id = request.form.get("patient_id", "").strip()
+            if not form_patient_id:
+                flash("患者を選択してください。検索して患者をクリックしてください。", "error")
+                return redirect(f"/admin/reservations/{reservation_id}/edit")
+            res_check = supabase_admin.table("patients").select("id").eq("id", form_patient_id).execute()
+            if not res_check.data:
+                flash("選択された患者が見つかりません", "error")
+                return redirect(f"/admin/reservations/{reservation_id}/edit")
+            patient_id = form_patient_id
+        elif place_type in ("field", "break"):
+            patient_id = None
+
         if place_type == "break":
             if not staff_name:
                 flash("担当スタッフを選択してください", "error")
@@ -5809,8 +6424,19 @@ def admin_reservations_edit(reservation_id):
         }
         if place_type in ("field", "break"):
             update_data["patient_id"] = None
+        elif place_type in ("in_house", "visit"):
+            update_data["patient_id"] = patient_id
         
         supabase_admin.table("reservations").update(update_data).eq("id", reservation_id).execute()
+        
+        # 患者付け替え時は日報の patient_id も同期
+        old_patient_id = existing_reservation.get("patient_id")
+        if patient_id != old_patient_id and place_type in ("in_house", "visit"):
+            try:
+                supabase_admin.table("staff_daily_report_patients").update({"patient_id": patient_id}).eq("reservation_id", reservation_id).execute()
+                print(f"✅ 予約の患者付け替えに伴い日報も更新: reservation_id={reservation_id}, patient_id={patient_id}")
+            except Exception as e:
+                print(f"⚠️ WARNING - 患者付け替え時の日報同期エラー: {e}")
         
         # 予約更新時に日報データも連動更新（base_price、course_name、nomination_type）
         try:

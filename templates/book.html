@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>院内ご予約 | KARiN. ~Sports & Beauty~</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="description" content="KARiN. 院内（東京・福岡）のWeb予約ページです。空き枠から日時・担当をお選びいただけます。">
+  <meta name="robots" content="index, follow">
+  <style>
+    :root {
+      --navy: #1E3A5F;
+      --muted: #5a6b7d;
+      --border: #e4e9ef;
+      --bg: #f6f8fb;
+      --ok: #1a9c55;
+      --ng: #c5cdd8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .logo span { font-weight: 400; font-size: 0.85rem; }
+    h1 {
+      text-align: center;
+      font-size: 1.35rem;
+      margin: 0 0 6px;
+    }
+    .lead {
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0 0 24px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(30,58,95,0.06);
+    }
+    .card h2 {
+      font-size: 1rem;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chip {
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover { border-color: var(--navy); }
+    .chip.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+    .chip:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .chip.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: #eef1f5;
+      color: #9aa8b8;
+      border-color: #dde3ea;
+    }
+    .chip.disabled:hover { border-color: #dde3ea; }
+    .chip-badge {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 500;
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+    .date-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 8px;
+    }
+    .date-chip {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .date-chip .d { font-weight: 700; font-size: 1rem; }
+    .date-chip .w { color: var(--muted); font-size: 0.75rem; }
+    .date-chip.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+    .date-chip.active .w { color: rgba(255,255,255,0.8); }
+    .date-chip:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .slots-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -4px;
+      padding-bottom: 4px;
+    }
+    .slots-table {
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      min-width: 100%;
+    }
+    .slots-table th, .slots-table td {
+      border: 1px solid var(--border);
+      padding: 6px 4px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .slots-table th {
+      background: #f0f4f8;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .slots-table th.staff-col,
+    .slots-table td.staff-col {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 1;
+      text-align: left;
+      min-width: 72px;
+      font-weight: 600;
+      padding-left: 8px;
+    }
+    .slots-table th.staff-col { background: #f0f4f8; z-index: 2; }
+    .slot-btn {
+      width: 36px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: transparent;
+    }
+    .slot-btn.ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+    .slot-btn.ok:hover { background: #e8f7ee; }
+    .slot-btn.ng {
+      color: var(--ng);
+      cursor: default;
+    }
+    .slot-btn.selected {
+      background: var(--navy);
+      color: #fff;
+    }
+    .legend {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .form-grid label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-grid input, .form-grid textarea {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    .form-grid textarea { min-height: 80px; resize: vertical; }
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .summary {
+      background: #f0f4f8;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+    .submit-btn {
+      width: 100%;
+      border: none;
+      border-radius: 999px;
+      background: var(--navy);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+    }
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hidden { display: none !important; }
+    .loading, .empty-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 20px 0;
+    }
+    .error-msg {
+      color: #c0392b;
+      font-size: 0.88rem;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    @media (max-width: 480px) {
+      .form-row-2 { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
+    <div class="logo">KARiN. <span>~Sports & Beauty~</span></div>
+    <h1>院内ご予約</h1>
+    <p class="lead">東京（代々木上原）・福岡（薬院）の院内施術が対象です（現在は東京のみWeb予約可）。<br>往診・帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>またはお問い合わせフォームをご利用ください。</p>
+
+    <div class="card" id="step-area">
+      <h2><span class="step-num">1</span>ご希望のエリア</h2>
+      <div class="chip-row" id="area-chips"></div>
+    </div>
+
+    <div class="card hidden" id="step-course">
+      <h2><span class="step-num">2</span>コース（施術時間）</h2>
+      <div class="chip-row" id="course-chips"></div>
+    </div>
+
+    <div class="card hidden" id="step-date">
+      <h2><span class="step-num">3</span>ご希望の日付</h2>
+      <div class="date-row" id="date-chips"></div>
+      <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。勤務シフトの登録をご確認ください。</p>
+    </div>
+
+    <div class="card hidden" id="step-slots">
+      <h2><span class="step-num">4</span>時間・担当スタッフ</h2>
+      <div class="loading hidden" id="slots-loading">空き状況を読み込み中…</div>
+      <div class="slots-wrap hidden" id="slots-wrap">
+        <table class="slots-table" id="slots-table"></table>
+      </div>
+      <p class="legend">○：予約可　×：予約不可　最下行「フリー」は自動割当です</p>
+    </div>
+
+    <div class="card hidden" id="step-form">
+      <h2><span class="step-num">5</span>お客様情報</h2>
+      <div class="summary" id="booking-summary"></div>
+      <form id="booking-form" class="form-grid">
+        <div class="form-row-2">
+          <div>
+            <label for="last_name">姓 <span style="color:#c0392b">*</span></label>
+            <input type="text" id="last_name" name="last_name" required autocomplete="family-name">
+          </div>
+          <div>
+            <label for="first_name">名 <span style="color:#c0392b">*</span></label>
+            <input type="text" id="first_name" name="first_name" required autocomplete="given-name">
+          </div>
+        </div>
+        <label for="phone">電話番号 <span style="color:#c0392b">*</span></label>
+        <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="09012345678">
+        <label for="email">メールアドレス <span style="color:#c0392b">*</span></label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+        <label for="web_note">ご要望（任意）</label>
+        <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など"></textarea>
+        <button type="submit" class="submit-btn" id="submit-btn">予約を確定する</button>
+        <p class="error-msg hidden" id="form-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const FREE_KEY = "__free__";
+    const state = {
+      meta: null,
+      area: null,
+      duration: null,
+      courseLabel: "",
+      date: null,
+      staffName: null,
+      time: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function show(el) { el.classList.remove("hidden"); }
+    function hide(el) { el.classList.add("hidden"); }
+
+    async function loadMeta() {
+      const res = await fetch("/api/book/meta");
+      state.meta = await res.json();
+      const areaRow = $("area-chips");
+      areaRow.innerHTML = "";
+      (state.meta.areas || []).forEach((a) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip" + (a.selectable === false ? " disabled" : "");
+        btn.innerHTML = a.label + (a.badge ? `<span class="chip-badge">${a.badge}</span>` : "");
+        btn.dataset.area = a.id;
+        if (a.selectable === false) {
+          btn.disabled = true;
+          btn.title = "現在Web予約の準備中です";
+        } else {
+          btn.addEventListener("click", () => selectArea(a.id, a.label, btn));
+        }
+        areaRow.appendChild(btn);
+      });
+      const defaultArea = (state.meta.areas || []).find((a) => a.id === state.meta.default_area && a.selectable !== false)
+        || (state.meta.areas || []).find((a) => a.selectable !== false);
+      if (defaultArea) {
+        const defaultBtn = areaRow.querySelector(`[data-area="${defaultArea.id}"]`);
+        if (defaultBtn) selectArea(defaultArea.id, defaultArea.label, defaultBtn);
+      }
+    }
+
+    function selectArea(areaId, label, btn) {
+      state.area = areaId;
+      document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
+      btn.classList.add("active");
+      renderCourses();
+      show($("step-course"));
+      state.duration = null;
+      state.date = null;
+      state.staffName = null;
+      state.time = null;
+      hide($("step-date"));
+      hide($("step-slots"));
+      hide($("step-form"));
+    }
+
+    function renderCourses() {
+      const courses = (state.meta.courses || {})[state.area] || [];
+      const row = $("course-chips");
+      row.innerHTML = "";
+      courses.forEach((c) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip";
+        btn.textContent = c.label;
+        btn.addEventListener("click", () => selectCourse(c.minutes, c.label, btn));
+        row.appendChild(btn);
+      });
+    }
+
+    async function selectCourse(minutes, label, btn) {
+      state.duration = minutes;
+      state.courseLabel = label;
+      document.querySelectorAll("#course-chips .chip").forEach((c) => c.classList.remove("active"));
+      btn.classList.add("active");
+      show($("step-date"));
+      hide($("step-slots"));
+      hide($("step-form"));
+      state.date = null;
+      state.staffName = null;
+      state.time = null;
+      await loadDates();
+    }
+
+    async function loadDates() {
+      const row = $("date-chips");
+      row.innerHTML = "";
+      hide($("date-empty"));
+      const res = await fetch(`/api/book/dates?area=${encodeURIComponent(state.area)}&duration=${state.duration}`);
+      const data = await res.json();
+      let any = false;
+      (data.dates || []).forEach((d) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-chip";
+        btn.disabled = !d.selectable;
+        btn.innerHTML = `<div class="d">${d.label}</div><div class="w">${d.weekday}</div>`;
+        if (d.selectable) {
+          any = true;
+          btn.addEventListener("click", () => selectDate(d.date, btn));
+        }
+        row.appendChild(btn);
+      });
+      if (!any) show($("date-empty"));
+    }
+
+    async function selectDate(dateStr, btn) {
+      state.date = dateStr;
+      document.querySelectorAll("#date-chips .date-chip").forEach((c) => c.classList.remove("active"));
+      btn.classList.add("active");
+      state.staffName = null;
+      state.time = null;
+      hide($("step-form"));
+      show($("step-slots"));
+      await loadSlots();
+    }
+
+    async function loadSlots() {
+      show($("slots-loading"));
+      hide($("slots-wrap"));
+      const res = await fetch(`/api/book/slots?area=${encodeURIComponent(state.area)}&date=${state.date}&duration=${state.duration}`);
+      const data = await res.json();
+      hide($("slots-loading"));
+      renderSlotsTable(data);
+      show($("slots-wrap"));
+    }
+
+    function renderSlotsTable(data) {
+      const table = $("slots-table");
+      const staffRows = data.staff || [];
+      const freeRow = data.free_row || { staff_name: "フリー", slots: [] };
+      const allRows = [...staffRows, freeRow];
+      const times = [];
+      const timeSet = new Set();
+      allRows.forEach((row) => {
+        (row.slots || []).forEach((s) => {
+          if (!timeSet.has(s.time)) {
+            timeSet.add(s.time);
+            times.push(s.time);
+          }
+        });
+      });
+      times.sort();
+
+      let html = "<thead><tr><th class='staff-col'>担当</th>";
+      times.forEach((t) => { html += `<th>${t}</th>`; });
+      html += "</tr></thead><tbody>";
+
+      allRows.forEach((row) => {
+        const isFree = row.staff_name === "フリー" || row.staff_name === freeRow.staff_name;
+        const staffKey = isFree ? FREE_KEY : row.staff_name;
+        html += `<tr><td class="staff-col">${row.staff_name}</td>`;
+        const slotMap = {};
+        (row.slots || []).forEach((s) => { slotMap[s.time] = s; });
+        times.forEach((t) => {
+          const s = slotMap[t];
+          if (!s) {
+            html += "<td>—</td>";
+          } else if (s.available) {
+            const sel = state.staffName === staffKey && state.time === t ? " selected" : "";
+            html += `<td><button type="button" class="slot-btn ok${sel}" data-staff="${staffKey}" data-time="${t}">○</button></td>`;
+          } else {
+            html += `<td><button type="button" class="slot-btn ng" disabled>×</button></td>`;
+          }
+        });
+        html += "</tr>";
+      });
+      html += "</tbody>";
+      table.innerHTML = html;
+
+      table.querySelectorAll(".slot-btn.ok").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.staffName = btn.dataset.staff;
+          state.time = btn.dataset.time;
+          table.querySelectorAll(".slot-btn.ok").forEach((b) => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          updateSummary();
+          show($("step-form"));
+          $("step-form").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+
+    function updateSummary() {
+      const areaLabel = state.area === "tokyo" ? "東京" : "福岡";
+      const staffLabel = state.staffName === FREE_KEY ? "フリー（自動割当）" : state.staffName;
+      $("booking-summary").innerHTML =
+        `<strong>ご予約内容</strong><br>` +
+        `日時：${state.date} ${state.time}（${state.courseLabel}）<br>` +
+        `エリア：${areaLabel}<br>` +
+        `担当：${staffLabel}`;
+    }
+
+    $("booking-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = $("form-error");
+      hide(errEl);
+      const btn = $("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "送信中…";
+      try {
+        const payload = {
+          area: state.area,
+          date: state.date,
+          time: state.time,
+          duration_minutes: state.duration,
+          staff_name: state.staffName,
+          course_request: state.courseLabel,
+          last_name: $("last_name").value.trim(),
+          first_name: $("first_name").value.trim(),
+          phone: $("phone").value.trim(),
+          email: $("email").value.trim(),
+          web_note: $("web_note").value.trim(),
+        };
+        const res = await fetch("/api/book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "予約に失敗しました");
+        }
+        window.location.href = data.redirect || "/book/complete";
+      } catch (err) {
+        errEl.textContent = err.message || "予約に失敗しました";
+        show(errEl);
+        btn.disabled = false;
+        btn.textContent = "予約を確定する";
+      }
+    });
+
+    loadMeta().catch(() => {
+      $("area-chips").innerHTML = "<p class='error-msg'>読み込みに失敗しました。ページを再読み込みしてください。</p>";
+    });
+  })();
+  </script>
+</body>
+</html>

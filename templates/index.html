@@ -416,6 +416,12 @@
     <p class="contact-text">ご希望の内容に合わせて、下記よりお選びください。</p>
 
     <div class="contact-buttons">
+      {% if public_booking_enabled %}
+      <a href="{{ url_for('book_page') }}" class="contact-btn book">
+        院内のご予約はこちら
+      </a>
+      <p class="contact-booking-note">※往診・帯同のご予約はLINEまたはお問い合わせフォームをご利用ください</p>
+      {% endif %}
       <a href="https://lin.ee/rVEbNhl5" target="_blank" class="contact-btn line">
         LINEで予約する
       </a>

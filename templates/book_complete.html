@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>予約完了 | KARiN. ~Sports & Beauty~</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="robots" content="noindex, follow">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #fafafa;
+      font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
+      color: #1E3A5F;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .wrap {
+      width: 90%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.06);
+      padding: 48px 28px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0 0 16px;
+    }
+    p {
+      line-height: 1.85;
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+    }
+    .note {
+      color: #5a6b7d;
+      font-size: 0.88rem;
+      margin-top: 20px;
+    }
+    .actions {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 260px;
+      height: 48px;
+      border-radius: 24px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .home-btn {
+      background: #1E3A5F;
+      color: #fff;
+    }
+    .line-btn {
+      background: #06C755;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>ご予約ありがとうございます</h1>
+    <p>院内のご予約を承りました。<br>確認メールをお送りしましたのでご確認ください。</p>
+    <p class="note">当日は開始時刻の5分前までにご来院ください。<br>キャンセル・変更はお早めにご連絡ください。</p>
+    <div class="actions">
+      <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="line-btn">公式LINEでお問い合わせ</a>
+      <a href="{{ url_for('index') }}" class="home-btn">トップページへ</a>
+    </div>
+  </div>
+</body>
+</html>

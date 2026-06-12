@@ -13,16 +13,35 @@
 {% endif %}
 
 <form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" id="admin-reservation-edit-form" class="admin-reservation-edit-form">
-  <!-- 患者情報（帯同では非表示／現場区分変更で表示切替） -->
+  <!-- 患者（院内・往診のみ。付け替え可） -->
   <div id="patient_info_row" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; {% if reservation.place_type in ['field', 'break'] %}display: none;{% endif %}">
-    <strong style="color: #1E3A5F;">患者：</strong>
+    <label class="form-field" style="display: block; margin-bottom: 10px; font-weight: 600; color: #1E3A5F;">患者</label>
     {% if reservation.patient_id %}
-    <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
-      {{ reservation.patient_name or '患者不明' }}
-    </a>
+    <p style="margin: 0 0 12px; font-size: 0.9rem; color: #666;">
+      現在：
+      <a href="/admin/karte/{{ reservation.patient_id }}" style="color: #1E3A5F; text-decoration: none; font-weight: 500;">
+        {{ reservation.patient_name or '患者不明' }}
+      </a>
+      のカルテに紐付いています
+    </p>
     {% else %}
-    <span style="color: #666; font-weight: 500;">{{ reservation.patient_name or '患者なし' }}</span>
+    <p style="margin: 0 0 12px; font-size: 0.9rem; color: #666;">現在：患者なし</p>
     {% endif %}
+    <input
+      type="text"
+      id="patient_search"
+      class="admin-form-input"
+      placeholder="名前・フリガナで検索して患者を選択"
+      autocomplete="off"
+      value="{{ reservation.patient_name or '' }}"
+      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
+    >
+    <div id="patient_results" class="admin-autocomplete-list"></div>
+    <input type="hidden" name="patient_id" id="patient_id" value="{{ reservation.patient_id or '' }}">
+    <small id="patient_selected_hint" style="display: {% if reservation.patient_id %}block{% else %}none{% endif %}; color: #4CAF50; font-size: 0.85rem; margin-top: 4px;">
+      {% if reservation.patient_id %}✓ 患者が選択されています: {{ reservation.patient_name }}{% endif %}
+    </small>
+    <small style="display: block; color: #888; font-size: 0.8rem; margin-top: 6px;">Web予約で重複カルテができた場合など、正しいカルテに付け替えてください。</small>
   </div>
 
   <!-- 現場区分（最初に配置） -->
@@ -697,6 +716,66 @@ function updatePlaceTypeFields() {
 
 document.addEventListener('DOMContentLoaded', function() {
   updatePlaceTypeFields();
+
+  // 患者検索（付け替え）
+  const allPatients = {{ patients | tojson }};
+  const searchInput = document.getElementById('patient_search');
+  const resultsBox = document.getElementById('patient_results');
+  const hiddenInput = document.getElementById('patient_id');
+  const selectedHint = document.getElementById('patient_selected_hint');
+
+  if (searchInput && resultsBox && hiddenInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      resultsBox.innerHTML = '';
+      if (!q) {
+        resultsBox.style.display = 'none';
+        return;
+      }
+      const matched = allPatients.filter(p => {
+        const lastName = (p.last_name || '').toLowerCase();
+        const firstName = (p.first_name || '').toLowerCase();
+        const lastKana = (p.last_kana || '').toLowerCase();
+        const firstKana = (p.first_kana || '').toLowerCase();
+        const name = (p.name || '').toLowerCase();
+        const kana = (p.kana || '').toLowerCase();
+        return `${lastName}${firstName}${lastKana}${firstKana}${name}${kana}`.includes(q);
+      });
+      matched.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'admin-autocomplete-item';
+        const lastName = p.last_name || '';
+        const firstName = p.first_name || '';
+        const lastKana = p.last_kana || '';
+        const firstKana = p.first_kana || '';
+        const birthday = p.birthday || '生年月日不明';
+        let introducerDisplay = '紹介者なし';
+        if (p.introducer_info) {
+          introducerDisplay = `${p.introducer_info.last_name || ''} ${p.introducer_info.first_name || ''}`.trim() || '紹介者不明';
+        } else if (p.introducer) {
+          introducerDisplay = p.introducer;
+        }
+        item.textContent = `${lastName} ${firstName}（${lastKana} ${firstKana}）｜${birthday}｜${introducerDisplay}`;
+        item.onclick = () => {
+          const displayName = `${lastName} ${firstName}`.trim() || p.name || '不明';
+          searchInput.value = displayName;
+          hiddenInput.value = p.id;
+          resultsBox.style.display = 'none';
+          if (selectedHint) {
+            selectedHint.style.display = 'block';
+            selectedHint.textContent = `✓ 患者が選択されました: ${displayName}`;
+          }
+        };
+        resultsBox.appendChild(item);
+      });
+      resultsBox.style.display = matched.length ? 'block' : 'none';
+    });
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+        resultsBox.style.display = 'none';
+      }
+    });
+  }
 
   const areaSelect = document.getElementById('area');
   if (areaSelect && areaSelect.value) {
