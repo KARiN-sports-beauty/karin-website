@@ -307,7 +307,8 @@
     <div class="card hidden" id="step-date">
       <h2><span class="step-num">3</span>ご希望の日付</h2>
       <div class="date-row" id="date-chips"></div>
-      <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。勤務シフトの登録をご確認ください。</p>
+      <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。</p>
+      <p class="empty-msg hidden" id="date-hint" style="font-size:0.82rem; color:#888; margin-top:8px;"></p>
     </div>
 
     <div class="card hidden" id="step-slots">
@@ -474,6 +475,7 @@
       const row = $("date-chips");
       row.innerHTML = "";
       hide($("date-empty"));
+      hide($("date-hint"));
       const res = await fetch(`/api/book/dates?area=${encodeURIComponent(state.area)}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
       const data = await res.json();
       let any = false;
@@ -489,7 +491,13 @@
         }
         row.appendChild(btn);
       });
-      if (!any) show($("date-empty"));
+      if (!any) {
+        show($("date-empty"));
+        if (data.hint) {
+          $("date-hint").textContent = data.hint;
+          show($("date-hint"));
+        }
+      }
     }
 
     async function selectDate(dateStr, btn) {

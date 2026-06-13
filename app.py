@@ -772,7 +772,7 @@ def load_approved_staff_entries_for_booking():
         users = supabase_admin.auth.admin.list_users()
         for u in users:
             meta = u.user_metadata or {}
-            if not meta.get("approved", False) or meta.get("is_admin", False):
+            if not meta.get("approved", False):
                 continue
             last_name = meta.get("last_name", "")
             first_name = meta.get("first_name", "")
@@ -789,6 +789,49 @@ def load_approved_staff_entries_for_booking():
         print(f"⚠️ booking staff list error: {e}")
     staff_entries.sort(key=staff_display_sort_key)
     return staff_entries
+
+
+def booking_dates_unavailable_reason(area):
+    """Web予約で日付が全部グレーになるときの原因メッセージ（管理画面向けヒント）"""
+    area = normalize_staff_area(area)
+    area_label = "東京" if area == "tokyo" else "福岡"
+    staff_entries = load_approved_staff_entries_for_booking()
+    if not staff_entries:
+        return "施術担当スタッフ（承認済み）が見つかりません。スタッフ管理で承認されているか確認してください。"
+
+    today = datetime.now(JST).date()
+    has_open_shift = False
+    has_area_match = False
+    for i in range(BOOKING_DAYS_AHEAD + 1):
+        day_str = (today + timedelta(days=i)).strftime("%Y-%m-%d")
+        names = [s["name"] for s in staff_entries]
+        shifts_map = fetch_booking_day_shifts(day_str, names)
+        day_reservations = fetch_booking_day_reservations(day_str)
+        for s in staff_entries:
+            name = (s.get("name") or "").strip()
+            shift_row = shifts_map.get(name)
+            st_min, ed_min = shift_open_minutes(shift_row)
+            if st_min is not None:
+                has_open_shift = True
+                if effective_staff_area_on_day(s, shift_row) == area:
+                    has_area_match = True
+        if working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations):
+            return None
+
+    if not has_open_shift:
+        return (
+            "今後2週間に「勤務時間オープン（白背景）」の登録がありません。"
+            "予定管理でカレンダーの日付を選び、スタッフ名→開始・終了時刻を入力し、休みのチェックを外して保存してください。"
+        )
+    if not has_area_match:
+        return (
+            f"勤務時間はありますが、{area_label}エリアとして登録された出勤がありません。"
+            f"予定管理の勤務時間パネルで「{area_label}」を選んでから保存してください。"
+        )
+    return (
+        f"{area_label}で出勤扱いになるスタッフがいません。"
+        "その日が帯同のみの予定になっていないか、拠点・エリア設定を確認してください。"
+    )
 
 
 def fetch_booking_day_reservations(day_str):
@@ -4733,7 +4776,8 @@ def api_book_dates():
             "selectable": len(working) > 0,
             "working_staff": [w["name"] for w in working],
         })
-    return jsonify({"area": area, "duration_minutes": duration, "dates": dates_out})
+    hint = booking_dates_unavailable_reason(area) if not any(d["selectable"] for d in dates_out) else None
+    return jsonify({"area": area, "duration_minutes": duration, "dates": dates_out, "hint": hint})
 
 
 @app.route("/api/book/slots")
