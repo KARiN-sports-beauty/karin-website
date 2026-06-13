@@ -2145,6 +2145,24 @@ def admin_contact_done(contact_id):
     return redirect("/admin/contacts")
 
 
+@app.route("/admin/contact/<contact_id>/delete", methods=["POST"])
+@staff_section_required("contacts")
+def admin_contact_delete(contact_id):
+    try:
+        res = supabase_admin.table("contacts").select("id, processed").eq("id", contact_id).execute()
+        if not res.data:
+            flash("お問い合わせが見つかりません", "error")
+            return redirect("/admin/contacts")
+        was_processed = bool(res.data[0].get("processed"))
+        supabase_admin.table("contacts").delete().eq("id", contact_id).execute()
+        flash("お問い合わせを削除しました", "success")
+        return redirect("/admin/contacts/replied" if was_processed else "/admin/contacts")
+    except Exception as e:
+        print(f"❌ お問い合わせ削除エラー: {e}")
+        flash("お問い合わせの削除に失敗しました", "error")
+        return redirect(f"/admin/contact/{contact_id}")
+
+
 
 
 # ===================================================

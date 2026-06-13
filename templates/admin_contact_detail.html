@@ -4,6 +4,15 @@
 {% block content %}
 <h2 class="admin-title">📩 お問い合わせ詳細</h2>
 
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<p><strong>状態：</strong>{% if contact.processed %}返信済み{% else %}未返信{% endif %}</p>
 <p><strong>名前：</strong>{{ contact.name }}</p>
 <p><strong>メール：</strong>{{ contact.email }}</p>
 <p><strong>電話番号：</strong>{{ contact.phone }}</p>
@@ -12,11 +21,19 @@
 <h3>内容</h3>
 <p style="white-space: pre-line;">{{ contact.message }}</p>
 
-<form action="/admin/contact/{{ contact.id }}/done" method="POST" style="margin-top:20px;">
-  <button type="submit" class="admin-contact-btn-white">返信済みにする</button>
-</form>
+<div style="margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+  {% if not contact.processed %}
+  <form action="/admin/contact/{{ contact.id }}/done" method="POST" style="display: inline;">
+    <button type="submit" class="admin-contact-btn-white">返信済みにする</button>
+  </form>
+  {% endif %}
+  <form action="/admin/contact/{{ contact.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="このお問い合わせを削除しますか？（迷惑メール等の場合。元には戻せません）">
+    <button type="submit" class="admin-karte-detail-btn-danger">🗑 削除</button>
+  </form>
+</div>
 
-<div style="margin-top:30px;">
+<div style="margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px;">
   <a href="/admin/contacts" class="admin-contact-btn">← 未返信一覧へ戻る</a>
+  <a href="/admin/contacts/replied" class="admin-contact-btn-white">返信済み一覧へ</a>
 </div>
 {% endblock %}
