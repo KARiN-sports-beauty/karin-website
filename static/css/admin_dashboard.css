@@ -605,16 +605,22 @@
 /* お問い合わせ用ボタン */
 .admin-contact-btn {
   display: inline-block;
-  margin-top: 30px;
   padding: 10px 20px;
   background: #1E3A5F;
   color: #fff;
+  border: 2px solid #1E3A5F;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.4;
   text-decoration: none;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
+  box-sizing: border-box;
+}
+
+.admin-contact-btn--spaced {
+  margin-top: 30px;
 }
 
 .admin-contact-btn:hover {
@@ -633,10 +639,12 @@
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.4;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
 .admin-contact-btn-white:hover {
