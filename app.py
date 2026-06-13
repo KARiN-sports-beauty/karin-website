@@ -5524,7 +5524,7 @@ def admin_reservations_new():
                         try:
                             hm = datetime.strptime(time_param, "%H:%M")
                             hour = hm.hour
-                            minute = hm.minute
+                            minute = (hm.minute // BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
                         except Exception:
                             pass
                     initial_date = date_obj.replace(hour=hour, minute=minute).strftime("%Y-%m-%dT%H:%M")
@@ -5646,6 +5646,8 @@ def admin_reservations_new():
         try:
             if "T" in reserved_at_str:
                 dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
+                snapped_min = (dt_naive.minute // BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
+                dt_naive = dt_naive.replace(minute=snapped_min, second=0, microsecond=0)
             else:
                 dpart = reserved_at_str[:10]
                 dt_naive = datetime.strptime(dpart, "%Y-%m-%d")

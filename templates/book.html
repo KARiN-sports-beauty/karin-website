@@ -171,8 +171,6 @@
     .slots-table th {
       background: #f0f4f8;
       font-weight: 600;
-      position: sticky;
-      top: 0;
     }
     .slots-table th.staff-col,
     .slots-table td.staff-col {
@@ -182,36 +180,121 @@
       z-index: 1;
       text-align: left;
       min-width: 72px;
+      max-width: 88px;
       font-weight: 600;
       padding-left: 8px;
+      font-size: 0.75rem;
     }
     .slots-table th.staff-col { background: #f0f4f8; z-index: 2; }
-    .slot-btn {
-      width: 36px;
-      height: 32px;
+    .hour-cell-btn {
+      width: 40px;
+      height: 34px;
       border: none;
       border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: default;
       background: transparent;
+      padding: 0;
+    }
+    .hour-cell-btn.full {
+      color: var(--ok);
+      cursor: pointer;
+    }
+    .hour-cell-btn.full:hover { background: #e8f7ee; }
+    .hour-cell-btn.partial {
+      color: #d97706;
+      cursor: pointer;
+    }
+    .hour-cell-btn.partial:hover { background: #fff7ed; }
+    .hour-cell-btn.ng {
+      color: var(--ng);
+    }
+    .hour-cell-btn.none {
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+    .hour-cell-btn.active-hour {
+      outline: 2px solid var(--navy);
+      outline-offset: 1px;
+    }
+    .slot-detail-panel {
+      margin-top: 16px;
+      padding: 14px;
+      background: #f0f4f8;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .slot-detail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .slot-detail-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .slot-detail-close {
+      border: none;
+      background: #fff;
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .slot-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 360px) {
+      .slot-detail-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .slot-btn {
+      width: 100%;
+      min-height: 44px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      background: #fff;
     }
     .slot-btn.ok {
       color: var(--ok);
       font-weight: 700;
     }
-    .slot-btn.ok:hover { background: #e8f7ee; }
+    .slot-btn.ok:hover { background: #e8f7ee; border-color: var(--ok); }
     .slot-btn.ng {
       color: var(--ng);
       cursor: default;
+      background: #f8fafc;
     }
     .slot-btn.selected {
       background: var(--navy);
+      border-color: var(--navy);
       color: #fff;
+    }
+    .slot-btn .slot-time {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .slot-btn .slot-mark {
+      display: block;
+      font-size: 0.75rem;
+      margin-top: 2px;
     }
     .legend {
       font-size: 0.78rem;
       color: var(--muted);
       margin-top: 10px;
+      line-height: 1.6;
     }
     .form-grid label {
       display: block;
@@ -317,7 +400,14 @@
       <div class="slots-wrap hidden" id="slots-wrap">
         <table class="slots-table" id="slots-table"></table>
       </div>
-      <p class="legend">○：予約可　×：予約不可　最下行「フリー」は自動割当です</p>
+      <div class="slot-detail-panel hidden" id="slot-detail-panel">
+        <div class="slot-detail-head">
+          <span class="slot-detail-title" id="slot-detail-title"></span>
+          <button type="button" class="slot-detail-close" id="slot-detail-close" aria-label="閉じる">×</button>
+        </div>
+        <div class="slot-detail-grid" id="slot-detail-grid"></div>
+      </div>
+      <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。最下行「フリー」は自動割当です</p>
     </div>
 
     <div class="card hidden" id="step-form">
@@ -349,6 +439,8 @@
   <script>
   (function () {
     const FREE_KEY = "__free__";
+    const HOUR_START = 10;
+    const HOUR_END = 26;
     const state = {
       meta: null,
       area: null,
@@ -359,6 +451,9 @@
       date: null,
       staffName: null,
       time: null,
+      slotsData: null,
+      detailStaff: null,
+      detailHour: null,
     };
 
     const $ = (id) => document.getElementById(id);
@@ -512,13 +607,102 @@
     }
 
     async function loadSlots() {
+      closeSlotDetail();
       show($("slots-loading"));
       hide($("slots-wrap"));
       const res = await fetch(`/api/book/slots?area=${encodeURIComponent(state.area)}&date=${state.date}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
       const data = await res.json();
+      state.slotsData = data;
       hide($("slots-loading"));
       renderSlotsTable(data);
       show($("slots-wrap"));
+    }
+
+    function timesInHour(hour) {
+      return [0, 15, 30, 45].map((m) =>
+        `${String(hour).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+      );
+    }
+
+    function classifyHour(slotMap, hour) {
+      const slots = timesInHour(hour).map((t) => slotMap[t]).filter(Boolean);
+      if (slots.length === 0) return "none";
+      const avail = slots.filter((s) => s.available).length;
+      if (avail === 0) return "ng";
+      if (avail === slots.length) return "full";
+      return "partial";
+    }
+
+    function rowStaffKey(row, freeStaffName) {
+      const isFree = row.staff_name === "フリー" || row.staff_name === freeStaffName;
+      return isFree ? FREE_KEY : row.staff_name;
+    }
+
+    function findRowByStaffKey(data, staffKey) {
+      const freeRow = data.free_row || { staff_name: "フリー", slots: [] };
+      const staffRows = data.staff || [];
+      if (staffKey === FREE_KEY) return freeRow;
+      return staffRows.find((r) => r.staff_name === staffKey) || null;
+    }
+
+    function closeSlotDetail() {
+      state.detailStaff = null;
+      state.detailHour = null;
+      hide($("slot-detail-panel"));
+      document.querySelectorAll(".hour-cell-btn.active-hour").forEach((b) => b.classList.remove("active-hour"));
+    }
+
+    function openSlotDetail(staffKey, staffLabel, hour) {
+      const data = state.slotsData;
+      if (!data) return;
+      const row = findRowByStaffKey(data, staffKey);
+      if (!row) return;
+
+      state.detailStaff = staffKey;
+      state.detailHour = hour;
+
+      document.querySelectorAll(".hour-cell-btn.active-hour").forEach((b) => b.classList.remove("active-hour"));
+      document.querySelectorAll(`.hour-cell-btn[data-staff="${staffKey}"][data-hour="${hour}"]`).forEach((b) => {
+        b.classList.add("active-hour");
+      });
+
+      $("slot-detail-title").textContent = `${staffLabel} / ${hour}:00〜${hour + 1}:00`;
+
+      const slotMap = {};
+      (row.slots || []).forEach((s) => { slotMap[s.time] = s; });
+
+      const grid = $("slot-detail-grid");
+      grid.innerHTML = "";
+      timesInHour(hour).forEach((t) => {
+        const s = slotMap[t];
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-btn";
+        if (!s || !s.available) {
+          btn.classList.add("ng");
+          btn.disabled = true;
+          btn.innerHTML = `<span class="slot-time">${t}</span><span class="slot-mark">×</span>`;
+        } else {
+          btn.classList.add("ok");
+          if (state.staffName === staffKey && state.time === t) btn.classList.add("selected");
+          btn.innerHTML = `<span class="slot-time">${t}</span><span class="slot-mark">○</span>`;
+          btn.addEventListener("click", () => selectSlot(staffKey, t, btn));
+        }
+        grid.appendChild(btn);
+      });
+
+      show($("slot-detail-panel"));
+      $("slot-detail-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function selectSlot(staffKey, time, btn) {
+      state.staffName = staffKey;
+      state.time = time;
+      document.querySelectorAll("#slot-detail-grid .slot-btn.ok").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      updateSummary();
+      show($("step-form"));
+      $("step-form").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function renderSlotsTable(data) {
@@ -526,37 +710,29 @@
       const staffRows = data.staff || [];
       const freeRow = data.free_row || { staff_name: "フリー", slots: [] };
       const allRows = [...staffRows, freeRow];
-      const times = [];
-      const timeSet = new Set();
-      allRows.forEach((row) => {
-        (row.slots || []).forEach((s) => {
-          if (!timeSet.has(s.time)) {
-            timeSet.add(s.time);
-            times.push(s.time);
-          }
-        });
-      });
-      times.sort();
+      const hours = [];
+      for (let h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
 
       let html = "<thead><tr><th class='staff-col'>担当</th>";
-      times.forEach((t) => { html += `<th>${t}</th>`; });
+      hours.forEach((h) => { html += `<th>${h}:00</th>`; });
       html += "</tr></thead><tbody>";
 
       allRows.forEach((row) => {
-        const isFree = row.staff_name === "フリー" || row.staff_name === freeRow.staff_name;
-        const staffKey = isFree ? FREE_KEY : row.staff_name;
+        const staffKey = rowStaffKey(row, freeRow.staff_name);
         html += `<tr><td class="staff-col">${row.staff_name}</td>`;
         const slotMap = {};
         (row.slots || []).forEach((s) => { slotMap[s.time] = s; });
-        times.forEach((t) => {
-          const s = slotMap[t];
-          if (!s) {
-            html += "<td>—</td>";
-          } else if (s.available) {
-            const sel = state.staffName === staffKey && state.time === t ? " selected" : "";
-            html += `<td><button type="button" class="slot-btn ok${sel}" data-staff="${staffKey}" data-time="${t}">○</button></td>`;
+        hours.forEach((h) => {
+          const status = classifyHour(slotMap, h);
+          const active = state.detailStaff === staffKey && state.detailHour === h ? " active-hour" : "";
+          if (status === "full") {
+            html += `<td><button type="button" class="hour-cell-btn full${active}" data-staff="${staffKey}" data-hour="${h}">○</button></td>`;
+          } else if (status === "partial") {
+            html += `<td><button type="button" class="hour-cell-btn partial${active}" data-staff="${staffKey}" data-hour="${h}">△</button></td>`;
+          } else if (status === "ng") {
+            html += `<td><button type="button" class="hour-cell-btn ng" disabled>×</button></td>`;
           } else {
-            html += `<td><button type="button" class="slot-btn ng" disabled>×</button></td>`;
+            html += `<td><button type="button" class="hour-cell-btn none" disabled>—</button></td>`;
           }
         });
         html += "</tr>";
@@ -564,18 +740,18 @@
       html += "</tbody>";
       table.innerHTML = html;
 
-      table.querySelectorAll(".slot-btn.ok").forEach((btn) => {
+      table.querySelectorAll(".hour-cell-btn.full, .hour-cell-btn.partial").forEach((btn) => {
         btn.addEventListener("click", () => {
-          state.staffName = btn.dataset.staff;
-          state.time = btn.dataset.time;
-          table.querySelectorAll(".slot-btn.ok").forEach((b) => b.classList.remove("selected"));
-          btn.classList.add("selected");
-          updateSummary();
-          show($("step-form"));
-          $("step-form").scrollIntoView({ behavior: "smooth", block: "start" });
+          const staffKey = btn.dataset.staff;
+          const hour = parseInt(btn.dataset.hour, 10);
+          const row = findRowByStaffKey(data, staffKey);
+          const staffLabel = row ? row.staff_name : staffKey;
+          openSlotDetail(staffKey, staffLabel, hour);
         });
       });
     }
+
+    $("slot-detail-close").addEventListener("click", closeSlotDetail);
 
     function updateSummary() {
       const areaLabel = state.area === "tokyo" ? "東京" : "福岡";

@@ -89,12 +89,12 @@
   
   <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none;">
     <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input" step="900" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
-    <input type="time" name="field_end_time" id="field_end_time" value="19:00" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <input type="time" name="field_end_time" id="field_end_time" value="19:00" step="900" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
     <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。</small>
   </div>
   
@@ -245,6 +245,40 @@
 
 <script src="{{ url_for('static', filename='js/admin_reservation_menus.js') }}"></script>
 <script>
+const RESERVATION_TIME_STEP_MINUTES = 15;
+
+function snapTotalMinutesToStep(totalMinutes) {
+  return Math.round(totalMinutes / RESERVATION_TIME_STEP_MINUTES) * RESERVATION_TIME_STEP_MINUTES;
+}
+
+function snapDatetimeLocalInput(input) {
+  if (!input || !input.value || input.value.length < 16) return;
+  const [datePart, timePart] = input.value.split('T');
+  const [h, m] = timePart.split(':').map((v) => parseInt(v, 10));
+  const snapped = snapTotalMinutesToStep(h * 60 + m);
+  input.value = `${datePart}T${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+}
+
+function snapTimeInput(input) {
+  if (!input || !input.value) return;
+  const [h, m] = input.value.split(':').map((v) => parseInt(v, 10));
+  const snapped = snapTotalMinutesToStep(h * 60 + m);
+  input.value = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+}
+
+function bindReservationTimeStepInputs() {
+  const reservedAtInput = document.getElementById('reserved_at');
+  const fieldEndInput = document.getElementById('field_end_time');
+  if (reservedAtInput) {
+    reservedAtInput.addEventListener('change', () => snapDatetimeLocalInput(reservedAtInput));
+    snapDatetimeLocalInput(reservedAtInput);
+  }
+  if (fieldEndInput) {
+    fieldEndInput.addEventListener('change', () => snapTimeInput(fieldEndInput));
+    snapTimeInput(fieldEndInput);
+  }
+}
+
 // 患者選択方式の切替
 const allPatients = {{ patients | tojson }};
 
@@ -828,6 +862,7 @@ document.getElementById('place_type').addEventListener('change', function() {
   updatePlaceTypeFields();
 });
 updatePlaceTypeFields();
+bindReservationTimeStepInputs();
 
 
 // フォーム送信時のバリデーション
@@ -868,7 +903,12 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
   }
   
-  const reservedAt = document.querySelector('input[name="reserved_at"]').value;
+  const reservedAtInput = document.querySelector('input[name="reserved_at"]');
+  snapDatetimeLocalInput(reservedAtInput);
+  const fieldEndInput = document.getElementById('field_end_time');
+  if (fieldEndInput) snapTimeInput(fieldEndInput);
+
+  const reservedAt = reservedAtInput ? reservedAtInput.value : '';
   console.log('🔍 予約日時:', reservedAt);
   if (!reservedAt) {
     e.preventDefault();
