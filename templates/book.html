@@ -625,12 +625,27 @@
     }
 
     function classifyHour(slotMap, hour) {
-      const slots = timesInHour(hour).map((t) => slotMap[t]).filter(Boolean);
-      if (slots.length === 0) return "none";
-      const avail = slots.filter((s) => s.available).length;
-      if (avail === 0) return "ng";
-      if (avail === slots.length) return "full";
-      return "partial";
+      const times = timesInHour(hour);
+      let definedCount = 0;
+      let availCount = 0;
+      let ngCount = 0;
+
+      for (const t of times) {
+        const s = slotMap[t];
+        if (!s) continue;
+        definedCount++;
+        if (s.available) availCount++;
+        else ngCount++;
+      }
+
+      // 勤務時間外（その時間帯に枠自体が無い）
+      if (definedCount === 0) return "none";
+
+      // APIは施術時間が収まらない開始時刻を返さない → 欠けた枠は不可扱い
+      const missingCount = times.length - definedCount;
+      if (availCount === 0) return "ng";
+      if (missingCount > 0 || ngCount > 0) return "partial";
+      return "full";
     }
 
     function rowStaffKey(row, freeStaffName) {
