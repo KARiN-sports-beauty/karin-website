@@ -81,11 +81,11 @@
   </div>
 
   <div id="menu_section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須・複数選択可）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">コース（必須）</label>
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">基本メニューを選択してください</small>
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。往診はトータルコンディショニングのみ。</small>
   </div>
 
   <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->
@@ -226,6 +226,7 @@
   </div>
 </form>
 
+<script src="{{ url_for('static', filename='js/admin_reservation_menus.js') }}"></script>
 <script>
 function syncStatusPlaceType(placeType) {
   const wrap = document.getElementById('status_select_wrap');
@@ -235,52 +236,6 @@ function syncStatusPlaceType(placeType) {
   wrap.style.display = hideStatus ? 'none' : 'block';
   if (sel) sel.disabled = hideStatus;
 }
-
-// メニュー定義（エリア別・時間別・税抜き価格）
-const menuPrices = {
-  tokyo: {
-    60: 10000,
-    90: 15000,
-    120: 20000
-  },
-  fukuoka: {
-    60: 8000,
-    90: 12000,
-    120: 16000
-  }
-};
-
-// エリア変更時にメニューを更新
-document.getElementById('area').addEventListener('change', function() {
-  const area = this.value;
-  const menuSelect = document.getElementById('menu');
-  const placeTypeSelect = document.getElementById('place_type');
-  const placeType = placeTypeSelect ? placeTypeSelect.value : '';
-
-  menuSelect.innerHTML = '<option value="">エリアを選択してください</option>';
-
-  if (placeType === 'field') {
-    const otherOption = document.createElement('option');
-    otherOption.value = 'other';
-    otherOption.textContent = 'その他（帯同）';
-    otherOption.dataset.price = '';
-    menuSelect.appendChild(otherOption);
-  }
-
-  if (area && menuPrices[area]) {
-    const prices = menuPrices[area];
-    for (const [minutes, price] of Object.entries(prices)) {
-      const option = document.createElement('option');
-      option.value = minutes;
-      const priceWithTax = Math.floor(price * 1.1);
-      option.textContent = `${minutes}分コース（¥${priceWithTax.toLocaleString()}税込）`;
-      option.dataset.price = price;
-      menuSelect.appendChild(option);
-    }
-  }
-
-  updatePrice();
-});
 
 // メニュー選択時に価格を自動入力
 document.getElementById('menu').addEventListener('change', function() {
@@ -690,24 +645,8 @@ function updatePlaceTypeFields() {
     placeNameWrapper.style.display = 'none';
   }
 
-  const menuSelect = document.getElementById('menu');
-  if (menuSelect) {
-    if (placeType === 'field') {
-      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-      if (existingOther) {
-        existingOther.remove();
-      }
-      const otherOption = document.createElement('option');
-      otherOption.value = 'other';
-      otherOption.textContent = 'その他（帯同）';
-      otherOption.dataset.price = '';
-      menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
-    } else {
-      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-      if (existingOther) {
-        existingOther.remove();
-      }
-    }
+  if (typeof refreshAdminReservationMenus === 'function') {
+    refreshAdminReservationMenus();
   }
 
   updatePrice();
@@ -715,6 +654,7 @@ function updatePlaceTypeFields() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  bindAdminReservationMenuListeners();
   updatePlaceTypeFields();
 
   // 患者検索（付け替え）
@@ -778,19 +718,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   const areaSelect = document.getElementById('area');
-  if (areaSelect && areaSelect.value) {
+  const initialMenu = {{ reservation.initial_menu | tojson }};
+  if (typeof refreshAdminReservationMenus === 'function') {
+    refreshAdminReservationMenus(initialMenu);
+  } else if (areaSelect && areaSelect.value) {
     areaSelect.dispatchEvent(new Event('change'));
   }
 
   const menuSelect = document.getElementById('menu');
-  const initialMenu = "{{ reservation.duration_minutes or 90 }}";
   const initialPlaceType = "{{ reservation.place_type or '' }}";
-  if (menuSelect) {
-    if (initialPlaceType === 'field') {
-      menuSelect.value = 'other';
-    } else if (menuSelect.querySelector(`option[value="${initialMenu}"]`)) {
-      menuSelect.value = initialMenu;
-    }
+  if (menuSelect && initialPlaceType === 'field' && !menuSelect.value) {
+    menuSelect.value = 'other';
   }
 
   const transportationFeeSelect = document.getElementById('transportation_fee');

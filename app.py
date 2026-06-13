@@ -587,18 +587,164 @@ def assert_booking_area_selectable(area_id):
         return jsonify({"success": False, "message": "このエリアは現在Web予約を受け付けていません"}), 400
     return None
 
-BOOKING_COURSE_OPTIONS = {
-    "tokyo": [
-        {"minutes": 60, "label": "60分"},
-        {"minutes": 90, "label": "90分"},
-        {"minutes": 120, "label": "120分"},
-    ],
-    "fukuoka": [
-        {"minutes": 60, "label": "60分"},
-        {"minutes": 90, "label": "90分"},
-        {"minutes": 120, "label": "120分"},
-    ],
+BOOKING_COURSE_TYPES = {
+    "total_conditioning": {
+        "id": "total_conditioning",
+        "label": "トータルコンディショニングコース",
+        "durations": (120, 90, 60),
+    },
+    "shinkyu_only": {
+        "id": "shinkyu_only",
+        "label": "鍼灸のみ",
+        "durations": (90, 60, 30),
+        "prices_tax_included": {
+            "tokyo": {90: 13200, 60: 8800, 30: 4400},
+            "fukuoka": {90: 9900, 60: 6600, 30: 3300},
+        },
+    },
 }
+
+
+def build_booking_course_options_for_area(area):
+    area = normalize_staff_area(area)
+    groups = []
+    for key in ("total_conditioning", "shinkyu_only"):
+        ct = BOOKING_COURSE_TYPES[key]
+        durations = []
+        for minutes in ct["durations"]:
+            item = {"minutes": minutes, "label": f"{minutes}分"}
+            prices = (ct.get("prices_tax_included") or {}).get(area) or {}
+            if minutes in prices:
+                item["price_yen"] = prices[minutes]
+            durations.append(item)
+        groups.append({"id": ct["id"], "label": ct["label"], "durations": durations})
+    return groups
+
+
+BOOKING_COURSE_OPTIONS = {
+    "tokyo": build_booking_course_options_for_area("tokyo"),
+    "fukuoka": build_booking_course_options_for_area("fukuoka"),
+}
+
+
+def normalize_booking_course_type(raw):
+    value = (raw or "total_conditioning").strip()
+    return value if value in BOOKING_COURSE_TYPES else "total_conditioning"
+
+
+def booking_duration_allowed(course_type, duration):
+    ct = BOOKING_COURSE_TYPES.get(course_type)
+    if not ct:
+        return False
+    try:
+        minutes = int(duration)
+    except (TypeError, ValueError):
+        return False
+    return minutes in ct["durations"]
+
+
+def resolve_booking_course(duration_raw, course_type_raw=None):
+    course_type = normalize_booking_course_type(course_type_raw)
+    try:
+        duration = int(duration_raw or 90)
+    except (TypeError, ValueError):
+        return None, None
+    if booking_duration_allowed(course_type, duration):
+        return duration, course_type
+    if course_type_raw is None and duration in BOOKING_COURSE_TYPES["total_conditioning"]["durations"]:
+        return duration, "total_conditioning"
+    return None, None
+
+
+def build_booking_course_label(course_type, duration):
+    ct = BOOKING_COURSE_TYPES.get(course_type) or BOOKING_COURSE_TYPES["total_conditioning"]
+    return f"{ct['label']} {duration}分"
+
+
+# 管理画面：税抜き価格（トータルコンディショニング＝出張と同額）
+ADMIN_TOTAL_CONDITIONING_PRICES = {
+    "tokyo": {120: 20000, 90: 15000, 60: 10000},
+    "fukuoka": {120: 16000, 90: 12000, 60: 8000},
+}
+
+
+def admin_shinkyu_prices_tax_excluded(area):
+    area = normalize_staff_area(area)
+    prices_inc = (BOOKING_COURSE_TYPES["shinkyu_only"].get("prices_tax_included") or {}).get(area) or {}
+    return {minutes: int(round(price / 1.1)) for minutes, price in prices_inc.items()}
+
+
+def parse_admin_reservation_menu(menu_raw, area, place_type):
+    """管理画面メニュー値 → duration / course_name 等"""
+    menu = (menu_raw or "").strip()
+    area = normalize_staff_area(area) if area else "tokyo"
+    if not menu:
+        return None
+    if menu == "other":
+        return {"duration_minutes": 90, "course_name": None, "course_type": None, "menu_value": menu}
+    if ":" in menu:
+        type_part, dur_part = menu.split(":", 1)
+        course_type = normalize_booking_course_type(type_part)
+        try:
+            duration = int(dur_part)
+        except (TypeError, ValueError):
+            return None
+        if not booking_duration_allowed(course_type, duration):
+            return None
+        if course_type == "shinkyu_only" and place_type != "in_house":
+            return None
+        return {
+            "duration_minutes": duration,
+            "course_name": build_booking_course_label(course_type, duration),
+            "course_type": course_type,
+            "menu_value": menu,
+        }
+    try:
+        duration = int(menu)
+    except (TypeError, ValueError):
+        return None
+    if duration in BOOKING_COURSE_TYPES["total_conditioning"]["durations"]:
+        return {
+            "duration_minutes": duration,
+            "course_name": build_booking_course_label("total_conditioning", duration),
+            "course_type": "total_conditioning",
+            "menu_value": f"total_conditioning:{duration}",
+        }
+    return None
+
+
+def guess_admin_menu_value_from_reservation(reservation):
+    """予定編集フォームのメニュー初期選択値"""
+    try:
+        duration = int(reservation.get("duration_minutes") or 90)
+    except (TypeError, ValueError):
+        duration = 90
+    label = (reservation.get("course_name") or reservation.get("web_course_request") or "").strip()
+    place_type = reservation.get("place_type") or ""
+    if "鍼灸のみ" in label and booking_duration_allowed("shinkyu_only", duration):
+        return f"shinkyu_only:{duration}"
+    if booking_duration_allowed("total_conditioning", duration):
+        return f"total_conditioning:{duration}"
+    if place_type == "in_house" and booking_duration_allowed("shinkyu_only", duration):
+        return f"shinkyu_only:{duration}"
+    return str(duration)
+
+
+def reservation_course_name_for_reports(reservation, nomination_type, place_type, area, duration_minutes, parsed_course_name=None):
+    """日報・売上用コース名（保存済みラベルを優先）"""
+    stored = (parsed_course_name or reservation.get("course_name") or reservation.get("web_course_request") or "").strip()
+    nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
+    if nomination_type in nomination_type_map:
+        nomination_type = nomination_type_map[nomination_type]
+    place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
+    if nomination_type in ["本指名", "枠指名"]:
+        return f"{nomination_type}（{place_type_label}）"
+    if stored:
+        return stored
+    if area and duration_minutes:
+        area_label = "東京" if area == "tokyo" else "福岡" if area == "fukuoka" else ""
+        return f"{area_label} {duration_minutes}分コース"
+    return f"{nomination_type}（{place_type_label}）"
 
 
 def public_booking_enabled():
@@ -4543,11 +4689,14 @@ def api_book_dates():
     if blocked:
         return blocked
     try:
-        duration = int(request.args.get("duration") or 90)
+        duration_raw = request.args.get("duration") or 90
+        course_type_raw = request.args.get("course_type")
     except ValueError:
-        duration = 90
-    if duration not in (60, 90, 120):
-        duration = 90
+        duration_raw = 90
+        course_type_raw = None
+    duration, course_type = resolve_booking_course(duration_raw, course_type_raw)
+    if duration is None:
+        duration, course_type = 90, "total_conditioning"
 
     staff_entries = load_approved_staff_entries_for_booking()
     today = datetime.now(JST).date()
@@ -4576,9 +4725,11 @@ def api_book_slots():
     if blocked:
         return blocked
     day_str = (request.args.get("date") or "").strip()
-    try:
-        duration = int(request.args.get("duration") or 90)
-    except ValueError:
+    duration, _course_type = resolve_booking_course(
+        request.args.get("duration") or 90,
+        request.args.get("course_type"),
+    )
+    if duration is None:
         duration = 90
     if not day_str:
         return jsonify({"success": False, "message": "日付が必要です"}), 400
@@ -4616,15 +4767,14 @@ def api_book_create():
         email = (data.get("email") or "").strip()
         course_label = (data.get("course_request") or "").strip()
         note = (data.get("web_note") or data.get("note") or "").strip() or None
-        try:
-            duration = int(data.get("duration_minutes") or 90)
-        except ValueError:
-            duration = 90
+        course_type = normalize_booking_course_type(data.get("course_type"))
+        duration, resolved_type = resolve_booking_course(data.get("duration_minutes") or 90, course_type)
+        if duration is None:
+            return jsonify({"success": False, "message": "コースが不正です"}), 400
+        course_type = resolved_type
 
         if not all([day_str, time_hm, last_name, first_name, phone, email]):
             return jsonify({"success": False, "message": "必須項目を入力してください"}), 400
-        if duration not in (60, 90, 120):
-            return jsonify({"success": False, "message": "コースが不正です"}), 400
 
         assigned_staff = staff_key
         if staff_key == BOOKING_FREE_STAFF_KEY or staff_key == "フリー":
@@ -4679,7 +4829,7 @@ def api_book_create():
             patient_id = res_p.data[0]["id"]
 
         if not course_label:
-            course_label = f"{duration}分"
+            course_label = build_booking_course_label(course_type, duration)
 
         reservation_data = {
             "patient_id": patient_id,
@@ -4698,6 +4848,7 @@ def api_book_create():
             "web_course_request": course_label,
             "web_note": note,
             "memo": note,
+            "course_name": course_label,
             "payment_status": "not_required",
             **reservation_audit_for_insert(),
         }
@@ -5464,6 +5615,7 @@ def admin_reservations_new():
         
         # メニュー取得（施術時間を決定）／帯同・休憩は終了時刻から算出
         menu = request.form.get("menu", "").strip()
+        course_name = None
         if place_type in ("field", "break"):
             fet = request.form.get("field_end_time", "").strip()
             duration_legacy = request.form.get("duration_minutes_custom", "").strip()
@@ -5488,7 +5640,11 @@ def admin_reservations_new():
         else:
             duration_minutes = 90
             if menu:
-                if menu == "other":
+                parsed_menu = parse_admin_reservation_menu(menu, area, place_type)
+                if parsed_menu:
+                    duration_minutes = parsed_menu["duration_minutes"]
+                    course_name = parsed_menu["course_name"]
+                elif menu == "other":
                     duration_minutes = 90
                 else:
                     try:
@@ -5674,6 +5830,7 @@ def admin_reservations_new():
             "tax": tax,
             "status": "reserved",
             "memo": memo,
+            "course_name": course_name,
             **reservation_audit_for_insert(),
         }
         
@@ -5826,33 +5983,20 @@ def admin_reservations_status(reservation_id):
                                 pass
                             
                             # 予約情報からコース名と価格を取得
-                            course_name = None
                             base_price = reservation.get("base_price") or 0
                             transportation_fee = reservation.get("transportation_fee") or 0
                             nomination_fee = reservation.get("nomination_fee") or 0
                             discount = reservation.get("discount") or 0
                             nomination_type = reservation.get("nomination_type", "本指名")
-                            
-                            # 英語値から日本語値への変換（後方互換性のため）
+                            place_type = reservation.get("place_type") or ""
+                            area = reservation.get("area")
+                            duration = reservation.get("duration_minutes")
                             nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
                             if nomination_type in nomination_type_map:
                                 nomination_type = nomination_type_map[nomination_type]
-                            
-                            # メニュー名を生成（指名タイプ＋現場区分の形式で統一）
-                            place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
-                            
-                            # 表記ルール：本指名（院内）、枠指名（帯同）の形式（本指名/枠指名は必ずこの形式）
-                            if nomination_type in ["本指名", "枠指名"]:
-                                course_name = f"{nomination_type}（{place_type_label}）"
-                            else:
-                                # 希望/フリーの場合は従来通り（エリア＋時間）
-                                area = reservation.get("area")
-                                duration = reservation.get("duration_minutes")
-                                if area and duration:
-                                    area_label = "東京" if area == "tokyo" else "福岡" if area == "fukuoka" else ""
-                                    course_name = f"{area_label} {duration}分コース"
-                                else:
-                                    course_name = f"{nomination_type}（{place_type_label}）"
+                            course_name = reservation_course_name_for_reports(
+                                reservation, nomination_type, place_type, area, duration
+                            )
                             
                             # スタッフ日報の売上金額 = 新規予約作成フォームの合計金額そのまま
                             # 合計金額 = 料金 + 出張費 + 指名料 - 割引 + 消費税
@@ -6010,6 +6154,7 @@ def admin_reservations_edit(reservation_id):
                     reservation["patient_name"] = "不明"
             else:
                 reservation["patient_name"] = "患者なし"
+            reservation["initial_menu"] = guess_admin_menu_value_from_reservation(reservation)
             
             # reserved_atをフォーム用に変換（帯同も日時で編集）／帯同終了時刻
             try:
@@ -6188,6 +6333,7 @@ def admin_reservations_edit(reservation_id):
         # メニュー取得（施術時間を決定）／帯同・休憩は終了時刻から算出
         menu = request.form.get("menu", "").strip()
         duration_minutes = existing_reservation.get("duration_minutes", 90)
+        course_name = existing_reservation.get("course_name")
         if place_type in ("field", "break"):
             fet = request.form.get("field_end_time", "").strip()
             dm_custom = request.form.get("duration_minutes_custom", "").strip()
@@ -6206,7 +6352,11 @@ def admin_reservations_edit(reservation_id):
             else:
                 duration_minutes = int(existing_reservation.get("duration_minutes") or (60 if place_type == "break" else 540))
         elif menu:
-            if menu == "other":
+            parsed_menu = parse_admin_reservation_menu(menu, area, place_type)
+            if parsed_menu:
+                duration_minutes = parsed_menu["duration_minutes"]
+                course_name = parsed_menu["course_name"]
+            elif menu == "other":
                 duration_minutes = existing_reservation.get("duration_minutes", 90)
             else:
                 try:
@@ -6420,6 +6570,7 @@ def admin_reservations_edit(reservation_id):
             "tax": tax,
             "status": status,
             "memo": memo,
+            "course_name": course_name,
             **reservation_audit_for_update(),
         }
         if place_type in ("field", "break"):
@@ -6443,20 +6594,9 @@ def admin_reservations_edit(reservation_id):
             # この予約に関連する日報患者情報を取得
             res_patients = supabase_admin.table("staff_daily_report_patients").select("*").eq("reservation_id", reservation_id).execute()
             if res_patients.data:
-                # コース名を生成（予約完了時と同じロジック）
-                course_name = None
-                place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
-                
-                # 表記ルール：本指名（院内）、枠指名（帯同）の形式
-                if nomination_type in ["本指名", "枠指名"]:
-                    course_name = f"{nomination_type}（{place_type_label}）"
-                else:
-                    # 希望/フリーの場合はエリア＋時間
-                    if area and duration_minutes:
-                        area_label = "東京" if area == "tokyo" else "福岡" if area == "fukuoka" else ""
-                        course_name = f"{area_label} {duration_minutes}分コース"
-                    else:
-                        course_name = f"{nomination_type}（{place_type_label}）"
+                course_name = reservation_course_name_for_reports(
+                    existing_reservation, nomination_type, place_type, area, duration_minutes, course_name
+                )
                 
                 # 日報患者情報を更新
                 for patient_report in res_patients.data:

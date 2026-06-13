@@ -115,6 +115,16 @@
       margin-top: 2px;
       opacity: 0.85;
     }
+    .course-sub-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .course-group {
+      margin-bottom: 18px;
+    }
+    .course-group:last-child { margin-bottom: 0; }
     .date-row {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
@@ -285,8 +295,13 @@
     </div>
 
     <div class="card hidden" id="step-course">
-      <h2><span class="step-num">2</span>コース（施術時間）</h2>
-      <div class="chip-row" id="course-chips"></div>
+      <h2><span class="step-num">2</span>コース</h2>
+      <p class="course-sub-label">コース種別</p>
+      <div class="chip-row" id="course-type-chips"></div>
+      <div id="course-duration-wrap" class="hidden course-group">
+        <p class="course-sub-label" style="margin-top: 16px;">施術時間</p>
+        <div class="chip-row" id="course-duration-chips"></div>
+      </div>
     </div>
 
     <div class="card hidden" id="step-date">
@@ -336,6 +351,8 @@
     const state = {
       meta: null,
       area: null,
+      courseType: null,
+      courseTypeLabel: "",
       duration: null,
       courseLabel: "",
       date: null,
@@ -379,9 +396,12 @@
       state.area = areaId;
       document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
-      renderCourses();
+      renderCourseTypes();
       show($("step-course"));
+      state.courseType = null;
+      state.courseTypeLabel = "";
       state.duration = null;
+      state.courseLabel = "";
       state.date = null;
       state.staffName = null;
       state.time = null;
@@ -390,24 +410,56 @@
       hide($("step-form"));
     }
 
-    function renderCourses() {
-      const courses = (state.meta.courses || {})[state.area] || [];
-      const row = $("course-chips");
+    function renderCourseTypes() {
+      const groups = (state.meta.courses || {})[state.area] || [];
+      const row = $("course-type-chips");
       row.innerHTML = "";
-      courses.forEach((c) => {
+      hide($("course-duration-wrap"));
+      groups.forEach((group) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "chip";
-        btn.textContent = c.label;
-        btn.addEventListener("click", () => selectCourse(c.minutes, c.label, btn));
+        btn.textContent = group.label;
+        btn.dataset.courseType = group.id;
+        btn.addEventListener("click", () => selectCourseType(group, btn));
         row.appendChild(btn);
       });
     }
 
-    async function selectCourse(minutes, label, btn) {
+    function selectCourseType(group, btn) {
+      state.courseType = group.id;
+      state.courseTypeLabel = group.label;
+      state.duration = null;
+      state.courseLabel = "";
+      document.querySelectorAll("#course-type-chips .chip").forEach((c) => c.classList.remove("active"));
+      btn.classList.add("active");
+      renderCourseDurations(group);
+      show($("course-duration-wrap"));
+      hide($("step-date"));
+      hide($("step-slots"));
+      hide($("step-form"));
+      state.date = null;
+      state.staffName = null;
+      state.time = null;
+    }
+
+    function renderCourseDurations(group) {
+      const row = $("course-duration-chips");
+      row.innerHTML = "";
+      (group.durations || []).forEach((d) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip";
+        btn.textContent = d.label;
+        btn.addEventListener("click", () => selectCourseDuration(d.minutes, d.label, btn, group.label));
+        row.appendChild(btn);
+      });
+    }
+
+    async function selectCourseDuration(minutes, durationLabel, btn, groupLabel) {
       state.duration = minutes;
-      state.courseLabel = label;
-      document.querySelectorAll("#course-chips .chip").forEach((c) => c.classList.remove("active"));
+      state.courseLabel = `${groupLabel} ${durationLabel}`;
+      document.querySelectorAll("#course-duration-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
       show($("step-date"));
       hide($("step-slots"));
@@ -422,7 +474,7 @@
       const row = $("date-chips");
       row.innerHTML = "";
       hide($("date-empty"));
-      const res = await fetch(`/api/book/dates?area=${encodeURIComponent(state.area)}&duration=${state.duration}`);
+      const res = await fetch(`/api/book/dates?area=${encodeURIComponent(state.area)}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
       const data = await res.json();
       let any = false;
       (data.dates || []).forEach((d) => {
@@ -454,7 +506,7 @@
     async function loadSlots() {
       show($("slots-loading"));
       hide($("slots-wrap"));
-      const res = await fetch(`/api/book/slots?area=${encodeURIComponent(state.area)}&date=${state.date}&duration=${state.duration}`);
+      const res = await fetch(`/api/book/slots?area=${encodeURIComponent(state.area)}&date=${state.date}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
       const data = await res.json();
       hide($("slots-loading"));
       renderSlotsTable(data);
@@ -540,6 +592,7 @@
           date: state.date,
           time: state.time,
           duration_minutes: state.duration,
+          course_type: state.courseType,
           staff_name: state.staffName,
           course_request: state.courseLabel,
           last_name: $("last_name").value.trim(),

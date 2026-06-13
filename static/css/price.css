@@ -419,3 +419,9 @@
     height: 24px;
   }
 }
+
+/* 院内・鍼灸のみ（公開準備中） */
+.in-house-course-draft,
+.in-house-course-draft[hidden] {
+  display: none !important;
+}

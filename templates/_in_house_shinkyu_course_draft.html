@@ -1,0 +1,24 @@
+{# 院内・鍼灸のみコース料金（公開準備中・非表示）
+   公開時: hidden 属性を外し、price.html 等から include する
+   area: "tokyo" | "fukuoka" #}
+{% if area == "tokyo" %}
+<div class="price-block in-house-course-draft" hidden aria-hidden="true">
+  <h3 class="block-heading">鍼灸のみ（院内）</h3>
+  <ul class="price-list">
+    <li><span>90分</span><span>13,200円</span></li>
+    <li><span>60分</span><span>8,800円</span></li>
+    <li><span>30分</span><span>4,400円</span></li>
+  </ul>
+  <div class="course-desc">・鍼灸メインの院内施術コース（公開準備中）</div>
+</div>
+{% elif area == "fukuoka" %}
+<div class="price-block in-house-course-draft" hidden aria-hidden="true">
+  <h3 class="block-heading">鍼灸のみ（院内）</h3>
+  <ul class="price-list">
+    <li><span>90分</span><span>9,900円</span></li>
+    <li><span>60分</span><span>6,600円</span></li>
+    <li><span>30分</span><span>3,300円</span></li>
+  </ul>
+  <div class="course-desc">・鍼灸メインの院内施術コース（公開準備中）</div>
+</div>
+{% endif %}

@@ -108,11 +108,11 @@
   </div>
   
   <div id="menu_section" style="margin-bottom: 20px; display: none;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">メニュー（必須・複数選択可）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">コース（必須）</label>
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">基本メニューを選択してください</small>
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。往診はトータルコンディショニングのみ。</small>
   </div>
   
   <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->
@@ -243,6 +243,7 @@
   </div>
 </form>
 
+<script src="{{ url_for('static', filename='js/admin_reservation_menus.js') }}"></script>
 <script>
 // 患者選択方式の切替
 const allPatients = {{ patients | tojson }};
@@ -362,54 +363,6 @@ if (searchInput && resultsBox && hiddenInput) {
     }
   });
 }
-
-// メニュー定義（エリア別・時間別・税抜き価格）
-const menuPrices = {
-  tokyo: {
-    60: 10000,  // 税抜き
-    90: 15000,  // 税抜き
-    120: 20000  // 税抜き
-  },
-  fukuoka: {
-    60: 8000,   // 税抜き
-    90: 12000,  // 税抜き
-    120: 16000  // 税抜き
-  }
-};
-
-// エリア変更時にメニューを更新
-document.getElementById('area').addEventListener('change', function() {
-  const area = this.value;
-  const menuSelect = document.getElementById('menu');
-  const placeTypeSelect = document.getElementById('place_type');
-  const placeType = placeTypeSelect ? placeTypeSelect.value : '';
-  
-  menuSelect.innerHTML = '<option value="">エリアを選択してください</option>';
-  
-  // 帯同の場合は「その他」を追加
-  if (placeType === 'field') {
-    const otherOption = document.createElement('option');
-    otherOption.value = 'other';
-    otherOption.textContent = 'その他（帯同）';
-    otherOption.dataset.price = '';
-    menuSelect.appendChild(otherOption);
-  }
-  
-  if (area && menuPrices[area]) {
-    const prices = menuPrices[area];
-    for (const [minutes, price] of Object.entries(prices)) {
-      const option = document.createElement('option');
-      option.value = minutes;
-      // 税込価格を表示（税抜き価格 × 1.1）
-      const priceWithTax = Math.floor(price * 1.1);
-      option.textContent = `${minutes}分コース（¥${priceWithTax.toLocaleString()}税込）`;
-      option.dataset.price = price; // 税抜き価格を保存
-      menuSelect.appendChild(option);
-    }
-  }
-  
-  updatePrice();
-});
 
 // メニュー選択時に価格を自動入力
 document.getElementById('menu').addEventListener('change', function() {
@@ -861,40 +814,20 @@ function updatePlaceTypeFields() {
   } else {
     placeNameWrapper.style.display = 'none';
   }
-  
-  // メニュー更新処理（帯同の場合は「その他」を追加）
-  const menuSelect = document.getElementById('menu');
-  if (menuSelect) {
-    if (placeType === 'field') {
-      // 既存の「その他」オプションを削除
-      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-      if (existingOther) {
-        existingOther.remove();
-      }
-      
-      // 「その他」を先頭に追加
-      const otherOption = document.createElement('option');
-      otherOption.value = 'other';
-      otherOption.textContent = 'その他（帯同）';
-      otherOption.dataset.price = '';
-      menuSelect.insertBefore(otherOption, menuSelect.firstChild.nextSibling);
-  } else {
-      // 帯同以外の場合は「その他」を削除
-      const existingOther = Array.from(menuSelect.options).find(opt => opt.value === 'other');
-      if (existingOther) {
-        existingOther.remove();
-  }
-    }
+
+  if (typeof refreshAdminReservationMenus === 'function') {
+    refreshAdminReservationMenus();
   }
   
   updatePrice();
   updateTotalPrice();
 }
 
-// 現場区分変更時にフィールドを更新
+bindAdminReservationMenuListeners();
 document.getElementById('place_type').addEventListener('change', function() {
   updatePlaceTypeFields();
 });
+updatePlaceTypeFields();
 
 
 // フォーム送信時のバリデーション

@@ -143,7 +143,7 @@
           <h2 class="area-title">東京エリア</h2>
 
           <div class="price-block">
-            <h3 class="block-heading">施術コース料金</h3>
+            <h3 class="block-heading">トータルコンディショニングコース</h3>
             <ul class="price-list">
                 <li><span>120分</span><span>22,000円</span></li>
             </ul>
@@ -170,6 +170,9 @@
             <p class="note-small">※オイルトリートメントをご希望の場合は、+3,000円 / 1時間</p>
           </div>
 
+          {# 院内・鍼灸のみ（公開準備中・非表示） #}
+          {% with area='tokyo' %}{% include '_in_house_shinkyu_course_draft.html' %}{% endwith %}
+
           <div class="price-block">
             <h3 class="block-heading">出張費（代々木上原駅から）</h3>
             <ul class="price-list">
@@ -192,7 +195,7 @@
           <h2 class="area-title">福岡エリア</h2>
 
           <div class="price-block">
-            <h3 class="block-heading">施術コース料金</h3>
+            <h3 class="block-heading">トータルコンディショニングコース</h3>
             <ul class="price-list">
                 <li><span>120分</span><span>17,600円</span></li>
             </ul>
@@ -218,6 +221,9 @@
             </div>
             <p class="note-small">※オイルトリートメントをご希望の場合は、+3,000円 / 1時間</p>
           </div>
+
+          {# 院内・鍼灸のみ（公開準備中・非表示） #}
+          {% with area='fukuoka' %}{% include '_in_house_shinkyu_course_draft.html' %}{% endwith %}
 
           <div class="price-block">
             <h3 class="block-heading">出張費（薬院駅から）</h3>
