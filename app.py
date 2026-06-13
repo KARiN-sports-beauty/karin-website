@@ -499,6 +499,49 @@ def session_may_edit_reservation_row(reservation_staff_name):
 
 # 院内は1床想定：予約同士の前後に空ける分数（被り禁止）
 IN_HOUSE_SINGLE_BED_GAP_MINUTES = 15
+# スタッフの予定：院内・往診の「後ろ」に空ける分数（タイムライン表示・空き枠計算）
+VISIT_POST_BUFFER_MINUTES = 30
+
+
+def reservation_post_buffer_minutes(place_type):
+    pt = (place_type or "").strip()
+    if pt == "in_house":
+        return IN_HOUSE_SINGLE_BED_GAP_MINUTES
+    if pt == "visit":
+        return VISIT_POST_BUFFER_MINUTES
+    return 0
+
+
+def reservation_staff_blocked_interval_jst(row):
+    """スタッフ行のブロック区間 [開始, 終了+事後バッファ]。"""
+    rs, re = reservation_interval_jst(row)
+    if rs is None:
+        return None, None
+    buf = reservation_post_buffer_minutes(row.get("place_type"))
+    if buf:
+        re = re + timedelta(minutes=buf)
+    return rs, re
+
+
+def staff_reservation_blocks_interval(row, block_start_jst, block_end_jst):
+    rs, re = reservation_staff_blocked_interval_jst(row)
+    if rs is None:
+        return False
+    return booking_intervals_overlap(block_start_jst, block_end_jst, rs, re)
+
+
+def staff_new_reservation_conflicts_existing(new_start, new_end, new_place_type, other_row):
+    """新規予定が既存予定（＋事後バッファ）と重なるか。既存の実施時間と新規の事後バッファも見る。"""
+    if staff_reservation_blocks_interval(other_row, new_start, new_end):
+        return True
+    os, oe = reservation_interval_jst(other_row)
+    if os is None:
+        return False
+    new_buf = reservation_post_buffer_minutes(new_place_type)
+    if not new_buf:
+        return False
+    new_blocked_end = new_end + timedelta(minutes=new_buf)
+    return booking_intervals_overlap(new_start, new_blocked_end, os, oe)
 
 
 def in_house_bed_intervals_conflict(a_start, a_end, b_start, b_end, gap_minutes=IN_HOUSE_SINGLE_BED_GAP_MINUTES):
@@ -953,7 +996,7 @@ def is_booking_slot_available(staff_name, slot_start_jst, duration_minutes, shif
     for r in day_reservations:
         if (r.get("staff_name") or "").strip() != staff_name:
             continue
-        rs, re = reservation_interval_jst(r)
+        rs, re = reservation_staff_blocked_interval_jst(r)
         if rs is None:
             continue
         if booking_intervals_overlap(slot_start_jst, slot_end_jst, rs, re):
@@ -5311,11 +5354,13 @@ def admin_reservations():
                 timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
 
         timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
+        timeline_buffers_by_staff = {nm: [] for nm in timeline_staff_names}
         for r in reservations_of_day:
             staff_name_raw = (r.get("staff_name") or "").strip()
             staff_name_for_timeline = staff_name_raw or "未割当"
             if staff_name_for_timeline not in timeline_cards_by_staff:
                 timeline_cards_by_staff[staff_name_for_timeline] = []
+                timeline_buffers_by_staff[staff_name_for_timeline] = []
                 timeline_staff_names.append(staff_name_for_timeline)
                 timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline, "role": timeline_staff_role_map.get(staff_name_for_timeline, STAFF_ROLE_REGULAR)})
 
@@ -5370,6 +5415,23 @@ def admin_reservations():
                 "is_break": _pt == "break",
                 "place_label": "院内" if _pt == "in_house" else ("往診" if _pt == "visit" else ("帯同" if _pt == "field" else ("休憩" if _pt == "break" else "予定"))),
             })
+            post_buf = reservation_post_buffer_minutes(_pt)
+            if post_buf > 0:
+                buf_start = start_minute + duration
+                buf_end = buf_start + post_buf
+                if buf_start < timeline_end_minute and buf_end > timeline_start_minute:
+                    if buf_start < timeline_start_minute:
+                        buf_start = timeline_start_minute
+                    if buf_end > timeline_end_minute:
+                        buf_end = timeline_end_minute
+                    buf_dur = buf_end - buf_start
+                    if buf_dur > 0:
+                        timeline_buffers_by_staff[staff_name_for_timeline].append({
+                            "start_minute": buf_start,
+                            "duration": buf_dur,
+                            "place_type": _pt,
+                            "buffer_minutes": post_buf,
+                        })
 
         # 勤務時間（DB保存）を取得
         selected_day_str = selected_day.strftime("%Y-%m-%d")
@@ -5428,6 +5490,7 @@ def admin_reservations():
             timeline_staff_names=timeline_staff_names,
             timeline_staff_rows=timeline_staff_rows,
             timeline_cards_by_staff=timeline_cards_by_staff,
+            timeline_buffers_by_staff=timeline_buffers_by_staff,
             shift_map=shift_map,
             staff_area_map=staff_area_map,
             shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
@@ -5810,7 +5873,7 @@ def admin_reservations_new():
         if staff_name:
             res_overlapping = (
                 supabase_admin.table("reservations")
-                .select("id, reserved_at, duration_minutes, staff_name, patient_id")
+                .select("id, reserved_at, duration_minutes, staff_name, patient_id, place_type")
                 .eq("staff_name", staff_name)
                 .neq("status", "canceled")
                 .execute()
@@ -5819,13 +5882,8 @@ def admin_reservations_new():
             if res_overlapping.data:
                 for other_res in res_overlapping.data:
                     try:
-                        other_start_str = other_res.get("reserved_at", "")
-                        other_duration = int(other_res.get("duration_minutes") or 60)
-                        if other_start_str:
-                            other_start = datetime.fromisoformat(other_start_str.replace("Z", "+00:00")).astimezone(JST)
-                            other_end = other_start + timedelta(minutes=other_duration)
-                            if dt_jst < other_end and reserved_end > other_start:
-                                overlapping_reservations.append(other_res)
+                        if staff_new_reservation_conflicts_existing(dt_jst, reserved_end, place_type, other_res):
+                            overlapping_reservations.append(other_res)
                     except Exception:
                         pass
             if overlapping_reservations:
@@ -6540,7 +6598,7 @@ def admin_reservations_edit(reservation_id):
         
         # 重複チェック：同じスタッフで、時間帯が被る予約を検索
         # 自分自身の予約は除外
-        query = supabase_admin.table("reservations").select("id, reserved_at, duration_minutes, staff_name, patient_id").eq("staff_name", staff_name).neq("id", reservation_id)
+        query = supabase_admin.table("reservations").select("id, reserved_at, duration_minutes, staff_name, patient_id, place_type").eq("staff_name", staff_name).neq("id", reservation_id)
         
         # キャンセル済みは除外
         query = query.neq("status", "canceled")
@@ -6553,16 +6611,9 @@ def admin_reservations_edit(reservation_id):
         if res_overlapping.data:
             for other_res in res_overlapping.data:
                 try:
-                    other_start_str = other_res.get("reserved_at", "")
-                    other_duration = other_res.get("duration_minutes", 60)
-                    if other_start_str:
-                        other_start = datetime.fromisoformat(other_start_str.replace("Z", "+00:00")).astimezone(JST)
-                        other_end = other_start + timedelta(minutes=other_duration)
-                        
-                        # 時間帯が被るかチェック
-                        if dt_jst < other_end and reserved_end > other_start:
-                            overlapping_reservations.append(other_res)
-                except:
+                    if staff_new_reservation_conflicts_existing(dt_jst, reserved_end, place_type, other_res):
+                        overlapping_reservations.append(other_res)
+                except Exception:
                     pass
         
         if overlapping_reservations:

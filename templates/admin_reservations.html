@@ -195,6 +195,23 @@
     border-bottom: 1px solid #f1f5f9;
     background: #fff;
   }
+  .schedule-buffer-zone {
+    position: absolute;
+    top: 7px;
+    height: 48px;
+    box-sizing: border-box;
+    z-index: 1;
+    pointer-events: none;
+    /* 勤務時間外と同じグレー＋ごく薄い斜線（予定直後のバッファだと分かる） */
+    background-color: #f1f5f9;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(203, 213, 225, 0.35) 10px,
+      rgba(203, 213, 225, 0.35) 11px
+    );
+  }
   .schedule-card {
     position: absolute;
     top: 7px;
@@ -212,6 +229,7 @@
     overflow: hidden;
     white-space: normal;
     text-overflow: clip;
+    z-index: 2;
   }
   .schedule-card-time {
     font-weight: 700;
@@ -419,6 +437,13 @@
             {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
             {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
             <div class="schedule-time-line" style="left: {{ x }}px;"></div>
+            {% endfor %}
+            {% for buf in timeline_buffers_by_staff.get(staff_name, []) %}
+            {% set buf_left = (buf.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
+            {% set buf_width = buf.duration * timeline_px_per_min %}
+            <div class="schedule-buffer-zone {% if buf.place_type == 'in_house' %}place-inhouse{% elif buf.place_type == 'visit' %}place-visit{% endif %}"
+                 style="left: {{ buf_left }}px; width: {{ buf_width if buf_width > 2 else 2 }}px;"
+                 title="{% if buf.place_type == 'in_house' %}院内後{{ buf.buffer_minutes }}分{% elif buf.place_type == 'visit' %}往診後{{ buf.buffer_minutes }}分{% endif %}"></div>
             {% endfor %}
             {% for card in timeline_cards_by_staff.get(staff_name, []) %}
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
