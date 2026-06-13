@@ -407,7 +407,7 @@
         </div>
         <div class="slot-detail-grid" id="slot-detail-grid"></div>
       </div>
-      <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。最下行「フリー」は自動割当です</p>
+      <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。スタッフの希望がない場合はフリーでお選びください</p>
     </div>
 
     <div class="card hidden" id="step-form">
@@ -439,6 +439,7 @@
   <script>
   (function () {
     const FREE_KEY = "__free__";
+    const SHOW_FREE_ROW = false; // スタッフ体制が整ったら true に
     const HOUR_START = 10;
     const HOUR_END = 26;
     const state = {
@@ -724,7 +725,7 @@
       const table = $("slots-table");
       const staffRows = data.staff || [];
       const freeRow = data.free_row || { staff_name: "フリー", slots: [] };
-      const allRows = [...staffRows, freeRow];
+      const allRows = SHOW_FREE_ROW ? [...staffRows, freeRow] : staffRows;
       const hours = [];
       for (let h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
 
