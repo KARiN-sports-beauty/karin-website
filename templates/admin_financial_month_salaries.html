@@ -4,36 +4,66 @@
 {% block content %}
 <h2 class="admin-title">💰 収支管理 - {{ year }}年{{ month_name }} スタッフ給与一覧</h2>
 
-<div style="margin-bottom: 20px;">
+<div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
   <a href="/admin/financial/years/{{ year }}" class="admin-karte-detail-btn-back" style="text-decoration: none;">← {{ year }}年に戻る</a>
+  <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">➕ 給与を新規登録</a>
+</div>
+
+<div style="padding: 20px 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px; display: flex; gap: 24px; flex-wrap: wrap;">
+  <div>
+    <span style="font-size: 0.85rem; color: #666;">月合計（総支給）</span>
+    <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">{% if month_total_gross %}¥{{ "{:,}".format(month_total_gross) }}{% else %}—{% endif %}</div>
+  </div>
+  <div>
+    <span style="font-size: 0.85rem; color: #666;">月合計（手取り）</span>
+    <div style="font-size: 1.2rem; font-weight: 600; color: #2e7d32;">{% if month_total_net %}¥{{ "{:,}".format(month_total_net) }}{% else %}—{% endif %}</div>
+  </div>
 </div>
 
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
-  <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ名一覧</h3>
-  <p style="margin: 0 0 20px 0; color: #666; font-size: 0.9rem;">スタッフ名をクリックすると給料の詳細確認・編集ができます。</p>
-
-  {% if staff_list %}
-  <div class="admin-karte-grid">
-    {% for staff in staff_list %}
-    <a href="/admin/financial/years/{{ year }}/staff/{{ staff.id | urlencode }}/months/{{ '%02d'|format(month|int) }}" class="admin-karte-card" style="text-decoration: none;">
-      <div class="admin-karte-head">
-        <strong class="admin-karte-name">{{ staff.name }}</strong>
-        {% if staff.id in registered_staff_ids %}
-        <span style="font-size: 0.8rem; color: #4CAF50; margin-left: 8px;">✓ 登録済</span>
-        {% else %}
-        <span style="font-size: 0.8rem; color: #999; margin-left: 8px;">未登録</span>
-        {% endif %}
-      </div>
-    </a>
-    {% endfor %}
+  {% if staff_rows %}
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f7fb;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">スタッフ名</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">総支給</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">手取り</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">状態</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in staff_rows %}
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600;">{{ row.name }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            {% if row.total_salary is not none %}¥{{ "{:,}".format(row.total_salary) }}{% else %}<span style="color:#999;">—</span>{% endif %}
+          </td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            {% if row.net_salary is not none %}¥{{ "{:,}".format(row.net_salary) }}{% else %}<span style="color:#999;">—</span>{% endif %}
+          </td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            {% if row.registered %}
+            <span style="color:#4CAF50; font-size:0.85rem;">登録済</span>
+            {% else %}
+            <span style="color:#999; font-size:0.85rem;">未登録</span>
+            {% endif %}
+          </td>
+          <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
+            <a href="/admin/financial/years/{{ year }}/staff/{{ row.id | urlencode }}/months/{{ month }}" style="color: #1E3A5F; text-decoration: none; font-size: 0.88rem; margin-right: 8px;">詳細</a>
+            {% if row.salary_id %}
+            <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/{{ row.salary_id }}/edit" style="color: #1E3A5F; text-decoration: none; font-size: 0.88rem;">編集</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
   {% else %}
   <p style="padding: 20px; color: #666;">承認済みスタッフがありません。</p>
   {% endif %}
-</div>
-
-<div style="margin-top: 20px;">
-  <a href="/admin/financial/years/{{ year }}/months/{{ month }}/salaries/new" class="admin-karte-detail-btn-primary" style="text-decoration: none;">➕ 給与を新規登録</a>
 </div>
 
 {% endblock %}

@@ -790,6 +790,17 @@ def reservation_course_name_for_reports(reservation, nomination_type, place_type
     return f"{nomination_type}（{place_type_label}）"
 
 
+def reservation_daily_report_amount(base_price, transportation_fee=0, nomination_fee=0, discount=0, tax=0):
+    """日報に載せる売上金額（予約フォームの合計＝税込）"""
+    return (
+        int(base_price or 0)
+        + int(transportation_fee or 0)
+        + int(nomination_fee or 0)
+        - int(discount or 0)
+        + int(tax or 0)
+    )
+
+
 def public_booking_enabled():
     return os.getenv("PUBLIC_BOOKING_ENABLED", "false").strip().lower() in ("1", "true", "yes")
 
@@ -1863,6 +1874,66 @@ def calculate_special_bonus(
     current_total = (base_salary or 0) + (commission or 0) + (nomination_fee or 0)
     bonus = max(0, int(revenue_total * 0.35) - int(existing_total + current_total))
     return {"bonus": bonus, "revenue_total": revenue_total, "existing_total": existing_total}
+
+
+# 給与天引き概算（登録フォームの参考値。実際の給与計算は手動調整前提）
+SALARY_DEDUCTION_SOCIAL_INSURANCE_RATE = 0.145
+SALARY_DEDUCTION_INCOME_TAX_RATE = 0.05
+
+
+def calculate_salary_deductions(base_salary, commission, nomination_fee, transportation, special_bonus):
+    """税金・社会保険の概算天引き（編集可能な参考値）。"""
+    gross = (
+        float(base_salary or 0)
+        + float(commission or 0)
+        + float(nomination_fee or 0)
+        + float(transportation or 0)
+        + float(special_bonus or 0)
+    )
+    insurable = float(base_salary or 0) + float(commission or 0)
+    social_insurance = int(round(insurable * SALARY_DEDUCTION_SOCIAL_INSURANCE_RATE))
+    tax_base = max(0.0, gross - social_insurance)
+    tax = int(round(tax_base * SALARY_DEDUCTION_INCOME_TAX_RATE))
+    return {"tax": tax, "social_insurance": social_insurance, "other_deduction": 0}
+
+
+def aggregate_staff_salaries_for_year(year_int):
+    """年間のスタッフ別給与サマリーと月別合計。"""
+    staff_list = get_staff_choices()
+    by_staff = {}
+    monthly_totals = {m: 0 for m in range(1, 13)}
+    try:
+        res = supabase_admin.table("staff_salaries").select("*").eq("year", year_int).execute()
+        for row in (res.data or []):
+            sid = row.get("staff_id")
+            if not sid:
+                continue
+            if sid not in by_staff:
+                by_staff[sid] = {"rows": [], "total_gross": 0.0, "total_net": 0.0}
+            by_staff[sid]["rows"].append(row)
+            gross = float(row.get("total_salary") or 0)
+            net = float(row.get("net_salary") or 0)
+            by_staff[sid]["total_gross"] += gross
+            by_staff[sid]["total_net"] += net
+            m = row.get("month")
+            if m:
+                monthly_totals[int(m)] = monthly_totals.get(int(m), 0) + int(gross)
+    except Exception as e:
+        print(f"⚠️ WARNING - 年間給与集計エラー: {e}")
+
+    cards = []
+    for staff in staff_list:
+        sid = staff["id"]
+        agg = by_staff.get(sid, {"rows": [], "total_gross": 0.0, "total_net": 0.0})
+        cards.append({
+            "id": sid,
+            "name": staff["name"],
+            "total_gross": int(agg["total_gross"]),
+            "total_net": int(agg["total_net"]),
+            "months_registered": len(agg["rows"]),
+        })
+    cards.sort(key=lambda x: (-x["months_registered"], x["name"]))
+    return cards, monthly_totals
 
 
 def normalize_datetime(dt):
@@ -6120,10 +6191,11 @@ def admin_reservations_status(reservation_id):
                                 reservation, nomination_type, place_type, area, duration
                             )
                             
-                            # スタッフ日報の売上金額 = 新規予約作成フォームの合計金額そのまま
-                            # 合計金額 = 料金 + 出張費 + 指名料 - 割引 + 消費税
+                            # スタッフ日報の売上金額 = 新規予約作成フォームの合計金額そのまま（税込）
                             tax = reservation.get("tax") or 0
-                            amount = base_price + transportation_fee + nomination_fee - discount + tax
+                            amount = reservation_daily_report_amount(
+                                base_price, transportation_fee, nomination_fee, discount, tax
+                            )
                             
                             # 患者・売上明細を追加（重複チェック）
                             try:
@@ -6717,9 +6789,10 @@ def admin_reservations_edit(reservation_id):
                 for patient_report in res_patients.data:
                     patient_update_data = {}
                     
-                    # base_priceが変更された場合は金額を更新
-                    if base_price is not None:
-                        patient_update_data["amount"] = base_price
+                    # 予約フォーム合計（税込）で日報金額を同期
+                    patient_update_data["amount"] = reservation_daily_report_amount(
+                        base_price, transportation_fee, nomination_fee, discount, tax
+                    )
                     
                     # コース名を更新
                     if course_name:
@@ -6728,7 +6801,7 @@ def admin_reservations_edit(reservation_id):
                     if patient_update_data:
                         supabase_admin.table("staff_daily_report_patients").update(patient_update_data).eq("id", patient_report["id"]).execute()
                 
-                print(f"✅ 予約更新に伴い、日報データも更新しました: reservation_id={reservation_id}, base_price={base_price}, course_name={course_name}")
+                print(f"✅ 予約更新に伴い、日報データも更新しました: reservation_id={reservation_id}, amount={patient_update_data.get('amount')}, course_name={course_name}")
         except Exception as e:
             print(f"⚠️ WARNING - 予約更新時の日報データ同期エラー: {e}")
             # エラーが発生しても予約更新は成功しているので警告のみ
@@ -11970,7 +12043,7 @@ def admin_financial_year_detail(year):
             9: "9月", 10: "10月", 11: "11月", 12: "12月"
         }
         
-        # その年に日報を上げたスタッフを取得
+        # その年に日報を上げたスタッフを取得（後方互換・参照用）
         staff_list = []
         try:
             res_reports = supabase_admin.table("staff_daily_reports").select("staff_id, staff_name, report_date").gte("report_date", year_start).lte("report_date", year_end).execute()
@@ -11981,16 +12054,14 @@ def admin_financial_year_detail(year):
                 if staff_id:
                     staff_map[staff_id] = staff_name
                 else:
-                    # staff_idがない場合は名前でまとめる
                     staff_map[staff_name] = staff_name
             for key, name in staff_map.items():
-                staff_list.append({
-                    "id": key,
-                    "name": name
-                })
+                staff_list.append({"id": key, "name": name})
             staff_list = sorted(staff_list, key=lambda x: x["name"])
         except Exception as e:
             print(f"⚠️ WARNING - 年別スタッフ取得エラー: {e}")
+
+        staff_salary_cards, monthly_salary_totals = aggregate_staff_salaries_for_year(year_int)
 
         return render_template(
             "admin_financial_year_detail.html",
@@ -12003,7 +12074,9 @@ def admin_financial_year_detail(year):
             monthly_profit=monthly_profit,
             expense_by_category=expense_by_category,
             month_names=month_names,
-            staff_list=staff_list
+            staff_list=staff_list,
+            staff_salary_cards=staff_salary_cards,
+            monthly_salary_totals=monthly_salary_totals,
         )
     except Exception as e:
         import traceback
@@ -12305,8 +12378,52 @@ def admin_financial_staff_months(year, staff_id):
         except Exception as e:
             print(f"⚠️ WARNING - スタッフ月一覧取得エラー: {e}")
 
-        months_list = sorted(list(months_set))
-        month_cards = [{"num": m, "label": f"{m}月給与"} for m in months_list]
+        # 日報がある月を取得
+        months_set = set()
+        try:
+            res_reports = supabase_admin.table("staff_daily_reports").select("report_date, staff_id, staff_name").gte("report_date", year_start).lte("report_date", year_end).execute()
+            for report in (res_reports.data or []):
+                report_staff_id = report.get("staff_id")
+                report_staff_name = report.get("staff_name")
+                if (report_staff_id and report_staff_id == staff_id) or (not report_staff_id and staff_name and report_staff_name == staff_name):
+                    report_date = report.get("report_date")
+                    if report_date and len(report_date) >= 7:
+                        months_set.add(int(report_date[5:7]))
+        except Exception as e:
+            print(f"⚠️ WARNING - スタッフ月一覧取得エラー: {e}")
+
+        salary_by_month = {}
+        annual_gross = 0
+        annual_net = 0
+        try:
+            res_salaries = (
+                supabase_admin.table("staff_salaries")
+                .select("*")
+                .eq("year", year_int)
+                .eq("staff_id", staff_id)
+                .execute()
+            )
+            for row in (res_salaries.data or []):
+                m = int(row.get("month") or 0)
+                if m:
+                    salary_by_month[m] = row
+                    annual_gross += int(float(row.get("total_salary") or 0))
+                    annual_net += int(float(row.get("net_salary") or 0))
+        except Exception as e:
+            print(f"⚠️ WARNING - スタッフ年間給与取得エラー: {e}")
+
+        month_rows = []
+        for m in range(1, 13):
+            sal = salary_by_month.get(m)
+            month_rows.append({
+                "num": m,
+                "label": f"{m}月",
+                "has_report": m in months_set,
+                "registered": sal is not None,
+                "total_salary": int(float(sal.get("total_salary") or 0)) if sal else None,
+                "net_salary": int(float(sal.get("net_salary") or 0)) if sal else None,
+                "salary_id": sal.get("id") if sal else None,
+            })
 
         return render_template(
             "admin_financial_staff_months.html",
@@ -12314,7 +12431,10 @@ def admin_financial_staff_months(year, staff_id):
             staff_id=staff_id,
             staff_name=staff_name or "スタッフ",
             staff_area=staff_area,
-            month_cards=month_cards
+            month_rows=month_rows,
+            annual_gross=annual_gross,
+            annual_net=annual_net,
+            months_registered=len(salary_by_month),
         )
     except Exception as e:
         print(f"❌ スタッフ月一覧取得エラー: {e}")
@@ -12724,22 +12844,41 @@ def admin_financial_month_salaries(year, month):
         # 承認済みスタッフを取得
         staff_list = get_staff_choices()
 
-        # 既に給与登録があるスタッフID
-        registered_staff_ids = set()
+        salary_map = {}
+        month_total_gross = 0
+        month_total_net = 0
         try:
-            res = supabase_admin.table("staff_salaries").select("staff_id").eq("year", year_int).eq("month", month_int).execute()
-            if res.data:
-                registered_staff_ids = {s.get("staff_id") for s in res.data if s.get("staff_id")}
+            res = supabase_admin.table("staff_salaries").select("*").eq("year", year_int).eq("month", month_int).execute()
+            for row in (res.data or []):
+                sid = row.get("staff_id")
+                if sid:
+                    salary_map[sid] = row
+                    month_total_gross += int(float(row.get("total_salary") or 0))
+                    month_total_net += int(float(row.get("net_salary") or 0))
         except Exception as e:
             print(f"⚠️ WARNING - 給与登録取得エラー: {e}")
+
+        staff_rows = []
+        for staff in staff_list:
+            sal = salary_map.get(staff["id"])
+            staff_rows.append({
+                "id": staff["id"],
+                "name": staff["name"],
+                "registered": sal is not None,
+                "total_salary": int(float(sal.get("total_salary") or 0)) if sal else None,
+                "net_salary": int(float(sal.get("net_salary") or 0)) if sal else None,
+                "salary_id": sal.get("id") if sal else None,
+            })
+        staff_rows.sort(key=lambda x: (not x["registered"], x["name"]))
 
         return render_template(
             "admin_financial_month_salaries.html",
             year=year,
             month=month,
             month_name=month_name,
-            staff_list=staff_list,
-            registered_staff_ids=registered_staff_ids
+            staff_rows=staff_rows,
+            month_total_gross=month_total_gross,
+            month_total_net=month_total_net,
         )
     except Exception as e:
         import traceback
@@ -12905,7 +13044,9 @@ def admin_financial_salary_new(year, month):
             year=year,
             month=month,
             staff_list=available_staff,
-            salary_calculations=salary_calculations
+            salary_calculations=salary_calculations,
+            deduction_social_rate=SALARY_DEDUCTION_SOCIAL_INSURANCE_RATE,
+            deduction_tax_rate=SALARY_DEDUCTION_INCOME_TAX_RATE,
         )
     except Exception as e:
         print(f"❌ スタッフ給与新規作成フォーム取得エラー: {e}")
@@ -13066,7 +13207,9 @@ def admin_financial_salary_edit(year, month, salary_id):
             month=month,
             salary=salary,
             staff_list=staff_list,
-            salary_calculation=salary_calculation
+            salary_calculation=salary_calculation,
+            deduction_social_rate=SALARY_DEDUCTION_SOCIAL_INSURANCE_RATE,
+            deduction_tax_rate=SALARY_DEDUCTION_INCOME_TAX_RATE,
         )
     except Exception as e:
         print(f"❌ スタッフ給与取得エラー: {e}")

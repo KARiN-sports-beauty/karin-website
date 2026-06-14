@@ -73,17 +73,18 @@
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div>
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">税金</label>
-        <input type="number" name="tax" min="0" step="0.01" value="{{ salary.tax or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="number" name="tax" id="tax" min="0" step="0.01" value="{{ salary.tax or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">社会保険</label>
-        <input type="number" name="social_insurance" min="0" step="0.01" value="{{ salary.social_insurance or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        <input type="number" name="social_insurance" id="social_insurance" min="0" step="0.01" value="{{ salary.social_insurance or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">その他控除</label>
         <input type="number" name="other_deduction" min="0" step="0.01" value="{{ salary.other_deduction or 0 }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
       </div>
     </div>
+    <p style="margin: -8px 0 20px 0; color: #888; font-size: 0.82rem;">「自動計算を適用」で税金・社会保険も概算入力されます（参考値。必要に応じて手動調整してください）。</p>
 
     <div style="margin-bottom: 20px;">
       <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E3A5F; font-size: 0.95rem;">特別給（6月/12月）</label>
@@ -105,6 +106,8 @@
 <script>
 const salaryCalculation = {{ salary_calculation | tojson if salary_calculation else 'null' }};
 const targetMonth = {{ month|int }};
+const DEDUCTION_SOCIAL_RATE = {{ deduction_social_rate }};
+const DEDUCTION_TAX_RATE = {{ deduction_tax_rate }};
 
 function updateStaffName() {
   const select = document.getElementById('staff_id');
@@ -122,11 +125,24 @@ function loadSalaryCalculation() {
   // 現時点では実装しない（必要に応じて追加可能）
 }
 
+function updateDeductions() {
+  const baseSalary = parseFloat(document.getElementById('base_salary').value) || 0;
+  const qualificationPay = parseFloat(document.getElementById('commission').value) || 0;
+  const performancePay = parseFloat(document.getElementById('nomination_fee').value) || 0;
+  const transportation = parseFloat(document.getElementById('transportation').value) || 0;
+  const bonus = parseFloat(document.getElementById('special_bonus').value) || 0;
+  const gross = baseSalary + qualificationPay + performancePay + transportation + bonus;
+  const insurable = baseSalary + qualificationPay;
+  document.getElementById('social_insurance').value = Math.round(insurable * DEDUCTION_SOCIAL_RATE);
+  document.getElementById('tax').value = Math.round(Math.max(0, gross - Math.round(insurable * DEDUCTION_SOCIAL_RATE)) * DEDUCTION_TAX_RATE);
+}
+
 function applyAutoCalculation() {
   if (salaryCalculation) {
     document.getElementById('nomination_fee').value = salaryCalculation.nomination_fee;
     document.getElementById('transportation').value = salaryCalculation.transportation;
     updateSpecialBonus(salaryCalculation);
+    updateDeductions();
     document.getElementById('use_auto_calc').value = 'true';
     alert('自動計算を適用しました。必要に応じて手動で調整してください。');
   }
@@ -155,13 +171,18 @@ function updateSpecialBonus(calc) {
 
 document.getElementById('base_salary')?.addEventListener('input', () => {
   if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+  updateDeductions();
 });
 document.getElementById('commission')?.addEventListener('input', () => {
   if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+  updateDeductions();
 });
 document.getElementById('nomination_fee')?.addEventListener('input', () => {
   if (salaryCalculation) updateSpecialBonus(salaryCalculation);
+  updateDeductions();
 });
+document.getElementById('transportation')?.addEventListener('input', updateDeductions);
+document.getElementById('special_bonus')?.addEventListener('input', updateDeductions);
 
 if (salaryCalculation) {
   updateSpecialBonus(salaryCalculation);

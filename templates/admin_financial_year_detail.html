@@ -39,22 +39,6 @@
   </div>
 </div>
 
-<!-- スタッフ別給与（年） -->
-{% if staff_list %}
-<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
-  <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">スタッフ別給与</h3>
-  <div class="admin-karte-grid">
-    {% for staff in staff_list %}
-    <a href="/admin/financial/years/{{ year }}/staff/{{ staff.id | urlencode }}" class="admin-karte-card" style="text-decoration: none;">
-      <div class="admin-karte-head">
-        <strong class="admin-karte-name">{{ staff.name }}</strong>
-      </div>
-    </a>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
 <!-- 経費カテゴリ別内訳 -->
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">経費カテゴリ別内訳</h3>
@@ -144,12 +128,12 @@
 <!-- 月別給料 -->
 <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
   <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">月別給料</h3>
-  
   <div style="overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr style="background: #f5f7fb;">
           <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; color: #1E3A5F;">月</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; color: #1E3A5F;">給与合計（総支給）</th>
           <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd; color: #1E3A5F;">詳細</th>
         </tr>
       </thead>
@@ -157,6 +141,13 @@
         {% for month in range(1, 13) %}
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ month_names[month] }}</td>
+          <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+            {% if monthly_salary_totals.get(month, 0) %}
+            ¥{{ "{:,}".format(monthly_salary_totals.get(month, 0)|int) }}
+            {% else %}
+            <span style="color:#999;">—</span>
+            {% endif %}
+          </td>
           <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">
             <a href="/admin/financial/years/{{ year }}/months/{{ '%02d'|format(month) }}/salaries" class="admin-karte-detail-btn-primary" style="text-decoration: none; padding: 6px 12px; font-size: 0.85rem;">詳細</a>
           </td>
@@ -166,6 +157,28 @@
     </table>
   </div>
 </div>
+
+<!-- 各スタッフ給料（年間） -->
+{% if staff_salary_cards %}
+<div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin-bottom: 20px;">
+  <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">各スタッフ給料</h3>
+  <p style="margin: 0 0 20px 0; color: #666; font-size: 0.9rem;">カードをクリックすると、月ごとの給与詳細が見られます。</p>
+  <div class="admin-karte-grid">
+    {% for card in staff_salary_cards %}
+    <a href="/admin/financial/years/{{ year }}/staff/{{ card.id | urlencode }}" class="admin-karte-card" style="text-decoration: none;">
+      <div class="admin-karte-head">
+        <strong class="admin-karte-name">{{ card.name }}</strong>
+      </div>
+      <div style="margin-top: 10px; font-size: 0.88rem; color: #444; line-height: 1.6;">
+        <div>年間総支給：<strong style="color:#1E3A5F;">{% if card.total_gross %}¥{{ "{:,}".format(card.total_gross) }}{% else %}—{% endif %}</strong></div>
+        <div>年間手取り：<strong style="color:#2e7d32;">{% if card.total_net %}¥{{ "{:,}".format(card.total_net) }}{% else %}—{% endif %}</strong></div>
+        <div style="color:#888; font-size:0.82rem; margin-top:4px;">登録 {{ card.months_registered }}ヶ月</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}
 
