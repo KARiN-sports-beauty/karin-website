@@ -17,17 +17,26 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+  margin-bottom: 20px;
 }
 
 .notes-tag {
-  display: inline-block;
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
   border-radius: 999px;
   background: var(--notes-sage-pale);
   color: var(--notes-navy);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.notes-page--standard .notes-tags {
+  margin-top: 8px;
+  margin-bottom: 24px;
 }
 
 .notes-type-label {

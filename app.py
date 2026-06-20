@@ -3,16 +3,36 @@ from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
 
-def to_jst(dt_str):
-    if not dt_str:
-        return ""
 
+def parse_iso_to_jst(dt_str):
+    """ISO8601 文字列を JST の datetime に変換する。
+    Supabase 等がタイムゾーンなしで返す場合は JST の壁時計として扱う（now_iso が JST で保存）。
+    """
+    if not dt_str:
+        return None
+    s = str(dt_str).strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
     try:
-        # SupabaseのISO形式 → JST変換
-        dt = datetime.fromisoformat(dt_str.replace("Z", ""))
-        return dt.astimezone(JST).strftime("%Y/%m/%d %H:%M")
-    except Exception:
-        return dt_str
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=JST)
+    return dt.astimezone(JST)
+
+
+def format_jst_datetime(dt_str, fmt="%Y/%m/%d %H:%M"):
+    dt = parse_iso_to_jst(dt_str)
+    if dt is None:
+        return dt_str or ""
+    return dt.strftime(fmt)
+
+
+def to_jst(dt_str):
+    return format_jst_datetime(dt_str)
 
 
 def field_end_time_to_duration_minutes(dt_start_jst, field_end_time_str):
@@ -39,8 +59,8 @@ def format_blog_date_display(value):
     if not value:
         return ""
     value_str = str(value)
-    if "T" in value_str or ":" in value_str:
-        return to_jst(value_str)
+    if "T" in value_str or (":" in value_str and len(value_str) > 10):
+        return format_jst_datetime(value_str)
     return value_str
 
 
@@ -270,11 +290,10 @@ app = Flask(__name__, template_folder="templates")
 
 @app.template_filter("to_jst")
 def to_jst_filter(value):
-    try:
-        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        return dt.astimezone(JST).strftime("%Y-%m-%d %H:%M")
-    except Exception:
-        return value
+    if not value:
+        return ""
+    formatted = format_jst_datetime(value, fmt="%Y-%m-%d %H:%M")
+    return formatted if formatted else value
 
 app.jinja_env.filters["to_jst"] = to_jst_filter
 
@@ -1433,17 +1452,38 @@ def normalize_blog_tags(tags):
     if not tags:
         return []
     if isinstance(tags, list):
-        return [str(t).strip() for t in tags if str(t).strip()]
+        result = []
+        for t in tags:
+            result.extend(_split_tag_tokens(str(t)))
+        # 重複除去（順序維持）
+        seen = set()
+        unique = []
+        for t in result:
+            if t not in seen:
+                seen.add(t)
+                unique.append(t)
+        return unique
     if isinstance(tags, str):
-        return [t.strip() for t in tags.split(",") if t.strip()]
+        return _split_tag_tokens(tags)
     return []
+
+
+def _split_tag_tokens(raw):
+    """カンマ・読点区切りのタグ文字列を個別タグに分解"""
+    import re
+    parts = re.split(r"[,、，]", raw or "")
+    return [p.strip() for p in parts if p and p.strip()]
 
 
 def prepare_blog_item(blog_item):
     if not blog_item:
         return blog_item
     blog_item["image"] = normalize_blog_image_url(blog_item.get("image"))
-    blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
+    created = blog_item.get("created_at")
+    if created:
+        blog_item["date_display"] = format_jst_datetime(created, fmt="%Y/%m/%d %H:%M")
+    else:
+        blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
     blog_item["article_type"] = normalize_article_type(blog_item.get("article_type"))
     blog_item["tags_list"] = normalize_blog_tags(blog_item.get("tags"))
     return blog_item
@@ -3243,7 +3283,7 @@ def admin_blog_new():
             )
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
-    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    tags = _split_tag_tokens(tags_raw) if tags_raw else []
     body_raw = request.form.get("body", "").strip()
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"
@@ -3353,7 +3393,7 @@ def admin_blog_edit(blog_id):
             return redirect(f"/admin/blogs/edit/{blog_id}")
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
-    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    tags = _split_tag_tokens(tags_raw) if tags_raw else []
     body_raw = request.form.get("body", "").strip()
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"
@@ -3456,7 +3496,7 @@ def admin_news_new():
     image = request.form.get("image", "").strip()
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
-    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    tags = _split_tag_tokens(tags_raw) if tags_raw else []
     body_raw = request.form.get("body", "").strip()
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"
@@ -3525,7 +3565,7 @@ def admin_news_edit(news_id):
     image = request.form.get("image", "").strip()
     category = request.form.get("category", "").strip()
     tags_raw = request.form.get("tags", "").strip()
-    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+    tags = _split_tag_tokens(tags_raw) if tags_raw else []
     body_raw = request.form.get("body", "").strip()
     if not body_raw:
         body_html = "<p>(本文未入力)</p>"

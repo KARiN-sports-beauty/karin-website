@@ -105,26 +105,21 @@ body {
   vertical-align: middle;
 }
 
-/* === 画像 === */
 /* === 画像（本文＆サムネイル） === */
 
-/* 本文中の画像（間に挟むimgタグ用） */
-.blog-body img {
-  display: block;
-  margin: 30px auto;
-  border-radius: 12px;
+/* アイキャッチ（記事詳細） */
+.blog-detail .blog-thumb {
   width: 100%;
-  max-width: 100%;
-  max-height: 480px;      /* ← 縦が伸びすぎないように制限 */
-  object-fit: cover;      /* ← トリミングして見栄え優先 */
+  margin: 0 0 32px;
+  padding: 0;
 }
 
 .blog-detail .blog-thumb img {
   width: 100%;
-  height: auto;           /* ← 縦横比保持 */
-  max-width: 720px;       /* ← PC時の最大幅 */
-  max-height: none;       /* ← 高さ制限なし */
-  object-fit: contain;    /* ← 切れずに全体表示 */
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: cover;
   object-position: center;
   display: block;
   margin: 0 auto 32px;
@@ -132,15 +127,31 @@ body {
   box-shadow: none;
 }
 
+/* 本文中の画像 */
+.blog-body img {
+  display: block;
+  margin: 30px auto;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+}
 
 /* 📱 タブレット */
 @media (max-width: 768px) {
   .blog-body img {
     max-height: 360px;
   }
+  .blog-detail .blog-thumb {
+    margin-bottom: 24px;
+  }
   .blog-detail .blog-thumb img {
-    max-width: 260px;
-    max-height: 220px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    border-radius: 12px;
+    margin-bottom: 24px;
   }
 }
 
@@ -151,8 +162,11 @@ body {
     margin: 24px auto;
   }
   .blog-detail .blog-thumb img {
-    max-width: 220px;
-    max-height: 200px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    border-radius: 10px;
+    margin-bottom: 20px;
   }
 }
 
