@@ -24,7 +24,7 @@
   <meta property="og:title" content="{{ news.title }}">
   <meta property="og:description" content="{{ news.excerpt }}">
   <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ news.image or url_for('static', filename='images/relogo.png', _external=True) }}">
+  <meta property="og:image" content="{{ news.image or url_for('static', filename='images/logoname.jpg', _external=True) }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
@@ -47,7 +47,7 @@
       {% if news.image %}
       "{{ news.image }}"
       {% else %}
-      "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+      "{{ url_for('static', filename='images/logoname.jpg', _external=True) }}"
       {% endif %}
     ],
     "author": {
@@ -59,7 +59,7 @@
       "name": "KARiN. ~Sports & Beauty~",
       "logo": {
         "@type": "ImageObject",
-        "url": "{{ url_for('static', filename='images/relogo.png', _external=True) }}"
+        "url": "{{ url_for('static', filename='images/logoname.jpg', _external=True) }}"
       }
     }
   }
