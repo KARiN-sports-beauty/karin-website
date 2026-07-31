@@ -5156,52 +5156,90 @@ def api_book_create():
 
 @app.route("/sitemap.xml")
 def sitemap():
+    """公開ページ＋Supabaseの公開記事／お知らせをサイトマップ化。"""
     try:
-        pages = []
+        from xml.sax.saxutils import escape as xml_escape
 
         base_url = "https://karin-sb.jp"
+        pages = []
 
-        # --- 固定ページ ---
+        def add_url(path, changefreq="weekly", lastmod=None):
+            loc = xml_escape(f"{base_url}{path}")
+            parts = [f"<loc>{loc}</loc>", f"<changefreq>{changefreq}</changefreq>"]
+            if lastmod:
+                # YYYY-MM-DD のみ採用
+                lm = str(lastmod)[:10]
+                if len(lm) == 10 and lm[4] == "-" and lm[7] == "-":
+                    parts.append(f"<lastmod>{lm}</lastmod>")
+            pages.append("<url>" + "".join(parts) + "</url>")
+
+        # --- 固定ページ（公開・SEO対象） ---
+        # /login /register は robots.txt で Disallow のため載せない
         static_urls = [
-            "/", "/treatment", "/price", "/contact",
-            "/form", "/login", "/register", "/blog", "/news", "/lp-yoyogiuehara", "/lp-yakuin"
+            ("/", "weekly"),
+            ("/treatment", "weekly"),
+            ("/price", "weekly"),
+            ("/contact", "weekly"),
+            ("/form", "weekly"),
+            ("/blog", "daily"),
+            ("/news", "daily"),
+            ("/lp-yoyogiuehara", "monthly"),
+            ("/lp-yakuin", "monthly"),
         ]
-        for url in static_urls:
-            pages.append(
-                f"<url><loc>{base_url}{url}</loc><changefreq>weekly</changefreq></url>"
+        if public_booking_enabled():
+            static_urls.append(("/book", "weekly"))
+
+        for path, freq in static_urls:
+            add_url(path, freq)
+
+        # --- KARiN.NOTES（公開のみ・slug） ---
+        try:
+            res_blogs = (
+                supabase.table("blogs")
+                .select("slug, updated_at, created_at, date")
+                .eq("draft", False)
+                .execute()
             )
+            for b in res_blogs.data or []:
+                slug = (b.get("slug") or "").strip()
+                if not slug:
+                    continue
+                lastmod = b.get("updated_at") or b.get("created_at") or b.get("date")
+                add_url(f"/blog/{slug}", "weekly", lastmod)
+        except Exception as e:
+            print(f"⚠️ sitemap blogs 取得エラー: {e}")
 
-        # --- KARiN.NOTES ---
-        if os.path.exists("static/data/blogs.json"):
-            with open("static/data/blogs.json", encoding="utf-8") as f:
-                blogs = json.load(f)
-            for b in blogs:
-                pages.append(
-                    f"<url><loc>{base_url}/blog/{b['id']}</loc><changefreq>weekly</changefreq></url>"
-                )
+        # --- お知らせ（公開のみ・slug） ---
+        try:
+            res_news = (
+                supabase.table("news")
+                .select("slug, updated_at, created_at")
+                .eq("draft", False)
+                .execute()
+            )
+            for n in res_news.data or []:
+                slug = (n.get("slug") or "").strip()
+                if not slug:
+                    continue
+                lastmod = n.get("updated_at") or n.get("created_at")
+                add_url(f"/news/{slug}", "weekly", lastmod)
+        except Exception as e:
+            print(f"⚠️ sitemap news 取得エラー: {e}")
 
-        # --- お知らせ ---
-        if os.path.exists("static/data/news.json"):
-            with open("static/data/news.json", encoding="utf-8") as f:
-                news = json.load(f)
-            for n in news:
-                pages.append(
-                    f"<url><loc>{base_url}/news/{n['id']}</loc><changefreq>weekly</changefreq></url>"
-                )
-
-        # --- XML 全体（⚠️ 最初の改行なし） ---
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            + "".join(pages) +
-            "</urlset>"
+            + "".join(pages)
+            + "</urlset>"
         )
-
         return app.response_class(xml, mimetype="application/xml")
 
     except Exception as e:
+        import traceback
         print("❌ sitemap 生成エラー:", e)
+        print(traceback.format_exc())
         return "Sitemap generation error", 500
+
 
 @app.route("/robots.txt")
 def robots_txt():
@@ -5210,6 +5248,8 @@ def robots_txt():
         "Disallow: /mypage",
         "Disallow: /login",
         "Disallow: /register",
+        "Disallow: /admin",
+        "Disallow: /staff",
         "",
         "Allow: /",
         "",
