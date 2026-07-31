@@ -592,7 +592,7 @@ body,
 
 /* 📚 戻るボタン（白背景＋影付き） */
 .blog-footer {
-  margin: 40px 0 60px;
+  margin: 40px 0 24px;
   display: flex;
   justify-content: center;
   gap: 60px;
@@ -1149,4 +1149,14 @@ body,
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* 記事詳細下部：管理画面へ戻る（一覧/ホームとの余白を詰める） */
+.blog-admin-back {
+  margin: 8px 0 40px;
+  text-align: center;
+}
+
+.blog-admin-back .admin-back-btn {
+  margin-top: 0;
 }
