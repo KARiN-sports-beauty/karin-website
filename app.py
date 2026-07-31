@@ -452,13 +452,23 @@ def staff_section_required(section):
     if allowed is None:
         raise ValueError(f"unknown staff section: {section}")
 
+    def _wants_json():
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return True
+        accept = (request.headers.get("Accept") or "").lower()
+        return "application/json" in accept and "text/html" not in accept
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             if "staff" not in session:
+                if _wants_json():
+                    return jsonify({"error": "ログインが必要です。再ログインしてください。"}), 401
                 return redirect("/staff/login")
             if not session_staff_is_currently_active():
                 session.pop("staff", None)
+                if _wants_json():
+                    return jsonify({"error": "セッションが切れました。再ログインしてください。"}), 401
                 flash("アカウント状態が変更されたため、再ログインが必要です", "error")
                 return redirect("/staff/login")
             st = session.get("staff") or {}
@@ -466,6 +476,8 @@ def staff_section_required(section):
                 return f(*args, **kwargs)
             role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
             if role not in allowed:
+                if _wants_json():
+                    return jsonify({"error": "権限がありません"}), 403
                 flash("権限がありません", "error")
                 return redirect("/admin/dashboard")
             return f(*args, **kwargs)
@@ -1580,25 +1592,38 @@ def upload_blog_image(file):
     ext = os.path.splitext(file.filename)[1].lower()
     allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
     if ext not in allowed_exts:
-        raise ValueError("画像は jpg / jpeg / png / webp のみ対応です")
+        raise ValueError("画像は jpg / jpeg / png / webp のみ対応です（HEIC は不可）")
 
     safe_name = f"{uuid.uuid4().hex}{ext}"
     storage_path = safe_name
 
     mime_type = file.mimetype
-    if not mime_type:
-        mime_type, _ = mimetypes.guess_type(file.filename)
-    if not mime_type:
-        mime_type = "application/octet-stream"
+    if not mime_type or mime_type == "application/octet-stream":
+        guessed, _ = mimetypes.guess_type(file.filename)
+        mime_type = guessed or {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".webp": "image/webp",
+        }.get(ext, "application/octet-stream")
 
     file_data = file.read()
+    if not file_data:
+        raise ValueError("空のファイルはアップロードできません")
+
     supabase_admin.storage.from_("blog-images").upload(
         path=storage_path,
         file=file_data,
-        file_options={"content-type": mime_type}
+        file_options={"content-type": mime_type, "upsert": "true"},
     )
 
-    return supabase_admin.storage.from_("blog-images").get_public_url(storage_path)
+    public_url = supabase_admin.storage.from_("blog-images").get_public_url(storage_path)
+    if isinstance(public_url, dict):
+        public_url = public_url.get("publicUrl") or public_url.get("public_url") or ""
+    public_url = str(public_url or "").strip().rstrip("?")
+    if not public_url:
+        raise ValueError("画像URLの取得に失敗しました")
+    return public_url
 
 
 @app.route("/admin/blogs/body-image", methods=["POST"])
@@ -1618,6 +1643,34 @@ def admin_blog_body_image_upload():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         print("❌ 記事本文画像アップロードエラー:", e)
+        return jsonify({"error": f"アップロード失敗: {e}"}), 500
+
+
+@app.route("/admin/blogs/static-images", methods=["GET"])
+@staff_section_required("blogs")
+def admin_blog_static_images():
+    """本文挿入用: static/images 内の画像一覧"""
+    try:
+        images_dir = os.path.join(app.static_folder or "static", "images")
+        allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+        items = []
+        if os.path.isdir(images_dir):
+            for name in sorted(os.listdir(images_dir), reverse=True):
+                ext = os.path.splitext(name)[1].lower()
+                if ext not in allowed_exts:
+                    continue
+                if name.startswith("."):
+                    continue
+                from urllib.parse import quote
+                items.append({
+                    "name": name,
+                    "url": "/static/images/" + quote(name),
+                })
+                if len(items) >= 200:
+                    break
+        return jsonify({"success": True, "images": items})
+    except Exception as e:
+        print("❌ static画像一覧エラー:", e)
         return jsonify({"error": str(e)}), 500
 
 

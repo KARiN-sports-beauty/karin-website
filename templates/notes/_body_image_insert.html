@@ -1,0 +1,128 @@
+{# 本文への画像挿入UI（新規・編集で共通） #}
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px;">
+  <button type="button" id="insert-body-image-btn" class="admin-blog-btn" style="border: none; cursor: pointer; padding: 8px 12px; font-size: 0.9rem;">🖼 ファイルをアップロードして追加</button>
+  <button type="button" id="insert-static-image-btn" class="admin-blog-btn-white" style="border: 1px solid #ccc; cursor: pointer; padding: 8px 12px; font-size: 0.9rem; background: #fff;">📁 サーバー内の画像から追加</button>
+  <span id="body-image-status" style="font-size: 0.85rem; color: #666;"></span>
+</div>
+<input type="file" id="body-image-input" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" style="display: none;">
+<div id="static-image-picker" style="display: none; margin-bottom: 12px; padding: 12px; border: 1px solid #e2e6ed; border-radius: 10px; background: #f8f9fc; max-height: 220px; overflow-y: auto;">
+  <p style="margin: 0 0 8px; font-size: 0.85rem; color: #666;">static/images 内の画像（クリックで本文に挿入）</p>
+  <div id="static-image-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+</div>
+<p style="margin: 0 0 8px; font-size: 0.8rem; color: #888;">※ HEIC（iPhoneのそのまま）は不可。jpg / png / webp にしてください。カーソル位置に &lt;img&gt; タグが入ります。</p>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const bodyImageBtn = document.getElementById("insert-body-image-btn");
+  const staticImageBtn = document.getElementById("insert-static-image-btn");
+  const bodyImageInput = document.getElementById("body-image-input");
+  const bodyImageStatus = document.getElementById("body-image-status");
+  const bodyTextarea = document.getElementById("blog-body-textarea");
+  const staticPicker = document.getElementById("static-image-picker");
+  const staticList = document.getElementById("static-image-list");
+  if (!bodyImageBtn || !bodyTextarea) return;
+
+  function insertAtCursor(text) {
+    const start = bodyTextarea.selectionStart || 0;
+    const end = bodyTextarea.selectionEnd || 0;
+    const value = bodyTextarea.value || "";
+    const block = (start > 0 && value[start - 1] !== "\n" ? "\n" : "") + text + "\n";
+    bodyTextarea.value = value.slice(0, start) + block + value.slice(end);
+    const cursorPos = start + block.length;
+    bodyTextarea.setSelectionRange(cursorPos, cursorPos);
+    bodyTextarea.focus();
+  }
+
+  function setStatus(msg, isError) {
+    bodyImageStatus.textContent = msg || "";
+    bodyImageStatus.style.color = isError ? "#c62828" : "#666";
+  }
+
+  bodyImageBtn.addEventListener("click", () => {
+    bodyImageInput.click();
+  });
+
+  bodyImageInput.addEventListener("change", async () => {
+    const file = bodyImageInput.files[0];
+    if (!file) return;
+
+    const name = (file.name || "").toLowerCase();
+    if (name.endsWith(".heic") || name.endsWith(".heif")) {
+      setStatus("HEIC は使えません。jpg / png / webp に変換してください", true);
+      bodyImageInput.value = "";
+      return;
+    }
+
+    setStatus("アップロード中...");
+    bodyImageBtn.disabled = true;
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/admin/blogs/body-image", {
+        method: "POST",
+        body: formData,
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+      });
+      let data = {};
+      const raw = await res.text();
+      try {
+        data = JSON.parse(raw);
+      } catch (_) {
+        throw new Error(res.status === 401 || res.status === 403
+          ? "ログイン切れの可能性があります。再ログインしてください"
+          : "サーバー応答が不正です（" + res.status + "）");
+      }
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "アップロードに失敗しました");
+      }
+
+      insertAtCursor('<img src="' + data.url + '" alt="挿絵">');
+      setStatus("追加しました（保存ボタンを押すと反映されます）");
+    } catch (e) {
+      setStatus(e.message || String(e), true);
+    } finally {
+      bodyImageBtn.disabled = false;
+      bodyImageInput.value = "";
+    }
+  });
+
+  let staticLoaded = false;
+  staticImageBtn.addEventListener("click", async () => {
+    const show = staticPicker.style.display === "none";
+    staticPicker.style.display = show ? "block" : "none";
+    if (!show || staticLoaded) return;
+
+    setStatus("画像一覧を読み込み中...");
+    try {
+      const res = await fetch("/admin/blogs/static-images", {
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "一覧の取得に失敗しました");
+      staticList.innerHTML = "";
+      (data.images || []).forEach((img) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = img.name;
+        btn.style.cssText = "text-align:left;padding:6px 10px;border:1px solid #dde3ec;border-radius:8px;background:#fff;cursor:pointer;font-size:0.85rem;color:#1E3A5F;";
+        btn.addEventListener("click", () => {
+          insertAtCursor('<img src="' + img.url + '" alt="' + img.name.replace(/"/g, "") + '">');
+          setStatus("追加しました: " + img.name);
+          staticPicker.style.display = "none";
+        });
+        staticList.appendChild(btn);
+      });
+      if (!(data.images || []).length) {
+        staticList.innerHTML = '<p style="margin:0;color:#888;font-size:0.85rem;">static/images に画像がありません</p>';
+      }
+      staticLoaded = true;
+      setStatus("");
+    } catch (e) {
+      setStatus(e.message || String(e), true);
+    }
+  });
+});
+</script>
