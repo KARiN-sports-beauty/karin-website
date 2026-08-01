@@ -408,6 +408,40 @@
   opacity: 0.9;
 }
 
+/* ─── 本文内リンク（KARiN.NOTES 内部リンク） ─── */
+.blog-body a,
+.article-body a {
+  color: #1E3A5F;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+.blog-body a:hover,
+.article-body a:hover {
+  opacity: 0.8;
+}
+
+/* CTA・ボタン類は通常リンク装飾の対象外 */
+.blog-body .notes-cta a,
+.blog-body .mini-btn,
+.blog-body .btn,
+.blog-body .notes-line-cta__btn,
+.article-body .notes-cta a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.blog-body .notes-cta a:hover,
+.blog-body .mini-btn:hover,
+.blog-body .btn:hover,
+.blog-body .notes-line-cta__btn:hover,
+.article-body .notes-cta a:hover {
+  opacity: 0.9;
+}
+
 .notes-balloon {
   position: relative;
   padding: 20px 24px;
