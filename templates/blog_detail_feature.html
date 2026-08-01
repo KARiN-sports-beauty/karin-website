@@ -18,6 +18,34 @@
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   {% endif %}
   <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": {{ blog.title | tojson }},
+    {% if blog.image %}
+    "image": "{{ blog.image }}",
+    {% endif %}
+    "author": {
+      "@type": "Person",
+      "name": {{ (author_info.name if author_info else "藤田 幸士（KARiN.代表）") | tojson }}
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "KARiN. ~Sports & Beauty~",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://karin-sb.jp/static/images/logoname.jpg"
+      }
+    },
+    "datePublished": "{{ blog.date_display or blog.date or '' }}",
+    "description": {{ (blog.excerpt or '') | tojson }},
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ request.url }}"
+    }
+  }
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260611">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260611">

@@ -6,6 +6,101 @@
   <title>KARiN.｜代々木上原 出張対応 鍼灸・ボディケア</title>
   <meta name="description" content="代々木上原で出張対応の鍼灸・ボディケア。心と身体をやさしく整えるKARiN.。初回体験あり。無理な継続提案はありません。ご予約・ご相談は公式LINEから。">
   <link rel="canonical" href="https://karin-sb.jp/lp-yoyogiuehara">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="KARiN.｜代々木上原 出張対応 鍼灸・ボディケア">
+  <meta property="og:description" content="代々木上原エリアで出張対応の鍼灸・ボディケア。初回体験あり。無理な継続提案はありません。ご予約・ご相談は公式LINEから。">
+  <meta property="og:url" content="https://karin-sb.jp/lp-yoyogiuehara">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- 構造化データ（LocalBusiness + FAQ） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        "name": "KARiN. ~Sports & Beauty~（代々木上原）",
+        "image": "https://karin-sb.jp/static/images/logoname.jpg",
+        "url": "https://karin-sb.jp/lp-yoyogiuehara",
+        "telephone": "+81-90-8154-9313",
+        "description": "代々木上原エリアで出張対応の鍼灸・ボディケア。完全予約制。",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "渋谷区",
+          "addressRegion": "東京都",
+          "addressCountry": "JP"
+        },
+        "areaServed": {
+          "@type": "Place",
+          "name": "代々木上原",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "渋谷区",
+            "addressRegion": "東京都",
+            "addressCountry": "JP"
+          }
+        },
+        "openingHoursSpecification": [{
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        }]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "鍼は痛いですか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "刺激はとてもやさしく、痛みを感じにくい施術を行っています。初めての方には、必ず状態を確認しながら進めますのでご安心ください。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "鍼灸が初めてでも受けられますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "はい、初めての方も多くいらっしゃいます。不安なことがあれば、施術前にしっかりご説明します。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "出張施術はどんな場所で受けられますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ご自宅やレンタルスペース等ご指定の場所での施術が可能です。詳細はご相談時に確認させていただきます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "無理に通わされたりしませんか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "無理な継続提案や回数券の販売などは行っておりません。今のお身体に必要なケアをご提案するだけです。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "相談だけでも大丈夫ですか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "もちろん大丈夫です。「自分に合うか聞きたい」など、お気軽にご相談ください。"
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 
   <!-- Google Fonts: index.html ロゴ用 Playfair Display + 本文 Noto + 見出し Cormorant -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -295,8 +390,19 @@
       font-weight: 300;
       color: var(--stone-600);
       line-height: 1.9;
-      margin-bottom: 40px;
+      margin-bottom: 12px;
       letter-spacing: 0.04em;
+      text-align: left;
+      width: 100%;
+    }
+
+    .hero__area {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--stone-400);
+      letter-spacing: 0.08em;
+      line-height: 1.7;
+      margin: 0 0 36px;
       text-align: left;
       width: 100%;
     }
@@ -1268,6 +1374,11 @@
         font-size: 14px;
       }
 
+      .hero__area {
+        font-size: 12px;
+        margin-bottom: 28px;
+      }
+
       .hero__meta {
         display: none;
       }
@@ -1429,7 +1540,7 @@
       <img src="/static/images/hands-treatment.jpg" alt="施術中の手元" class="hero__img" loading="eager">
       <div class="hero__gradient"></div>
       <div class="hero__meta">
-        東京で受けられる<br>
+        代々木上原で受けられる<br>
         出張対応の鍼灸・ボディケア<br>
         （完全予約制）
       </div>
@@ -1438,6 +1549,7 @@
       <p class="hero__eyebrow" aria-hidden="true">Acupuncture &amp; Body Care</p>
       <h1 class="hero__title">その一歩が、<br>身体の変わる<em>瞬間</em>。</h1>
       <p class="hero__lead">がんばる日々に、やさしい選択を。</p>
+      <p class="hero__area">代々木上原の出張鍼灸・ボディケア</p>
       <div class="hero__ctas">
         <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.428 1.808-2.428.853 0 1.267.641 1.267 1.408 0 .858-.546 2.140-.828 3.330-.235.995.499 1.806 1.476 1.806 1.771 0 3.135-1.867 3.135-4.562 0-2.387-1.716-4.057-4.164-4.057-2.835 0-4.498 2.126-4.498 4.322 0 .856.33 1.773.742 2.273a.3.3 0 0 1 .069.288l-.272 1.112c-.044.18-.145.218-.334.131-1.249-.581-2.030-2.407-2.030-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.220-5.190 6.220-1.013 0-1.967-.527-2.292-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.523 0 10-4.477 10-10S17.523 2 12 2Z"/></svg>
