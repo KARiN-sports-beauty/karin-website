@@ -767,7 +767,7 @@ def assert_booking_area_selectable(area_id):
 BOOKING_COURSE_TYPES = {
     "total_conditioning": {
         "id": "total_conditioning",
-        "label": "トータルコンディショニングコース",
+        "label": "トータルコンディショニング",
         "durations": (120, 90, 60),
     },
     "shinkyu_only": {
