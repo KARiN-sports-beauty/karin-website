@@ -104,23 +104,62 @@ def public_content_clients():
     return clients
 
 
+def blog_search_blob(item):
+    """キーワード検索用に title / category / tags / body を連結。"""
+    if not item:
+        return ""
+    parts = []
+    for key in ("title", "category", "body"):
+        val = item.get(key)
+        if val:
+            parts.append(str(val))
+    tags = item.get("tags")
+    if isinstance(tags, (list, tuple)):
+        parts.extend(str(t) for t in tags if t)
+    elif tags:
+        parts.append(str(tags))
+    return "\n".join(parts)
+
+
+def blog_matches_keyword(item, query):
+    """カテゴリ・タグ・本文・タイトルのいずれかにキーワードが含まれれば True。"""
+    q = (query or "").strip()
+    if not q:
+        return True
+    return q.casefold() in blog_search_blob(item).casefold()
+
+
 def fetch_published_blogs(limit=None, slug=None, category=None, query=None, columns="*"):
-    """公開中の KARiN.NOTES を取得。失敗時は空リスト。"""
+    """公開中の KARiN.NOTES を取得。失敗時は空リスト。
+
+    query 指定時は title / category / tags / body のいずれかに
+    部分一致するものを返す（タグは text[] のためアプリ側で判定）。
+    """
     last_error = None
+    # キーワード検索時は本文なども必要なので select を広げる
+    select_columns = columns
+    if query and columns != "*":
+        select_columns = "*"
+
     for name, client in public_content_clients():
         try:
-            sb = client.table("blogs").select(columns).eq("draft", False)
+            sb = client.table("blogs").select(select_columns).eq("draft", False)
             if slug:
                 sb = sb.eq("slug", slug)
             if category:
                 sb = sb.ilike("category", f"%{category}%")
-            if query:
-                sb = sb.ilike("title", f"%{query}%")
+            # query は DB の title-only ilike ではなく、取得後に横断マッチ
             sb = sb.order("created_at", desc=True)
-            if limit:
+            # キーワードなしの limit だけ DB 側で切る（検索時はフィルタ後に切る）
+            if limit and not query:
                 sb = sb.limit(int(limit))
             res = sb.execute()
-            return list(res.data or [])
+            items = list(res.data or [])
+            if query:
+                items = [item for item in items if blog_matches_keyword(item, query)]
+                if limit:
+                    items = items[: int(limit)]
+            return items
         except Exception as e:
             last_error = e
             print(f"❌ fetch_published_blogs ({name}) エラー: {e}")

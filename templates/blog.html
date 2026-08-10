@@ -94,7 +94,7 @@
   </header>
 
   <form action="{{ url_for('blog') }}" method="get" class="blog-search">
-    <input type="text" name="q" placeholder="キーワードで検索" value="{{ query or '' }}">
+    <input type="text" name="q" placeholder="タイトル・カテゴリ・タグ・本文で検索" value="{{ query or '' }}">
     <button type="submit">検索</button>
   </form>
 
