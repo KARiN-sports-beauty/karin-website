@@ -82,12 +82,76 @@ load_dotenv()
 # ===============================
 # Supabase 接続設定
 # ===============================
-SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+# anon はハードコードをデフォルトに（Render に古い SUPABASE_KEY があっても上書きされない）
+# 更新する場合は SUPABASE_ANON_KEY を環境変数で設定
+_DEFAULT_SUPABASE_URL = "https://pmuvlinhusxesmhwsxtz.supabase.co"
+_DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdXZsaW5odXN4ZXNtaHdzeHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTA1ODAsImV4cCI6MjA3OTM2NjU4MH0.efXpBSYXAqMqvYnQQX1CUSnaymft7j_HzXZX6bHCXHA"
+
+SUPABASE_URL = (os.getenv("SUPABASE_URL") or _DEFAULT_SUPABASE_URL).strip()
+SUPABASE_KEY = (os.getenv("SUPABASE_ANON_KEY") or _DEFAULT_SUPABASE_ANON_KEY).strip()
+SUPABASE_SERVICE_KEY = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip() or None
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else supabase
+
+
+def public_content_clients():
+    """公開コンテンツ取得用クライアント（service_role 優先 → anon）。"""
+    clients = []
+    if SUPABASE_SERVICE_KEY:
+        clients.append(("admin", supabase_admin))
+    clients.append(("anon", supabase))
+    return clients
+
+
+def fetch_published_blogs(limit=None, slug=None, category=None, query=None, columns="*"):
+    """公開中の KARiN.NOTES を取得。失敗時は空リスト。"""
+    last_error = None
+    for name, client in public_content_clients():
+        try:
+            sb = client.table("blogs").select(columns).eq("draft", False)
+            if slug:
+                sb = sb.eq("slug", slug)
+            if category:
+                sb = sb.ilike("category", f"%{category}%")
+            if query:
+                sb = sb.ilike("title", f"%{query}%")
+            sb = sb.order("created_at", desc=True)
+            if limit:
+                sb = sb.limit(int(limit))
+            res = sb.execute()
+            return list(res.data or [])
+        except Exception as e:
+            last_error = e
+            print(f"❌ fetch_published_blogs ({name}) エラー: {e}")
+    if last_error:
+        print(f"❌ fetch_published_blogs 全クライアント失敗: {last_error}")
+    return []
+
+
+def fetch_published_news(limit=None, slug=None, columns="*"):
+    """公開中のお知らせを取得。失敗時は空リスト。"""
+    last_error = None
+    for name, client in public_content_clients():
+        try:
+            sb = client.table("news").select(columns).eq("draft", False)
+            if slug:
+                sb = sb.eq("slug", slug)
+            sb = sb.order("created_at", desc=True)
+            if limit:
+                sb = sb.limit(int(limit))
+            res = sb.execute()
+            items = list(res.data or [])
+            for n in items:
+                if not n.get("date"):
+                    n["date"] = (n.get("created_at") or "")[:10]
+            return items
+        except Exception as e:
+            last_error = e
+            print(f"❌ fetch_published_news ({name}) エラー: {e}")
+    if last_error:
+        print(f"❌ fetch_published_news 全クライアント失敗: {last_error}")
+    return []
 
 
 
@@ -1538,15 +1602,13 @@ def get_related_blogs(current_blog, limit=6):
     current_tags = set(normalize_blog_tags(current_blog.get("tags")))
 
     try:
-        res = (
-            supabase.table("blogs")
-            .select("*")
-            .eq("draft", False)
-            .neq("id", blog_id)
-            .order("created_at", desc=True)
-            .execute()
-        )
-        candidates = [prepare_blog_item(dict(item)) for item in (res.data or [])]
+        rows = fetch_published_blogs(columns="*")
+        # 自分自身は除外
+        candidates = [
+            prepare_blog_item(dict(item))
+            for item in rows
+            if item.get("id") != blog_id
+        ]
     except Exception as e:
         print(f"⚠️ 関連記事取得エラー: {e}")
         return []
@@ -3036,11 +3098,16 @@ def mypage():
 # ===================================================
 @app.route("/test_supabase")
 def test_supabase():
-    try:
-        response = supabase.table("blogs").select("*").execute()
-        return {"status": "ok", "data": response.data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    """anon / admin 双方の blogs 取得疎通確認（デバッグ用）。"""
+    results = {}
+    for name, client in public_content_clients():
+        try:
+            response = client.table("blogs").select("id,slug,draft").eq("draft", False).limit(3).execute()
+            results[name] = {"status": "ok", "count": len(response.data or []), "slugs": [x.get("slug") for x in (response.data or [])]}
+        except Exception as e:
+            results[name] = {"status": "error", "message": str(e)}
+    ok = any(v.get("status") == "ok" for v in results.values())
+    return {"status": "ok" if ok else "error", "clients": results}
 
 
 @app.route("/blog")
@@ -3048,44 +3115,41 @@ def blog():
     query = request.args.get("q")
     category = request.args.get("category")
 
-    sb = supabase.table("blogs").select("*").eq("draft", False)
-
-    if category:
-        sb = sb.ilike("category", f"%{category}%")
-
-    if query:
-        sb = sb.ilike("title", f"%{query}%")
-
-    res = sb.order("created_at", desc=True).execute()
-    blogs = [prepare_blog_item(dict(item)) for item in (res.data or [])]
-    feature_blogs, grid_blogs = split_blogs_for_notes_list(blogs)
-
-    # カテゴリ一覧（全公開記事から抽出）
-    categories = []
     try:
-        res_categories = supabase.table("blogs").select("category").eq("draft", False).execute()
-        category_set = set()
-        for c in (res_categories.data or []):
-            raw = c.get("category") or ""
-            raw = raw.replace("　", " ")
-            for token in raw.replace(",", " ").replace("、", " ").split():
-                token = token.strip()
-                if token:
-                    category_set.add(token)
-        categories = sorted(category_set)
-    except Exception as e:
-        print(f"⚠️ WARNING - カテゴリ取得エラー: {e}")
-        categories = []
+        rows = fetch_published_blogs(category=category, query=query)
+        blogs = [prepare_blog_item(dict(item)) for item in rows]
+        feature_blogs, grid_blogs = split_blogs_for_notes_list(blogs)
 
-    return render_template(
-        "blog.html",
-        blogs=blogs,
-        feature_blogs=feature_blogs,
-        grid_blogs=grid_blogs,
-        categories=categories,
-        current_category=category,
-        query=query,
-    )
+        categories = []
+        try:
+            cat_rows = fetch_published_blogs(columns="category")
+            category_set = set()
+            for c in cat_rows:
+                raw = c.get("category") or ""
+                raw = raw.replace("　", " ")
+                for token in raw.replace(",", " ").replace("、", " ").split():
+                    token = token.strip()
+                    if token:
+                        category_set.add(token)
+            categories = sorted(category_set)
+        except Exception as e:
+            print(f"⚠️ WARNING - カテゴリ取得エラー: {e}")
+            categories = []
+
+        return render_template(
+            "blog.html",
+            blogs=blogs,
+            feature_blogs=feature_blogs,
+            grid_blogs=grid_blogs,
+            categories=categories,
+            current_category=category,
+            query=query,
+        )
+    except Exception as e:
+        import traceback
+        print("❌ /blog エラー:", e)
+        print(traceback.format_exc())
+        return "KARiN.NOTES の取得に失敗しました。しばらくしてから再度お試しください。", 500
 
 
 
@@ -3095,10 +3159,8 @@ def blog():
 @app.route("/blog/<slug>")
 def show_blog(slug):
     try:
-        # 対象記事取得（slug で検索）
-        # 公開されている記事のみ取得（draft=False）
-        res = supabase.table("blogs").select("*").eq("slug", slug).eq("draft", False).execute()
-        data = res.data
+        # 対象記事取得（slug で検索）・公開記事のみ
+        data = fetch_published_blogs(slug=slug)
 
         if not data:
             # 下書きも含めて検索（管理者用）
@@ -3106,7 +3168,7 @@ def show_blog(slug):
                 res_draft = supabase_admin.table("blogs").select("*").eq("slug", slug).execute()
                 if res_draft.data:
                     data = res_draft.data
-            except:
+            except Exception:
                 pass
 
         if not data:
@@ -4755,36 +4817,34 @@ def admin_karte_image_delete(image_id):
 # ===========================
 @app.route("/news/<slug>")
 def show_news(slug):
-    res = supabase.table("news").select("*").eq("slug", slug).eq("draft", False).execute()
-    if not res.data:
-        return render_template("404.html"), 404
+    try:
+        items = fetch_published_news(slug=slug)
+        if not items:
+            return render_template("404.html"), 404
 
-    news = res.data[0]
+        news = items[0]
+        if not news.get("body"):
+            news["body"] = "<p>この記事の内容は準備中です。</p>"
 
-    if not news.get("body"):
-        news["body"] = "<p>この記事の内容は準備中です。</p>"
-
-    return render_template("news_detail.html", news=news)
+        return render_template("news_detail.html", news=news)
+    except Exception as e:
+        import traceback
+        print("❌ /news/<slug> エラー:", e)
+        print(traceback.format_exc())
+        return "お知らせの取得に失敗しました。しばらくしてから再度お試しください。", 500
 
 
 
 @app.route("/news")
 def news_list():
-    # Supabase から取得（下書き以外）
-    res = (
-        supabase.table("news")
-        .select("*")
-        .eq("draft", False)
-        .order("created_at", desc=True)
-        .execute()
-    )
-    items = res.data or []
-
-    # 日付整形（blogs と合わせる）
-    for n in items:
-        n["date"] = (n.get("created_at") or "")[:10]
-
-    return render_template("news.html", news_list=items)
+    try:
+        items = fetch_published_news()
+        return render_template("news.html", news_list=items)
+    except Exception as e:
+        import traceback
+        print("❌ /news エラー:", e)
+        print(traceback.format_exc())
+        return "お知らせ一覧の取得に失敗しました。しばらくしてから再度お試しください。", 500
 
 
 
@@ -4796,51 +4856,13 @@ def news_list():
 def index():
 
     # ----------------------------------------
-    # 最新 KARiN.NOTES 3件
+    # 最新 KARiN.NOTES 3件 / 最新ニュース 3件
     # ----------------------------------------
-    latest_blogs = []
-    try:
-        latest_blogs_res = (
-            supabase
-            .table("blogs")
-            .select("*")
-            .eq("draft", False)
-            .order("created_at", desc=True)
-            .limit(3)
-            .execute()
-        )
-        latest_blogs = latest_blogs_res.data or []
-    except Exception as e:
-        print("❌ latest_blogs 取得エラー:", e)
-
-
-
-    # ----------------------------------------
-    # 最新ニュース 3件
-    # ----------------------------------------
-    latest_news = []
-    try:
-        latest_news_res = (
-            supabase
-            .table("news")
-            .select("*")
-            .eq("draft", False)
-            .order("created_at", desc=True)
-            .limit(3)
-            .execute()
-        )
-        latest_news = latest_news_res.data or []
-
-        # ★ created_at → date に変換
-        for n in latest_news:
-            if n.get("created_at"):
-                n["date"] = n["created_at"][:10]
-            else:
-                n["date"] = ""
-    except Exception as e:
-        print("❌ latest_news 取得エラー:", e)
-
-
+    latest_blogs = fetch_published_blogs(limit=3)
+    for b in latest_blogs:
+        if not b.get("date") and b.get("created_at"):
+            b["date"] = str(b["created_at"])[:10]
+    latest_news = fetch_published_news(limit=3)
 
     # ----------------------------------------
     # スケジュール読み込み（今日を左端に）
@@ -5193,38 +5215,20 @@ def sitemap():
             add_url(path, freq)
 
         # --- KARiN.NOTES（公開のみ・slug） ---
-        try:
-            res_blogs = (
-                supabase.table("blogs")
-                .select("slug, updated_at, created_at, date")
-                .eq("draft", False)
-                .execute()
-            )
-            for b in res_blogs.data or []:
-                slug = (b.get("slug") or "").strip()
-                if not slug:
-                    continue
-                lastmod = b.get("updated_at") or b.get("created_at") or b.get("date")
-                add_url(f"/blog/{slug}", "weekly", lastmod)
-        except Exception as e:
-            print(f"⚠️ sitemap blogs 取得エラー: {e}")
+        for b in fetch_published_blogs(columns="slug, updated_at, created_at, date"):
+            slug = (b.get("slug") or "").strip()
+            if not slug:
+                continue
+            lastmod = b.get("updated_at") or b.get("created_at") or b.get("date")
+            add_url(f"/blog/{slug}", "weekly", lastmod)
 
         # --- お知らせ（公開のみ・slug） ---
-        try:
-            res_news = (
-                supabase.table("news")
-                .select("slug, updated_at, created_at")
-                .eq("draft", False)
-                .execute()
-            )
-            for n in res_news.data or []:
-                slug = (n.get("slug") or "").strip()
-                if not slug:
-                    continue
-                lastmod = n.get("updated_at") or n.get("created_at")
-                add_url(f"/news/{slug}", "weekly", lastmod)
-        except Exception as e:
-            print(f"⚠️ sitemap news 取得エラー: {e}")
+        for n in fetch_published_news(columns="slug, updated_at, created_at"):
+            slug = (n.get("slug") or "").strip()
+            if not slug:
+                continue
+            lastmod = n.get("updated_at") or n.get("created_at")
+            add_url(f"/news/{slug}", "weekly", lastmod)
 
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
