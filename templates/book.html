@@ -72,6 +72,11 @@
       color: var(--muted);
       margin: 0 0 24px;
     }
+    .lead a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: underline;
+    }
     .card {
       background: #fff;
       border-radius: 16px;
@@ -395,7 +400,7 @@
     <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
     <div class="logo">KARiN. <span>~Sports & Beauty~</span></div>
     <h1>院内ご予約</h1>
-    <p class="lead">東京（代々木上原）・福岡（薬院）の院内施術が対象です（現在は東京のみWeb予約可）。<br>往診・帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>またはお問い合わせフォームをご利用ください。</p>
+    <p class="lead">東京（代々木上原）・福岡（薬院）の院内施術が対象です（現在は東京のみWeb予約可）。<br>往診・帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
 
     <div class="card" id="step-area">
       <h2><span class="step-num">1</span>ご希望のエリア</h2>
