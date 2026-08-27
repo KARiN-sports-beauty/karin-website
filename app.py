@@ -5552,7 +5552,7 @@ def api_book_meta():
         "free_staff_label": "フリー",
         "default_area": "tokyo",
         "default_course_type": "total_conditioning",
-        "durations": [60, 90, 120],
+        "durations": [120, 90, 60],
     })
 
 
@@ -5590,7 +5590,7 @@ def api_book_dates():
             "selectable": len(working) > 0,
             "working_staff": [w["name"] for w in working],
         })
-    hint = booking_dates_unavailable_reason(area) if not any(d["selectable"] for d in dates_out) else None
+    hint = None
     return jsonify({
         "area": area,
         "place_type": place_type,

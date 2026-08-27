@@ -414,8 +414,38 @@
       box-shadow: none;
     }
     .card.is-locked .step-body { display: none; }
+    .card.is-done {
+      opacity: 1;
+      box-shadow: 0 4px 14px rgba(30,58,95,0.04);
+    }
+    .card.is-done .step-body { display: none; }
     .card.is-active {
       outline: 2px solid rgba(30,58,95,0.18);
+    }
+    .step-summary {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--navy);
+      margin-left: 2px;
+    }
+    .step-summary:empty { display: none; }
+    .step-summary:not(:empty)::before {
+      content: "：";
+      font-weight: 600;
+      color: var(--muted);
+    }
+    #web_note {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      min-height: 110px;
+      resize: vertical;
+      box-sizing: border-box;
     }
     .card .step-edit {
       margin-left: auto;
@@ -460,40 +490,39 @@
     <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
     <div class="logo">KARiN. <span>~Sports & Beauty~</span></div>
     <h1>ご予約</h1>
-    <p class="lead">東京・福岡の院内／出張をご予約いただけます。<br>現在時刻から12時間より先の枠のみご予約可能です。帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
+    <p class="lead">東京・福岡の院内（準備中）/出張をご予約いただけます。<br>帯同および12時間以内のご予約は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
 
     <div class="card is-active" id="step-area" data-step="1">
-      <h2><span class="step-num">1</span>ご希望のエリア</h2>
+      <h2><span class="step-num">1</span>ご希望のエリア<span class="step-summary" id="summary-1"></span><button type="button" class="step-edit hidden" data-edit="1">変更</button></h2>
       <div class="step-body">
         <div class="chip-row" id="area-chips"></div>
       </div>
     </div>
 
     <div class="card is-locked" id="step-method" data-step="2">
-      <h2><span class="step-num">2</span>施術方法<button type="button" class="step-edit hidden" data-edit="2">変更</button></h2>
+      <h2><span class="step-num">2</span>施術方法<span class="step-summary" id="summary-2"></span><button type="button" class="step-edit hidden" data-edit="2">変更</button></h2>
       <div class="step-body">
         <div class="chip-row" id="method-chips"></div>
       </div>
     </div>
 
     <div class="card is-locked" id="step-duration" data-step="3">
-      <h2><span class="step-num">3</span>施術時間・希望内容<button type="button" class="step-edit hidden" data-edit="3">変更</button></h2>
+      <h2><span class="step-num">3</span>施術時間・希望内容<span class="step-summary" id="summary-3"></span><button type="button" class="step-edit hidden" data-edit="3">変更</button></h2>
       <div class="step-body">
         <p class="course-sub-label">施術時間</p>
         <div class="chip-row" id="duration-chips"></div>
         <label for="web_note" style="display:block;margin-top:16px;font-size:0.85rem;font-weight:600;">希望・伝達事項（任意）</label>
-        <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など" style="margin-top:8px;"></textarea>
+        <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など"></textarea>
         <button type="button" class="submit-btn" id="duration-next" style="margin-top:14px;">日時選択へ進む</button>
       </div>
     </div>
 
     <div class="card is-locked" id="step-datetime" data-step="4">
-      <h2><span class="step-num">4</span>日時選択<button type="button" class="step-edit hidden" data-edit="4">変更</button></h2>
+      <h2><span class="step-num">4</span>日時選択<span class="step-summary" id="summary-4"></span><button type="button" class="step-edit hidden" data-edit="4">変更</button></h2>
       <div class="step-body">
         <p class="course-sub-label">ご希望の日付</p>
         <div class="date-row" id="date-chips"></div>
-        <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。</p>
-        <p class="empty-msg hidden" id="date-hint" style="font-size:0.82rem; color:#888; margin-top:8px;"></p>
+        <p class="empty-msg hidden" id="date-empty">2週間以内でご予約可能な日がありません。</p>
 
         <div id="slots-section" class="hidden" style="margin-top:18px;">
           <p class="course-sub-label">時間・担当スタッフ</p>
@@ -514,7 +543,7 @@
     </div>
 
     <div class="card is-locked" id="step-customer" data-step="5">
-      <h2><span class="step-num">5</span>お客様情報<button type="button" class="step-edit hidden" data-edit="5">変更</button></h2>
+      <h2><span class="step-num">5</span>お客様情報<span class="step-summary" id="summary-5"></span><button type="button" class="step-edit hidden" data-edit="5">変更</button></h2>
       <div class="step-body">
         <div class="form-grid">
           <div class="form-row-2">
@@ -580,13 +609,40 @@
     function show(el) { if (el) el.classList.remove("hidden"); }
     function hide(el) { if (el) el.classList.add("hidden"); }
 
+    function updateStepSummaries() {
+      const s1 = $("summary-1");
+      const s2 = $("summary-2");
+      const s3 = $("summary-3");
+      const s4 = $("summary-4");
+      const s5 = $("summary-5");
+      if (s1) s1.textContent = state.areaLabel || "";
+      if (s2) s2.textContent = state.placeTypeLabel || "";
+      if (s3) s3.textContent = state.duration ? (state.duration + "分") : "";
+      if (s4) {
+        if (state.date && state.time) {
+          const staff = state.staffName === FREE_KEY ? "フリー" : (state.staffName || "");
+          s4.textContent = state.date + " " + state.time + (staff ? "（" + staff + "）" : "");
+        } else if (state.date) {
+          s4.textContent = state.date;
+        } else {
+          s4.textContent = "";
+        }
+      }
+      if (s5) {
+        const ln = ($("last_name") && $("last_name").value.trim()) || "";
+        const fn = ($("first_name") && $("first_name").value.trim()) || "";
+        s5.textContent = (ln || fn) ? (ln + " " + fn).trim() : "";
+      }
+    }
+
     function setStep(n) {
       state.currentStep = n;
       document.querySelectorAll(".card[data-step]").forEach((card) => {
         const step = parseInt(card.dataset.step, 10);
-        card.classList.remove("is-locked", "is-active");
+        card.classList.remove("is-locked", "is-active", "is-done");
         const editBtn = card.querySelector(".step-edit");
         if (step < n) {
+          card.classList.add("is-done");
           if (editBtn) show(editBtn);
         } else if (step === n) {
           card.classList.add("is-active");
@@ -596,18 +652,26 @@
           if (editBtn) hide(editBtn);
         }
       });
+      updateStepSummaries();
       const active = document.querySelector(`.card[data-step="${n}"]`);
       if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function clearFromStep(n) {
+      if (n <= 1) {
+        state.area = null;
+        state.areaLabel = "";
+        document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
+      }
       if (n <= 2) {
         state.placeType = null;
         state.placeTypeLabel = "";
+        document.querySelectorAll("#method-chips .chip").forEach((c) => c.classList.remove("active"));
       }
       if (n <= 3) {
         state.duration = null;
         state.courseLabel = "";
+        document.querySelectorAll("#duration-chips .chip").forEach((c) => c.classList.remove("active"));
       }
       if (n <= 4) {
         state.date = null;
@@ -618,6 +682,7 @@
         hide($("slots-section"));
         $("date-chips").innerHTML = "";
       }
+      updateStepSummaries();
     }
 
     document.querySelectorAll(".step-edit").forEach((btn) => {
@@ -701,7 +766,7 @@
     function renderDurations() {
       const row = $("duration-chips");
       row.innerHTML = "";
-      (state.meta.durations || [60, 90, 120]).forEach((m) => {
+      (state.meta.durations || [120, 90, 60]).forEach((m) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "chip";
@@ -732,7 +797,6 @@
       const row = $("date-chips");
       row.innerHTML = "";
       hide($("date-empty"));
-      hide($("date-hint"));
       const qs = new URLSearchParams({
         area: state.area,
         duration: String(state.duration),
@@ -756,10 +820,6 @@
       });
       if (!any) {
         show($("date-empty"));
-        if (data.hint) {
-          $("date-hint").textContent = data.hint;
-          show($("date-hint"));
-        }
       }
     }
 
