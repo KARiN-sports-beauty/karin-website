@@ -517,7 +517,7 @@
         <div class="chip-row" id="duration-chips"></div>
         <label for="web_note" style="display:block;margin-top:16px;font-size:0.85rem;font-weight:600;">希望・伝達事項（任意）</label>
         <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など"></textarea>
-        <button type="button" class="submit-btn" id="duration-next" style="margin-top:14px;">日時選択へ進む</button>
+        <button type="button" class="submit-btn" id="duration-next" style="margin-top:14px;">完了</button>
       </div>
     </div>
 
@@ -542,6 +542,7 @@
             <div class="slot-detail-grid" id="slot-detail-grid"></div>
           </div>
           <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可（直近12時間以内を含む）　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。</p>
+          <button type="button" class="submit-btn" id="datetime-next" style="margin-top:14px;">完了</button>
         </div>
       </div>
     </div>
@@ -566,9 +567,9 @@
           <input type="email" id="email" name="email" required autocomplete="email">
           <div id="address-wrap" class="hidden">
             <label for="place_name">出張先のエリア・住所 <span style="color:#c0392b">*</span></label>
-            <textarea id="place_name" name="place_name" placeholder="例）東京都渋谷区〇〇 1-2-3 〇〇マンション101"></textarea>
+            <textarea id="place_name" name="place_name" placeholder="例）渋谷区代々木上原"></textarea>
           </div>
-          <button type="button" class="submit-btn" id="customer-next">確認画面へ進む</button>
+          <button type="button" class="submit-btn" id="customer-next">完了</button>
           <p class="error-msg hidden" id="customer-error"></p>
         </div>
       </div>
@@ -613,6 +614,49 @@
     function show(el) { if (el) el.classList.remove("hidden"); }
     function hide(el) { if (el) el.classList.add("hidden"); }
 
+    function isCustomerComplete() {
+      const last = ($("last_name") && $("last_name").value.trim()) || "";
+      const first = ($("first_name") && $("first_name").value.trim()) || "";
+      const phone = ($("phone") && $("phone").value.trim()) || "";
+      const email = ($("email") && $("email").value.trim()) || "";
+      if (!last || !first || !phone || !email) return false;
+      if (state.placeType === "visit") {
+        const placeName = ($("place_name") && $("place_name").value.trim()) || "";
+        if (!placeName) return false;
+      }
+      return true;
+    }
+
+    function isStepComplete(step) {
+      if (step === 1) return !!state.area;
+      if (step === 2) return !!state.placeType;
+      if (step === 3) return !!state.duration;
+      if (step === 4) return !!(state.date && state.time && state.staffName);
+      if (step === 5) return isCustomerComplete();
+      if (step === 6) return isStepComplete(1) && isStepComplete(2) && isStepComplete(3) && isStepComplete(4) && isStepComplete(5);
+      return false;
+    }
+
+    function firstIncompleteStep() {
+      for (let i = 1; i <= 5; i++) {
+        if (!isStepComplete(i)) return i;
+      }
+      return 6;
+    }
+
+    function clearDatetimeOnly() {
+      state.date = null;
+      state.staffName = null;
+      state.time = null;
+      state.slotsData = null;
+      state.detailStaff = null;
+      state.detailHour = null;
+      closeSlotDetail();
+      hide($("slots-section"));
+      if ($("date-chips")) $("date-chips").innerHTML = "";
+      updateStepSummaries();
+    }
+
     function updateStepSummaries() {
       const s1 = $("summary-1");
       const s2 = $("summary-2");
@@ -645,12 +689,12 @@
         const step = parseInt(card.dataset.step, 10);
         card.classList.remove("is-locked", "is-active", "is-done");
         const editBtn = card.querySelector(".step-edit");
-        if (step < n) {
-          card.classList.add("is-done");
-          if (editBtn) show(editBtn);
-        } else if (step === n) {
+        if (step === n) {
           card.classList.add("is-active");
           if (editBtn) hide(editBtn);
+        } else if (step < n || (step > n && step <= 5 && isStepComplete(step))) {
+          card.classList.add("is-done");
+          if (editBtn) show(editBtn);
         } else {
           card.classList.add("is-locked");
           if (editBtn) hide(editBtn);
@@ -661,39 +705,57 @@
       if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    function clearFromStep(n) {
-      if (n <= 1) {
-        state.area = null;
-        state.areaLabel = "";
-        document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
-      }
-      if (n <= 2) {
-        state.placeType = null;
-        state.placeTypeLabel = "";
-        document.querySelectorAll("#method-chips .chip").forEach((c) => c.classList.remove("active"));
-      }
-      if (n <= 3) {
-        state.duration = null;
-        state.courseLabel = "";
-        document.querySelectorAll("#duration-chips .chip").forEach((c) => c.classList.remove("active"));
-      }
-      if (n <= 4) {
-        state.date = null;
-        state.staffName = null;
-        state.time = null;
-        state.slotsData = null;
-        closeSlotDetail();
-        hide($("slots-section"));
-        $("date-chips").innerHTML = "";
-      }
+    async function proceedFromStep(completedStep) {
       updateStepSummaries();
+      const next = firstIncompleteStep();
+      if (next === 6) {
+        $("confirm-summary").innerHTML = buildConfirmHtml();
+        setStep(6);
+        return;
+      }
+      setStep(next);
+      if (next === 4) {
+        await loadDates();
+      }
     }
 
     document.querySelectorAll(".step-edit").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const n = parseInt(btn.dataset.edit, 10);
-        clearFromStep(n + 1);
         setStep(n);
+        if (n === 1) {
+          document.querySelectorAll("#area-chips .chip").forEach((c) => {
+            c.classList.toggle("active", c.dataset.area === state.area);
+          });
+        }
+        if (n === 2) {
+          document.querySelectorAll("#method-chips .chip").forEach((c) => {
+            c.classList.toggle("active", c.dataset.placeType === state.placeType);
+          });
+        }
+        if (n === 3) {
+          document.querySelectorAll("#duration-chips .chip").forEach((c) => {
+            c.classList.toggle("active", parseInt(c.dataset.minutes, 10) === state.duration);
+          });
+        }
+        if (n === 4 && state.area && state.duration) {
+          if (!$("date-chips").children.length) {
+            await loadDates();
+          } else if (state.date) {
+            document.querySelectorAll("#date-chips .date-chip").forEach((c) => {
+              c.classList.toggle("active", c.dataset.date === state.date);
+            });
+          }
+          if (state.date) {
+            show($("slots-section"));
+            if (!state.slotsData) {
+              await loadSlots();
+            } else {
+              renderSlotsTable(state.slotsData);
+              show($("slots-wrap"));
+            }
+          }
+        }
       });
     });
 
@@ -725,12 +787,13 @@
     }
 
     function selectArea(areaId, label, btn) {
+      const changed = state.area !== areaId;
       state.area = areaId;
       state.areaLabel = label;
       document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
-      clearFromStep(2);
-      setStep(2);
+      if (changed) clearDatetimeOnly();
+      proceedFromStep(1);
     }
 
     function renderMethods() {
@@ -756,14 +819,15 @@
     }
 
     function selectMethod(id, label, btn) {
+      const changed = state.placeType !== id;
       state.placeType = id;
       state.placeTypeLabel = label;
       document.querySelectorAll("#method-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
       if (id === "visit") show($("address-wrap"));
       else hide($("address-wrap"));
-      clearFromStep(3);
-      setStep(3);
+      if (changed) clearDatetimeOnly();
+      proceedFromStep(2);
     }
 
     function renderDurations() {
@@ -776,11 +840,14 @@
         btn.textContent = m + "分";
         btn.dataset.minutes = m;
         btn.addEventListener("click", () => {
+          const changed = state.duration !== m;
           state.duration = m;
           state.courseType = "total_conditioning";
           state.courseLabel = "トータルコンディショニング " + m + "分";
           document.querySelectorAll("#duration-chips .chip").forEach((c) => c.classList.remove("active"));
           btn.classList.add("active");
+          if (changed) clearDatetimeOnly();
+          updateStepSummaries();
         });
         row.appendChild(btn);
       });
@@ -791,9 +858,7 @@
         alert("施術時間を選択してください");
         return;
       }
-      clearFromStep(4);
-      setStep(4);
-      await loadDates();
+      await proceedFromStep(3);
     });
 
     async function loadDates() {
@@ -813,10 +878,12 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "date-chip";
+        btn.dataset.date = d.date;
         btn.disabled = !d.selectable;
         btn.innerHTML = '<div class="d">' + d.label + '</div><div class="w">' + d.weekday + "</div>";
         if (d.selectable) {
           any = true;
+          if (state.date === d.date) btn.classList.add("active");
           btn.addEventListener("click", () => selectDate(d.date, btn));
         }
         row.appendChild(btn);
@@ -941,8 +1008,16 @@
       state.time = time;
       document.querySelectorAll("#slot-detail-grid .slot-btn.ok").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
-      setStep(5);
+      proceedFromStep(4);
     }
+
+    $("datetime-next").addEventListener("click", () => {
+      if (!state.date || !state.time || !state.staffName) {
+        alert("日付と時間を選択してください");
+        return;
+      }
+      proceedFromStep(4);
+    });
 
     function renderSlotsTable(data) {
       const table = $("slots-table");
@@ -1040,8 +1115,7 @@
         show(err);
         return;
       }
-      $("confirm-summary").innerHTML = buildConfirmHtml();
-      setStep(6);
+      proceedFromStep(5);
     });
 
     $("confirm-back").addEventListener("click", () => setStep(5));
