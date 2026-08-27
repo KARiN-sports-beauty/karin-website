@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>院内ご予約 | KARiN. ~Sports & Beauty~</title>
+  <title>ご予約 | KARiN. ~Sports & Beauty~</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-  <meta name="description" content="KARiN. 院内（東京・福岡）のWeb予約ページです。空き枠から日時・担当をお選びいただけます。">
+  <meta name="description" content="KARiN. 東京・福岡の院内／出張のWeb予約ページです。空き枠から日時・担当をお選びいただけます。">
   <link rel="canonical" href="https://karin-sb.jp/book">
   <meta name="robots" content="index, follow">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="院内ご予約 | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN. 院内（東京・福岡）のWeb予約ページです。空き枠から日時・担当をお選びいただけます。">
+  <meta property="og:title" content="ご予約 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="KARiN. 東京・福岡の院内／出張のWeb予約ページです。空き枠から日時・担当をお選びいただけます。">
   <meta property="og:url" content="https://karin-sb.jp/book">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
@@ -23,9 +23,9 @@
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "院内ご予約 | KARiN. ~Sports & Beauty~",
+    "name": "ご予約 | KARiN. ~Sports & Beauty~",
     "url": "https://karin-sb.jp/book",
-    "description": "KARiN. 院内（東京・福岡）のWeb予約ページです。",
+    "description": "KARiN. 東京・福岡の院内／出張Web予約ページです。",
     "isPartOf": {
       "@type": "WebSite",
       "name": "KARiN. ~Sports & Beauty~",
@@ -104,6 +104,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
     }
     .step-num {
       display: inline-flex;
@@ -407,90 +408,163 @@
     @media (max-width: 480px) {
       .form-row-2 { grid-template-columns: 1fr; gap: 0; }
     }
+
+    .card.is-locked {
+      opacity: 0.55;
+      box-shadow: none;
+    }
+    .card.is-locked .step-body { display: none; }
+    .card.is-active {
+      outline: 2px solid rgba(30,58,95,0.18);
+    }
+    .card .step-edit {
+      margin-left: auto;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .confirm-box {
+      background: #f7f9fc;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .confirm-box dt {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .confirm-box dt:first-child { margin-top: 0; }
+    .confirm-box dd { margin: 0; font-weight: 600; }
+    .secondary-btn {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
     <div class="logo">KARiN. <span>~Sports & Beauty~</span></div>
-    <h1>院内ご予約</h1>
-    <p class="lead">東京（代々木上原）・福岡（薬院）の院内施術が対象です（現在は東京のみWeb予約可）。<br>出張・帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
+    <h1>ご予約</h1>
+    <p class="lead">東京・福岡の院内／出張をご予約いただけます。<br>現在時刻から12時間より先の枠のみご予約可能です。帯同は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
 
-    <div class="card" id="step-area">
+    <div class="card is-active" id="step-area" data-step="1">
       <h2><span class="step-num">1</span>ご希望のエリア</h2>
-      <div class="chip-row" id="area-chips"></div>
-    </div>
-
-    <div class="card hidden" id="step-course">
-      <h2><span class="step-num">2</span>メニュー</h2>
-      <p class="course-sub-label">メニュー種別（身体の状況に合わせて施術希望の方はトータルコンディショニングをお選びください）</p>
-      <div class="chip-row" id="course-type-chips"></div>
-      <div id="course-duration-wrap" class="hidden course-group">
-        <p class="course-sub-label" style="margin-top: 16px;">施術時間</p>
-        <div class="chip-row" id="course-duration-chips"></div>
+      <div class="step-body">
+        <div class="chip-row" id="area-chips"></div>
       </div>
     </div>
 
-    <div class="card hidden" id="step-date">
-      <h2><span class="step-num">3</span>ご希望の日付</h2>
-      <div class="date-row" id="date-chips"></div>
-      <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。</p>
-      <p class="empty-msg hidden" id="date-hint" style="font-size:0.82rem; color:#888; margin-top:8px;"></p>
+    <div class="card is-locked" id="step-method" data-step="2">
+      <h2><span class="step-num">2</span>施術方法<button type="button" class="step-edit hidden" data-edit="2">変更</button></h2>
+      <div class="step-body">
+        <div class="chip-row" id="method-chips"></div>
+      </div>
     </div>
 
-    <div class="card hidden" id="step-slots">
-      <h2><span class="step-num">4</span>時間・担当スタッフ</h2>
-      <div class="loading hidden" id="slots-loading">空き状況を読み込み中…</div>
-      <div class="slots-wrap hidden" id="slots-wrap">
-        <table class="slots-table" id="slots-table"></table>
+    <div class="card is-locked" id="step-duration" data-step="3">
+      <h2><span class="step-num">3</span>施術時間・希望内容<button type="button" class="step-edit hidden" data-edit="3">変更</button></h2>
+      <div class="step-body">
+        <p class="course-sub-label">施術時間</p>
+        <div class="chip-row" id="duration-chips"></div>
+        <label for="web_note" style="display:block;margin-top:16px;font-size:0.85rem;font-weight:600;">希望・伝達事項（任意）</label>
+        <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など" style="margin-top:8px;"></textarea>
+        <button type="button" class="submit-btn" id="duration-next" style="margin-top:14px;">日時選択へ進む</button>
       </div>
-      <div class="slot-detail-panel hidden" id="slot-detail-panel">
-        <div class="slot-detail-head">
-          <span class="slot-detail-title" id="slot-detail-title"></span>
-          <button type="button" class="slot-detail-close" id="slot-detail-close" aria-label="閉じる">×</button>
-        </div>
-        <div class="slot-detail-grid" id="slot-detail-grid"></div>
-      </div>
-      <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。スタッフの希望がない場合はフリーでお選びください</p>
     </div>
 
-    <div class="card hidden" id="step-form">
-      <h2><span class="step-num">5</span>お客様情報</h2>
-      <div class="summary" id="booking-summary"></div>
-      <form id="booking-form" class="form-grid">
-        <div class="form-row-2">
-          <div>
-            <label for="last_name">姓 <span style="color:#c0392b">*</span></label>
-            <input type="text" id="last_name" name="last_name" required autocomplete="family-name">
+    <div class="card is-locked" id="step-datetime" data-step="4">
+      <h2><span class="step-num">4</span>日時選択<button type="button" class="step-edit hidden" data-edit="4">変更</button></h2>
+      <div class="step-body">
+        <p class="course-sub-label">ご希望の日付</p>
+        <div class="date-row" id="date-chips"></div>
+        <p class="empty-msg hidden" id="date-empty">このエリアで予約可能な日がありません。</p>
+        <p class="empty-msg hidden" id="date-hint" style="font-size:0.82rem; color:#888; margin-top:8px;"></p>
+
+        <div id="slots-section" class="hidden" style="margin-top:18px;">
+          <p class="course-sub-label">時間・担当スタッフ</p>
+          <div class="loading hidden" id="slots-loading">空き状況を読み込み中…</div>
+          <div class="slots-wrap hidden" id="slots-wrap">
+            <table class="slots-table" id="slots-table"></table>
           </div>
-          <div>
-            <label for="first_name">名 <span style="color:#c0392b">*</span></label>
-            <input type="text" id="first_name" name="first_name" required autocomplete="given-name">
+          <div class="slot-detail-panel hidden" id="slot-detail-panel">
+            <div class="slot-detail-head">
+              <span class="slot-detail-title" id="slot-detail-title"></span>
+              <button type="button" class="slot-detail-close" id="slot-detail-close" aria-label="閉じる">×</button>
+            </div>
+            <div class="slot-detail-grid" id="slot-detail-grid"></div>
           </div>
+          <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可（直近12時間以内を含む）　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。</p>
         </div>
-        <label for="phone">電話番号 <span style="color:#c0392b">*</span></label>
-        <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="09012345678">
-        <label for="email">メールアドレス <span style="color:#c0392b">*</span></label>
-        <input type="email" id="email" name="email" required autocomplete="email">
-        <label for="web_note">ご要望（任意）</label>
-        <textarea id="web_note" name="web_note" placeholder="気になる部位・ご希望など"></textarea>
-        <button type="submit" class="submit-btn" id="submit-btn">予約を確定する</button>
+      </div>
+    </div>
+
+    <div class="card is-locked" id="step-customer" data-step="5">
+      <h2><span class="step-num">5</span>お客様情報<button type="button" class="step-edit hidden" data-edit="5">変更</button></h2>
+      <div class="step-body">
+        <div class="form-grid">
+          <div class="form-row-2">
+            <div>
+              <label for="last_name">姓 <span style="color:#c0392b">*</span></label>
+              <input type="text" id="last_name" name="last_name" required autocomplete="family-name">
+            </div>
+            <div>
+              <label for="first_name">名 <span style="color:#c0392b">*</span></label>
+              <input type="text" id="first_name" name="first_name" required autocomplete="given-name">
+            </div>
+          </div>
+          <label for="phone">電話番号 <span style="color:#c0392b">*</span></label>
+          <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="09012345678">
+          <label for="email">メールアドレス <span style="color:#c0392b">*</span></label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+          <div id="address-wrap" class="hidden">
+            <label for="place_name">出張先のエリア・住所 <span style="color:#c0392b">*</span></label>
+            <textarea id="place_name" name="place_name" placeholder="例）東京都渋谷区〇〇 1-2-3 〇〇マンション101"></textarea>
+          </div>
+          <button type="button" class="submit-btn" id="customer-next">確認画面へ進む</button>
+          <p class="error-msg hidden" id="customer-error"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card is-locked" id="step-confirm" data-step="6">
+      <h2><span class="step-num">6</span>予約確認</h2>
+      <div class="step-body">
+        <div class="confirm-box" id="confirm-summary"></div>
+        <button type="button" class="secondary-btn" id="confirm-back">内容を修正する</button>
+        <button type="button" class="submit-btn" id="submit-btn">予約を確定する</button>
         <p class="error-msg hidden" id="form-error"></p>
-      </form>
+      </div>
     </div>
   </div>
 
   <script>
   (function () {
     const FREE_KEY = "__free__";
-    const SHOW_FREE_ROW = false; // スタッフ体制が整ったら true に
+    const SHOW_FREE_ROW = false;
     const HOUR_START = 10;
     const HOUR_END = 26;
     const state = {
       meta: null,
       area: null,
-      courseType: null,
-      courseTypeLabel: "",
+      areaLabel: "",
+      placeType: null,
+      placeTypeLabel: "",
+      courseType: "total_conditioning",
       duration: null,
       courseLabel: "",
       date: null,
@@ -499,18 +573,79 @@
       slotsData: null,
       detailStaff: null,
       detailHour: null,
+      currentStep: 1,
     };
 
     const $ = (id) => document.getElementById(id);
+    function show(el) { if (el) el.classList.remove("hidden"); }
+    function hide(el) { if (el) el.classList.add("hidden"); }
 
-    function show(el) { el.classList.remove("hidden"); }
-    function hide(el) { el.classList.add("hidden"); }
+    function setStep(n) {
+      state.currentStep = n;
+      document.querySelectorAll(".card[data-step]").forEach((card) => {
+        const step = parseInt(card.dataset.step, 10);
+        card.classList.remove("is-locked", "is-active");
+        const editBtn = card.querySelector(".step-edit");
+        if (step < n) {
+          if (editBtn) show(editBtn);
+        } else if (step === n) {
+          card.classList.add("is-active");
+          if (editBtn) hide(editBtn);
+        } else {
+          card.classList.add("is-locked");
+          if (editBtn) hide(editBtn);
+        }
+      });
+      const active = document.querySelector(`.card[data-step="${n}"]`);
+      if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function clearFromStep(n) {
+      if (n <= 2) {
+        state.placeType = null;
+        state.placeTypeLabel = "";
+      }
+      if (n <= 3) {
+        state.duration = null;
+        state.courseLabel = "";
+      }
+      if (n <= 4) {
+        state.date = null;
+        state.staffName = null;
+        state.time = null;
+        state.slotsData = null;
+        closeSlotDetail();
+        hide($("slots-section"));
+        $("date-chips").innerHTML = "";
+      }
+    }
+
+    document.querySelectorAll(".step-edit").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const n = parseInt(btn.dataset.edit, 10);
+        clearFromStep(n + 1);
+        setStep(n);
+      });
+    });
 
     async function loadMeta() {
       const res = await fetch("/api/book/meta");
       state.meta = await res.json();
-      const areaRow = $("area-chips");
-      areaRow.innerHTML = "";
+      renderAreas();
+      renderMethods();
+      renderDurations();
+      setStep(1);
+      const defaultArea = (state.meta.areas || []).find((a) => a.id === state.meta.default_area && a.selectable !== false)
+        || (state.meta.areas || []).find((a) => a.selectable !== false);
+      if (defaultArea) {
+        const defaultBtn = $("area-chips").querySelector(`[data-area="${defaultArea.id}"]`);
+        if (defaultBtn) selectArea(defaultArea.id, defaultArea.label, defaultBtn);
+      }
+    }
+
+    function renderAreas() {
+      const row = $("area-chips");
+      row.innerHTML = "";
       (state.meta.areas || []).forEach((a) => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -519,104 +654,92 @@
         btn.dataset.area = a.id;
         if (a.selectable === false) {
           btn.disabled = true;
-          btn.title = "現在Web予約の準備中です";
         } else {
           btn.addEventListener("click", () => selectArea(a.id, a.label, btn));
         }
-        areaRow.appendChild(btn);
+        row.appendChild(btn);
       });
-      const defaultArea = (state.meta.areas || []).find((a) => a.id === state.meta.default_area && a.selectable !== false)
-        || (state.meta.areas || []).find((a) => a.selectable !== false);
-      if (defaultArea) {
-        const defaultBtn = areaRow.querySelector(`[data-area="${defaultArea.id}"]`);
-        if (defaultBtn) selectArea(defaultArea.id, defaultArea.label, defaultBtn);
-      }
     }
 
     function selectArea(areaId, label, btn) {
       state.area = areaId;
+      state.areaLabel = label;
       document.querySelectorAll("#area-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
-      renderCourseTypes();
-      show($("step-course"));
-      state.courseType = null;
-      state.courseTypeLabel = "";
-      state.duration = null;
-      state.courseLabel = "";
-      state.date = null;
-      state.staffName = null;
-      state.time = null;
-      hide($("step-date"));
-      hide($("step-slots"));
-      hide($("step-form"));
+      clearFromStep(2);
+      setStep(2);
     }
 
-    function renderCourseTypes() {
-      const groups = (state.meta.courses || {})[state.area] || [];
-      const row = $("course-type-chips");
+    function renderMethods() {
+      const row = $("method-chips");
       row.innerHTML = "";
-      hide($("course-duration-wrap"));
-      groups.forEach((group) => {
+      (state.meta.place_types || [
+        { id: "visit", label: "出張" },
+        { id: "in_house", label: "院内" },
+      ]).forEach((m) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "chip";
-        btn.textContent = group.label;
-        btn.dataset.courseType = group.id;
-        btn.addEventListener("click", () => selectCourseType(group, btn));
+        btn.textContent = m.label;
+        btn.dataset.placeType = m.id;
+        btn.addEventListener("click", () => selectMethod(m.id, m.label, btn));
         row.appendChild(btn);
       });
     }
 
-    function selectCourseType(group, btn) {
-      state.courseType = group.id;
-      state.courseTypeLabel = group.label;
-      state.duration = null;
-      state.courseLabel = "";
-      document.querySelectorAll("#course-type-chips .chip").forEach((c) => c.classList.remove("active"));
+    function selectMethod(id, label, btn) {
+      state.placeType = id;
+      state.placeTypeLabel = label;
+      document.querySelectorAll("#method-chips .chip").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
-      renderCourseDurations(group);
-      show($("course-duration-wrap"));
-      hide($("step-date"));
-      hide($("step-slots"));
-      hide($("step-form"));
-      state.date = null;
-      state.staffName = null;
-      state.time = null;
+      if (id === "visit") show($("address-wrap"));
+      else hide($("address-wrap"));
+      clearFromStep(3);
+      setStep(3);
     }
 
-    function renderCourseDurations(group) {
-      const row = $("course-duration-chips");
+    function renderDurations() {
+      const row = $("duration-chips");
       row.innerHTML = "";
-      (group.durations || []).forEach((d) => {
+      (state.meta.durations || [60, 90, 120]).forEach((m) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "chip";
-        btn.textContent = d.label;
-        btn.addEventListener("click", () => selectCourseDuration(d.minutes, d.label, btn, group.label));
+        btn.textContent = m + "分";
+        btn.dataset.minutes = m;
+        btn.addEventListener("click", () => {
+          state.duration = m;
+          state.courseType = "total_conditioning";
+          state.courseLabel = "トータルコンディショニング " + m + "分";
+          document.querySelectorAll("#duration-chips .chip").forEach((c) => c.classList.remove("active"));
+          btn.classList.add("active");
+        });
         row.appendChild(btn);
       });
     }
 
-    async function selectCourseDuration(minutes, durationLabel, btn, groupLabel) {
-      state.duration = minutes;
-      state.courseLabel = `${groupLabel} ${durationLabel}`;
-      document.querySelectorAll("#course-duration-chips .chip").forEach((c) => c.classList.remove("active"));
-      btn.classList.add("active");
-      show($("step-date"));
-      hide($("step-slots"));
-      hide($("step-form"));
-      state.date = null;
-      state.staffName = null;
-      state.time = null;
+    $("duration-next").addEventListener("click", async () => {
+      if (!state.duration) {
+        alert("施術時間を選択してください");
+        return;
+      }
+      clearFromStep(4);
+      setStep(4);
       await loadDates();
-    }
+    });
 
     async function loadDates() {
       const row = $("date-chips");
       row.innerHTML = "";
       hide($("date-empty"));
       hide($("date-hint"));
-      const res = await fetch(`/api/book/dates?area=${encodeURIComponent(state.area)}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
+      const qs = new URLSearchParams({
+        area: state.area,
+        duration: String(state.duration),
+        course_type: state.courseType || "total_conditioning",
+        place_type: state.placeType || "in_house",
+      });
+      const res = await fetch("/api/book/dates?" + qs.toString());
       const data = await res.json();
       let any = false;
       (data.dates || []).forEach((d) => {
@@ -624,7 +747,7 @@
         btn.type = "button";
         btn.className = "date-chip";
         btn.disabled = !d.selectable;
-        btn.innerHTML = `<div class="d">${d.label}</div><div class="w">${d.weekday}</div>`;
+        btn.innerHTML = '<div class="d">' + d.label + '</div><div class="w">' + d.weekday + "</div>";
         if (d.selectable) {
           any = true;
           btn.addEventListener("click", () => selectDate(d.date, btn));
@@ -646,8 +769,7 @@
       btn.classList.add("active");
       state.staffName = null;
       state.time = null;
-      hide($("step-form"));
-      show($("step-slots"));
+      show($("slots-section"));
       await loadSlots();
     }
 
@@ -655,7 +777,14 @@
       closeSlotDetail();
       show($("slots-loading"));
       hide($("slots-wrap"));
-      const res = await fetch(`/api/book/slots?area=${encodeURIComponent(state.area)}&date=${state.date}&duration=${state.duration}&course_type=${encodeURIComponent(state.courseType || "")}`);
+      const qs = new URLSearchParams({
+        area: state.area,
+        date: state.date,
+        duration: String(state.duration),
+        course_type: state.courseType || "total_conditioning",
+        place_type: state.placeType || "in_house",
+      });
+      const res = await fetch("/api/book/slots?" + qs.toString());
       const data = await res.json();
       state.slotsData = data;
       hide($("slots-loading"));
@@ -665,7 +794,7 @@
 
     function timesInHour(hour) {
       return [0, 15, 30, 45].map((m) =>
-        `${String(hour).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+        String(hour).padStart(2, "0") + ":" + String(m).padStart(2, "0")
       );
     }
 
@@ -674,7 +803,6 @@
       let definedCount = 0;
       let availCount = 0;
       let ngCount = 0;
-
       for (const t of times) {
         const s = slotMap[t];
         if (!s) continue;
@@ -682,11 +810,7 @@
         if (s.available) availCount++;
         else ngCount++;
       }
-
-      // 勤務時間外（その時間帯に枠自体が無い）
       if (definedCount === 0) return "none";
-
-      // APIは施術時間が収まらない開始時刻を返さない → 欠けた枠は不可扱い
       const missingCount = times.length - definedCount;
       if (availCount === 0) return "ng";
       if (missingCount > 0 || ngCount > 0) return "partial";
@@ -717,20 +841,15 @@
       if (!data) return;
       const row = findRowByStaffKey(data, staffKey);
       if (!row) return;
-
       state.detailStaff = staffKey;
       state.detailHour = hour;
-
       document.querySelectorAll(".hour-cell-btn.active-hour").forEach((b) => b.classList.remove("active-hour"));
-      document.querySelectorAll(`.hour-cell-btn[data-staff="${staffKey}"][data-hour="${hour}"]`).forEach((b) => {
+      document.querySelectorAll('.hour-cell-btn[data-staff="' + staffKey + '"][data-hour="' + hour + '"]').forEach((b) => {
         b.classList.add("active-hour");
       });
-
-      $("slot-detail-title").textContent = `${staffLabel} / ${hour}:00〜${hour + 1}:00`;
-
+      $("slot-detail-title").textContent = staffLabel + " / " + hour + ":00〜" + (hour + 1) + ":00";
       const slotMap = {};
       (row.slots || []).forEach((s) => { slotMap[s.time] = s; });
-
       const grid = $("slot-detail-grid");
       grid.innerHTML = "";
       timesInHour(hour).forEach((t) => {
@@ -741,16 +860,15 @@
         if (!s || !s.available) {
           btn.classList.add("ng");
           btn.disabled = true;
-          btn.innerHTML = `<span class="slot-time">${t}</span><span class="slot-mark">×</span>`;
+          btn.innerHTML = '<span class="slot-time">' + t + '</span><span class="slot-mark">×</span>';
         } else {
           btn.classList.add("ok");
           if (state.staffName === staffKey && state.time === t) btn.classList.add("selected");
-          btn.innerHTML = `<span class="slot-time">${t}</span><span class="slot-mark">○</span>`;
+          btn.innerHTML = '<span class="slot-time">' + t + '</span><span class="slot-mark">○</span>';
           btn.addEventListener("click", () => selectSlot(staffKey, t, btn));
         }
         grid.appendChild(btn);
       });
-
       show($("slot-detail-panel"));
       $("slot-detail-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
@@ -760,46 +878,41 @@
       state.time = time;
       document.querySelectorAll("#slot-detail-grid .slot-btn.ok").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
-      updateSummary();
-      show($("step-form"));
-      $("step-form").scrollIntoView({ behavior: "smooth", block: "start" });
+      setStep(5);
     }
 
     function renderSlotsTable(data) {
       const table = $("slots-table");
       const staffRows = data.staff || [];
       const freeRow = data.free_row || { staff_name: "フリー", slots: [] };
-      const allRows = SHOW_FREE_ROW ? [...staffRows, freeRow] : staffRows;
+      const allRows = SHOW_FREE_ROW ? staffRows.concat([freeRow]) : staffRows;
       const hours = [];
       for (let h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
-
       let html = "<thead><tr><th class='staff-col'>担当</th>";
-      hours.forEach((h) => { html += `<th>${h}:00</th>`; });
+      hours.forEach((h) => { html += "<th>" + h + ":00</th>"; });
       html += "</tr></thead><tbody>";
-
       allRows.forEach((row) => {
         const staffKey = rowStaffKey(row, freeRow.staff_name);
-        html += `<tr><td class="staff-col">${row.staff_name}</td>`;
+        html += '<tr><td class="staff-col">' + row.staff_name + "</td>";
         const slotMap = {};
         (row.slots || []).forEach((s) => { slotMap[s.time] = s; });
         hours.forEach((h) => {
           const status = classifyHour(slotMap, h);
           const active = state.detailStaff === staffKey && state.detailHour === h ? " active-hour" : "";
           if (status === "full") {
-            html += `<td><button type="button" class="hour-cell-btn full${active}" data-staff="${staffKey}" data-hour="${h}">○</button></td>`;
+            html += '<td><button type="button" class="hour-cell-btn full' + active + '" data-staff="' + staffKey + '" data-hour="' + h + '">○</button></td>';
           } else if (status === "partial") {
-            html += `<td><button type="button" class="hour-cell-btn partial${active}" data-staff="${staffKey}" data-hour="${h}">△</button></td>`;
+            html += '<td><button type="button" class="hour-cell-btn partial' + active + '" data-staff="' + staffKey + '" data-hour="' + h + '">△</button></td>';
           } else if (status === "ng") {
-            html += `<td><button type="button" class="hour-cell-btn ng" disabled>×</button></td>`;
+            html += '<td><button type="button" class="hour-cell-btn ng" disabled>×</button></td>';
           } else {
-            html += `<td><button type="button" class="hour-cell-btn none" disabled>—</button></td>`;
+            html += '<td><button type="button" class="hour-cell-btn none" disabled>—</button></td>';
           }
         });
         html += "</tr>";
       });
       html += "</tbody>";
       table.innerHTML = html;
-
       table.querySelectorAll(".hour-cell-btn.full, .hour-cell-btn.partial").forEach((btn) => {
         btn.addEventListener("click", () => {
           const staffKey = btn.dataset.staff;
@@ -813,18 +926,64 @@
 
     $("slot-detail-close").addEventListener("click", closeSlotDetail);
 
-    function updateSummary() {
-      const areaLabel = state.area === "tokyo" ? "東京" : "福岡";
-      const staffLabel = state.staffName === FREE_KEY ? "フリー（自動割当）" : state.staffName;
-      $("booking-summary").innerHTML =
-        `<strong>ご予約内容</strong><br>` +
-        `日時：${state.date} ${state.time}（${state.courseLabel}）<br>` +
-        `エリア：${areaLabel}<br>` +
-        `担当：${staffLabel}`;
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
 
-    $("booking-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
+    function buildConfirmHtml() {
+      const staffLabel = state.staffName === FREE_KEY ? "フリー（自動割当）" : state.staffName;
+      const note = ($("web_note").value || "").trim() || "なし";
+      const placeName = ($("place_name").value || "").trim();
+      let html = "<dl>";
+      html += "<dt>エリア</dt><dd>" + escapeHtml(state.areaLabel) + "</dd>";
+      html += "<dt>施術方法</dt><dd>" + escapeHtml(state.placeTypeLabel) + "</dd>";
+      html += "<dt>施術時間</dt><dd>" + escapeHtml(state.courseLabel) + "</dd>";
+      html += "<dt>希望日時</dt><dd>" + escapeHtml(state.date + " " + state.time) + "（担当：" + escapeHtml(staffLabel) + "）</dd>";
+      html += "<dt>希望・伝達事項</dt><dd>" + escapeHtml(note) + "</dd>";
+      html += "<dt>お名前</dt><dd>" + escapeHtml($("last_name").value.trim() + " " + $("first_name").value.trim()) + "</dd>";
+      html += "<dt>電話番号</dt><dd>" + escapeHtml($("phone").value.trim()) + "</dd>";
+      html += "<dt>メール</dt><dd>" + escapeHtml($("email").value.trim()) + "</dd>";
+      if (state.placeType === "visit") {
+        html += "<dt>出張先</dt><dd>" + escapeHtml(placeName) + "</dd>";
+      }
+      html += "</dl>";
+      return html;
+    }
+
+    $("customer-next").addEventListener("click", () => {
+      const err = $("customer-error");
+      hide(err);
+      const last = $("last_name").value.trim();
+      const first = $("first_name").value.trim();
+      const phone = $("phone").value.trim();
+      const email = $("email").value.trim();
+      const placeName = $("place_name").value.trim();
+      if (!last || !first || !phone || !email) {
+        err.textContent = "必須項目を入力してください";
+        show(err);
+        return;
+      }
+      if (state.placeType === "visit" && !placeName) {
+        err.textContent = "出張先のエリア・住所を入力してください";
+        show(err);
+        return;
+      }
+      if (!state.date || !state.time || !state.staffName) {
+        err.textContent = "日時を選択してください";
+        show(err);
+        return;
+      }
+      $("confirm-summary").innerHTML = buildConfirmHtml();
+      setStep(6);
+    });
+
+    $("confirm-back").addEventListener("click", () => setStep(5));
+
+    $("submit-btn").addEventListener("click", async () => {
       const errEl = $("form-error");
       hide(errEl);
       const btn = $("submit-btn");
@@ -833,6 +992,8 @@
       try {
         const payload = {
           area: state.area,
+          place_type: state.placeType,
+          place_name: $("place_name").value.trim(),
           date: state.date,
           time: state.time,
           duration_minutes: state.duration,
@@ -870,3 +1031,4 @@
   </script>
 </body>
 </html>
+

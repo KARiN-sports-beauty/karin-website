@@ -631,51 +631,78 @@ def session_may_edit_reservation_row(reservation_staff_name):
     return bool(vname) and vname == rname
 
 
-# 院内は1床想定：予約同士の前後に空ける分数（被り禁止）
+# 院内は1床想定：予約同士の前後に空ける分数（被り禁止・別スタッフ含む）
 IN_HOUSE_SINGLE_BED_GAP_MINUTES = 15
-# スタッフの予定：院内・出張の「後ろ」に空ける分数（タイムライン表示・空き枠計算）
-VISIT_POST_BUFFER_MINUTES = 30
+# スタッフ同一人物の予定間隔
+# - 次が出張（または前が出張→次が院内）：終了後60分
+# - 院内→院内の続き：終了後30分
+VISIT_RELATED_GAP_MINUTES = 60
+IN_HOUSE_TO_IN_HOUSE_GAP_MINUTES = 30
 
 
-def reservation_post_buffer_minutes(place_type):
-    pt = (place_type or "").strip()
-    if pt == "in_house":
-        return IN_HOUSE_SINGLE_BED_GAP_MINUTES
-    if pt == "visit":
-        return VISIT_POST_BUFFER_MINUTES
+def staff_gap_minutes_between(prev_place_type, next_place_type):
+    """前の予定終了〜次の予定開始に必要な分数（同一スタッフ）。"""
+    prev_pt = (prev_place_type or "").strip()
+    next_pt = (next_place_type or "").strip()
+    if next_pt == "visit":
+        return VISIT_RELATED_GAP_MINUTES
+    if prev_pt == "visit" and next_pt == "in_house":
+        return VISIT_RELATED_GAP_MINUTES
+    if prev_pt == "in_house" and next_pt == "in_house":
+        return IN_HOUSE_TO_IN_HOUSE_GAP_MINUTES
     return 0
 
 
-def reservation_staff_blocked_interval_jst(row):
-    """スタッフ行のブロック区間 [開始, 終了+事後バッファ]。"""
+def reservation_display_post_buffer_minutes(place_type):
+    """タイムライン表示用の事後バッファ（次の予定が未定のため代表値）。"""
+    pt = (place_type or "").strip()
+    if pt == "visit":
+        return VISIT_RELATED_GAP_MINUTES
+    if pt == "in_house":
+        return IN_HOUSE_TO_IN_HOUSE_GAP_MINUTES
+    return 0
+
+
+def reservation_post_buffer_minutes(place_type):
+    """互換用。表示・ざっくりブロックは display と同じ代表値。"""
+    return reservation_display_post_buffer_minutes(place_type)
+
+
+def reservation_staff_blocked_interval_jst(row, next_place_type="in_house"):
+    """スタッフ行のブロック区間 [開始, 終了+（次の区分向け）事後バッファ]。"""
     rs, re = reservation_interval_jst(row)
     if rs is None:
         return None, None
-    buf = reservation_post_buffer_minutes(row.get("place_type"))
+    buf = staff_gap_minutes_between(row.get("place_type"), next_place_type)
     if buf:
         re = re + timedelta(minutes=buf)
     return rs, re
 
 
-def staff_reservation_blocks_interval(row, block_start_jst, block_end_jst):
-    rs, re = reservation_staff_blocked_interval_jst(row)
+def staff_reservation_blocks_interval(row, block_start_jst, block_end_jst, next_place_type="in_house"):
+    rs, re = reservation_staff_blocked_interval_jst(row, next_place_type=next_place_type)
     if rs is None:
         return False
     return booking_intervals_overlap(block_start_jst, block_end_jst, rs, re)
 
 
 def staff_new_reservation_conflicts_existing(new_start, new_end, new_place_type, other_row):
-    """新規予定が既存予定（＋事後バッファ）と重なるか。既存の実施時間と新規の事後バッファも見る。"""
-    if staff_reservation_blocks_interval(other_row, new_start, new_end):
-        return True
+    """新規予定が既存予定と、区分に応じた間隔不足で衝突するか。"""
     os, oe = reservation_interval_jst(other_row)
     if os is None:
         return False
-    new_buf = reservation_post_buffer_minutes(new_place_type)
-    if not new_buf:
-        return False
-    new_blocked_end = new_end + timedelta(minutes=new_buf)
-    return booking_intervals_overlap(new_start, new_blocked_end, os, oe)
+    other_pt = other_row.get("place_type")
+    if booking_intervals_overlap(new_start, new_end, os, oe):
+        return True
+    # 既存 → 新規
+    if oe <= new_start:
+        gap = staff_gap_minutes_between(other_pt, new_place_type)
+        return bool(gap) and (oe + timedelta(minutes=gap) > new_start)
+    # 新規 → 既存
+    if new_end <= os:
+        gap = staff_gap_minutes_between(new_place_type, other_pt)
+        return bool(gap) and (new_end + timedelta(minutes=gap) > os)
+    return True
 
 
 def in_house_bed_intervals_conflict(a_start, a_end, b_start, b_end, gap_minutes=IN_HOUSE_SINGLE_BED_GAP_MINUTES):
@@ -733,17 +760,25 @@ def fetch_in_house_bed_conflicting_reservations(new_start_jst, new_end_jst, excl
 # 院内Web予約（クライアント向け Phase 1）
 # ===============================
 BOOKING_SLOT_STEP_MINUTES = 15
-BOOKING_MIN_LEAD_MINUTES = 120
+# 現時点からこの分数以内の枠は Web 予約不可（○×△上は ×）
+# 理由: 予約直後に気づけない／施術中で対応できない可能性があるため
+BOOKING_MIN_LEAD_MINUTES = 12 * 60
 BOOKING_DAYS_AHEAD = 14
 BOOKING_TIMELINE_START_MINUTE = 7 * 60
 BOOKING_TIMELINE_END_MINUTE = 26 * 60
 BOOKING_FREE_STAFF_KEY = "__free__"
 OFFICIAL_LINE_URL = "https://lin.ee/rVEbNhl5"
 
-# 院内Web予約のエリア（福岡は UI 表示のみ・選択不可。準備完了後に selectable を true に）
+# 院内Web予約のエリア（東京・福岡とも受付可）
 BOOKING_AREA_OPTIONS = [
     {"id": "tokyo", "label": "東京", "selectable": True},
-    {"id": "fukuoka", "label": "福岡", "selectable": False, "badge": "準備中"},
+    {"id": "fukuoka", "label": "福岡", "selectable": True},
+]
+
+# Web予約の施術方法（既存 place_type を利用）
+BOOKING_PLACE_TYPE_OPTIONS = [
+    {"id": "visit", "label": "出張"},
+    {"id": "in_house", "label": "院内"},
 ]
 
 
@@ -1128,7 +1163,28 @@ def working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_
     return working
 
 
-def is_booking_slot_available(staff_name, slot_start_jst, duration_minutes, shift_start_min, shift_end_min, day_reservations, now_jst):
+def normalize_booking_place_type(raw):
+    value = (raw or "").strip()
+    if value in ("visit", "in_house"):
+        return value
+    return "in_house"
+
+
+def booking_place_type_label(place_type):
+    return "出張" if place_type == "visit" else "院内"
+
+
+def is_booking_slot_available(
+    staff_name,
+    slot_start_jst,
+    duration_minutes,
+    shift_start_min,
+    shift_end_min,
+    day_reservations,
+    now_jst,
+    place_type="in_house",
+):
+    place_type = normalize_booking_place_type(place_type)
     if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
         return False
     slot_end_jst = slot_start_jst + timedelta(minutes=duration_minutes)
@@ -1141,19 +1197,19 @@ def is_booking_slot_available(staff_name, slot_start_jst, duration_minutes, shif
     for r in day_reservations:
         if (r.get("staff_name") or "").strip() != staff_name:
             continue
-        rs, re = reservation_staff_blocked_interval_jst(r)
-        if rs is None:
-            continue
-        if booking_intervals_overlap(slot_start_jst, slot_end_jst, rs, re):
+        if staff_new_reservation_conflicts_existing(slot_start_jst, slot_end_jst, place_type, r):
             return False
-    if fetch_in_house_bed_conflicting_reservations(slot_start_jst, slot_end_jst):
-        return False
+    # 院内のみ1床制約。出張はスタッフ個人の予定衝突のみ見る
+    if place_type == "in_house":
+        if fetch_in_house_bed_conflicting_reservations(slot_start_jst, slot_end_jst):
+            return False
     return True
 
 
-def build_booking_slot_list(working_staff, day_str, duration_minutes, day_reservations, now_jst):
+def build_booking_slot_list(working_staff, day_str, duration_minutes, day_reservations, now_jst, place_type="in_house"):
     staff_rows = []
     free_slots = []
+    place_type = normalize_booking_place_type(place_type)
     try:
         day = datetime.strptime(day_str, "%Y-%m-%d").date()
     except ValueError:
@@ -1168,7 +1224,7 @@ def build_booking_slot_list(working_staff, day_str, duration_minutes, day_reserv
             hh, mm = divmod(minute, 60)
             slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
             available = is_booking_slot_available(
-                ws["name"], slot_start_jst, duration_minutes, st_min, ed_min, day_reservations, now_jst
+                ws["name"], slot_start_jst, duration_minutes, st_min, ed_min, day_reservations, now_jst, place_type
             )
             time_label = f"{hh:02d}:{mm:02d}"
             slot_info = {"time": time_label, "available": available}
@@ -1185,15 +1241,13 @@ def build_booking_slot_list(working_staff, day_str, duration_minutes, day_reserv
     all_times = sorted({sl["time"] for row in staff_rows for sl in row["slots"]})
     free_row_slots = []
     for t in all_times:
-        hh, mm = map(int, t.split(":"))
-        minute = hh * 60 + mm
-        any_staff = next((ws for ws in working_staff if ws["shift_start"] <= minute < ws["shift_end"]), None)
         available = t in free_by_time
         free_row_slots.append({"time": t, "available": available})
     return staff_rows, free_row_slots
 
 
-def pick_free_staff_for_slot(day_str, time_hm, duration_minutes, area):
+def pick_free_staff_for_slot(day_str, time_hm, duration_minutes, area, place_type="in_house"):
+    place_type = normalize_booking_place_type(place_type)
     staff_entries = load_approved_staff_entries_for_booking()
     day_reservations = fetch_booking_day_reservations(day_str)
     names = [s["name"] for s in staff_entries]
@@ -1210,7 +1264,7 @@ def pick_free_staff_for_slot(day_str, time_hm, duration_minutes, area):
     for ws in working_sorted:
         if is_booking_slot_available(
             ws["name"], slot_start_jst, duration_minutes,
-            ws["shift_start"], ws["shift_end"], day_reservations, now_jst
+            ws["shift_start"], ws["shift_end"], day_reservations, now_jst, place_type
         ):
             return ws["name"]
     return None
@@ -1263,7 +1317,20 @@ def load_patients_for_autocomplete():
     return patients
 
 
-def send_booking_confirmation_email(to_email, last_name, first_name, day_str, time_hm, duration_minutes, area, staff_name, course_label, note):
+def send_booking_confirmation_email(
+    to_email,
+    last_name,
+    first_name,
+    day_str,
+    time_hm,
+    duration_minutes,
+    area,
+    staff_name,
+    course_label,
+    note,
+    place_type="in_house",
+    place_name=None,
+):
     api_key = (os.getenv("SENDGRID_API_KEY") or "").strip()
     from_email = (os.getenv("BOOKING_FROM_EMAIL") or "info@karin-sb.jp").strip()
     if not api_key or not to_email:
@@ -1280,8 +1347,17 @@ def send_booking_confirmation_email(to_email, last_name, first_name, day_str, ti
         except Exception:
             pass
         area_label = "東京" if area == "tokyo" else "福岡"
+        place_label = booking_place_type_label(place_type)
         time_range = f"{time_hm}〜{end_h:02d}:{end_m:02d}" if end_h is not None else time_hm
         name = f"{last_name} {first_name}".strip()
+        place_line = f"{area_label}（{place_label}）"
+        if place_type == "visit" and place_name:
+            place_line += f"\n出張先：{place_name}"
+        arrival_note = (
+            "当日は開始時刻までにご指定の場所でお待ちください。"
+            if place_type == "visit"
+            else "当日は開始時刻の5分前までにご来院ください。"
+        )
         body = f"""{name} 様
 
 この度は KARiN. ~Sports & Beauty~ をご予約いただき、
@@ -1292,8 +1368,8 @@ def send_booking_confirmation_email(to_email, last_name, first_name, day_str, ti
 ━━━━━━━━━━━━━━
 ■ ご予約内容
 日時　：{day_str} {time_range}
-場所　：{area_label}（院内）
-コース：{course_label}
+場所　：{place_line}
+メニュー：{course_label}
 担当　：{staff_name}
 
 ■ ご連絡先
@@ -1303,7 +1379,7 @@ def send_booking_confirmation_email(to_email, last_name, first_name, day_str, ti
         if note:
             body += f"\n■ ご要望\n{note}\n━━━━━━━━━━━━━━\n"
         body += f"""
-当日は開始時刻の5分前までにご来院ください。
+{arrival_note}
 キャンセル・変更はお早めにご連絡ください。
 
 ▼ お問い合わせ
@@ -5002,12 +5078,15 @@ def book_complete():
 def api_book_meta():
     return jsonify({
         "areas": BOOKING_AREA_OPTIONS,
+        "place_types": BOOKING_PLACE_TYPE_OPTIONS,
         "courses": BOOKING_COURSE_OPTIONS,
         "days_ahead": BOOKING_DAYS_AHEAD,
         "slot_step_minutes": BOOKING_SLOT_STEP_MINUTES,
         "min_lead_minutes": BOOKING_MIN_LEAD_MINUTES,
         "free_staff_label": "フリー",
         "default_area": "tokyo",
+        "default_course_type": "total_conditioning",
+        "durations": [60, 90, 120],
     })
 
 
@@ -5017,12 +5096,13 @@ def api_book_dates():
     blocked = assert_booking_area_selectable(area)
     if blocked:
         return blocked
+    place_type = normalize_booking_place_type(request.args.get("place_type"))
     try:
         duration_raw = request.args.get("duration") or 90
-        course_type_raw = request.args.get("course_type")
+        course_type_raw = request.args.get("course_type") or "total_conditioning"
     except ValueError:
         duration_raw = 90
-        course_type_raw = None
+        course_type_raw = "total_conditioning"
     duration, course_type = resolve_booking_course(duration_raw, course_type_raw)
     if duration is None:
         duration, course_type = 90, "total_conditioning"
@@ -5045,7 +5125,13 @@ def api_book_dates():
             "working_staff": [w["name"] for w in working],
         })
     hint = booking_dates_unavailable_reason(area) if not any(d["selectable"] for d in dates_out) else None
-    return jsonify({"area": area, "duration_minutes": duration, "dates": dates_out, "hint": hint})
+    return jsonify({
+        "area": area,
+        "place_type": place_type,
+        "duration_minutes": duration,
+        "dates": dates_out,
+        "hint": hint,
+    })
 
 
 @app.route("/api/book/slots")
@@ -5055,9 +5141,10 @@ def api_book_slots():
     if blocked:
         return blocked
     day_str = (request.args.get("date") or "").strip()
+    place_type = normalize_booking_place_type(request.args.get("place_type"))
     duration, _course_type = resolve_booking_course(
         request.args.get("duration") or 90,
-        request.args.get("course_type"),
+        request.args.get("course_type") or "total_conditioning",
     )
     if duration is None:
         duration = 90
@@ -5070,10 +5157,13 @@ def api_book_slots():
     day_reservations = fetch_booking_day_reservations(day_str)
     working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
     now_jst = datetime.now(JST)
-    staff_rows, free_row_slots = build_booking_slot_list(working, day_str, duration, day_reservations, now_jst)
+    staff_rows, free_row_slots = build_booking_slot_list(
+        working, day_str, duration, day_reservations, now_jst, place_type
+    )
     return jsonify({
         "date": day_str,
         "area": area,
+        "place_type": place_type,
         "duration_minutes": duration,
         "staff": staff_rows,
         "free_row": {"staff_name": "フリー", "slots": free_row_slots},
@@ -5088,6 +5178,8 @@ def api_book_create():
         blocked = assert_booking_area_selectable(area)
         if blocked:
             return blocked
+        place_type = normalize_booking_place_type(data.get("place_type"))
+        place_name = (data.get("place_name") or data.get("address") or "").strip() or None
         day_str = (data.get("date") or "").strip()
         time_hm = (data.get("time") or "").strip()
         staff_key = (data.get("staff_name") or "").strip()
@@ -5097,18 +5189,20 @@ def api_book_create():
         email = (data.get("email") or "").strip()
         course_label = (data.get("course_request") or "").strip()
         note = (data.get("web_note") or data.get("note") or "").strip() or None
-        course_type = normalize_booking_course_type(data.get("course_type"))
+        course_type = normalize_booking_course_type(data.get("course_type") or "total_conditioning")
         duration, resolved_type = resolve_booking_course(data.get("duration_minutes") or 90, course_type)
         if duration is None:
-            return jsonify({"success": False, "message": "コースが不正です"}), 400
+            return jsonify({"success": False, "message": "施術時間が不正です"}), 400
         course_type = resolved_type
 
         if not all([day_str, time_hm, last_name, first_name, phone, email]):
             return jsonify({"success": False, "message": "必須項目を入力してください"}), 400
+        if place_type == "visit" and not place_name:
+            return jsonify({"success": False, "message": "出張先のエリア・住所を入力してください"}), 400
 
         assigned_staff = staff_key
         if staff_key == BOOKING_FREE_STAFF_KEY or staff_key == "フリー":
-            assigned_staff = pick_free_staff_for_slot(day_str, time_hm, duration, area)
+            assigned_staff = pick_free_staff_for_slot(day_str, time_hm, duration, area, place_type)
             if not assigned_staff:
                 return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
             nomination_type = "フリー"
@@ -5123,6 +5217,7 @@ def api_book_create():
         except Exception:
             return jsonify({"success": False, "message": "日時の形式が不正です"}), 400
 
+        # 確定直前に12時間ルール＋最新の空きを再確認（二重予約防止）
         staff_entries = load_approved_staff_entries_for_booking()
         names = [s["name"] for s in staff_entries]
         shifts_map = fetch_booking_day_shifts(day_str, names)
@@ -5132,9 +5227,11 @@ def api_book_create():
         if not ws:
             return jsonify({"success": False, "message": "担当スタッフが見つかりません"}), 400
         now_jst = datetime.now(JST)
+        if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
+            return jsonify({"success": False, "message": "現在時刻から12時間以内の枠はご予約できません"}), 409
         if not is_booking_slot_available(
             assigned_staff, slot_start_jst, duration,
-            ws["shift_start"], ws["shift_end"], day_reservations, now_jst
+            ws["shift_start"], ws["shift_end"], day_reservations, now_jst, place_type
         ):
             return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
 
@@ -5153,10 +5250,17 @@ def api_book_create():
                 "visibility": "all",
                 "created_at": now_iso(),
             }
+            if place_name:
+                patient_data["address"] = place_name
             res_p = supabase_admin.table("patients").insert(patient_data).execute()
             if not res_p.data:
                 return jsonify({"success": False, "message": "患者情報の登録に失敗しました"}), 500
             patient_id = res_p.data[0]["id"]
+        elif place_name:
+            try:
+                supabase_admin.table("patients").update({"address": place_name, "email": email}).eq("id", patient_id).execute()
+            except Exception as e:
+                print(f"⚠️ patient address update skip: {e}")
 
         if not course_label:
             course_label = build_booking_course_label(course_type, duration)
@@ -5165,8 +5269,8 @@ def api_book_create():
             "patient_id": patient_id,
             "reserved_at": slot_start_jst.isoformat(),
             "duration_minutes": duration,
-            "place_type": "in_house",
-            "place_name": None,
+            "place_type": place_type,
+            "place_name": place_name if place_type == "visit" else None,
             "staff_name": assigned_staff,
             "area": area,
             "nomination_type": nomination_type,
@@ -5187,21 +5291,25 @@ def api_book_create():
             return jsonify({"success": False, "message": "予約の作成に失敗しました"}), 500
 
         area_label = "東京" if area == "tokyo" else "福岡"
+        place_label = booking_place_type_label(place_type)
         slot_end = slot_start_jst + timedelta(minutes=duration)
-        line_message = f"""【院内Web予約】
+        line_message = f"""【Web予約】
 日時：{slot_start_jst.strftime('%Y/%m/%d %H:%M')}〜{slot_end.strftime('%H:%M')}
 エリア：{area_label}
+施術方法：{place_label}
 担当：{assigned_staff}{'（フリー自動割当）' if nomination_type == 'フリー' else ''}
 お名前：{last_name} {first_name}
 電話：{phone}
 メール：{email}
-コース：{course_label}
+メニュー：{course_label}
+出張先：{place_name or '—'}
 要望：{note or 'なし'}
 """
         send_line_message(line_message)
         send_booking_confirmation_email(
             email, last_name, first_name, day_str, time_hm,
-            duration, area, assigned_staff, course_label, note or ""
+            duration, area, assigned_staff, course_label, note or "",
+            place_type=place_type, place_name=place_name,
         )
 
         return jsonify({
@@ -5662,7 +5770,7 @@ def admin_reservations():
                 "is_break": _pt == "break",
                 "place_label": "院内" if _pt == "in_house" else ("出張" if _pt == "visit" else ("帯同" if _pt == "field" else ("休憩" if _pt == "break" else "予定"))),
             })
-            post_buf = reservation_post_buffer_minutes(_pt)
+            post_buf = reservation_display_post_buffer_minutes(_pt)
             if post_buf > 0:
                 buf_start = start_minute + duration
                 buf_end = buf_start + post_buf
