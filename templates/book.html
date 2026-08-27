@@ -419,6 +419,10 @@
       box-shadow: 0 4px 14px rgba(30,58,95,0.04);
     }
     .card.is-done .step-body { display: none; }
+    .card.is-done h2,
+    .card.is-locked h2 {
+      margin-bottom: 0;
+    }
     .card.is-active {
       outline: 2px solid rgba(30,58,95,0.18);
     }
@@ -700,12 +704,6 @@
       renderMethods();
       renderDurations();
       setStep(1);
-      const defaultArea = (state.meta.areas || []).find((a) => a.id === state.meta.default_area && a.selectable !== false)
-        || (state.meta.areas || []).find((a) => a.selectable !== false);
-      if (defaultArea) {
-        const defaultBtn = $("area-chips").querySelector(`[data-area="${defaultArea.id}"]`);
-        if (defaultBtn) selectArea(defaultArea.id, defaultArea.label, defaultBtn);
-      }
     }
 
     function renderAreas() {
@@ -739,15 +737,20 @@
       const row = $("method-chips");
       row.innerHTML = "";
       (state.meta.place_types || [
-        { id: "visit", label: "出張" },
-        { id: "in_house", label: "院内" },
+        { id: "visit", label: "出張", selectable: true },
+        { id: "in_house", label: "院内（準備中）", selectable: false },
       ]).forEach((m) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "chip";
+        const selectable = m.selectable !== false;
+        btn.className = "chip" + (selectable ? "" : " disabled");
         btn.textContent = m.label;
         btn.dataset.placeType = m.id;
-        btn.addEventListener("click", () => selectMethod(m.id, m.label, btn));
+        if (!selectable) {
+          btn.disabled = true;
+        } else {
+          btn.addEventListener("click", () => selectMethod(m.id, m.label, btn));
+        }
         row.appendChild(btn);
       });
     }

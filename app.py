@@ -813,9 +813,28 @@ BOOKING_AREA_OPTIONS = [
 
 # Web予約の施術方法（既存 place_type を利用）
 BOOKING_PLACE_TYPE_OPTIONS = [
-    {"id": "visit", "label": "出張"},
-    {"id": "in_house", "label": "院内"},
+    {"id": "visit", "label": "出張", "selectable": True},
+    {"id": "in_house", "label": "院内（準備中）", "selectable": False},
 ]
+
+
+def booking_place_type_option(place_type_id):
+    place_type_id = normalize_booking_place_type(place_type_id)
+    for opt in BOOKING_PLACE_TYPE_OPTIONS:
+        if opt["id"] == place_type_id:
+            return opt
+    return None
+
+
+def booking_place_type_selectable(place_type_id):
+    opt = booking_place_type_option(place_type_id)
+    return bool(opt and opt.get("selectable"))
+
+
+def assert_booking_place_type_selectable(place_type_id):
+    if not booking_place_type_selectable(place_type_id):
+        return jsonify({"success": False, "message": "この施術方法は現在Web予約を受け付けていません"}), 400
+    return None
 
 
 def booking_area_option(area_id):
@@ -5563,6 +5582,9 @@ def api_book_dates():
     if blocked:
         return blocked
     place_type = normalize_booking_place_type(request.args.get("place_type"))
+    blocked_place = assert_booking_place_type_selectable(place_type)
+    if blocked_place:
+        return blocked_place
     try:
         duration_raw = request.args.get("duration") or 90
         course_type_raw = request.args.get("course_type") or "total_conditioning"
@@ -5608,6 +5630,9 @@ def api_book_slots():
         return blocked
     day_str = (request.args.get("date") or "").strip()
     place_type = normalize_booking_place_type(request.args.get("place_type"))
+    blocked_place = assert_booking_place_type_selectable(place_type)
+    if blocked_place:
+        return blocked_place
     duration, _course_type = resolve_booking_course(
         request.args.get("duration") or 90,
         request.args.get("course_type") or "total_conditioning",
@@ -5645,6 +5670,9 @@ def api_book_create():
         if blocked:
             return blocked
         place_type = normalize_booking_place_type(data.get("place_type"))
+        blocked_place = assert_booking_place_type_selectable(place_type)
+        if blocked_place:
+            return blocked_place
         place_name = (data.get("place_name") or data.get("address") or "").strip() or None
         day_str = (data.get("date") or "").strip()
         time_hm = (data.get("time") or "").strip()
