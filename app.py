@@ -66,6 +66,7 @@ def format_blog_date_display(value):
 
 import json, os
 import mimetypes
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
@@ -717,6 +718,24 @@ def in_house_bed_intervals_conflict(a_start, a_end, b_start, b_end, gap_minutes=
     return True
 
 
+def in_house_bed_conflicts_from_rows(rows, new_start_jst, new_end_jst, exclude_reservation_id=None):
+    """既存予約行リストから院内1床の競合があるか（トランザクション内再検証用）。"""
+    for row in rows or []:
+        if (row.get("place_type") or "") != "in_house":
+            continue
+        rid = row.get("id")
+        if exclude_reservation_id is not None and str(rid) == str(exclude_reservation_id):
+            continue
+        if (row.get("status") or "") == "canceled":
+            continue
+        o_start, o_end = reservation_interval_jst(row)
+        if o_start is None:
+            continue
+        if in_house_bed_intervals_conflict(new_start_jst, new_end_jst, o_start, o_end):
+            return True
+    return False
+
+
 def fetch_in_house_bed_conflicting_reservations(new_start_jst, new_end_jst, exclude_reservation_id=None):
     """院内1床チェック用。JST の new_start〜new_end と競合する in_house（キャンセル除外）を返す。"""
     d0 = new_start_jst.astimezone(JST).date()
@@ -768,6 +787,23 @@ BOOKING_TIMELINE_START_MINUTE = 7 * 60
 BOOKING_TIMELINE_END_MINUTE = 26 * 60
 BOOKING_FREE_STAFF_KEY = "__free__"
 OFFICIAL_LINE_URL = "https://lin.ee/rVEbNhl5"
+BOOKING_SLOT_TAKEN_MESSAGE = (
+    "申し訳ありません。先ほど他の予約が入ったため、この時間はご利用いただけなくなりました。"
+)
+BOOKING_LEAD_TIME_MESSAGE = "現在時刻から12時間以内の枠はご予約できません"
+BOOKING_LOCK_UNAVAILABLE_USER_MESSAGE = (
+    "現在、予約を確定できません。しばらく経ってから再度お試しください。"
+)
+
+
+class BookingSlotConflictError(Exception):
+    """Web予約の空き枠競合（409返却用）"""
+    pass
+
+
+class BookingInfrastructureError(Exception):
+    """二重予約防止を保証できない／DB操作失敗（予約を確定しない）"""
+    pass
 
 # 院内Web予約のエリア（東京・福岡とも受付可）
 BOOKING_AREA_OPTIONS = [
@@ -989,7 +1025,7 @@ def parse_booking_hm_to_minutes(hm_str):
         return None
 
 
-def load_approved_staff_entries_for_booking():
+def load_approved_staff_entries_for_booking(strict=False):
     staff_entries = []
     try:
         users = supabase_admin.auth.admin.list_users()
@@ -1010,6 +1046,8 @@ def load_approved_staff_entries_for_booking():
             })
     except Exception as e:
         print(f"⚠️ booking staff list error: {e}")
+        if strict:
+            raise BookingInfrastructureError("スタッフ一覧の取得に失敗しました") from e
     staff_entries.sort(key=staff_display_sort_key)
     return staff_entries
 
@@ -1077,6 +1115,430 @@ def fetch_booking_day_reservations(day_str):
     except Exception as e:
         print(f"⚠️ booking reservations fetch error: {e}")
         return []
+
+
+try:
+    import psycopg2
+    import psycopg2.extras
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    psycopg2 = None
+    PSYCOPG2_AVAILABLE = False
+
+
+def resolve_booking_postgres_url():
+    """
+    Web予約の advisory lock 用接続文字列を検証する。
+    成功: (url, None) / 失敗: (None, ログ用理由)
+    Transaction pooler (6543) は拒否する。
+    """
+    raw = (os.getenv("SUPABASE_DB_URL") or os.getenv("DATABASE_URL") or "").strip()
+    if not raw:
+        return None, "SUPABASE_DB_URL / DATABASE_URL が未設定です"
+    url = raw.replace("postgres://", "postgresql://", 1) if raw.startswith("postgres://") else raw
+    parsed = urlparse(url)
+    port = parsed.port or 5432
+    if port == 6543:
+        return None, (
+            "Transaction pooler (port 6543) は pg_advisory_xact_lock を保証できません。"
+            "Direct connection (5432) または Session pooler (5432) を設定してください"
+        )
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    pgbouncer = (query.get("pgbouncer") or [""])[0].strip().lower()
+    if pgbouncer in ("1", "true", "yes"):
+        return None, (
+            "接続文字列に pgbouncer=true が含まれています（transaction モードの可能性）。"
+            "Session pooler または Direct 接続を使用してください"
+        )
+    host = (parsed.hostname or "").lower()
+    if ("supabase.co" in host or "supabase.com" in host) and "sslmode" not in {k.lower() for k in query}:
+        query["sslmode"] = ["require"]
+        parsed = parsed._replace(query=urlencode(query, doseq=True))
+        url = urlunparse(parsed)
+    return url, None
+
+
+def web_booking_lock_config_error():
+    if not PSYCOPG2_AVAILABLE:
+        return "psycopg2 がインストールされていません"
+    _url, err = resolve_booking_postgres_url()
+    return err
+
+
+def log_web_booking_lock_config():
+    err = web_booking_lock_config_error()
+    if err:
+        print(f"❌ Web予約の二重予約防止が無効です: {err}")
+        print("   Render に SUPABASE_DB_URL（推奨）または DATABASE_URL を設定してください。")
+        print("   値は Supabase Direct (5432) または Session pooler (5432) です。Transaction pooler (6543) は不可。")
+        print("   この状態では Web予約は確定できません。")
+        return
+    print("✅ Web予約の二重予約防止: PostgreSQL pg_advisory_xact_lock を使用します")
+
+
+def assert_web_booking_lock_ready():
+    err = web_booking_lock_config_error()
+    if err:
+        raise BookingInfrastructureError(err)
+
+
+def connect_postgres_for_booking():
+    """Session/Direct 接続。失敗時は予約を確定しない。"""
+    assert_web_booking_lock_ready()
+    url, err = resolve_booking_postgres_url()
+    if err or not url:
+        raise BookingInfrastructureError(err or "DATABASE_URL が不正です")
+    try:
+        conn = psycopg2.connect(
+            url,
+            connect_timeout=10,
+            application_name="karin-web-booking",
+        )
+        conn.autocommit = False
+        return conn
+    except BookingInfrastructureError:
+        raise
+    except Exception as e:
+        print(f"❌ Web予約 Postgres接続エラー: {e}")
+        raise BookingInfrastructureError("データベースに接続できません") from e
+
+
+def get_postgres_connection():
+    """互換用。失敗時は None ではなく例外（Web予約はフォールバックしない）。"""
+    return connect_postgres_for_booking()
+
+
+def booking_lock_dates(slot_start_jst, slot_end_jst):
+    """間隔ルールが跨ぎうる日付（前後パディング）をロック対象にする。"""
+    pad = timedelta(minutes=max(
+        VISIT_RELATED_GAP_MINUTES,
+        IN_HOUSE_TO_IN_HOUSE_GAP_MINUTES,
+        IN_HOUSE_SINGLE_BED_GAP_MINUTES,
+    ))
+    start_d = (slot_start_jst - pad).astimezone(JST).date()
+    end_d = (slot_end_jst + pad).astimezone(JST).date()
+    dates = []
+    d = start_d
+    while d <= end_d:
+        dates.append(d)
+        d += timedelta(days=1)
+    return dates
+
+
+def booking_reservation_fetch_window(slot_start_jst, slot_end_jst):
+    pad = timedelta(days=1)
+    d0 = (slot_start_jst - pad).astimezone(JST).date()
+    d1 = (slot_end_jst + pad).astimezone(JST).date()
+    win_start = datetime.combine(d0, datetime.min.time()).replace(tzinfo=JST)
+    win_end = datetime.combine(d1, datetime.min.time()).replace(tzinfo=JST) + timedelta(days=1)
+    return win_start, win_end
+
+
+def _pg_advisory_xact_lock(cur, key):
+    cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (key,))
+
+
+def booking_lock_keys(staff_names, lock_dates, place_type):
+    """デッドロック回避のため、常に bed → staff 名順 → 日付順。"""
+    keys = []
+    if place_type == "in_house":
+        for d in sorted(lock_dates):
+            keys.append(f"karin.web_book.bed:{d.isoformat()}")
+    for name in sorted({(n or "").strip() for n in staff_names if (n or "").strip()}):
+        for d in sorted(lock_dates):
+            keys.append(f"karin.web_book.staff:{name}:{d.isoformat()}")
+    return keys
+
+
+def _pg_acquire_booking_locks(cur, staff_names, slot_start_jst, slot_end_jst, place_type):
+    dates = booking_lock_dates(slot_start_jst, slot_end_jst)
+    for key in booking_lock_keys(staff_names, dates, place_type):
+        _pg_advisory_xact_lock(cur, key)
+
+
+def _pg_rows_from_cursor(cur):
+    cols = [d[0] for d in cur.description]
+    rows = []
+    for record in cur.fetchall():
+        row = dict(zip(cols, record))
+        ra = row.get("reserved_at")
+        if hasattr(ra, "isoformat"):
+            row["reserved_at"] = ra.isoformat()
+        rows.append(row)
+    return rows
+
+
+def _pg_fetch_reservations(cur, win_start, win_end):
+    try:
+        cur.execute(
+            """
+            SELECT id, staff_name, reserved_at, duration_minutes, place_type, status, patient_id
+            FROM reservations
+            WHERE reserved_at >= %s AND reserved_at < %s
+              AND status != 'canceled'
+            ORDER BY reserved_at
+            """,
+            (win_start, win_end),
+        )
+        return _pg_rows_from_cursor(cur)
+    except Exception as e:
+        print(f"❌ Web予約 既存予約取得エラー: {e}")
+        raise BookingInfrastructureError("最新の予約状況を取得できません") from e
+
+
+def _pg_fetch_shifts(cur, day_str, staff_names):
+    if not staff_names:
+        return {}
+    try:
+        cur.execute(
+            """
+            SELECT staff_name, start_time, end_time, is_off, area
+            FROM staff_work_shifts
+            WHERE shift_date = %s AND staff_name = ANY(%s)
+            """,
+            (day_str, list(staff_names)),
+        )
+        out = {}
+        for row in _pg_rows_from_cursor(cur):
+            nm = (row.get("staff_name") or "").strip()
+            if nm:
+                out[nm] = row
+        return out
+    except Exception as e:
+        print(f"❌ Web予約 シフト取得エラー: {e}")
+        raise BookingInfrastructureError("スタッフの勤務時間を取得できません") from e
+
+
+def pick_free_staff_with_reservations(
+    day_str, time_hm, duration_minutes, area, place_type,
+    staff_entries, shifts_map, day_reservations, now_jst, bed_reservation_rows=None,
+):
+    place_type = normalize_booking_place_type(place_type)
+    working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+    working_sorted = sorted(working, key=lambda x: (x.get("created_at") or "", x.get("name") or ""))
+    try:
+        day = datetime.strptime(day_str, "%Y-%m-%d").date()
+        hh, mm = map(int, time_hm.split(":"))
+        slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+    except Exception:
+        return None
+    for ws in working_sorted:
+        if is_booking_slot_available(
+            ws["name"], slot_start_jst, duration_minutes,
+            ws["shift_start"], ws["shift_end"], day_reservations, now_jst, place_type,
+            bed_reservation_rows=bed_reservation_rows,
+        ):
+            return ws["name"]
+    return None
+
+
+def _insert_web_reservation_pg(cur, reservation_data):
+    columns = list(reservation_data.keys())
+    values = []
+    for col in columns:
+        val = reservation_data[col]
+        if col in ("nominated_staff_ids", "selected_menus") and isinstance(val, (list, dict)):
+            values.append(psycopg2.extras.Json(val))
+        else:
+            values.append(val)
+    placeholders = ", ".join(["%s"] * len(columns))
+    col_sql = ", ".join(columns)
+    try:
+        cur.execute(
+            f"INSERT INTO reservations ({col_sql}) VALUES ({placeholders}) RETURNING id",
+            values,
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
+    except Exception as e:
+        print(f"❌ Web予約 INSERTエラー: {e}")
+        raise BookingInfrastructureError("予約の保存に失敗しました") from e
+
+
+def _pg_upsert_web_patient(cur, last_name, first_name, phone, email, place_name):
+    norm_phone = normalize_phone_digits(phone)
+    try:
+        cur.execute(
+            """
+            SELECT id, last_name, first_name, phone
+            FROM patients
+            WHERE last_name = %s AND first_name = %s
+            """,
+            (last_name.strip(), first_name.strip()),
+        )
+        for row in cur.fetchall():
+            if normalize_phone_digits(row[3]) == norm_phone:
+                patient_id = row[0]
+                if place_name:
+                    cur.execute(
+                        "UPDATE patients SET address = %s, email = %s WHERE id = %s",
+                        (place_name, email, patient_id),
+                    )
+                return patient_id
+        name = f"{last_name} {first_name}".strip()
+        if place_name:
+            cur.execute(
+                """
+                INSERT INTO patients (
+                    last_name, first_name, last_kana, first_kana, name, kana,
+                    phone, email, visibility, created_at, address
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    last_name, first_name, "", "", name, "",
+                    phone, email, "all", now_iso(), place_name,
+                ),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO patients (
+                    last_name, first_name, last_kana, first_kana, name, kana,
+                    phone, email, visibility, created_at
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    last_name, first_name, "", "", name, "",
+                    phone, email, "all", now_iso(),
+                ),
+            )
+        row = cur.fetchone()
+        if not row:
+            raise BookingInfrastructureError("患者情報の登録に失敗しました")
+        return row[0]
+    except BookingInfrastructureError:
+        raise
+    except Exception as e:
+        print(f"❌ Web予約 患者upsertエラー: {e}")
+        raise BookingInfrastructureError("患者情報の登録に失敗しました") from e
+
+
+def atomic_create_web_reservation(
+    area, place_type, day_str, time_hm, staff_key, duration,
+    last_name, first_name, phone, email, course_label, note, place_name=None,
+):
+    """
+    同一PostgreSQLトランザクション内で
+    advisory lock → 最新予約取得 → is_booking_slot_available 再実行 → 患者upsert → INSERT → COMMIT。
+    競合: BookingSlotConflictError（ROLLBACK）
+    基盤障害: BookingInfrastructureError（ROLLBACK・予約しない）
+    """
+    place_type = normalize_booking_place_type(place_type)
+    try:
+        day = datetime.strptime(day_str, "%Y-%m-%d").date()
+        hh, mm = map(int, time_hm.split(":"))
+        slot_start_jst = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
+    except Exception:
+        raise BookingSlotConflictError("日時の形式が不正です")
+
+    slot_end_jst = slot_start_jst + timedelta(minutes=duration)
+    now_jst = datetime.now(JST)
+    if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
+        raise BookingSlotConflictError(BOOKING_LEAD_TIME_MESSAGE)
+
+    staff_entries = load_approved_staff_entries_for_booking(strict=True)
+    names = [s["name"] for s in staff_entries]
+    is_free = staff_key == BOOKING_FREE_STAFF_KEY or staff_key == "フリー"
+    nomination_type = "フリー" if is_free else "本指名"
+    assigned_staff = None if is_free else staff_key
+    lock_staff_names = names if is_free else [assigned_staff]
+    win_start, win_end = booking_reservation_fetch_window(slot_start_jst, slot_end_jst)
+
+    conn = connect_postgres_for_booking()
+    try:
+        with conn.cursor() as cur:
+            _pg_acquire_booking_locks(cur, lock_staff_names, slot_start_jst, slot_end_jst, place_type)
+            shifts_map = _pg_fetch_shifts(cur, day_str, names)
+            bed_rows = _pg_fetch_reservations(cur, win_start, win_end)
+            day_reservations = [
+                r for r in bed_rows
+                if parse_iso_to_jst(r.get("reserved_at"))
+                and parse_iso_to_jst(r.get("reserved_at")).date() == day
+            ]
+
+            if assigned_staff is None:
+                assigned_staff = pick_free_staff_with_reservations(
+                    day_str, time_hm, duration, area, place_type,
+                    staff_entries, shifts_map, day_reservations, now_jst, bed_reservation_rows=bed_rows,
+                )
+                if not assigned_staff:
+                    raise BookingSlotConflictError(BOOKING_SLOT_TAKEN_MESSAGE)
+
+            working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+            ws = next((w for w in working if w["name"] == assigned_staff), None)
+            if not ws:
+                raise BookingSlotConflictError("担当スタッフが見つかりません")
+
+            if not is_booking_slot_available(
+                assigned_staff, slot_start_jst, duration,
+                ws["shift_start"], ws["shift_end"], bed_rows, now_jst, place_type,
+                bed_reservation_rows=bed_rows,
+            ):
+                raise BookingSlotConflictError(BOOKING_SLOT_TAKEN_MESSAGE)
+
+            patient_id = _pg_upsert_web_patient(
+                cur, last_name, first_name, phone, email, place_name,
+            )
+            reservation_data = {
+                "patient_id": patient_id,
+                "reserved_at": slot_start_jst.isoformat(),
+                "duration_minutes": duration,
+                "place_type": place_type,
+                "place_name": place_name if place_type == "visit" else None,
+                "staff_name": assigned_staff,
+                "area": area,
+                "nomination_type": nomination_type,
+                "nominated_staff_ids": [],
+                "nomination_priority": None,
+                "status": "reserved",
+                "source": "web",
+                "client_email": email,
+                "web_course_request": course_label,
+                "web_note": note,
+                "memo": note,
+                "course_name": course_label,
+                "payment_status": "not_required",
+                **reservation_audit_for_insert(),
+            }
+            booking_id = _insert_web_reservation_pg(cur, reservation_data)
+            if not booking_id:
+                raise BookingInfrastructureError("予約の保存に失敗しました")
+
+        conn.commit()
+        return {
+            "booking_id": str(booking_id),
+            "staff_name": assigned_staff,
+            "nomination_type": nomination_type,
+            "slot_start_jst": slot_start_jst,
+        }
+    except BookingSlotConflictError:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    except BookingInfrastructureError:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        print(f"❌ Web予約トランザクションエラー: {e}")
+        raise BookingInfrastructureError("予約の確定処理に失敗しました") from e
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def fetch_booking_day_shifts(day_str, staff_names):
@@ -1183,6 +1645,7 @@ def is_booking_slot_available(
     day_reservations,
     now_jst,
     place_type="in_house",
+    bed_reservation_rows=None,
 ):
     place_type = normalize_booking_place_type(place_type)
     if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
@@ -1201,7 +1664,10 @@ def is_booking_slot_available(
             return False
     # 院内のみ1床制約。出張はスタッフ個人の予定衝突のみ見る
     if place_type == "in_house":
-        if fetch_in_house_bed_conflicting_reservations(slot_start_jst, slot_end_jst):
+        if bed_reservation_rows is not None:
+            if in_house_bed_conflicts_from_rows(bed_reservation_rows, slot_start_jst, slot_end_jst):
+                return False
+        elif fetch_in_house_bed_conflicting_reservations(slot_start_jst, slot_end_jst):
             return False
     return True
 
@@ -5200,16 +5666,6 @@ def api_book_create():
         if place_type == "visit" and not place_name:
             return jsonify({"success": False, "message": "出張先のエリア・住所を入力してください"}), 400
 
-        assigned_staff = staff_key
-        if staff_key == BOOKING_FREE_STAFF_KEY or staff_key == "フリー":
-            assigned_staff = pick_free_staff_for_slot(day_str, time_hm, duration, area, place_type)
-            if not assigned_staff:
-                return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
-            nomination_type = "フリー"
-        else:
-            assigned_staff = staff_key
-            nomination_type = "本指名"
-
         try:
             day = datetime.strptime(day_str, "%Y-%m-%d").date()
             hh, mm = map(int, time_hm.split(":"))
@@ -5217,78 +5673,29 @@ def api_book_create():
         except Exception:
             return jsonify({"success": False, "message": "日時の形式が不正です"}), 400
 
-        # 確定直前に12時間ルール＋最新の空きを再確認（二重予約防止）
-        staff_entries = load_approved_staff_entries_for_booking()
-        names = [s["name"] for s in staff_entries]
-        shifts_map = fetch_booking_day_shifts(day_str, names)
-        day_reservations = fetch_booking_day_reservations(day_str)
-        working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
-        ws = next((w for w in working if w["name"] == assigned_staff), None)
-        if not ws:
-            return jsonify({"success": False, "message": "担当スタッフが見つかりません"}), 400
         now_jst = datetime.now(JST)
         if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
-            return jsonify({"success": False, "message": "現在時刻から12時間以内の枠はご予約できません"}), 409
-        if not is_booking_slot_available(
-            assigned_staff, slot_start_jst, duration,
-            ws["shift_start"], ws["shift_end"], day_reservations, now_jst, place_type
-        ):
-            return jsonify({"success": False, "message": "選択された時間は予約できなくなりました。別の時間をお選びください"}), 409
-
-        patient_id = find_patient_by_name_phone(last_name, first_name, phone)
-        if not patient_id:
-            name = f"{last_name} {first_name}".strip()
-            patient_data = {
-                "last_name": last_name,
-                "first_name": first_name,
-                "last_kana": "",
-                "first_kana": "",
-                "name": name,
-                "kana": "",
-                "phone": phone,
-                "email": email,
-                "visibility": "all",
-                "created_at": now_iso(),
-            }
-            if place_name:
-                patient_data["address"] = place_name
-            res_p = supabase_admin.table("patients").insert(patient_data).execute()
-            if not res_p.data:
-                return jsonify({"success": False, "message": "患者情報の登録に失敗しました"}), 500
-            patient_id = res_p.data[0]["id"]
-        elif place_name:
-            try:
-                supabase_admin.table("patients").update({"address": place_name, "email": email}).eq("id", patient_id).execute()
-            except Exception as e:
-                print(f"⚠️ patient address update skip: {e}")
+            return jsonify({"success": False, "message": BOOKING_LEAD_TIME_MESSAGE}), 409
 
         if not course_label:
             course_label = build_booking_course_label(course_type, duration)
 
-        reservation_data = {
-            "patient_id": patient_id,
-            "reserved_at": slot_start_jst.isoformat(),
-            "duration_minutes": duration,
-            "place_type": place_type,
-            "place_name": place_name if place_type == "visit" else None,
-            "staff_name": assigned_staff,
-            "area": area,
-            "nomination_type": nomination_type,
-            "nominated_staff_ids": [],
-            "nomination_priority": None,
-            "status": "reserved",
-            "source": "web",
-            "client_email": email,
-            "web_course_request": course_label,
-            "web_note": note,
-            "memo": note,
-            "course_name": course_label,
-            "payment_status": "not_required",
-            **reservation_audit_for_insert(),
-        }
-        res_r = supabase_admin.table("reservations").insert(reservation_data).execute()
-        if not res_r.data:
-            return jsonify({"success": False, "message": "予約の作成に失敗しました"}), 500
+        try:
+            assert_web_booking_lock_ready()
+            booking_result = atomic_create_web_reservation(
+                area, place_type, day_str, time_hm, staff_key, duration,
+                last_name, first_name, phone, email, course_label, note, place_name=place_name,
+            )
+        except BookingSlotConflictError as e:
+            return jsonify({"success": False, "message": str(e) or BOOKING_SLOT_TAKEN_MESSAGE}), 409
+        except BookingInfrastructureError as e:
+            print(f"❌ Web予約を確定できません（二重予約防止が保証できないため中止）: {e}")
+            return jsonify({"success": False, "message": BOOKING_LOCK_UNAVAILABLE_USER_MESSAGE}), 503
+
+        assigned_staff = booking_result["staff_name"]
+        nomination_type = booking_result["nomination_type"]
+        booking_id = booking_result["booking_id"]
+        slot_start_jst = booking_result.get("slot_start_jst") or slot_start_jst
 
         area_label = "東京" if area == "tokyo" else "福岡"
         place_label = booking_place_type_label(place_type)
@@ -5305,19 +5712,30 @@ def api_book_create():
 出張先：{place_name or '—'}
 要望：{note or 'なし'}
 """
-        send_line_message(line_message)
-        send_booking_confirmation_email(
-            email, last_name, first_name, day_str, time_hm,
-            duration, area, assigned_staff, course_label, note or "",
-            place_type=place_type, place_name=place_name,
-        )
+        try:
+            send_line_message(line_message)
+        except Exception as notify_err:
+            print(f"⚠️ Web予約LINE通知失敗（予約は確定済み）: {notify_err}")
+        try:
+            send_booking_confirmation_email(
+                email, last_name, first_name, day_str, time_hm,
+                duration, area, assigned_staff, course_label, note or "",
+                place_type=place_type, place_name=place_name,
+            )
+        except Exception as notify_err:
+            print(f"⚠️ Web予約メール通知失敗（予約は確定済み）: {notify_err}")
 
         return jsonify({
             "success": True,
-            "booking_id": res_r.data[0].get("id"),
+            "booking_id": booking_id,
             "staff_name": assigned_staff,
             "redirect": "/book/complete",
         })
+    except BookingSlotConflictError as e:
+        return jsonify({"success": False, "message": str(e) or BOOKING_SLOT_TAKEN_MESSAGE}), 409
+    except BookingInfrastructureError as e:
+        print(f"❌ Web予約を確定できません: {e}")
+        return jsonify({"success": False, "message": BOOKING_LOCK_UNAVAILABLE_USER_MESSAGE}), 503
     except Exception as e:
         print(f"❌ Web予約作成エラー: {e}")
         return jsonify({"success": False, "message": "予約の作成に失敗しました"}), 500
@@ -13727,5 +14145,7 @@ def page_not_found(e):
 # ===================================================
 # ✅ 起動
 # ===================================================
+log_web_booking_lock_config()
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)
