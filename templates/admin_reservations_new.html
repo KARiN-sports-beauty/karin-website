@@ -19,7 +19,7 @@
     <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" onchange="updatePlaceTypeFields()">
       <option value="">選択してください</option>
       <option value="in_house">院内</option>
-      <option value="visit">往診</option>
+      <option value="visit">出張</option>
       <option value="field">帯同</option>
       <option value="break">休憩</option>
     </select>
@@ -112,7 +112,7 @@
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。往診はトータルコンディショニングのみ。</small>
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。出張はトータルコンディショニングのみ。</small>
   </div>
   
   <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->
@@ -731,7 +731,7 @@ function updatePlaceTypeFields() {
   if (adminPriceWrap) adminPriceWrap.style.display = (placeType === 'break' || placeType === 'field') ? 'none' : 'block';
   if (staffNameSelect) staffNameSelect.setAttribute('required', 'required');
 
-  // 院内/往診の場合：患者選択以降を表示
+  // 院内/出張の場合：患者選択以降を表示
   if (placeType === 'in_house' || placeType === 'visit') {
     if (fieldDur) fieldDur.style.display = 'none';
     if (patientSection) patientSection.style.display = 'block';
@@ -842,7 +842,7 @@ function updatePlaceTypeFields() {
     }
   }
 
-  // 現場名は往診/帯同の場合のみ表示
+  // 現場名は出張/帯同の場合のみ表示
   if (placeType === 'visit' || placeType === 'field') {
     placeNameWrapper.style.display = 'block';
   } else {

@@ -324,7 +324,7 @@
       <select name="place_type" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
         <option value="all" {% if place_type_filter == 'all' %}selected{% endif %}>すべて</option>
         <option value="in_house" {% if place_type_filter == 'in_house' %}selected{% endif %}>院内</option>
-        <option value="visit" {% if place_type_filter == 'visit' %}selected{% endif %}>往診</option>
+        <option value="visit" {% if place_type_filter == 'visit' %}selected{% endif %}>出張</option>
         <option value="field" {% if place_type_filter == 'field' %}selected{% endif %}>帯同</option>
         <option value="break" {% if place_type_filter == 'break' %}selected{% endif %}>休憩</option>
       </select>
@@ -443,7 +443,7 @@
             {% set buf_width = buf.duration * timeline_px_per_min %}
             <div class="schedule-buffer-zone {% if buf.place_type == 'in_house' %}place-inhouse{% elif buf.place_type == 'visit' %}place-visit{% endif %}"
                  style="left: {{ buf_left }}px; width: {{ buf_width if buf_width > 2 else 2 }}px;"
-                 title="{% if buf.place_type == 'in_house' %}院内後{{ buf.buffer_minutes }}分{% elif buf.place_type == 'visit' %}往診後{{ buf.buffer_minutes }}分{% endif %}"></div>
+                 title="{% if buf.place_type == 'in_house' %}院内後{{ buf.buffer_minutes }}分{% elif buf.place_type == 'visit' %}出張後{{ buf.buffer_minutes }}分{% endif %}"></div>
             {% endfor %}
             {% for card in timeline_cards_by_staff.get(staff_name, []) %}
             {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
@@ -593,7 +593,7 @@
               {% if reservation.place_type == 'in_house' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
               {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
               {% elif reservation.place_type == 'field' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
               {% endif %}
@@ -607,7 +607,7 @@
                 {% if reservation.place_type == 'in_house' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（院内）</span>
                 {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（往診）</span>
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（出張）</span>
                 {% elif reservation.place_type == 'field' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
                 {% else %}
@@ -617,7 +617,7 @@
                 {% if reservation.place_type == 'in_house' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（院内）</span>
                 {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（往診）</span>
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（出張）</span>
                 {% elif reservation.place_type == 'field' %}
               <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
             {% else %}
@@ -646,7 +646,7 @@
         </div>
         
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
-          {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+          {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同'} %}
           <span>現場：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
           {% if reservation.place_name %}
           <span>（{{ reservation.place_name }}）</span>

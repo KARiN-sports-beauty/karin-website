@@ -13,7 +13,7 @@
 {% endif %}
 
 <form method="POST" action="/admin/reservations/{{ reservation.id }}/edit" id="admin-reservation-edit-form" class="admin-reservation-edit-form">
-  <!-- 患者（院内・往診のみ。付け替え可） -->
+  <!-- 患者（院内・出張のみ。付け替え可） -->
   <div id="patient_info_row" style="margin-bottom: 20px; padding: 16px; background: #f5f7fb; border-radius: 8px; {% if reservation.place_type in ['field', 'break'] %}display: none;{% endif %}">
     <label class="form-field" style="display: block; margin-bottom: 10px; font-weight: 600; color: #1E3A5F;">患者</label>
     {% if reservation.patient_id %}
@@ -50,7 +50,7 @@
     <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" onchange="updatePlaceTypeFields()">
       <option value="">選択してください</option>
       <option value="in_house" {% if reservation.place_type == 'in_house' %}selected{% endif %}>院内</option>
-      <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>往診</option>
+      <option value="visit" {% if reservation.place_type == 'visit' %}selected{% endif %}>出張</option>
       <option value="field" {% if reservation.place_type == 'field' %}selected{% endif %}>帯同</option>
       <option value="break" {% if reservation.place_type == 'break' %}selected{% endif %}>休憩</option>
     </select>
@@ -85,7 +85,7 @@
     <select name="menu" id="menu" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">エリアを選択してください</option>
     </select>
-    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。往診はトータルコンディショニングのみ。</small>
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">院内は「鍼灸のみ」も選択できます。出張はトータルコンディショニングのみ。</small>
   </div>
 
   <!-- 追加メニュー（本指名・枠指名・割引・出張費） -->

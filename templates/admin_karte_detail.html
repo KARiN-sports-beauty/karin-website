@@ -265,7 +265,7 @@
             {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
             {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
             {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
             {% endif %}
@@ -279,7 +279,7 @@
               {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（院内）</span>
               {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（往診）</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（出張）</span>
               {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
               {% else %}
@@ -289,7 +289,7 @@
               {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（院内）</span>
               {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（往診）</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（出張）</span>
               {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
               {% else %}
@@ -318,7 +318,7 @@
       </div>
       
       <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
-        {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+        {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同'} %}
         <span>現場：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
         {% if reservation.place_name %}
         <span>（{{ reservation.place_name }}）</span>
@@ -399,7 +399,7 @@
             {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
             {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
             {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
             {% endif %}
@@ -413,7 +413,7 @@
               {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（院内）</span>
               {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（往診）</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（出張）</span>
               {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
               {% else %}
@@ -423,7 +423,7 @@
               {% if reservation.place_type == 'in_house' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（院内）</span>
               {% elif reservation.place_type == 'visit' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（往診）</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（出張）</span>
               {% elif reservation.place_type == 'field' %}
             <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
               {% else %}
@@ -446,7 +446,7 @@
       </div>
       
       <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
-        {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+        {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同'} %}
         <span>現場：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
         {% if reservation.place_name %}
         <span>（{{ reservation.place_name }}）</span>
@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="admin-karte-log-field">
           <span class="admin-karte-log-label">現場区分：</span>
           <span>
-            {% set place_map = {'in_house':'院内','visit':'往診','field':'帯同'} %}
+            {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同'} %}
             {{ place_map.get(log.place_type, log.place_type or '未入力') }}
           </span>
         </div>

@@ -633,7 +633,7 @@ def session_may_edit_reservation_row(reservation_staff_name):
 
 # 院内は1床想定：予約同士の前後に空ける分数（被り禁止）
 IN_HOUSE_SINGLE_BED_GAP_MINUTES = 15
-# スタッフの予定：院内・往診の「後ろ」に空ける分数（タイムライン表示・空き枠計算）
+# スタッフの予定：院内・出張の「後ろ」に空ける分数（タイムライン表示・空き枠計算）
 VISIT_POST_BUFFER_MINUTES = 30
 
 
@@ -913,7 +913,7 @@ def reservation_course_name_for_reports(reservation, nomination_type, place_type
     nomination_type_map = {"main": "本指名", "frame": "枠指名", "hope": "希望", "free": "フリー"}
     if nomination_type in nomination_type_map:
         nomination_type = nomination_type_map[nomination_type]
-    place_type_label = {"in_house": "院内", "visit": "往診", "field": "帯同"}.get(place_type, "")
+    place_type_label = {"in_house": "院内", "visit": "出張", "field": "帯同"}.get(place_type, "")
     if nomination_type in ["本指名", "枠指名"]:
         return f"{nomination_type}（{place_type_label}）"
     if stored:
@@ -1855,11 +1855,11 @@ def calculate_salary(staff_name, year, month, area="tokyo"):
         res_reservations = supabase_admin.table("reservations").select("base_price, transportation_fee, place_type").eq("staff_name", staff_name).eq("status", "completed").gte("reserved_at", month_start).lte("reserved_at", month_end).execute()
         
         for reservation in (res_reservations.data or []):
-            # 税抜き料金を集計（院内・往診・帯同すべて）
+            # 税抜き料金を集計（院内・出張・帯同すべて）
             base_price = reservation.get("base_price", 0) or 0
             base_revenue += base_price
             
-            # 出張費を集計（往診の場合のみ）
+            # 出張費を集計（出張の場合のみ）
             transportation_fee = reservation.get("transportation_fee", 0) or 0
             transportation_total += transportation_fee
     except Exception as e:
@@ -5660,7 +5660,7 @@ def admin_reservations():
                 "place_type": _pt,
                 "is_field": _pt == "field",
                 "is_break": _pt == "break",
-                "place_label": "院内" if _pt == "in_house" else ("往診" if _pt == "visit" else ("帯同" if _pt == "field" else ("休憩" if _pt == "break" else "予定"))),
+                "place_label": "院内" if _pt == "in_house" else ("出張" if _pt == "visit" else ("帯同" if _pt == "field" else ("休憩" if _pt == "break" else "予定"))),
             })
             post_buf = reservation_post_buffer_minutes(_pt)
             if post_buf > 0:
@@ -6275,7 +6275,7 @@ def admin_reservations_status(reservation_id):
                 except Exception as e:
                     print(f"⚠️ payment/receipt 更新エラー: {e}")
         
-        # 予約完了時に日報へ自動反映（院内 or 往診のみ）
+        # 予約完了時に日報へ自動反映（院内 or 出張のみ）
         if new_status == "completed":
             try:
                 staff_name = reservation.get("staff_name")
@@ -6283,7 +6283,7 @@ def admin_reservations_status(reservation_id):
                 patient_id = reservation.get("patient_id")
                 reserved_at_str = reservation.get("reserved_at")
                 
-                # 院内・往診・帯同すべてで日報に反映
+                # 院内・出張・帯同すべてで日報に反映
                 if staff_name and place_type in ["in_house", "visit", "field"] and patient_id and reserved_at_str:
                     # 予約日時をJSTに変換して日付を取得
                     dt = datetime.fromisoformat(reserved_at_str.replace("Z", "+00:00"))
@@ -7249,7 +7249,7 @@ def staff_daily_report_new():
                             duration = reservations_info_map.get(reservation_id)
                             course_name = patient.get("course_name", "")
                             if duration and course_name:
-                                # コース名の形式を変更（例：「60分　本指名（往診）」）
+                                # コース名の形式を変更（例：「60分　本指名（出張）」）
                                 if "（" in course_name:
                                     # 既に括弧がある場合は、時間を前に追加
                                     patient["course_name_display"] = f"{duration}分　{course_name}"
@@ -8220,7 +8220,7 @@ def admin_revenue_months(year):
         except Exception as e:
             print(f"⚠️ WARNING - 年間売上集計エラー: {e}")
 
-        # 全体の内訳（院内+往診+帯同の合計を支払方法・領収書別に集約）
+        # 全体の内訳（院内+出張+帯同の合計を支払方法・領収書別に集約）
         total_breakdown = {}
         for wt in ["in_house", "visit", "field"]:
             for key, amt in revenue_breakdown[wt].items():
@@ -9676,7 +9676,7 @@ def admin_daily_reports(year=None, month=None, date=None):
             # 編集権限を判定（スタッフは自分の分のみ、管理者は全て）
             item["can_edit"] = is_admin or (item["staff_name"] == staff_name)
         
-        # work_typeで分類（院内・往診・帯同）
+        # work_typeで分類（院内・出張・帯同）
         in_house_items = []
         visit_items = []
         field_items = []
@@ -9730,7 +9730,7 @@ def admin_daily_reports(year=None, month=None, date=None):
                                 "vip_level": p.get("vip_level")
                             }
                 
-                # 予約情報を先に取得して、コース名マップを作成（院内・往診用）
+                # 予約情報を先に取得して、コース名マップを作成（院内・出張用）
                 reservation_ids = [p.get("reservation_id") for p in patients if p.get("reservation_id")]
                 invalid_reservation_ids = []
                 reservation_course_map = {}  # {reservation_id: course_name}
@@ -9775,7 +9775,7 @@ def admin_daily_reports(year=None, month=None, date=None):
                         patient["patient_name"] = None
                         patient["vip_level"] = None
                     
-                    # コース名を予約データから取得して反映（院内・往診用、編集時の反映のため）
+                    # コース名を予約データから取得して反映（院内・出張用、編集時の反映のため）
                     # 予約データのコース名を優先（staff_daily_report_patientsのcourse_nameが空の場合、予約データから取得）
                     if reservation_id and reservation_id in reservation_course_map:
                         reservation_course = reservation_course_map[reservation_id]
@@ -10026,7 +10026,7 @@ def admin_daily_reports_item_update(item_id):
         existing_patients = res_patients.data or []
         existing_patient_report_ids = {p.get("id") for p in existing_patients}
         
-        # 予約IDを収集してコース名を取得（院内・往診用）
+        # 予約IDを収集してコース名を取得（院内・出張用）
         reservation_ids_for_course = []
         for p in existing_patients:
             reservation_id = p.get("reservation_id")
@@ -10051,12 +10051,12 @@ def admin_daily_reports_item_update(item_id):
                 patient_amount = int(patient_amounts[i]) if i < len(patient_amounts) and patient_amounts[i] and patient_amounts[i].isdigit() else 0
                 patient_course_name = patient_course_names[i] if i < len(patient_course_names) else None
                 
-                # 予約データからコース名を取得（院内・往診用、編集時に反映）
+                # 予約データからコース名を取得（院内・出張用、編集時に反映）
                 patient_data = next((p for p in existing_patients if p.get("id") == patient_report_id), None)
                 if patient_data:
                     reservation_id = patient_data.get("reservation_id")
                     
-                    # 院内・往診の場合、予約データからコース名を取得して反映（編集時に予約データの最新値を反映）
+                    # 院内・出張の場合、予約データからコース名を取得して反映（編集時に予約データの最新値を反映）
                     if work_type in ["in_house", "visit"] and reservation_id and reservation_id in reservation_course_map:
                         # 予約データからコース名を取得（入力値が空の場合は予約データの値を使用、入力値がある場合は入力値を優先）
                         reservation_course_name = reservation_course_map[reservation_id]
@@ -10070,7 +10070,7 @@ def admin_daily_reports_item_update(item_id):
                         "course_name": patient_course_name if work_type in ["in_house", "visit"] else None
                     }
                     
-                    # reservation_idがある場合は予約データも更新（院内・往診のみ）
+                    # reservation_idがある場合は予約データも更新（院内・出張のみ）
                     if reservation_id and work_type in ["in_house", "visit"]:
                         try:
                             # 予約データのbase_priceを更新

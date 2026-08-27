@@ -20,7 +20,7 @@
       <select name="work_type" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
         <option value="all" {% if work_type_filter == 'all' %}selected{% endif %}>すべて</option>
         <option value="in_house" {% if work_type_filter == 'in_house' %}selected{% endif %}>院内</option>
-        <option value="visit" {% if work_type_filter == 'visit' %}selected{% endif %}>往診</option>
+        <option value="visit" {% if work_type_filter == 'visit' %}selected{% endif %}>出張</option>
         <option value="field" {% if work_type_filter == 'field' %}selected{% endif %}>帯同</option>
       </select>
     </label>
@@ -72,7 +72,7 @@
             {% if item.work_type == 'in_house' %}
             <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
             {% elif item.work_type == 'visit' %}
-            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #4CAF50; color: #fff;">往診</span>
+            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
             {% elif item.work_type == 'field' %}
             <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
             {% endif %}

@@ -156,11 +156,11 @@
   </div>
   {% endif %}
   
-  <!-- 🚗 往診カード -->
+  <!-- 🚗 出張カード -->
   {% if visit_items %}
   <div style="padding: 24px; background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
     <h3 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 600; color: #4CAF50; display: flex; align-items: center; gap: 8px;">
-      🚗 往診
+      🚗 出張
     </h3>
     
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if ((patient.vip_level || '').includes('clover')) patientsHtml += ' 🍀';
               }
               patientsHtml += '</strong></div>';
-              // 院内・往診の場合のみコース名を表示
+              // 院内・出張の場合のみコース名を表示
               if (!isField) {
                 patientsHtml += '<div style="margin-bottom: 8px;">';
                 patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">コース名</label>';
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   patientsHtml += '</div>';
                 }
               } else {
-                // 院内・往診は常に金額編集を表示
+                // 院内・出張は常に金額編集を表示
                 patientsHtml += '<div style="margin-bottom: 8px;">';
                 patientsHtml += '<label style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #666;">金額</label>';
                 patientsHtml += '<input type="number" name="patient_amount[]" value="' + amount + '" min="0" step="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">';

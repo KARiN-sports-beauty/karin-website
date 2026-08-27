@@ -27,7 +27,7 @@
     <select name="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
       <option value="">選択してください</option>
       <option value="in_house" {% if log.place_type == 'in_house' %}selected{% endif %}>院内</option>
-      <option value="visit" {% if log.place_type == 'visit' %}selected{% endif %}>往診</option>
+      <option value="visit" {% if log.place_type == 'visit' %}selected{% endif %}>出張</option>
       <option value="field" {% if log.place_type == 'field' %}selected{% endif %}>帯同</option>
     </select>
   </div>

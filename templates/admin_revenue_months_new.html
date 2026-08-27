@@ -24,7 +24,7 @@
       <div style="font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">¥{{ "{:,}".format(in_house_revenue or 0) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #4CAF50;">
-      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">往診</div>
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 6px;">出張</div>
       <div style="font-size: 1.2rem; font-weight: 600; color: #4CAF50;">¥{{ "{:,}".format(visit_revenue or 0) }}</div>
     </div>
     <div style="padding: 16px; background: #f5f7fb; border-radius: 10px; border-left: 4px solid #FFB6C1;">
@@ -52,9 +52,9 @@
           {% endif %}
         {% endfor %}
       </div>
-      <!-- 往診 -->
+      <!-- 出張 -->
       <div style="padding: 12px; background: #fafbfc; border-radius: 8px; border-left: 3px solid #4CAF50;">
-        <div style="font-size: 0.9rem; font-weight: 600; color: #4CAF50; margin-bottom: 8px;">往診</div>
+        <div style="font-size: 0.9rem; font-weight: 600; color: #4CAF50; margin-bottom: 8px;">出張</div>
         {% for pair in (breakdown_order or []) %}
           {% set amt = (revenue_breakdown or {}).get('visit',{}).get(pair, 0) or 0 %}
           {% if amt > 0 %}
