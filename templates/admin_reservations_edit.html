@@ -34,7 +34,6 @@
       placeholder="名前・フリガナで検索して患者を選択"
       autocomplete="off"
       value="{{ reservation.patient_name or '' }}"
-      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
     >
     <div id="patient_results" class="admin-autocomplete-list"></div>
     <input type="hidden" name="patient_id" id="patient_id" value="{{ reservation.patient_id or '' }}">

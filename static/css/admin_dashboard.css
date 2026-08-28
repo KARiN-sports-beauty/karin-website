@@ -311,6 +311,25 @@
   font-size: 1rem;
 }
 
+/* 患者検索（width:100% + padding/border で親枠からはみ出すのを防ぐ） */
+#admin-reservation-edit-form #patient_info_row {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#admin-reservation-edit-form #patient_search {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#admin-reservation-edit-form #patient_results {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* 予定編集：帯同終了時刻（デスクトップでは幅を抑える／モバイルは下記メディアクエリで全幅） */
 #admin-reservation-edit-form #field_end_time {
   max-width: 200px;
