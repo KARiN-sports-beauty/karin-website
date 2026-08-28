@@ -541,7 +541,7 @@
             </div>
             <div class="slot-detail-grid" id="slot-detail-grid"></div>
           </div>
-          <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可（直近12時間以内を含む）　—：勤務時間外<br>○・△をタップすると15分刻みの詳細が表示されます。</p>
+          <p class="legend">○：その1時間すべて空き　△：一部空き　×：予約不可<br>○・△をタップすると15分刻みの詳細が表示されます。</p>
           <button type="button" class="submit-btn" id="datetime-next" style="margin-top:14px;">完了</button>
         </div>
       </div>
@@ -1041,10 +1041,8 @@
             html += '<td><button type="button" class="hour-cell-btn full' + active + '" data-staff="' + staffKey + '" data-hour="' + h + '">○</button></td>';
           } else if (status === "partial") {
             html += '<td><button type="button" class="hour-cell-btn partial' + active + '" data-staff="' + staffKey + '" data-hour="' + h + '">△</button></td>';
-          } else if (status === "ng") {
-            html += '<td><button type="button" class="hour-cell-btn ng" disabled>×</button></td>';
           } else {
-            html += '<td><button type="button" class="hour-cell-btn none" disabled>—</button></td>';
+            html += '<td><button type="button" class="hour-cell-btn ng" disabled>×</button></td>';
           }
         });
         html += "</tr>";
