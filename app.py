@@ -1351,15 +1351,38 @@ def pick_free_staff_with_reservations(
     return None
 
 
+# reservations 直結 INSERT 用（Supabase REST と PostgreSQL 型の差異）
+_PG_RESERVATION_JSONB_COLUMNS = frozenset({"selected_menus"})
+_PG_RESERVATION_ARRAY_COLUMNS = frozenset({"nominated_staff_ids"})
+
+
+def _pg_reservation_insert_param(col, val):
+    """psycopg2 用パラメータ変換。JSONB は Json、PG配列は Python list。"""
+    if col in _PG_RESERVATION_JSONB_COLUMNS:
+        if val is None:
+            return None
+        if isinstance(val, (list, dict)):
+            return psycopg2.extras.Json(val)
+        return val
+    if col in _PG_RESERVATION_ARRAY_COLUMNS:
+        if val is None:
+            return None
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            try:
+                parsed = json.loads(val)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return val
+    return val
+
+
 def _insert_web_reservation_pg(cur, reservation_data):
     columns = list(reservation_data.keys())
-    values = []
-    for col in columns:
-        val = reservation_data[col]
-        if col in ("nominated_staff_ids", "selected_menus") and isinstance(val, (list, dict)):
-            values.append(psycopg2.extras.Json(val))
-        else:
-            values.append(val)
+    values = [_pg_reservation_insert_param(col, reservation_data[col]) for col in columns]
     placeholders = ", ".join(["%s"] * len(columns))
     col_sql = ", ".join(columns)
     try:
