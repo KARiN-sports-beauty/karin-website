@@ -1929,6 +1929,11 @@ def load_patients_for_autocomplete():
     return patients
 
 
+def booking_public_base_url():
+    """公開サイトのベースURL（メール内リンク用）。"""
+    return (os.getenv("SITE_BASE_URL") or os.getenv("PUBLIC_SITE_URL") or "https://karin-sb.jp").strip().rstrip("/")
+
+
 def send_booking_confirmation_email(
     to_email,
     last_name,
@@ -1943,10 +1948,17 @@ def send_booking_confirmation_email(
     place_type="in_house",
     place_name=None,
 ):
-    api_key = (os.getenv("SENDGRID_API_KEY") or "").strip()
+    api_key = (os.getenv("RESEND_API_KEY") or "").strip()
     from_email = (os.getenv("BOOKING_FROM_EMAIL") or "info@karin-sb.jp").strip()
-    if not api_key or not to_email:
-        print("⚠️ SENDGRID_API_KEY または宛先メールが未設定のため予約確認メールをスキップ")
+    if "<" not in from_email:
+        from_header = f"KARiN. <{from_email}>"
+    else:
+        from_header = from_email
+    if not api_key:
+        print("⚠️ RESEND_API_KEY が未設定のため予約確認メールをスキップ")
+        return False
+    if not to_email:
+        print("⚠️ 宛先メールが未設定のため予約確認メールをスキップ")
         return False
     try:
         end_h = end_m = None
@@ -1954,22 +1966,20 @@ def send_booking_confirmation_email(
             day = datetime.strptime(day_str, "%Y-%m-%d").date()
             hh, mm = map(int, time_hm.split(":"))
             start_dt = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(hours=hh, minutes=mm)
-            end_dt = start_dt + timedelta(minutes=duration_minutes)
+            end_dt = start_dt + timedelta(minutes=int(duration_minutes or 0))
             end_h, end_m = end_dt.hour, end_dt.minute
         except Exception:
             pass
-        area_label = "東京" if area == "tokyo" else "福岡"
+        area_label = "東京（代々木上原）" if area == "tokyo" else "福岡（薬院）"
         place_label = booking_place_type_label(place_type)
         time_range = f"{time_hm}〜{end_h:02d}:{end_m:02d}" if end_h is not None else time_hm
         name = f"{last_name} {first_name}".strip()
-        place_line = f"{area_label}（{place_label}）"
-        if place_type == "visit" and place_name:
-            place_line += f"\n出張先：{place_name}"
         arrival_note = (
             "当日は開始時刻までにご指定の場所でお待ちください。"
             if place_type == "visit"
             else "当日は開始時刻の5分前までにご来院ください。"
         )
+        first_visit_url = f"{booking_public_base_url()}/form"
         body = f"""{name} 様
 
 この度は KARiN. ~Sports & Beauty~ をご予約いただき、
@@ -1979,20 +1989,28 @@ def send_booking_confirmation_email(
 
 ━━━━━━━━━━━━━━
 ■ ご予約内容
-日時　：{day_str} {time_range}
-場所　：{place_line}
+お名前　：{name}
+日時　　：{day_str} {time_range}
+エリア　：{area_label}
+施術方法：{place_label}
 メニュー：{course_label}
-担当　：{staff_name}
-
-■ ご連絡先
-メール：{to_email}
-━━━━━━━━━━━━━━
+施術時間：{int(duration_minutes or 0)}分
+担当　　：{staff_name}
 """
+        if place_type == "visit" and place_name:
+            body += f"出張先　：{place_name}\n"
         if note:
-            body += f"\n■ ご要望\n{note}\n━━━━━━━━━━━━━━\n"
-        body += f"""
+            body += f"\n■ 備考\n{note}\n"
+        body += f"""━━━━━━━━━━━━━━
+
 {arrival_note}
 キャンセル・変更はお早めにご連絡ください。
+
+初めてご来院・ご利用の方は、事前に初診受付フォームへのご入力をお願いしております。
+▼ 初診受付フォーム
+{first_visit_url}
+
+ご不明点がございましたら、お気軽にご連絡ください。
 
 ▼ お問い合わせ
 LINE：{OFFICIAL_LINE_URL}
@@ -2001,20 +2019,36 @@ LINE：{OFFICIAL_LINE_URL}
 
 KARiN. ~Sports & Beauty~
 """
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail
-        message = Mail(
-            from_email=from_email,
-            to_emails=to_email,
-            subject=f"【KARiN.】ご予約ありがとうございます（{day_str} {time_hm}）",
-            plain_text_content=body,
+        resp = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": from_header,
+                "to": [to_email],
+                "subject": f"【KARiN.】ご予約ありがとうございます（{day_str} {time_hm}）",
+                "text": body,
+            },
+            timeout=30,
         )
-        sg = SendGridAPIClient(api_key)
-        response = sg.send(message)
-        print(f"📧 予約確認メール送信: {response.status_code}")
-        return 200 <= response.status_code < 300
+        if 200 <= resp.status_code < 300:
+            print(f"📧 予約確認メール送信成功 (Resend status={resp.status_code})")
+            return True
+        err_hint = "unknown"
+        try:
+            data = resp.json()
+            err_hint = data.get("message") or data.get("name") or err_hint
+        except Exception:
+            pass
+        print(f"❌ 予約確認メール送信失敗: Resend status={resp.status_code} ({err_hint})")
+        return False
+    except requests.RequestException as e:
+        print(f"❌ 予約確認メール送信エラー: {type(e).__name__}")
+        return False
     except Exception as e:
-        print(f"❌ 予約確認メール送信エラー: {e}")
+        print(f"❌ 予約確認メール送信エラー: {type(e).__name__}")
         return False
 
 
