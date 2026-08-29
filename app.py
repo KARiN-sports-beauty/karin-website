@@ -528,6 +528,9 @@ def normalize_staff_area(area_raw):
 
 
 WORK_MODES = frozenset({"unset", "clinic", "field", "off"})
+RESERVATION_PLACE_TYPES = frozenset({"in_house", "visit", "field", "break", "personal"})
+RESERVATION_NON_PATIENT_PLACE_TYPES = frozenset({"field", "break", "personal"})
+RESERVATION_TIME_BLOCK_PLACE_TYPES = frozenset({"field", "break", "personal"})
 PUBLIC_SCHEDULE_STAFF_NAME = (os.getenv("PUBLIC_SCHEDULE_STAFF_NAME") or "藤田 幸士").strip()
 PUBLIC_PLACE_TOKYO = "東京（代々木上原）"
 PUBLIC_PLACE_FUKUOKA = "福岡（薬院）"
@@ -572,6 +575,38 @@ def calendar_status_for_mode(mode, area=None):
     if mode in ("field", "off", "unset"):
         return mode
     return "unset"
+
+
+def reservation_place_type_label(place_type):
+    """予定の区分表示名。"""
+    labels = {
+        "in_house": "院内",
+        "visit": "出張",
+        "field": "帯同",
+        "personal": "予定",
+        "break": "休憩",
+    }
+    return labels.get((place_type or "").strip(), "予定")
+
+
+def is_non_patient_reservation_place_type(place_type):
+    return (place_type or "").strip() in RESERVATION_NON_PATIENT_PLACE_TYPES
+
+
+def is_time_block_reservation_place_type(place_type):
+    return (place_type or "").strip() in RESERVATION_TIME_BLOCK_PLACE_TYPES
+
+
+def time_block_time_label(place_type):
+    labels = {"break": "休憩時間", "personal": "予定時間", "field": "帯同時間"}
+    return labels.get((place_type or "").strip(), "時間")
+
+
+def time_block_default_duration_minutes(place_type):
+    pt = (place_type or "").strip()
+    if pt in ("break", "personal"):
+        return 60
+    return 540
 
 
 def staff_display_sort_key(entry):
@@ -6108,7 +6143,7 @@ def admin_reservations():
                     continue
                 dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                 dt_jst = dt.astimezone(JST)
-                if r.get("place_type") in ("field", "break"):
+                if r.get("place_type") in RESERVATION_TIME_BLOCK_PLACE_TYPES:
                     dur = int(r.get("duration_minutes") or 540)
                     end_jst = dt_jst + timedelta(minutes=dur)
                     r["reserved_at_display"] = (
@@ -6277,7 +6312,8 @@ def admin_reservations():
                 "place_type": _pt,
                 "is_field": _pt == "field",
                 "is_break": _pt == "break",
-                "place_label": "院内" if _pt == "in_house" else ("出張" if _pt == "visit" else ("帯同" if _pt == "field" else ("休憩" if _pt == "break" else "予定"))),
+                "is_personal": _pt == "personal",
+                "place_label": reservation_place_type_label(_pt),
             })
             post_buf = reservation_display_post_buffer_minutes(_pt)
             if post_buf > 0:
@@ -6538,8 +6574,8 @@ def admin_reservations_new():
     # POST処理
     try:
         place_type = request.form.get("place_type", "").strip()
-        if place_type not in ["in_house", "visit", "field", "break"]:
-            flash("現場区分を選択してください", "error")
+        if place_type not in RESERVATION_PLACE_TYPES:
+            flash("区分を選択してください", "error")
             return redirect("/admin/reservations/new")
         
         patient_mode = request.form.get("patient_mode", "existing")
@@ -6587,7 +6623,7 @@ def admin_reservations_new():
                     flash("選択された患者が見つかりません", "error")
                     return redirect("/admin/reservations/new")
         else:
-            # 帯同・休憩：患者は紐付けない
+            # 帯同・休憩・予定：患者は紐付けない
             patient_id = None
         
         reserved_at_str = request.form.get("reserved_at", "").strip()
@@ -6618,7 +6654,7 @@ def admin_reservations_new():
         staff_name = request.form.get("staff_name", "").strip() or None
         memo = request.form.get("memo", "").strip() or None
 
-        if place_type == "break":
+        if place_type in ("break", "personal"):
             if not staff_name:
                 flash("担当スタッフを選択してください", "error")
                 return redirect("/admin/reservations/new")
@@ -6632,10 +6668,10 @@ def admin_reservations_new():
         # メニュー取得（施術時間を決定）／帯同・休憩は終了時刻から算出
         menu = request.form.get("menu", "").strip()
         course_name = None
-        if place_type in ("field", "break"):
+        if place_type in RESERVATION_TIME_BLOCK_PLACE_TYPES:
             fet = request.form.get("field_end_time", "").strip()
             duration_legacy = request.form.get("duration_minutes_custom", "").strip()
-            time_label = "休憩時間" if place_type == "break" else "帯同時間"
+            time_label = time_block_time_label(place_type)
             if fet:
                 dm = field_end_time_to_duration_minutes(dt_jst, fet)
                 if dm is None:
@@ -6646,13 +6682,13 @@ def admin_reservations_new():
                 try:
                     duration_minutes = int(duration_legacy)
                 except Exception:
-                    duration_minutes = 60 if place_type == "break" else 540
+                    duration_minutes = time_block_default_duration_minutes(place_type)
             else:
-                if place_type == "break":
-                    duration_minutes = 60
+                if place_type in ("break", "personal"):
+                    duration_minutes = time_block_default_duration_minutes(place_type)
                 else:
                     dm = field_end_time_to_duration_minutes(dt_jst, "19:00")
-                    duration_minutes = dm if dm is not None else 540
+                    duration_minutes = dm if dm is not None else time_block_default_duration_minutes(place_type)
         else:
             duration_minutes = 90
             if menu:
@@ -6671,7 +6707,7 @@ def admin_reservations_new():
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
         nominated_staff_ids = []
         nomination_priority = None
-        if place_type == "break":
+        if place_type in ("break", "personal"):
             nomination_type = "フリー"
         else:
             nomination_type = request.form.get("nomination_type", "本指名").strip()
@@ -6896,7 +6932,7 @@ def admin_reservations_status(reservation_id):
             flash("この予約を操作する権限がありません（担当の自分の予定のみ操作できます）", "error")
             return redirect("/admin/reservations")
 
-        if reservation.get("place_type") in ("field", "break"):
+        if reservation.get("place_type") in RESERVATION_NON_PATIENT_PLACE_TYPES:
             flash("帯同・休憩には来院・完了などのステータスはありません", "error")
             return redirect(request.referrer or "/admin/reservations")
         
@@ -7175,7 +7211,7 @@ def admin_reservations_edit(reservation_id):
                     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                     dt_jst = dt.astimezone(JST)
                     reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
-                    if reservation.get("place_type") in ("field", "break"):
+                    if reservation.get("place_type") in RESERVATION_NON_PATIENT_PLACE_TYPES:
                         default_dur = 540 if reservation.get("place_type") == "field" else 60
                         dur_m = int(reservation.get("duration_minutes") or default_dur)
                         end_jst = dt_jst + timedelta(minutes=dur_m)
@@ -7304,8 +7340,8 @@ def admin_reservations_edit(reservation_id):
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
         place_type = form_place_type_early
-        if place_type not in ["in_house", "visit", "field", "break"]:
-            flash("現場区分を選択してください", "error")
+        if place_type not in RESERVATION_PLACE_TYPES:
+            flash("区分を選択してください", "error")
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
         place_name = request.form.get("place_name", "").strip() or None
@@ -7322,10 +7358,10 @@ def admin_reservations_edit(reservation_id):
                 flash("選択された患者が見つかりません", "error")
                 return redirect(f"/admin/reservations/{reservation_id}/edit")
             patient_id = form_patient_id
-        elif place_type in ("field", "break"):
+        elif place_type in RESERVATION_NON_PATIENT_PLACE_TYPES:
             patient_id = None
 
-        if place_type == "break":
+        if place_type in ("break", "personal"):
             if not staff_name:
                 flash("担当スタッフを選択してください", "error")
                 return redirect(f"/admin/reservations/{reservation_id}/edit")
@@ -7346,10 +7382,10 @@ def admin_reservations_edit(reservation_id):
         menu = request.form.get("menu", "").strip()
         duration_minutes = existing_reservation.get("duration_minutes", 90)
         course_name = existing_reservation.get("course_name")
-        if place_type in ("field", "break"):
+        if place_type in RESERVATION_TIME_BLOCK_PLACE_TYPES:
             fet = request.form.get("field_end_time", "").strip()
             dm_custom = request.form.get("duration_minutes_custom", "").strip()
-            time_label = "休憩時間" if place_type == "break" else "帯同時間"
+            time_label = time_block_time_label(place_type)
             if fet:
                 dm = field_end_time_to_duration_minutes(dt_jst, fet)
                 if dm is None:
@@ -7360,9 +7396,9 @@ def admin_reservations_edit(reservation_id):
                 try:
                     duration_minutes = int(dm_custom)
                 except Exception:
-                    duration_minutes = int(existing_reservation.get("duration_minutes") or (60 if place_type == "break" else 540))
+                    duration_minutes = int(existing_reservation.get("duration_minutes") or time_block_default_duration_minutes(place_type))
             else:
-                duration_minutes = int(existing_reservation.get("duration_minutes") or (60 if place_type == "break" else 540))
+                duration_minutes = int(existing_reservation.get("duration_minutes") or time_block_default_duration_minutes(place_type))
         elif menu:
             parsed_menu = parse_admin_reservation_menu(menu, area, place_type)
             if parsed_menu:
@@ -7379,7 +7415,7 @@ def admin_reservations_edit(reservation_id):
         # 指名タイプ取得（日本語値：'本指名','枠指名','希望','フリー'）
         nominated_staff_ids = []
         nomination_priority = None
-        if place_type == "break":
+        if place_type in ("break", "personal"):
             nomination_type = "フリー"
         else:
             nomination_type = request.form.get("nomination_type", "本指名").strip()
@@ -7473,7 +7509,7 @@ def admin_reservations_edit(reservation_id):
                 selected_menus = _sm_prev
         
         status = request.form.get("status", "").strip()
-        if place_type in ("field", "break"):
+        if place_type in RESERVATION_TIME_BLOCK_PLACE_TYPES:
             status = "reserved"
         elif status not in ["reserved", "visited", "completed", "canceled"]:
             flash("無効なステータスです", "error")
@@ -7578,7 +7614,7 @@ def admin_reservations_edit(reservation_id):
             "course_name": course_name,
             **reservation_audit_for_update(),
         }
-        if place_type in ("field", "break"):
+        if place_type in RESERVATION_TIME_BLOCK_PLACE_TYPES:
             update_data["patient_id"] = None
         elif place_type in ("in_house", "visit"):
             update_data["patient_id"] = patient_id

@@ -266,6 +266,7 @@
     line-height: 1.25;
   }
   .schedule-card.place-break { background: #94a3b8; color: #fff; }
+  .schedule-card.place-personal { background: #64748b; color: #fff; }
   .schedule-card.place-default { background: #64748b; }
   .schedule-card.status-visited.place-inhouse { outline: 2px solid #123157; outline-offset: -2px; }
   .schedule-card.status-visited.place-visit { outline: 2px solid #2e7d32; outline-offset: -2px; }
@@ -320,12 +321,13 @@
     <input type="hidden" name="day" value="{{ selected_day }}">
     
     <label style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-weight: 500; color: #1E3A5F;">現場区分：</span>
+      <span style="font-weight: 500; color: #1E3A5F;">区分：</span>
       <select name="place_type" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
         <option value="all" {% if place_type_filter == 'all' %}selected{% endif %}>すべて</option>
         <option value="in_house" {% if place_type_filter == 'in_house' %}selected{% endif %}>院内</option>
         <option value="visit" {% if place_type_filter == 'visit' %}selected{% endif %}>出張</option>
         <option value="field" {% if place_type_filter == 'field' %}selected{% endif %}>帯同</option>
+        <option value="personal" {% if place_type_filter == 'personal' %}selected{% endif %}>予定</option>
         <option value="break" {% if place_type_filter == 'break' %}selected{% endif %}>休憩</option>
       </select>
     </label>
@@ -470,6 +472,14 @@
               <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
               <span class="schedule-card-main">休憩{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
             </a>
+            {% elif card.is_personal %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card place-personal"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
+              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-main">予定{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
+            </a>
             {% elif card.is_field %}
             <a href="#resv-detail-{{ card.id }}"
                class="schedule-card schedule-card-field-timeline"
@@ -525,6 +535,39 @@
           {% endif %}
           {% if reservation.viewer_may_edit %}
           <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この休憩を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% elif reservation.place_type == 'personal' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-personal" style="border-left: 4px solid #64748b;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">予定</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #64748b; color: #fff;">予定</span>
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>予定時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          理由：{{ reservation.memo }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit"
+             class="admin-resv-btn"
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
             <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
           </form>
           {% endif %}
@@ -660,8 +703,8 @@
         </div>
         
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
-          {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同'} %}
-          <span>現場：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
+          {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同','personal':'予定','break':'休憩'} %}
+          <span>区分：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
           {% if reservation.place_name %}
           <span>（{{ reservation.place_name }}）</span>
           {% endif %}

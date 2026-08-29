@@ -13,14 +13,15 @@
 {% endif %}
 
 <form method="POST" action="/admin/reservations/new" id="admin-reservation-form" style="max-width: 800px;">
-  <!-- 現場区分（最初に配置） -->
+  <!-- 区分（最初に配置） -->
   <div style="margin-bottom: 20px;">
-    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">現場区分（必須）</label>
+    <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">区分（必須）</label>
     <select name="place_type" id="place_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" onchange="updatePlaceTypeFields()">
       <option value="">選択してください</option>
       <option value="in_house">院内</option>
       <option value="visit">出張</option>
       <option value="field">帯同</option>
+      <option value="personal">予定</option>
       <option value="break">休憩</option>
     </select>
   </div>
@@ -695,7 +696,43 @@ document.getElementById('add_frame_staff_btn').addEventListener('click', functio
   });
 });
 
-function setBreakEndTimeDefault() {
+const RESERVATION_TIME_BLOCK_TYPES = ['field', 'break', 'personal'];
+
+function clearHiddenFormRequired() {
+  ['area', 'menu', 'patient_id', 'new_last_name', 'new_first_name', 'new_last_kana', 'new_first_kana'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.removeAttribute('required');
+  });
+  document.querySelectorAll('#frame_staff_list select').forEach(function(s) {
+    s.removeAttribute('required');
+  });
+}
+
+function syncTimeBlockEndRequired(placeType) {
+  const fend = document.getElementById('field_end_time');
+  if (!fend) return;
+  if (RESERVATION_TIME_BLOCK_TYPES.indexOf(placeType) >= 0) {
+    fend.setAttribute('required', 'required');
+  } else {
+    fend.removeAttribute('required');
+  }
+}
+
+function memoLabelsForPlaceType(placeType) {
+  if (placeType === 'break') {
+    return { label: '理由（空欄も可）', placeholder: '例：昼食、移動など' };
+  }
+  if (placeType === 'personal') {
+    return { label: '理由（空欄も可）', placeholder: '例：打ち合わせ、移動など' };
+  }
+  return { label: 'メモ', placeholder: 'メモを入力' };
+}
+
+function isNonPatientPlaceType(placeType) {
+  return RESERVATION_TIME_BLOCK_TYPES.indexOf(placeType) >= 0;
+}
+
+function setTimeBlockEndDefaults() {
   const reservedAtInput = document.getElementById('reserved_at');
   const fend = document.getElementById('field_end_time');
   if (!reservedAtInput || !fend || !reservedAtInput.value || reservedAtInput.value.length < 16) return;
@@ -718,17 +755,24 @@ function updatePlaceTypeFields() {
   const placeNameWrapper = document.getElementById('place_name_wrapper');
   const fieldDur = document.getElementById('field_duration_section');
   const nominationSection = document.getElementById('nomination_section');
+  const frameSection = document.getElementById('frame_nomination_section');
   const adminPriceWrap = document.getElementById('admin_only_price_wrap_new');
   const memoLabel = document.getElementById('memo_label');
   const memoInput = document.getElementById('memo_input');
   const fieldEndLabel = document.getElementById('field_end_time_label');
   const fieldDurHint = document.getElementById('field_duration_hint');
   const staffNameSelect = document.getElementById('staff_name');
+  const memoMeta = memoLabelsForPlaceType(placeType);
 
-  if (memoLabel) memoLabel.textContent = placeType === 'break' ? '理由（空欄も可）' : 'メモ';
-  if (memoInput) memoInput.placeholder = placeType === 'break' ? '例：昼食、移動など' : 'メモを入力';
-  if (nominationSection) nominationSection.style.display = (placeType === 'break') ? 'none' : 'block';
-  if (adminPriceWrap) adminPriceWrap.style.display = (placeType === 'break' || placeType === 'field') ? 'none' : 'block';
+  clearHiddenFormRequired();
+  syncTimeBlockEndRequired(placeType);
+
+  if (memoLabel) memoLabel.textContent = memoMeta.label;
+  if (memoInput) memoInput.placeholder = memoMeta.placeholder;
+  const hideNomination = (placeType === 'break' || placeType === 'personal');
+  if (nominationSection) nominationSection.style.display = hideNomination ? 'none' : 'block';
+  if (frameSection) frameSection.style.display = hideNomination ? 'none' : frameSection.style.display;
+  if (adminPriceWrap) adminPriceWrap.style.display = isNonPatientPlaceType(placeType) ? 'none' : 'block';
   if (staffNameSelect) staffNameSelect.setAttribute('required', 'required');
 
   // 院内/出張の場合：患者選択以降を表示
@@ -767,6 +811,7 @@ function updatePlaceTypeFields() {
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
     if (fieldDur) fieldDur.style.display = 'block';
+    if (frameSection) frameSection.style.display = 'none';
     
     const patientIdInput = document.getElementById('patient_id');
     const patientSearch = document.getElementById('patient_search');
@@ -800,8 +845,8 @@ function updatePlaceTypeFields() {
       fend.value = '19:00';
     }
   }
-  // 休憩：休憩時間・担当スタッフ・理由
-  else if (placeType === 'break') {
+  // 休憩・予定：時間・担当・理由
+  else if (placeType === 'break' || placeType === 'personal') {
     if (patientSection) patientSection.style.display = 'none';
     if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'none';
@@ -809,22 +854,23 @@ function updatePlaceTypeFields() {
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
     if (fieldDur) fieldDur.style.display = 'block';
     if (placeNameWrapper) placeNameWrapper.style.display = 'none';
-
-    const patientIdInput = document.getElementById('patient_id');
-    const patientSearch = document.getElementById('patient_search');
-    if (patientIdInput) { patientIdInput.removeAttribute('required'); patientIdInput.value = ''; }
-    if (patientSearch) patientSearch.value = '';
+    if (frameSection) frameSection.style.display = 'none';
 
     const reservedAtInput = document.getElementById('reserved_at');
     const reservedAtLabel = document.getElementById('reserved_at_label');
-    if (reservedAtLabel) reservedAtLabel.textContent = '休憩時間（開始）';
-    if (fieldEndLabel) fieldEndLabel.textContent = '休憩時間（終了）';
-    if (fieldDurHint) fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「休憩（理由）」と表示されます）。';
+    const startLabel = placeType === 'break' ? '休憩時間（開始）' : '予定時間（開始）';
+    const endLabel = placeType === 'break' ? '休憩時間（終了）' : '予定時間（終了）';
+    const cardLabel = placeType === 'break' ? '休憩' : '予定';
+    if (reservedAtLabel) reservedAtLabel.textContent = startLabel;
+    if (fieldEndLabel) fieldEndLabel.textContent = endLabel;
+    if (fieldDurHint) {
+      fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「' + cardLabel + '（理由）」と表示されます）。';
+    }
     if (reservedAtInput) {
       reservedAtInput.setAttribute('required', 'required');
       reservedAtInput.type = 'datetime-local';
     }
-    setBreakEndTimeDefault();
+    setTimeBlockEndDefaults();
   }
   // 未選択の場合：すべて非表示
   else {
@@ -867,13 +913,16 @@ bindReservationTimeStepInputs();
 
 // フォーム送信時のバリデーション
 document.querySelector('form').addEventListener('submit', function(e) {
-  console.log('🔍 フォーム送信開始');
   const placeTypeSubmit = document.getElementById('place_type').value;
+  clearHiddenFormRequired();
+  syncTimeBlockEndRequired(placeTypeSubmit);
+
+  console.log('🔍 フォーム送信開始');
   const existingMode = document.getElementById('patient_mode_existing').checked;
-  console.log('🔍 現場区分:', placeTypeSubmit, '患者モード:', existingMode ? '既存' : '新規');
+  console.log('🔍 区分:', placeTypeSubmit, '患者モード:', existingMode ? '既存' : '新規');
   
-  // 帯同・休憩以外では患者必須
-  if (placeTypeSubmit !== 'field' && placeTypeSubmit !== 'break') {
+  // 帯同・休憩・予定以外では患者必須
+  if (!isNonPatientPlaceType(placeTypeSubmit)) {
     if (existingMode) {
       const patientId = document.getElementById('patient_id').value;
       if (!patientId) {
@@ -912,16 +961,29 @@ document.querySelector('form').addEventListener('submit', function(e) {
   console.log('🔍 予約日時:', reservedAt);
   if (!reservedAt) {
     e.preventDefault();
-    alert(placeTypeSubmit === 'field' ? '帯同日時を入力してください' : (placeTypeSubmit === 'break' ? '休憩時間（開始）を入力してください' : '予約日時を入力してください'));
+    let msg = '予約日時を入力してください';
+    if (placeTypeSubmit === 'field') msg = '帯同日時を入力してください';
+    else if (placeTypeSubmit === 'break') msg = '休憩時間（開始）を入力してください';
+    else if (placeTypeSubmit === 'personal') msg = '予定時間（開始）を入力してください';
+    alert(msg);
     return false;
   }
+
+  if (isNonPatientPlaceType(placeTypeSubmit)) {
+    const fend = document.getElementById('field_end_time');
+    if (fend && !fend.value) {
+      e.preventDefault();
+      alert(placeTypeSubmit === 'break' ? '休憩時間（終了）を入力してください' : (placeTypeSubmit === 'personal' ? '予定時間（終了）を入力してください' : '帯同時間（終了）を入力してください'));
+      return false;
+    }
+  }
   
-  // 現場区分のチェック
+  // 区分のチェック
   const placeType = document.getElementById('place_type').value;
-  console.log('🔍 現場区分:', placeType);
+  console.log('🔍 区分:', placeType);
   if (!placeType) {
     e.preventDefault();
-    alert('現場区分を選択してください');
+    alert('区分を選択してください');
     return false;
   }
   
