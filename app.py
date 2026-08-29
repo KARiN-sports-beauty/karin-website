@@ -36,23 +36,21 @@ def to_jst(dt_str):
 
 
 def field_end_time_to_duration_minutes(dt_start_jst, field_end_time_str):
-    """帯同の終了時刻（HH:MM）から開始との分差を返す。無効・終了≦開始なら None。"""
+    """帯同・休憩・予定の終了時刻から開始との分差。24:00〜26:00および翌日早朝（01:00等）に対応。"""
     raw = (field_end_time_str or "").strip() or "19:00"
-    try:
-        if len(raw) >= 5 and raw[2] == ":":
-            eh, em = int(raw[0:2]), int(raw[3:5])
+    end_min = parse_staff_daily_time_to_minutes(raw)
+    if end_min is None:
+        return None
+    start_min = dt_start_jst.hour * 60 + dt_start_jst.minute
+    if end_min <= start_min:
+        if end_min < 24 * 60:
+            end_min += 24 * 60
         else:
-            p = raw.split(":")
-            eh = int(p[0])
-            em = int(p[1]) if len(p) > 1 else 0
-    except Exception:
+            return None
+    timeline_end_min = RESERVATION_TIMELINE_END_HOUR * 60
+    if end_min > timeline_end_min or end_min <= start_min:
         return None
-    if eh < 0 or eh > 27 or em < 0 or em > 59:
-        return None
-    end_dt = dt_start_jst.replace(hour=eh, minute=em, second=0, microsecond=0)
-    if end_dt <= dt_start_jst:
-        return None
-    return max(15, int((end_dt - dt_start_jst).total_seconds() // 60))
+    return max(15, end_min - start_min)
 
 
 def format_blog_date_display(value):
@@ -270,6 +268,14 @@ def format_staff_daily_time_hhmm(val):
     if m is None:
         return None
     h, mi = divmod(m, 60)
+    return f"{h:02d}:{mi:02d}"
+
+
+def reservation_end_time_display_hhmm(dt_start_jst, duration_minutes):
+    """予定タイムライン整合の拡張時刻（26:00まで）で終了時刻を表示。"""
+    start_min = dt_start_jst.hour * 60 + dt_start_jst.minute
+    end_min = start_min + int(duration_minutes or 0)
+    h, mi = divmod(end_min, 60)
     return f"{h:02d}:{mi:02d}"
 
 
@@ -531,6 +537,7 @@ WORK_MODES = frozenset({"unset", "clinic", "field", "off"})
 RESERVATION_PLACE_TYPES = frozenset({"in_house", "visit", "field", "break", "personal"})
 RESERVATION_NON_PATIENT_PLACE_TYPES = frozenset({"field", "break", "personal"})
 RESERVATION_TIME_BLOCK_PLACE_TYPES = frozenset({"field", "break", "personal"})
+RESERVATION_TIMELINE_END_HOUR = 26
 PUBLIC_SCHEDULE_STAFF_NAME = (os.getenv("PUBLIC_SCHEDULE_STAFF_NAME") or "藤田 幸士").strip()
 PUBLIC_PLACE_TOKYO = "東京（代々木上原）"
 PUBLIC_PLACE_FUKUOKA = "福岡（薬院）"
@@ -861,6 +868,14 @@ def fetch_in_house_bed_conflicting_reservations(new_start_jst, new_end_jst, excl
 # 院内Web予約（クライアント向け Phase 1）
 # ===============================
 BOOKING_SLOT_STEP_MINUTES = 15
+
+
+def snap_reservation_datetime_naive(dt_naive):
+    """予約開始日時を BOOKING_SLOT_STEP_MINUTES 刻みに丸める（naive datetime）。"""
+    total = dt_naive.hour * 60 + dt_naive.minute
+    snapped = round(total / BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
+    h, mi = divmod(int(snapped), 60)
+    return dt_naive.replace(hour=h, minute=mi, second=0, microsecond=0)
 # 現時点からこの分数以内の枠は Web 予約不可（○×△上は ×）
 # 理由: 予約直後に気づけない／施術中で対応できない可能性があるため
 BOOKING_MIN_LEAD_MINUTES = 12 * 60
@@ -6145,9 +6160,8 @@ def admin_reservations():
                 dt_jst = dt.astimezone(JST)
                 if r.get("place_type") in RESERVATION_TIME_BLOCK_PLACE_TYPES:
                     dur = int(r.get("duration_minutes") or 540)
-                    end_jst = dt_jst + timedelta(minutes=dur)
                     r["reserved_at_display"] = (
-                        f"{dt_jst.strftime('%H:%M')}〜{end_jst.strftime('%H:%M')}"
+                        f"{dt_jst.strftime('%H:%M')}〜{reservation_end_time_display_hhmm(dt_jst, dur)}"
                     )
                 else:
                     r["reserved_at_display"] = dt_jst.strftime("%H:%M")
@@ -6511,8 +6525,11 @@ def admin_reservations_new():
                     if time_param:
                         try:
                             hm = datetime.strptime(time_param, "%H:%M")
-                            hour = hm.hour
-                            minute = (hm.minute // BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
+                            snapped = snap_reservation_datetime_naive(
+                                date_obj.replace(hour=hm.hour, minute=hm.minute)
+                            )
+                            hour = snapped.hour
+                            minute = snapped.minute
                         except Exception:
                             pass
                     initial_date = date_obj.replace(hour=hour, minute=minute).strftime("%Y-%m-%dT%H:%M")
@@ -6634,8 +6651,7 @@ def admin_reservations_new():
         try:
             if "T" in reserved_at_str:
                 dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
-                snapped_min = (dt_naive.minute // BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
-                dt_naive = dt_naive.replace(minute=snapped_min, second=0, microsecond=0)
+                dt_naive = snap_reservation_datetime_naive(dt_naive)
             else:
                 dpart = reserved_at_str[:10]
                 dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
@@ -6675,7 +6691,7 @@ def admin_reservations_new():
             if fet:
                 dm = field_end_time_to_duration_minutes(dt_jst, fet)
                 if dm is None:
-                    flash(f"{time_label}の終了時刻は、開始より後の時刻にしてください", "error")
+                    flash(f"{time_label}の終了時刻は、開始より後かつ{RESERVATION_TIMELINE_END_HOUR}:00までにしてください", "error")
                     return redirect("/admin/reservations/new")
                 duration_minutes = dm
             elif duration_legacy:
@@ -7214,8 +7230,7 @@ def admin_reservations_edit(reservation_id):
                     if reservation.get("place_type") in RESERVATION_NON_PATIENT_PLACE_TYPES:
                         default_dur = 540 if reservation.get("place_type") == "field" else 60
                         dur_m = int(reservation.get("duration_minutes") or default_dur)
-                        end_jst = dt_jst + timedelta(minutes=dur_m)
-                        reservation["field_end_time_display"] = end_jst.strftime("%H:%M")
+                        reservation["field_end_time_display"] = reservation_end_time_display_hhmm(dt_jst, dur_m)
                     else:
                         reservation["field_end_time_display"] = "19:00"
                 else:
@@ -7328,6 +7343,7 @@ def admin_reservations_edit(reservation_id):
         try:
             if "T" in reserved_at_str:
                 dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
+                dt_naive = snap_reservation_datetime_naive(dt_naive)
             else:
                 dpart = reserved_at_str[:10]
                 dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
@@ -7389,7 +7405,7 @@ def admin_reservations_edit(reservation_id):
             if fet:
                 dm = field_end_time_to_duration_minutes(dt_jst, fet)
                 if dm is None:
-                    flash(f"{time_label}の終了時刻は、開始より後の時刻にしてください", "error")
+                    flash(f"{time_label}の終了時刻は、開始より後かつ{RESERVATION_TIMELINE_END_HOUR}:00までにしてください", "error")
                     return redirect(f"/admin/reservations/{reservation_id}/edit")
                 duration_minutes = dm
             elif dm_custom:

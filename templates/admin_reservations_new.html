@@ -95,8 +95,8 @@
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
-    <input type="time" name="field_end_time" id="field_end_time" value="19:00" step="900" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。</small>
+    <input type="text" name="field_end_time" id="field_end_time" value="19:00" inputmode="numeric" placeholder="例: 26:00" autocomplete="off" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可。翌日早朝は 01:00 等でも可）。</small>
   </div>
   
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -246,41 +246,7 @@
 
 <script src="{{ url_for('static', filename='js/admin_reservation_menus.js') }}"></script>
 <script>
-const RESERVATION_TIME_STEP_MINUTES = 15;
-
-function snapTotalMinutesToStep(totalMinutes) {
-  return Math.round(totalMinutes / RESERVATION_TIME_STEP_MINUTES) * RESERVATION_TIME_STEP_MINUTES;
-}
-
-function snapDatetimeLocalInput(input) {
-  if (!input || !input.value || input.value.length < 16) return;
-  const [datePart, timePart] = input.value.split('T');
-  const [h, m] = timePart.split(':').map((v) => parseInt(v, 10));
-  const snapped = snapTotalMinutesToStep(h * 60 + m);
-  input.value = `${datePart}T${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
-}
-
-function snapTimeInput(input) {
-  if (!input || !input.value) return;
-  const [h, m] = input.value.split(':').map((v) => parseInt(v, 10));
-  const snapped = snapTotalMinutesToStep(h * 60 + m);
-  input.value = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
-}
-
-function bindReservationTimeStepInputs() {
-  const reservedAtInput = document.getElementById('reserved_at');
-  const fieldEndInput = document.getElementById('field_end_time');
-  if (reservedAtInput) {
-    reservedAtInput.addEventListener('change', () => snapDatetimeLocalInput(reservedAtInput));
-    snapDatetimeLocalInput(reservedAtInput);
-  }
-  if (fieldEndInput) {
-    fieldEndInput.addEventListener('change', () => snapTimeInput(fieldEndInput));
-    snapTimeInput(fieldEndInput);
-  }
-}
-
-// 患者選択方式の切替
+// 予約・予定の開始・終了時刻スナップは admin_reservation_menus.js の bindReservationTimeInputs を使用
 const allPatients = {{ patients | tojson }};
 
 function togglePatientMode() {
@@ -840,7 +806,7 @@ function updatePlaceTypeFields() {
     }
     const fend = document.getElementById('field_end_time');
     if (fieldEndLabel) fieldEndLabel.textContent = '帯同時間（終了）';
-    if (fieldDurHint) fieldDurHint.textContent = '開始は「帯同日時」の時刻、終了はここで指定します（一覧では「何時〜何時」のみ表示します）。';
+    if (fieldDurHint) fieldDurHint.textContent = '開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。';
     if (fend && !fend.value) {
       fend.value = '19:00';
     }
@@ -864,7 +830,7 @@ function updatePlaceTypeFields() {
     if (reservedAtLabel) reservedAtLabel.textContent = startLabel;
     if (fieldEndLabel) fieldEndLabel.textContent = endLabel;
     if (fieldDurHint) {
-      fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「' + cardLabel + '（理由）」と表示されます）。';
+      fieldDurHint.textContent = '開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。';
     }
     if (reservedAtInput) {
       reservedAtInput.setAttribute('required', 'required');
@@ -901,6 +867,9 @@ function updatePlaceTypeFields() {
   
   updatePrice();
   updateTotalPrice();
+
+  const reservedAtInput = document.getElementById('reserved_at');
+  if (reservedAtInput) snapDatetimeLocalInput(reservedAtInput);
 }
 
 bindAdminReservationMenuListeners();
@@ -908,7 +877,7 @@ document.getElementById('place_type').addEventListener('change', function() {
   updatePlaceTypeFields();
 });
 updatePlaceTypeFields();
-bindReservationTimeStepInputs();
+bindReservationTimeInputs();
 
 
 // フォーム送信時のバリデーション
@@ -955,7 +924,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
   const reservedAtInput = document.querySelector('input[name="reserved_at"]');
   snapDatetimeLocalInput(reservedAtInput);
   const fieldEndInput = document.getElementById('field_end_time');
-  if (fieldEndInput) snapTimeInput(fieldEndInput);
+  if (fieldEndInput) snapExtendedTimeInput(fieldEndInput);
 
   const reservedAt = reservedAtInput ? reservedAtInput.value : '';
   console.log('🔍 予約日時:', reservedAt);

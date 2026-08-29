@@ -59,16 +59,16 @@
   <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
     <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（開始）{% elif reservation.place_type == 'personal' %}予定時間（開始）{% elif reservation.place_type == 'field' %}帯同日時{% else %}予約日時{% endif %}</label>
     <div class="admin-reservation-native-input-wrap">
-      <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input">
+      <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input" step="900">
     </div>
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（終了）{% elif reservation.place_type == 'personal' %}予定時間（終了）{% else %}帯同時間（終了）{% endif %}</label>
     <div class="admin-reservation-native-input-wrap">
-      <input type="time" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}" class="admin-field-end-time-input">
+      <input type="text" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}" class="admin-field-end-time-input" inputmode="numeric" placeholder="例: 26:00" autocomplete="off">
     </div>
-    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">{% if reservation.place_type == 'break' %}開始・終了を指定します（タイムテーブルに「休憩（理由）」と表示されます）。{% else %}開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。{% endif %}</small>
+    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">{% if reservation.place_type == 'break' %}開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。{% else %}開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。{% endif %}</small>
   </div>
 
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -597,7 +597,7 @@ function updatePlaceTypeFields() {
     }
     if (fieldDur) fieldDur.style.display = 'block';
     if (fieldEndLabel) fieldEndLabel.textContent = '帯同時間（終了）';
-    if (fieldDurHint) fieldDurHint.textContent = '開始は「帯同日時」の時刻、終了はここで指定します（表示は「何時〜何時」、分の表記はしません）。';
+    if (fieldDurHint) fieldDurHint.textContent = '開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。';
   } else if (placeType === 'break' || placeType === 'personal') {
     if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'none';
@@ -608,7 +608,7 @@ function updatePlaceTypeFields() {
     const cardLabel = placeType === 'break' ? '休憩' : '予定';
     if (reservedAtLabel) reservedAtLabel.textContent = cardLabel + '時間（開始）';
     if (fieldEndLabel) fieldEndLabel.textContent = cardLabel + '時間（終了）';
-    if (fieldDurHint) fieldDurHint.textContent = '開始・終了を指定します（タイムテーブルに「' + cardLabel + '（理由）」と表示されます）。';
+    if (fieldDurHint) fieldDurHint.textContent = '開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。';
     const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
@@ -652,6 +652,9 @@ function updatePlaceTypeFields() {
 
   updatePrice();
   updateTotalPrice();
+
+  const reservedAtInput = document.getElementById('reserved_at');
+  if (reservedAtInput) snapDatetimeLocalInput(reservedAtInput);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -755,6 +758,16 @@ document.addEventListener('DOMContentLoaded', function() {
   updateNominationFee();
   updateDiscount();
   updateTotalPrice();
+
+  bindReservationTimeInputs();
+
+  const editForm = document.getElementById('admin-reservation-edit-form');
+  if (editForm) {
+    editForm.addEventListener('submit', function() {
+      snapDatetimeLocalInput(document.getElementById('reserved_at'));
+      snapExtendedTimeInput(document.getElementById('field_end_time'));
+    });
+  }
 });
 </script>
 

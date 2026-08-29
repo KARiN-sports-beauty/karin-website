@@ -97,3 +97,61 @@ function bindAdminReservationMenuListeners() {
     placeTypeEl.addEventListener('change', () => refreshAdminReservationMenus());
   }
 }
+
+const RESERVATION_TIMELINE_END_HOUR = 26;
+const RESERVATION_TIME_STEP_MINUTES = 15;
+
+function parseExtendedHmToMinute(s) {
+  const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const hh = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
+  if (hh < 0 || hh > RESERVATION_TIMELINE_END_HOUR || mm < 0 || mm > 59) return null;
+  return hh * 60 + mm;
+}
+
+function formatExtendedHm(totalMinutes) {
+  const maxMin = RESERVATION_TIMELINE_END_HOUR * 60;
+  const v = Math.max(0, Math.min(maxMin, Number(totalMinutes) || 0));
+  const hh = String(Math.floor(v / 60)).padStart(2, '0');
+  const mm = String(v % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function snapTotalMinutesToStep(totalMinutes) {
+  return Math.round(totalMinutes / RESERVATION_TIME_STEP_MINUTES) * RESERVATION_TIME_STEP_MINUTES;
+}
+
+function snapExtendedTimeInput(input) {
+  if (!input || !input.value) return;
+  const total = parseExtendedHmToMinute(input.value.trim());
+  if (total === null) return;
+  input.value = formatExtendedHm(snapTotalMinutesToStep(total));
+}
+
+function snapDatetimeLocalInput(input) {
+  if (!input || !input.value || input.value.length < 16) return;
+  const [datePart, timePart] = input.value.split('T');
+  const [h, m] = timePart.split(':').map((v) => parseInt(v, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return;
+  const snapped = snapTotalMinutesToStep(h * 60 + m);
+  input.value = `${datePart}T${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+}
+
+function bindReservationDatetimeInput(input) {
+  if (!input || input.dataset.timeStepBound) return;
+  input.dataset.timeStepBound = '1';
+  input.addEventListener('change', () => snapDatetimeLocalInput(input));
+  input.addEventListener('blur', () => snapDatetimeLocalInput(input));
+  snapDatetimeLocalInput(input);
+}
+
+function bindReservationTimeInputs() {
+  bindReservationDatetimeInput(document.getElementById('reserved_at'));
+  const fieldEndInput = document.getElementById('field_end_time');
+  if (!fieldEndInput || fieldEndInput.dataset.timeStepBound) return;
+  fieldEndInput.dataset.timeStepBound = '1';
+  fieldEndInput.addEventListener('change', () => snapExtendedTimeInput(fieldEndInput));
+  fieldEndInput.addEventListener('blur', () => snapExtendedTimeInput(fieldEndInput));
+  snapExtendedTimeInput(fieldEndInput);
+}
