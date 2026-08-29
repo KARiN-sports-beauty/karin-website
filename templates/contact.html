@@ -191,7 +191,7 @@
       <div class="schedule-mini-row">
         {% for s in schedule %}
           {% set date_md = s.date[5:].replace('-', '/') %}
-          <div class="schedule-mini-cell {% if '休' in s.place %}off-day{% endif %}">
+          <div class="schedule-mini-cell {% if s.status == 'unset' or s.place == '—' %}unset-day{% elif '休' in s.place %}off-day{% endif %}">
             <strong>{{ date_md }}</strong>：{{ s.place }}
           </div>
         {% endfor %}

@@ -393,7 +393,7 @@
               {% endif %}
             </div>
 
-            <div class="schedule-cell {% if '休' in s.place %}off-day{% endif %}">
+            <div class="schedule-cell {% if s.status == 'unset' or s.place == '—' %}unset-day{% elif '休' in s.place %}off-day{% endif %}">
               <span>{{ s.place }}</span>
             </div>
           </div>

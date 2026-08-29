@@ -373,12 +373,28 @@
         {% set count = counts_by_day.get(day_key, 0) %}
         {% set today_str = now_jst.strftime('%Y-%m-%d') %}
         {% set is_today = (day_key == today_str) %}
-        {% set place = schedule_map.get(day_key, '') %}
-        {% set is_off_day = ('休' in place) %}
+        {% set day_status = shift_status_map.get(day_key, 'unset') %}
+        {% set day_class = {
+          'off': 'off-day',
+          'unset': 'unset-day',
+          'field': 'field-day',
+          'tokyo': 'tokyo-day',
+          'fukuoka': 'fukuoka-day'
+        }.get(day_status, 'unset-day') %}
+        {% set day_badge = {
+          'tokyo': '東',
+          'fukuoka': '福',
+          'field': '帯',
+          'off': '休',
+          'unset': ''
+        }.get(day_status, '') %}
         
         <a href="/admin/reservations?ym={{ current_ym }}&day={{ day_key }}&place_type={{ place_type_filter }}&staff={{ staff_filter }}" 
-           class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %} {% if is_off_day %}off-day{% endif %}">
+           class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %} {{ day_class }}">
           <span style="font-size: 1rem; font-weight: 600;">{{ day_num }}</span>
+          {% if day_badge %}
+          <span class="admin-resv-day-badge">{{ day_badge }}</span>
+          {% endif %}
           {% if count > 0 %}
           <span class="admin-resv-badge">{{ count }}</span>
           {% endif %}
@@ -395,18 +411,16 @@
     </h3>
     <div id="schedule-filter-panel" class="schedule-filter-panel">
       <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
-      <div id="work-area-toggle" class="work-area-toggle" title="この日の勤務エリア（東京出張など）">
-        <button type="button" data-area="fukuoka" id="work-area-fukuoka">福岡</button>
-        <button type="button" data-area="tokyo" id="work-area-tokyo">東京</button>
+      <div id="work-mode-toggle" class="work-area-toggle" title="この日の勤務モード">
+        <button type="button" data-mode="clinic" data-area="fukuoka" id="work-mode-fukuoka">福岡</button>
+        <button type="button" data-mode="clinic" data-area="tokyo" id="work-mode-tokyo">東京</button>
+        <button type="button" data-mode="field" id="work-mode-field">帯同</button>
+        <button type="button" data-mode="off" id="work-mode-off">休み</button>
       </div>
-      <span style="color:#64748b; font-size:0.9rem;">勤務時間</span>
+      <span style="color:#64748b; font-size:0.9rem;">時間</span>
       <input id="work-start-input" type="text" value="" placeholder="10:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
       <span style="color:#64748b;">〜</span>
       <input id="work-end-input" type="text" value="" placeholder="19:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
-      <label style="display:flex; align-items:center; gap:6px; color:#1E3A5F; font-size:0.9rem;">
-        <input id="work-off-input" type="checkbox">
-        休み
-      </label>
       <button id="work-time-save-btn" type="button" style="padding:6px 10px; border:none; border-radius:6px; background:#1E3A5F; color:#fff; cursor:pointer;">保存</button>
       <button id="schedule-filter-clear-btn" type="button" style="padding:6px 10px; border:1px solid #cfd8e3; border-radius:6px; background:#fff; color:#1E3A5F; cursor:pointer;">全員表示に戻す</button>
       <small id="work-time-message" style="color:#64748b;"></small>
@@ -790,12 +804,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const filterStaffName = document.getElementById('schedule-filter-staff-name');
   const workStartInput = document.getElementById('work-start-input');
   const workEndInput = document.getElementById('work-end-input');
-  const workOffInput = document.getElementById('work-off-input');
   const workTimeSaveBtn = document.getElementById('work-time-save-btn');
   const filterClearBtn = document.getElementById('schedule-filter-clear-btn');
   const workTimeMessage = document.getElementById('work-time-message');
-  const workAreaFukuoka = document.getElementById('work-area-fukuoka');
-  const workAreaTokyo = document.getElementById('work-area-tokyo');
+  const workModeButtons = document.querySelectorAll('#work-mode-toggle button');
+  let selectedWorkMode = 'clinic';
   let selectedShiftArea = 'fukuoka';
 
   function getStaffDefaultArea(staffName) {
@@ -808,17 +821,31 @@ document.addEventListener('DOMContentLoaded', function() {
     if (row && row.area) return row.area;
     return getStaffDefaultArea(key);
   }
-  function syncAreaToggleUI(area, canEdit) {
-    const a = (area === 'tokyo') ? 'tokyo' : 'fukuoka';
-    selectedShiftArea = a;
-    if (workAreaFukuoka) {
-      workAreaFukuoka.classList.toggle('active', a === 'fukuoka');
-      workAreaFukuoka.disabled = !canEdit;
+  function getShiftWorkMode(staffName) {
+    const key = String(staffName || '').trim();
+    const row = SHIFT_DATA[key];
+    if (!row) return 'unset';
+    if (row.work_mode) return row.work_mode;
+    if (row.is_off) return 'off';
+    return 'clinic';
+  }
+  function syncWorkModeToggleUI(mode, area, canEdit) {
+    selectedWorkMode = mode || 'unset';
+    if (selectedWorkMode === 'clinic') {
+      selectedShiftArea = (area === 'tokyo') ? 'tokyo' : 'fukuoka';
     }
-    if (workAreaTokyo) {
-      workAreaTokyo.classList.toggle('active', a === 'tokyo');
-      workAreaTokyo.disabled = !canEdit;
-    }
+    workModeButtons.forEach(function(btn) {
+      const btnMode = btn.dataset.mode || '';
+      const btnArea = btn.dataset.area || '';
+      let active = false;
+      if (btnMode === 'clinic' && selectedWorkMode === 'clinic') {
+        active = btnArea === selectedShiftArea;
+      } else {
+        active = btnMode === selectedWorkMode;
+      }
+      btn.classList.toggle('active', active);
+      btn.disabled = !canEdit;
+    });
   }
 
   function parseHmToMinute(s) {
@@ -839,18 +866,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const key = String(staffName || '').trim();
     const row = SHIFT_DATA[key];
     if (!row) {
-      return { start: null, end: null, is_off: true, unset: true };
+      return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
     }
     const st = parseHmToMinute(row.start);
     const ed = parseHmToMinute(row.end);
-    const isOff = !!row.is_off;
-    if (isOff) {
-      return { start: st, end: ed, is_off: true, unset: false };
+    let mode = row.work_mode || (row.is_off ? 'off' : 'clinic');
+    if (mode === 'unset' || (!row.work_mode && !row.is_off && (st === null || ed === null || ed <= st))) {
+      return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
+    }
+    if (mode === 'off') {
+      return { start: st, end: ed, is_off: true, unset: false, work_mode: 'off' };
     }
     if (st !== null && ed !== null && ed > st) {
-      return { start: st, end: ed, is_off: false, unset: false };
+      return { start: st, end: ed, is_off: false, unset: false, work_mode: mode };
     }
-    return { start: null, end: null, is_off: true, unset: true };
+    return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
   }
   function applyCanvasShiftBackground(canvas) {
     const day = canvas.dataset.day || '';
@@ -860,13 +890,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!day || !staffName || !pxPerMin) return;
     const shift = getShift(day, staffName, startHour);
     const timelineStart = startHour * 60;
-    if (shift.is_off || shift.start === null || shift.end === null || shift.end <= shift.start) {
+    if (shift.unset || shift.work_mode === 'off' || shift.start === null || shift.end === null || shift.end <= shift.start) {
       canvas.style.background = '#f1f5f9';
       return;
     }
     const shiftStartPx = Math.max(0, (shift.start - timelineStart) * pxPerMin);
     const shiftEndPx = Math.max(0, (shift.end - timelineStart) * pxPerMin);
-    canvas.style.background = `linear-gradient(to right, #f1f5f9 0px, #f1f5f9 ${shiftStartPx}px, #ffffff ${shiftStartPx}px, #ffffff ${shiftEndPx}px, #f1f5f9 ${shiftEndPx}px, #f1f5f9 100%)`;
+    const openColor = shift.work_mode === 'field' ? '#fff5f8' : '#ffffff';
+    canvas.style.background = `linear-gradient(to right, #f1f5f9 0px, #f1f5f9 ${shiftStartPx}px, ${openColor} ${shiftStartPx}px, ${openColor} ${shiftEndPx}px, #f1f5f9 ${shiftEndPx}px, #f1f5f9 100%)`;
   }
   function applyAllCanvasShiftBackgrounds() {
     timelineCanvases.forEach(applyCanvasShiftBackground);
@@ -884,13 +915,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   let selectedStaffName = '';
-  function syncOffInputState() {
-    const off = !!(workOffInput && workOffInput.checked);
-    if (workStartInput) workStartInput.disabled = off;
-    if (workEndInput) workEndInput.disabled = off;
-    if (off && workTimeMessage && !workTimeMessage.textContent) {
-      workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
-      workTimeMessage.style.color = '#64748b';
+  function syncTimeInputsForMode() {
+    const needsTime = selectedWorkMode === 'clinic' || selectedWorkMode === 'field';
+    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+    if (workStartInput) workStartInput.disabled = !canEdit || !needsTime;
+    if (workEndInput) workEndInput.disabled = !canEdit || !needsTime;
+    if (!needsTime && workTimeMessage) {
+      if (selectedWorkMode === 'off') {
+        workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
+        workTimeMessage.style.color = '#64748b';
+      }
     }
   }
   function showPanelForStaff(staffName) {
@@ -904,13 +938,12 @@ document.addEventListener('DOMContentLoaded', function() {
     filterPanel.classList.add('show');
     filterStaffName.textContent = `スタッフ: ${staffName}`;
     const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
-    syncAreaToggleUI(getShiftArea(staffName), canEdit);
+    const mode = shift.unset ? 'clinic' : (shift.work_mode || 'clinic');
+    const area = getShiftArea(staffName);
+    syncWorkModeToggleUI(mode === 'unset' ? 'clinic' : mode, area, canEdit);
     workStartInput.value = (shift.start !== null) ? minuteToHm(shift.start) : '';
     workEndInput.value = (shift.end !== null) ? minuteToHm(shift.end) : '';
-    if (workOffInput) workOffInput.checked = !!shift.is_off;
-    workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。開始・終了を入力して保存するとオープンになります。' : '';
-    workStartInput.disabled = !canEdit;
-    workEndInput.disabled = !canEdit;
+    workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。東京/福岡/帯同と時間を入力して保存するとオープンになります。' : '';
     workTimeSaveBtn.disabled = !canEdit;
     workTimeSaveBtn.style.opacity = canEdit ? '1' : '0.5';
     workTimeSaveBtn.style.cursor = canEdit ? 'pointer' : 'not-allowed';
@@ -918,7 +951,7 @@ document.addEventListener('DOMContentLoaded', function() {
       workTimeMessage.textContent = 'このスタッフの勤務時間は編集できません。';
       workTimeMessage.style.color = '#64748b';
     }
-    syncOffInputState();
+    syncTimeInputsForMode();
   }
 
   staffButtons.forEach(function(btn) {
@@ -930,21 +963,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  if (workOffInput) {
-    workOffInput.addEventListener('change', syncOffInputState);
-  }
-
-  function bindAreaToggle(btn) {
-    if (!btn) return;
+  workModeButtons.forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (btn.disabled || !selectedStaffName) return;
       const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
       if (!canEdit) return;
-      syncAreaToggleUI(btn.dataset.area || 'fukuoka', true);
+      const mode = btn.dataset.mode || 'clinic';
+      const area = btn.dataset.area || selectedShiftArea;
+      syncWorkModeToggleUI(mode, area, true);
+      syncTimeInputsForMode();
+      if (mode === 'field') {
+        workTimeMessage.textContent = '帯同日: 時間を設定し、タイムラインに帯同カードを置けます。公開スケジュールは「休」、Web予約は受付不可です。';
+        workTimeMessage.style.color = '#64748b';
+      } else if (mode === 'off') {
+        workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
+        workTimeMessage.style.color = '#64748b';
+      } else {
+        workTimeMessage.textContent = '';
+      }
     });
-  }
-  bindAreaToggle(workAreaFukuoka);
-  bindAreaToggle(workAreaTokyo);
+  });
 
   if (workTimeSaveBtn) {
     workTimeSaveBtn.addEventListener('click', async function() {
@@ -954,39 +992,44 @@ document.addEventListener('DOMContentLoaded', function() {
       const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
       if (!canEdit) return;
       const day = targetCanvas.dataset.day || '';
-      const isOff = !!(workOffInput && workOffInput.checked);
+      const mode = selectedWorkMode;
       const st = parseHmToMinute(workStartInput.value);
       const ed = parseHmToMinute(workEndInput.value);
-      if (!isOff && (st === null || ed === null || ed <= st)) {
-        workTimeMessage.textContent = '勤務時間は HH:MM 形式で、終了は開始より後にしてください。';
+      if ((mode === 'clinic' || mode === 'field') && (st === null || ed === null || ed <= st)) {
+        workTimeMessage.textContent = (mode === 'field' ? '帯同' : '勤務') + '時間は HH:MM 形式で、終了は開始より後にしてください。';
         workTimeMessage.style.color = '#b91c1c';
         return;
       }
       try {
+        const payload = {
+          date: day,
+          staff_name: selectedStaffName,
+          start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
+          end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
+          work_mode: mode,
+          area: mode === 'clinic' ? selectedShiftArea : null,
+          is_off: mode === 'off',
+        };
         const res = await fetch('/admin/reservations/shifts/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date: day,
-            staff_name: selectedStaffName,
-            start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
-            end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
-            is_off: isOff,
-            area: selectedShiftArea,
-          }),
+          body: JSON.stringify(payload),
         });
         const json = await res.json();
         if (!res.ok || !json.success) {
           throw new Error(json.message || '保存に失敗しました');
         }
         SHIFT_DATA[selectedStaffName] = {
-          start: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
-          end: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
-          is_off: isOff,
-          area: selectedShiftArea,
+          start: payload.start_time,
+          end: payload.end_time,
+          is_off: mode === 'off',
+          work_mode: mode,
+          area: mode === 'clinic' ? selectedShiftArea : null,
         };
         applyAllCanvasShiftBackgrounds();
-        workTimeMessage.textContent = isOff ? '休みを保存しました。' : '勤務時間を保存しました。';
+        const msg = mode === 'off' ? '休みを保存しました。'
+          : (mode === 'field' ? '帯同を保存しました。' : '勤務時間を保存しました。');
+        workTimeMessage.textContent = msg + '（カレンダー表示はページ再読込で更新されます）';
         workTimeMessage.style.color = '#166534';
       } catch (e) {
         workTimeMessage.textContent = e.message || '保存に失敗しました。';

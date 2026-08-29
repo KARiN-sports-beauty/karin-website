@@ -1114,6 +1114,12 @@ body.index-page .blog-section {
   color: #aaa;
 }
 
+/* 未設定 */
+.schedule-cell.unset-day {
+  background: #e8ecf1;
+  color: #94a3b8;
+}
+
 /* 今日 */
 .schedule-cell.today {
   background-color: #1E3A5F;

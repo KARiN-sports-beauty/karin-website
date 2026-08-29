@@ -2052,6 +2052,42 @@ form .admin-news-btn {
   border-color: #ccc;
 }
 
+.admin-resv-day.unset-day {
+  background: #eef1f5;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+.admin-resv-day.field-day {
+  background: #fff0f5;
+  color: #9d4c6c;
+  border-color: #ffb6c1;
+}
+
+.admin-resv-day.field-day:hover {
+  background: #ffe4ec;
+  border-color: #f8a0b4;
+}
+
+.admin-resv-day-badge {
+  margin-top: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.admin-resv-day.tokyo-day .admin-resv-day-badge,
+.admin-resv-day.fukuoka-day .admin-resv-day-badge {
+  color: #1E3A5F;
+}
+
+.admin-resv-day.selected .admin-resv-day-badge {
+  color: inherit;
+  opacity: 0.95;
+}
+
 .admin-resv-badge {
   position: absolute;
   top: 6px;

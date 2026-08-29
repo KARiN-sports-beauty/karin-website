@@ -468,6 +468,12 @@ body {
   box-shadow: none;
 }
 
+.schedule-mini-cell.unset-day {
+  color: #94a3b8;
+  background: #e8ecf1;
+  box-shadow: none;
+}
+
 /* =====================================
    ご予約希望日時（第1〜第3希望） 横並び＋余白あり
 ===================================== */

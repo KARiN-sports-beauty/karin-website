@@ -527,6 +527,53 @@ def normalize_staff_area(area_raw):
     return area if area in ("tokyo", "fukuoka") else "tokyo"
 
 
+WORK_MODES = frozenset({"unset", "clinic", "field", "off"})
+PUBLIC_SCHEDULE_STAFF_NAME = (os.getenv("PUBLIC_SCHEDULE_STAFF_NAME") or "藤田 幸士").strip()
+PUBLIC_PLACE_TOKYO = "東京（代々木上原）"
+PUBLIC_PLACE_FUKUOKA = "福岡（薬院）"
+PUBLIC_PLACE_OFF = "休"
+PUBLIC_PLACE_UNSET = "—"
+
+
+def normalize_work_mode(raw):
+    mode = (raw or "").strip().lower()
+    return mode if mode in WORK_MODES else None
+
+
+def resolve_shift_work_mode(shift_row):
+    """シフト行から work_mode を解決（旧 is_off / 時間のみデータ互換）。"""
+    if not shift_row:
+        return "unset"
+    mode = normalize_work_mode(shift_row.get("work_mode"))
+    if mode:
+        return mode
+    if bool(shift_row.get("is_off")):
+        return "off"
+    st = parse_booking_hm_to_minutes(shift_row.get("start_time") or shift_row.get("start"))
+    ed = parse_booking_hm_to_minutes(shift_row.get("end_time") or shift_row.get("end"))
+    if st is not None and ed is not None and ed > st:
+        return "clinic"
+    return "unset"
+
+
+def public_place_label_for_mode(mode, area=None):
+    """公開スケジュール表記。帯同(field)も休として表示。"""
+    if mode == "clinic":
+        return PUBLIC_PLACE_FUKUOKA if normalize_staff_area(area) == "fukuoka" else PUBLIC_PLACE_TOKYO
+    if mode in ("off", "field"):
+        return PUBLIC_PLACE_OFF
+    return PUBLIC_PLACE_UNSET
+
+
+def calendar_status_for_mode(mode, area=None):
+    """管理カレンダー用ステータス。"""
+    if mode == "clinic":
+        return "fukuoka" if normalize_staff_area(area) == "fukuoka" else "tokyo"
+    if mode in ("field", "off", "unset"):
+        return mode
+    return "unset"
+
+
 def staff_display_sort_key(entry):
     """予定管理タイムライン等：福岡→東京、同エリア内は登録が古い順。"""
     area_grp = 0 if normalize_staff_area(entry.get("area")) == "fukuoka" else 1
@@ -1090,6 +1137,8 @@ def booking_dates_unavailable_reason(area):
         for s in staff_entries:
             name = (s.get("name") or "").strip()
             shift_row = shifts_map.get(name)
+            if resolve_shift_work_mode(shift_row) != "clinic":
+                continue
             st_min, ed_min = shift_open_minutes(shift_row)
             if st_min is not None:
                 has_open_shift = True
@@ -1100,8 +1149,8 @@ def booking_dates_unavailable_reason(area):
 
     if not has_open_shift:
         return (
-            "今後2週間に「勤務時間オープン（白背景）」の登録がありません。"
-            "予定管理でカレンダーの日付を選び、スタッフ名→開始・終了時刻を入力し、休みのチェックを外して保存してください。"
+            "今後2週間に「通常出勤（東京/福岡）」の登録がありません。"
+            "予定管理でカレンダーの日付を選び、スタッフ名→東京または福岡と勤務時間を入力して保存してください。"
         )
     if not has_area_match:
         return (
@@ -1110,7 +1159,7 @@ def booking_dates_unavailable_reason(area):
         )
     return (
         f"{area_label}で出勤扱いになるスタッフがいません。"
-        "その日が帯同のみの予定になっていないか、拠点・エリア設定を確認してください。"
+        "その日が帯同・休みになっていないか、拠点・エリア設定を確認してください。"
     )
 
 
@@ -1311,7 +1360,7 @@ def _pg_fetch_shifts(cur, day_str, staff_names):
     try:
         cur.execute(
             """
-            SELECT staff_name, start_time, end_time, is_off, area
+            SELECT staff_name, start_time, end_time, is_off, area, work_mode
             FROM staff_work_shifts
             WHERE shift_date = %s AND staff_name = ANY(%s)
             """,
@@ -1589,7 +1638,7 @@ def fetch_booking_day_shifts(day_str, staff_names):
     try:
         res = (
             supabase_admin.table("staff_work_shifts")
-            .select("staff_name, start_time, end_time, is_off, area")
+            .select("staff_name, start_time, end_time, is_off, area, work_mode")
             .eq("shift_date", day_str)
             .in_("staff_name", staff_names)
             .execute()
@@ -1634,25 +1683,30 @@ def effective_staff_area_on_day(staff_entry, shift_row):
 
 
 def shift_open_minutes(shift_row):
-    if not shift_row or bool(shift_row.get("is_off")):
+    """タイムライン白背景用。clinic / field は時間あり。off / unset はなし。"""
+    mode = resolve_shift_work_mode(shift_row)
+    if mode not in ("clinic", "field"):
         return None, None
-    st = parse_booking_hm_to_minutes(shift_row.get("start_time"))
-    ed = parse_booking_hm_to_minutes(shift_row.get("end_time"))
+    st = parse_booking_hm_to_minutes(shift_row.get("start_time") or shift_row.get("start"))
+    ed = parse_booking_hm_to_minutes(shift_row.get("end_time") or shift_row.get("end"))
     if st is None or ed is None or ed <= st:
         return None, None
     return st, ed
 
 
 def working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations):
+    """Web予約受付可能なスタッフ。work_mode=clinic のみ（帯同日・休みは対象外）。"""
     area = normalize_staff_area(area)
     working = []
     for s in staff_entries:
         name = (s.get("name") or "").strip()
         if not name:
             continue
+        shift_row = shifts_map.get(name)
+        if resolve_shift_work_mode(shift_row) != "clinic":
+            continue
         if staff_field_only_on_day(name, day_reservations):
             continue
-        shift_row = shifts_map.get(name)
         st_min, ed_min = shift_open_minutes(shift_row)
         if st_min is None:
             continue
@@ -2747,15 +2801,82 @@ def normalize_datetime(dt):
 
 
 
-def load_schedule():
+def fetch_staff_shifts_in_range(staff_name, start_date, end_date):
+    """staff_work_shifts を日付範囲で取得。{ 'YYYY-MM-DD': row }"""
+    name = (staff_name or "").strip()
+    if not name:
+        return {}
     try:
-        with open("static/data/schedule.json", encoding="utf-8") as f:
-            all_schedule = json.load(f)
-        today = datetime.today()
-        ten_days = today + timedelta(days=10)
-        return [s for s in all_schedule if today <= datetime.strptime(s["date"], "%Y-%m-%d") <= ten_days]
+        res = (
+            supabase_admin.table("staff_work_shifts")
+            .select("shift_date, staff_name, start_time, end_time, is_off, area, work_mode")
+            .eq("staff_name", name)
+            .gte("shift_date", start_date.strftime("%Y-%m-%d"))
+            .lte("shift_date", end_date.strftime("%Y-%m-%d"))
+            .execute()
+        )
+        out = {}
+        for row in res.data or []:
+            d = str(row.get("shift_date") or "")[:10]
+            if d:
+                out[d] = row
+        return out
     except Exception as e:
-        print("❌ schedule.json 読み込みエラー:", e)
+        print(f"❌ staff_work_shifts 範囲取得エラー: {e}")
+        return {}
+
+
+def build_public_schedule_entries(days=10):
+    """公開用直近スケジュール（オーナーの work_mode 由来）。帯同は表記上「休」。"""
+    today = datetime.now(JST).date()
+    end = today + timedelta(days=max(0, int(days) - 1))
+    shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, today, end)
+    entries = []
+    for i in range(max(1, int(days))):
+        d = today + timedelta(days=i)
+        day_str = d.strftime("%Y-%m-%d")
+        row = shifts.get(day_str)
+        mode = resolve_shift_work_mode(row)
+        area = (row or {}).get("area")
+        place = public_place_label_for_mode(mode, area)
+        status = calendar_status_for_mode(mode, area)
+        entries.append({
+            "date": day_str,
+            "place": place,
+            "status": status,
+            "month": day_str[5:7],
+            "day": day_str[8:10],
+        })
+    return entries
+
+
+def build_calendar_shift_status_map(year, month, staff_name=None):
+    """管理カレンダー用 {YYYY-MM-DD: status}。既定は公開オーナー。"""
+    name = (staff_name or PUBLIC_SCHEDULE_STAFF_NAME).strip()
+    start = datetime(year, month, 1, tzinfo=JST).date()
+    if month == 12:
+        end = datetime(year + 1, 1, 1, tzinfo=JST).date() - timedelta(days=1)
+    else:
+        end = datetime(year, month + 1, 1, tzinfo=JST).date() - timedelta(days=1)
+    shifts = fetch_staff_shifts_in_range(name, start, end)
+    status_map = {}
+    # 月内全日を埋め、未登録日は unset
+    d = start
+    while d <= end:
+        day_str = d.strftime("%Y-%m-%d")
+        row = shifts.get(day_str)
+        mode = resolve_shift_work_mode(row)
+        status_map[day_str] = calendar_status_for_mode(mode, (row or {}).get("area"))
+        d += timedelta(days=1)
+    return status_map
+
+
+def load_schedule():
+    """公開スケジュール（トップ・contact・form）。staff_work_shifts 由来。"""
+    try:
+        return build_public_schedule_entries(days=10)
+    except Exception as e:
+        print("❌ 公開スケジュール読み込みエラー:", e)
         return []
 
 def load_blogs():
@@ -5488,70 +5609,10 @@ def index():
     latest_news = fetch_published_news(limit=3)
 
     # ----------------------------------------
-    # スケジュール読み込み（今日を左端に）
+    # スケジュール読み込み（予定管理のオーナーシフト由来）
     # ----------------------------------------
-    upcoming = []
-    try:
-        with open("static/data/schedule.json", encoding="utf-8") as f:
-            schedule = json.load(f)
-
-        today = datetime.now().date()
-
-        for s in schedule:
-            try:
-                # 日付フォーマットを正規化（"2026-1-31" → "2026-01-31"）
-                date_str = s.get("date", "")
-                if date_str:
-                    d = None
-                    normalized_date = None
-                    
-                    # 既に正しいフォーマットの場合
-                    try:
-                        d = datetime.strptime(date_str, "%Y-%m-%d").date()
-                        normalized_date = date_str
-                    except:
-                        # ゼロパディングがない場合（"2026-1-31"など）
-                        parts = date_str.split("-")
-                        if len(parts) == 3:
-                            year, month, day = parts
-                            normalized_date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-                            try:
-                                d = datetime.strptime(normalized_date, "%Y-%m-%d").date()
-                            except:
-                                print(f"⚠️ WARNING - 日付解析失敗: {normalized_date}")
-                                continue
-                        else:
-                            print(f"⚠️ WARNING - 日付フォーマット不正: {date_str}")
-                            continue
-                    
-                    if d and d >= today:
-                        # 正規化した日付を反映
-                        s["date"] = normalized_date
-                        # 表示用の月/日も追加（必ず設定）
-                        # normalized_dateは "YYYY-MM-DD" 形式なので、[5:7]と[8:10]で取得
-                        if len(normalized_date) >= 10:
-                            s["month"] = normalized_date[5:7]
-                            s["day"] = normalized_date[8:10]
-                        else:
-                            # フォールバック: 日付文字列から直接取得
-                            parts = normalized_date.split("-")
-                            if len(parts) >= 3:
-                                s["month"] = parts[1].zfill(2)
-                                s["day"] = parts[2].zfill(2)
-                            else:
-                                s["month"] = "01"
-                                s["day"] = "01"
-                        upcoming.append(s)
-            except Exception as e:
-                print(f"⚠️ WARNING - スケジュール日付解析エラー: {e}, date: {s.get('date', '')}")
-                continue
-
-        upcoming = upcoming[:10]
-    except Exception as e:
-        print("❌ schedule.json 読み込みエラー:", e)
-        upcoming = []  # エラー時は空リストを返す
-
-
+    today = datetime.now(JST).date()
+    upcoming = build_public_schedule_entries(days=10)
 
     # ----------------------------------------
     # レンダリング
@@ -5561,7 +5622,7 @@ def index():
         latest_blogs=latest_blogs,
         latest_news=latest_news,
         schedule=upcoming,
-        today=today,
+        today=today.strftime("%Y-%m-%d"),
         public_booking_enabled=public_booking_enabled(),
     )
 
@@ -6123,29 +6184,8 @@ def admin_reservations():
             next_month_first = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
         days_in_month = (next_month_first - current_date).days
         
-        # スケジュール読み込み（休日の判定用）
-        schedule_map = {}  # {日付文字列（YYYY-MM-DD）: place}
-        try:
-            with open("static/data/schedule.json", encoding="utf-8") as f:
-                all_schedule = json.load(f)
-            for s in all_schedule:
-                # 日付フォーマットを正規化（"2025-12-1" → "2025-12-01"）
-                date_str = s.get("date", "")
-                if date_str:
-                    try:
-                        # 日付をパースして正規化
-                        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                        normalized_date = date_obj.strftime("%Y-%m-%d")
-                        schedule_map[normalized_date] = s.get("place", "")
-                    except:
-                        # フォーマットが異なる場合（"2025-12-1"など）
-                        parts = date_str.split("-")
-                        if len(parts) == 3:
-                            year, month, day = parts
-                            normalized_date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-                            schedule_map[normalized_date] = s.get("place", "")
-        except Exception as e:
-            print("❌ schedule.json 読み込みエラー:", e)
+        # カレンダー表示用ステータス（オーナーの work_mode）
+        shift_status_map = build_calendar_shift_status_map(current_date.year, current_date.month)
 
         # 予定タイムライン（縦軸: スタッフ / 横軸: 時間）
         timeline_start_hour = 7
@@ -6266,7 +6306,7 @@ def admin_reservations():
                 res_shifts = (
                     supabase_admin
                     .table("staff_work_shifts")
-                    .select("staff_name, start_time, end_time, is_off, area")
+                    .select("staff_name, start_time, end_time, is_off, area, work_mode")
                     .eq("shift_date", selected_day_str)
                     .in_("staff_name", shift_staff_names)
                     .execute()
@@ -6275,10 +6315,12 @@ def admin_reservations():
                     nm = (sh.get("staff_name") or "").strip()
                     if nm:
                         shift_area = sh.get("area")
+                        mode = resolve_shift_work_mode(sh)
                         shift_map[nm] = {
                             "start": sh.get("start_time") or "",
                             "end": sh.get("end_time") or "",
-                            "is_off": bool(sh.get("is_off")),
+                            "is_off": mode == "off",
+                            "work_mode": mode,
                             "area": normalize_staff_area(shift_area) if shift_area else None,
                         }
             except Exception as e:
@@ -6306,7 +6348,8 @@ def admin_reservations():
             first_weekday=first_weekday,
             days_in_month=days_in_month,
             now_jst=now_jst,
-            schedule_map=schedule_map,
+            schedule_map=shift_status_map,
+            shift_status_map=shift_status_map,
             timeline_start_hour=timeline_start_hour,
             timeline_end_hour=timeline_end_hour,
             timeline_px_per_min=timeline_px_per_min,
@@ -6330,18 +6373,28 @@ def admin_reservations():
 @app.route("/admin/reservations/shifts/save", methods=["POST"])
 @staff_section_required("reservations")
 def admin_reservations_shift_save():
-    """予定管理: 勤務時間を保存（DB共有）。"""
+    """予定管理: 勤務時間を保存（DB共有）。work_mode: clinic / field / off。"""
     try:
         data = request.get_json(silent=True) or {}
         shift_date = (data.get("date") or "").strip()
         staff_name = (data.get("staff_name") or "").strip()
         start_time = (data.get("start_time") or "").strip()
         end_time = (data.get("end_time") or "").strip()
-        is_off = bool(data.get("is_off", False))
         area_raw = (data.get("area") or "").strip()
+        work_mode = normalize_work_mode(data.get("work_mode"))
+        # 旧UI互換: is_off のみ送られた場合
+        if not work_mode:
+            if bool(data.get("is_off", False)):
+                work_mode = "off"
+            elif area_raw:
+                work_mode = "clinic"
+            else:
+                work_mode = "unset"
         shift_area = normalize_staff_area(area_raw) if area_raw else None
         if not shift_date or not staff_name:
             return jsonify({"success": False, "message": "必須項目が不足しています"}), 400
+        if work_mode not in ("clinic", "field", "off"):
+            return jsonify({"success": False, "message": "勤務モードが不正です"}), 400
 
         def parse_hm(v):
             try:
@@ -6356,15 +6409,22 @@ def admin_reservations_shift_save():
 
         start_min = parse_hm(start_time)
         end_min = parse_hm(end_time)
-        if is_off:
-            # 休みの場合も表示の都合で時間値は保持（未入力ならデフォルト）
+        if work_mode == "off":
             if start_min is None:
                 start_time = "10:00"
             if end_min is None:
                 end_time = "19:00"
-        else:
+            shift_area = None
+        elif work_mode == "field":
+            if start_min is None or end_min is None or end_min <= start_min:
+                return jsonify({"success": False, "message": "帯同の時間は HH:MM 形式で、終了は開始より後にしてください"}), 400
+            # 帯同は拠点を持たない（公開は「休」、Web予約不可）
+            shift_area = None
+        else:  # clinic
             if start_min is None or end_min is None or end_min <= start_min:
                 return jsonify({"success": False, "message": "勤務時間の形式が不正です"}), 400
+            if not shift_area:
+                return jsonify({"success": False, "message": "東京または福岡を選んでください"}), 400
 
         st = session.get("staff", {}) or {}
         role = (st.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
@@ -6377,14 +6437,19 @@ def admin_reservations_shift_save():
             "staff_name": staff_name,
             "start_time": start_time,
             "end_time": end_time,
-            "is_off": is_off,
+            "work_mode": work_mode,
+            "is_off": work_mode == "off",
+            "area": shift_area,
             "updated_by": (st.get("name") or st.get("email") or "unknown"),
             "updated_at": now_iso(),
         }
-        if shift_area:
-            payload["area"] = shift_area
         supabase_admin.table("staff_work_shifts").upsert(payload, on_conflict="shift_date,staff_name").execute()
-        return jsonify({"success": True}), 200
+        return jsonify({
+            "success": True,
+            "work_mode": work_mode,
+            "area": shift_area,
+            "is_off": work_mode == "off",
+        }), 200
     except Exception as e:
         print(f"❌ 勤務時間保存エラー: {e}")
         return jsonify({"success": False, "message": "保存に失敗しました"}), 500
@@ -7642,14 +7707,15 @@ def first_work_card_defaults_from_reservations_timeline(staff_name: str, report_
     try:
         res_shift = (
             supabase_admin.table("staff_work_shifts")
-            .select("start_time, end_time, is_off")
+            .select("start_time, end_time, is_off, work_mode")
             .eq("shift_date", report_date)
             .eq("staff_name", staff_name)
             .limit(1)
             .execute()
         )
         row = (res_shift.data or [None])[0]
-        if row and not bool(row.get("is_off")):
+        mode = resolve_shift_work_mode(row)
+        if row and mode in ("clinic", "field"):
             start_str = format_staff_daily_time_hhmm(row.get("start_time"))
             end_str = format_staff_daily_time_hhmm(row.get("end_time"))
     except Exception as e:
