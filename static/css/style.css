@@ -328,6 +328,67 @@ section, header, footer {
 
 
 /* ===============================
+   About（サービス紹介）
+   ファーストビュー直後・お知らせの前
+=============================== */
+.about-section {
+  background-color: #fafafa;
+  padding: 110px 8% 120px;
+  text-align: center;
+  position: relative;
+}
+
+.about-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.about-heading {
+  display: inline-block;
+  position: relative;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.8;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+  padding: 0 0 18px;
+}
+
+.about-heading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.about-lead {
+  font-size: 1.28rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  color: #1E3A5F;
+  margin: 36px 0 28px;
+}
+
+.about-body {
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 2.15;
+  color: #1E3A5F;
+  opacity: 0.88;
+  margin: 0;
+}
+
+
+/* ===============================
    🩵 お知らせセクション（2025.11再整理版）
    ※KARiN.NOTES（記事）デザインと完全統一トーン
 =============================== */
@@ -1750,6 +1811,30 @@ section[id],
 
 
   /* ==========================
+     About（サービス紹介）
+  ========================== */
+  .about-section {
+    padding: 88px 8% 96px;
+  }
+
+  .about-heading {
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+  }
+
+  .about-lead {
+    font-size: 1.12rem;
+    line-height: 2;
+    margin: 32px 0 24px;
+  }
+
+  .about-body {
+    font-size: 0.95rem;
+    line-height: 2.2;
+  }
+
+
+  /* ==========================
      院長あいさつ（Greeting）
   ========================== */
   .greeting-section {
@@ -2054,6 +2139,31 @@ section[id],
   }
 
   /* ==========================
+     About（サービス紹介）
+     ※ section 一括 padding を上書きし、スマホ用の余白を確保
+  ========================== */
+  .about-section {
+    padding: 88px 8% 100px !important;
+  }
+
+  .about-heading {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    padding-bottom: 16px;
+  }
+
+  .about-lead {
+    font-size: 1.08rem;
+    line-height: 2;
+    margin: 28px 0 24px;
+  }
+
+  .about-body {
+    font-size: 0.95rem;
+    line-height: 2.2;
+  }
+
+  /* ==========================
      院長あいさつ
   ========================== */
   .greeting-section {
@@ -2333,6 +2443,14 @@ section[id],
 
   .slide.last .brand h1 {
     font-size: 4.2rem;
+  }
+
+
+  /* ==========================
+      About（サービス紹介）
+  ========================== */
+  .about-section {
+    padding: 88px 8% 100px !important;
   }
 
 
@@ -2713,6 +2831,13 @@ section[id],
   .slide.last .brand p {
     font-size: 1.8rem;
     white-space: nowrap;
+  }
+
+  /* ==========================
+       About（サービス紹介）
+  ========================== */
+  .about-section {
+    padding: 84px 8% 96px !important;
   }
 
   /* ==========================
