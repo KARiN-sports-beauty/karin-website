@@ -417,6 +417,86 @@ section, header, footer {
 
 
 /* ===============================
+   こんな方へ（共感セクション）
+   #about の直後・お知らせの前
+=============================== */
+.for-you-section {
+  background-color: #ffffff;
+  padding: 100px 8% 110px;
+  text-align: center;
+  position: relative;
+}
+
+.for-you-title {
+  display: inline-block;
+  position: relative;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
+}
+
+.for-you-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.for-you-list {
+  max-width: 640px;
+  margin: 64px auto 0;
+  text-align: left;
+}
+
+.for-you-item {
+  padding: 0;
+}
+
+.for-you-item + .for-you-item {
+  margin-top: 36px;
+  padding-top: 36px;
+  border-top: 1px solid #eee8dc;
+}
+
+.for-you-num {
+  display: block;
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #c0a062;
+  margin-bottom: 10px;
+}
+
+.for-you-item-title {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+}
+
+.for-you-item-text {
+  font-size: 0.98rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0;
+}
+
+
+/* ===============================
    🩵 お知らせセクション（2025.11再整理版）
    ※KARiN.NOTES（記事）デザインと完全統一トーン
 =============================== */
@@ -1895,6 +1975,38 @@ section[id],
 
 
   /* ==========================
+     こんな方へ
+  ========================== */
+  .for-you-section {
+    padding: 80px 8% 88px;
+  }
+
+  .for-you-title {
+    font-size: 1.7rem;
+    letter-spacing: 0.06em;
+  }
+
+  .for-you-list {
+    margin-top: 48px;
+  }
+
+  .for-you-item + .for-you-item {
+    margin-top: 32px;
+    padding-top: 32px;
+  }
+
+  .for-you-item-title {
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+
+  .for-you-item-text {
+    font-size: 0.95rem;
+    line-height: 2.05;
+  }
+
+
+  /* ==========================
      院長あいさつ（Greeting）
   ========================== */
   .greeting-section {
@@ -2224,6 +2336,42 @@ section[id],
   }
 
   /* ==========================
+     こんな方へ
+     ※ section 一括 padding を上書きし、スマホ用の余白を確保
+  ========================== */
+  .for-you-section {
+    padding: 80px 8% 92px !important;
+  }
+
+  .for-you-title {
+    font-size: 1.55rem;
+  }
+
+  .for-you-list {
+    margin-top: 44px;
+  }
+
+  .for-you-item + .for-you-item {
+    margin-top: 28px;
+    padding-top: 28px;
+  }
+
+  .for-you-num {
+    font-size: 0.78rem;
+    margin-bottom: 8px;
+  }
+
+  .for-you-item-title {
+    font-size: 1.02rem;
+    margin-bottom: 10px;
+  }
+
+  .for-you-item-text {
+    font-size: 0.92rem;
+    line-height: 2.1;
+  }
+
+  /* ==========================
      院長あいさつ
   ========================== */
   .greeting-section {
@@ -2511,6 +2659,14 @@ section[id],
   ========================== */
   .about-section {
     padding: 88px 8% 100px !important;
+  }
+
+
+  /* ==========================
+      こんな方へ
+  ========================== */
+  .for-you-section {
+    padding: 80px 8% 92px !important;
   }
 
 
@@ -2902,6 +3058,17 @@ section[id],
 
   .about-heading {
     font-size: 1.55rem;
+  }
+
+  /* ==========================
+       こんな方へ
+  ========================== */
+  .for-you-section {
+    padding: 76px 8% 88px !important;
+  }
+
+  .for-you-title {
+    font-size: 1.45rem;
   }
 
   /* ==========================
