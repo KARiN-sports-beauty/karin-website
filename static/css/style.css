@@ -347,7 +347,7 @@ section, header, footer {
   display: inline-block;
   position: relative;
   font-family: "Noto Sans JP", sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.7;
@@ -1864,7 +1864,7 @@ section[id],
     flex-direction: column;
     align-items: center;
     gap: 0.12em;
-    font-size: 1.45rem;
+    font-size: 1.7rem;
     letter-spacing: 0.04em;
     line-height: 1.45;
     padding-bottom: 22px;
@@ -2206,7 +2206,7 @@ section[id],
   }
 
   .about-heading {
-    font-size: 1.38rem;
+    font-size: 1.58rem;
     letter-spacing: 0.03em;
     padding-bottom: 20px;
   }
@@ -2900,7 +2900,7 @@ section[id],
   }
 
   .about-heading {
-    font-size: 1.28rem;
+    font-size: 1.45rem;
   }
 
   /* ==========================
