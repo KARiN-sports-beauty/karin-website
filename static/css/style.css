@@ -347,13 +347,18 @@ section, header, footer {
   display: inline-block;
   position: relative;
   font-family: "Noto Sans JP", sans-serif;
-  font-size: 0.88rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  line-height: 1.8;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
   color: #1E3A5F;
   margin: 0 0 12px;
-  padding: 0 0 18px;
+  padding: 0 0 20px;
+}
+
+.about-heading-mark {
+  margin: 0 0.28em;
+  font-weight: 500;
 }
 
 .about-heading::after {
@@ -362,10 +367,32 @@ section, header, footer {
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: 40px;
+  width: 48px;
   height: 1.5px;
   background-color: #c0a062;
   border-radius: 2px;
+}
+
+@keyframes aboutReveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes aboutRevealSoft {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 0.88;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .about-lead {
@@ -1817,20 +1844,52 @@ section[id],
     padding: 88px 8% 96px;
   }
 
+  /* AOSのスクロール待ちを無効化し、読み込み時にフェードイン */
+  .about-section [data-aos] {
+    pointer-events: auto !important;
+    transition: none !important;
+  }
+
+  .about-heading,
+  .about-lead {
+    animation: aboutReveal 0.9s ease-out both;
+  }
+
+  .about-body {
+    animation: aboutRevealSoft 0.9s ease-out both;
+  }
+
   .about-heading {
-    font-size: 0.82rem;
-    letter-spacing: 0.1em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12em;
+    font-size: 1.45rem;
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+    padding-bottom: 22px;
+    animation-delay: 0.5s;
+  }
+
+  .about-heading-mark {
+    margin: 0;
+    font-size: 0.85em;
+    font-weight: 400;
+    opacity: 0.7;
+    line-height: 1.2;
   }
 
   .about-lead {
     font-size: 1.12rem;
     line-height: 2;
     margin: 32px 0 24px;
+    animation-delay: 0.85s;
   }
 
   .about-body {
     font-size: 0.95rem;
     line-height: 2.2;
+    animation-delay: 1.15s;
   }
 
 
@@ -2147,9 +2206,9 @@ section[id],
   }
 
   .about-heading {
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    padding-bottom: 16px;
+    font-size: 1.38rem;
+    letter-spacing: 0.03em;
+    padding-bottom: 20px;
   }
 
   .about-lead {
@@ -2838,6 +2897,10 @@ section[id],
   ========================== */
   .about-section {
     padding: 84px 8% 96px !important;
+  }
+
+  .about-heading {
+    font-size: 1.28rem;
   }
 
   /* ==========================
