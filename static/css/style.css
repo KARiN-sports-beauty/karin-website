@@ -154,7 +154,7 @@ section, header, footer {
   position: relative;
   width: 100%;
   height: 100vh;
-  padding-top: 70px;
+  padding-top: 70px; /* 固定ヘッダー分。中身は残りの高さで中央揃え */
   overflow: hidden;
   background: #fff;
   margin: 0;
@@ -164,7 +164,7 @@ section, header, footer {
 .slider {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100%; /* ヘッダー下の可視エリアいっぱいに合わせる */
   overflow: hidden;
   z-index: 1;
 }
@@ -189,7 +189,7 @@ section, header, footer {
 
 .slide img {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   object-fit: cover;
   object-position: center center;
   filter: brightness(0.8);
@@ -245,6 +245,7 @@ section, header, footer {
   flex-direction: column;
   overflow: hidden;
   z-index: 2;
+  height: 100%;
 }
 
 /* 初期状態（非表示＋下位置） */
@@ -347,7 +348,7 @@ section, header, footer {
   display: inline-block;
   position: relative;
   font-family: "Noto Sans JP", sans-serif;
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.7;
@@ -1864,7 +1865,7 @@ section[id],
     flex-direction: column;
     align-items: center;
     gap: 0.12em;
-    font-size: 1.7rem;
+    font-size: 1.8rem;
     letter-spacing: 0.04em;
     line-height: 1.45;
     padding-bottom: 22px;
@@ -2206,7 +2207,7 @@ section[id],
   }
 
   .about-heading {
-    font-size: 1.58rem;
+    font-size: 1.68rem;
     letter-spacing: 0.03em;
     padding-bottom: 20px;
   }
@@ -2900,7 +2901,7 @@ section[id],
   }
 
   .about-heading {
-    font-size: 1.45rem;
+    font-size: 1.55rem;
   }
 
   /* ==========================
