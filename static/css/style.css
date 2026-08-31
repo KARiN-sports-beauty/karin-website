@@ -497,6 +497,113 @@ section, header, footer {
 
 
 /* ===============================
+   KARiN.のサービス
+   「こんな方へ」の直後・お知らせの前
+=============================== */
+.services-section {
+  background-color: #fafafa;
+  padding: 100px 8% 110px;
+  text-align: center;
+  position: relative;
+}
+
+.services-title {
+  display: inline-block;
+  position: relative;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
+}
+
+.services-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.services-list {
+  max-width: 640px;
+  margin: 64px auto 0;
+  text-align: left;
+}
+
+.services-item + .services-item {
+  margin-top: 44px;
+  padding-top: 44px;
+  border-top: 1px solid #eee8dc;
+}
+
+.services-num {
+  display: block;
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #c0a062;
+  margin-bottom: 8px;
+}
+
+.services-audience {
+  font-size: 0.88rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  opacity: 0.72;
+  margin: 0 0 14px;
+}
+
+.services-name {
+  font-size: 1.48rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+  margin: 0 0 20px;
+}
+
+.services-text {
+  font-size: 0.98rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0 0 1em;
+}
+
+.services-text:last-of-type {
+  margin-bottom: 0;
+}
+
+.services-link {
+  display: inline-block;
+  margin-top: 22px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  border-bottom: 1px solid #c0a062;
+  padding-bottom: 3px;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.services-link:hover {
+  color: #8fa3c1;
+  opacity: 1;
+}
+
+
+/* ===============================
    🩵 お知らせセクション（2025.11再整理版）
    ※KARiN.NOTES（記事）デザインと完全統一トーン
 =============================== */
@@ -2007,6 +2114,39 @@ section[id],
 
 
   /* ==========================
+     KARiN.のサービス
+  ========================== */
+  .services-section {
+    padding: 80px 8% 88px;
+  }
+
+  .services-title {
+    font-size: 1.7rem;
+    letter-spacing: 0.06em;
+  }
+
+  .services-list {
+    margin-top: 48px;
+  }
+
+  .services-item + .services-item {
+    margin-top: 36px;
+    padding-top: 36px;
+  }
+
+  .services-name {
+    font-size: 1.32rem;
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+
+  .services-text {
+    font-size: 0.95rem;
+    line-height: 2.05;
+  }
+
+
+  /* ==========================
      院長あいさつ（Greeting）
   ========================== */
   .greeting-section {
@@ -2372,6 +2512,48 @@ section[id],
   }
 
   /* ==========================
+     KARiN.のサービス
+     ※ section 一括 padding を上書きし、スマホ用の余白を確保
+  ========================== */
+  .services-section {
+    padding: 80px 8% 92px !important;
+  }
+
+  .services-title {
+    font-size: 1.55rem;
+  }
+
+  .services-list {
+    margin-top: 44px;
+  }
+
+  .services-item + .services-item {
+    margin-top: 32px;
+    padding-top: 32px;
+  }
+
+  .services-audience {
+    font-size: 0.84rem;
+    margin-bottom: 12px;
+  }
+
+  .services-name {
+    font-size: 1.22rem;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .services-text {
+    font-size: 0.92rem;
+    line-height: 2.1;
+  }
+
+  .services-link {
+    margin-top: 20px;
+    font-size: 0.86rem;
+  }
+
+  /* ==========================
      院長あいさつ
   ========================== */
   .greeting-section {
@@ -2666,6 +2848,14 @@ section[id],
       こんな方へ
   ========================== */
   .for-you-section {
+    padding: 80px 8% 92px !important;
+  }
+
+
+  /* ==========================
+      KARiN.のサービス
+  ========================== */
+  .services-section {
     padding: 80px 8% 92px !important;
   }
 
@@ -3069,6 +3259,21 @@ section[id],
 
   .for-you-title {
     font-size: 1.45rem;
+  }
+
+  /* ==========================
+       KARiN.のサービス
+  ========================== */
+  .services-section {
+    padding: 76px 8% 88px !important;
+  }
+
+  .services-title {
+    font-size: 1.45rem;
+  }
+
+  .services-name {
+    font-size: 1.18rem;
   }
 
   /* ==========================
