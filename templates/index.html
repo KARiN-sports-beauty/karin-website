@@ -314,57 +314,6 @@
 
 
   <!-- ==========================
-       News Section
-  =========================== -->
-  <section id="news" class="news-section" data-aos="fade-up">
-    <h2 class="section-title">お知らせ</h2>
-    <p class="section-subtitle">休診情報・営業時間のお知らせなどを掲載しています</p>
-    <div class="news-container">
-      {% for item in latest_news %}
-      <div class="news-card">
-        <a href="{{ url_for('show_news', slug=item.slug) }}">
-          <span class="news-title">{{ item.title }}</span>
-          <span class="news-date">{{ item.date }}</span>
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="news-cta">
-    <a href="{{ url_for('news_list') }}" class="btn-more">お知らせ一覧はこちら</a>
-    </div>
-  </section>
-
-
-  <!-- ==========================
-       初診案内
-  =========================== -->
-  <section id="initial-section" class="initial-section" data-aos="fade-up">
-    <div class="initial-container">
-      <div class="initial-text">
-        <h2>初診の方へ</h2>
-        <p>
-          「KARiN.（かりん）」という名前は、私がトレーナーとして現場に立っていた頃、
-          関係者の方々から自然に呼ばれていたあだ名が由来です。<br /><br />
-          技術を提供するだけでなく、「あの人がいると安心して動ける」「また頑張ろうと思える」そんな存在でありたいという想いを込めて、
-          この名前をそのまま屋号にしました。<br /><br />
-          KARiN.では、身体だけでなく心にも寄り添い、
-          その人が“自分らしく健やかに生きる力”を取り戻すサポートをしています。<br /><br />
-          鍼灸・整体・トレーニング・美容のアプローチを組み合わせ、
-          一人ひとりの身体の状態や生活スタイルに合わせたオーダーメイドのケアを行っています。<br /><br />
-          トレーナー帯同や出張専門での施術・トレーニングサポートを
-          福岡（薬院中心）・東京（代々木上原中心）を拠点として活動中です。<br /><br />
-          KARiN.は、施術を受ける場所であると同時に、
-          「また頑張ろう」と思えるきっかけでいれるよう走り続けます。
-        </p>
-      </div>
-      <div class="initial-side">
-        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. logo" class="initial-logo" />
-        <a href="{{ url_for('form') }}" class="cta-btn"><span>初診受付フォームは</span>こちら</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==========================
        施術概要
   =========================== -->
   <section id="treatment-overview" class="treatment-overview">
@@ -403,6 +352,37 @@
     </div>
   </section>
 
+
+  <!-- ==========================
+       初診案内
+  =========================== -->
+  <section id="initial-section" class="initial-section" data-aos="fade-up">
+    <div class="initial-container">
+      <div class="initial-text">
+        <h2>初診の方へ</h2>
+        <p>
+          「KARiN.（かりん）」という名前は、私がトレーナーとして現場に立っていた頃、
+          関係者の方々から自然に呼ばれていたあだ名が由来です。<br /><br />
+          技術を提供するだけでなく、「あの人がいると安心して動ける」「また頑張ろうと思える」そんな存在でありたいという想いを込めて、
+          この名前をそのまま屋号にしました。<br /><br />
+          KARiN.では、身体だけでなく心にも寄り添い、
+          その人が“自分らしく健やかに生きる力”を取り戻すサポートをしています。<br /><br />
+          鍼灸・整体・トレーニング・美容のアプローチを組み合わせ、
+          一人ひとりの身体の状態や生活スタイルに合わせたオーダーメイドのケアを行っています。<br /><br />
+          トレーナー帯同や出張専門での施術・トレーニングサポートを
+          福岡（薬院中心）・東京（代々木上原中心）を拠点として活動中です。<br /><br />
+          KARiN.は、施術を受ける場所であると同時に、
+          「また頑張ろう」と思えるきっかけでいれるよう走り続けます。
+        </p>
+      </div>
+      <div class="initial-side">
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. logo" class="initial-logo" />
+        <a href="{{ url_for('form') }}" class="cta-btn"><span>初診受付フォームは</span>こちら</a>
+      </div>
+    </div>
+  </section>
+
+
   <!-- ==========================
        KARiN.NOTES
   =========================== -->
@@ -424,7 +404,30 @@
     </div>
   </section>
 
-    <!-- ==========================
+
+  <!-- ==========================
+       News Section
+  =========================== -->
+  <section id="news" class="news-section" data-aos="fade-up">
+    <h2 class="section-title">お知らせ</h2>
+    <p class="section-subtitle">休診情報・営業時間のお知らせなどを掲載しています</p>
+    <div class="news-container">
+      {% for item in latest_news %}
+      <div class="news-card">
+        <a href="{{ url_for('show_news', slug=item.slug) }}">
+          <span class="news-title">{{ item.title }}</span>
+          <span class="news-date">{{ item.date }}</span>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="news-cta">
+    <a href="{{ url_for('news_list') }}" class="btn-more">お知らせ一覧はこちら</a>
+    </div>
+  </section>
+
+
+  <!-- ==========================
       アクセス・営業時間＋直近スケジュール
   =========================== -->
   <section id="access" class="access-section" data-aos="fade-up">

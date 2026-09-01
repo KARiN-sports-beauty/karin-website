@@ -1152,7 +1152,7 @@ section, header, footer {
    2025.11 トップページ用
 =============================== */
 .blog-section {
-  background-color: #ffffff;
+  background-color: #fafafa;
   padding: 90px 5% 100px;
   text-align: center;
   position: relative;
@@ -1291,6 +1291,23 @@ section, header, footer {
 body.index-page .blog-section {
   margin-bottom: 30px;
   padding-bottom: 80px;
+}
+
+/* トップページ：白 / #fafafa を交互にしてセクションの区切りを明確に */
+body.index-page #about,
+body.index-page #services,
+body.index-page #treatment-overview,
+body.index-page #blog,
+body.index-page #access {
+  background-color: #fafafa;
+}
+
+body.index-page #for-you,
+body.index-page #profile,
+body.index-page #initial-section,
+body.index-page #news,
+body.index-page #contact-section {
+  background-color: #ffffff;
 }
 
 
