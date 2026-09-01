@@ -1,108 +1,348 @@
 /* =========================================================
-   KARiN. Treatment Page Styling
-   - Based on style.css (Global)
-   - Optimized for: PC / 1240 / 768 / 480
-   ========================================================= */
+   /treatment 専用
+   トップページ（こんな方へ / サービス / プロフィール）と同じ世界観
+   ※ .treatment-card は使わない（style.css のトップ用と衝突するため）
+========================================================= */
 
-/* ---------- レイアウト ---------- */
-.treatment-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 120px 5% 160px;
+.treatment-page {
+  background-color: #ffffff;
+  color: #1E3A5F;
+}
+
+.tx-hero,
+.tx-section {
+  box-sizing: border-box;
+}
+
+.tx-hero {
+  padding: 120px 8% 72px;
   text-align: center;
+  background-color: #ffffff;
 }
 
-/* ---------- タイトル ---------- */
-.treatment-title {
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: #1E3A5F;
-  margin-bottom: 20px;
-  letter-spacing: 0.05em;
-}
-
-.treatment-lead {
-  font-size: 1.05rem;
-  line-height: 1.9;
-  color: #1E3A5F;
-  margin-bottom: 70px;
-}
-
-/* ---------- グリッド ---------- */
-.treatment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 40px;
-  justify-content: center;
-}
-
-/* ---------- カード ---------- */
-.treatment-card {
-  background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 3px 6px rgba(30, 58, 95, 0.06),
-              0 8px 22px rgba(30, 58, 95, 0.08);
-  padding: 28px 24px 36px;
-  text-align: left;
-  transition: all 0.35s ease;
+.tx-hero-title {
+  display: inline-block;
   position: relative;
-  overflow: hidden;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
 }
 
-.treatment-card::before {
+.tx-hero-title::after {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5),
-              inset 0 -3px 6px rgba(0, 0, 0, 0.04);
-  pointer-events: none;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
 }
 
-.treatment-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 28px rgba(30, 58, 95, 0.12),
-              0 6px 12px rgba(30, 58, 95, 0.08);
+.tx-hero-lead {
+  max-width: 640px;
+  margin: 28px auto 0;
+  font-size: 1.02rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.86;
 }
 
-/* ---------- 画像 ---------- */
-.treatment-image {
+.tx-section {
+  padding: 88px 8% 96px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.tx-section--muted {
+  background-color: #fafafa;
+}
+
+.tx-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.tx-inner--narrow {
+  max-width: 640px;
+}
+
+.tx-heading {
+  display: inline-block;
+  position: relative;
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
+}
+
+.tx-heading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.tx-heading--left {
+  display: block;
+  text-align: left;
+}
+
+.tx-heading--left::after {
+  left: 0;
+  transform: none;
+}
+
+.tx-body {
+  margin: 36px auto 0;
+  text-align: left;
+}
+
+.tx-body p {
+  font-size: 0.98rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2.05;
+  color: #1E3A5F;
+  opacity: 0.86;
+  margin: 0 0 1.1em;
+}
+
+.tx-body p:last-child {
+  margin-bottom: 0;
+}
+
+.tx-body--left {
+  margin-top: 20px;
+}
+
+.tx-section-lead {
+  margin: 28px auto 0;
+  font-size: 0.98rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.86;
+}
+
+.tx-catch {
+  margin: 20px 0 0;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  text-align: left;
+}
+
+.tx-eyebrow {
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #c0a062;
+  margin: 0 0 10px;
+  text-align: left;
+}
+
+/* ---------- 3本柱 ---------- */
+.tx-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px 36px;
+  margin-top: 56px;
+  text-align: left;
+}
+
+.tx-pillar-image {
   width: 100%;
-  height: 200px;
+  height: 220px;
   overflow: hidden;
   border-radius: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
-.treatment-image img {
+.tx-pillar-image img,
+.tx-beauty-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease, opacity 0.4s ease;
+  display: block;
 }
 
-.treatment-card:hover .treatment-image img {
-  transform: scale(1.04);
-  opacity: 0.95;
-}
-
-/* ---------- テキスト ---------- */
-.treatment-card h3 {
-  font-size: 1.25rem;
+.tx-num {
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
   font-weight: 600;
-  margin-bottom: 10px;
-  color: #1E3A5F;
+  letter-spacing: 0.18em;
+  color: #c0a062;
+  margin: 0 0 8px;
 }
 
-.treatment-card p {
-  font-size: 0.95rem;
-  line-height: 1.8;
+.tx-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1.6;
   color: #1E3A5F;
+  opacity: 0.72;
+  margin: 0 0 12px;
+}
+
+.tx-pillar-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  margin: 0 0 14px;
+}
+
+.tx-pillar-text {
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0;
+}
+
+/* ---------- 美容鍼 ---------- */
+.tx-beauty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 56px;
+  align-items: center;
   text-align: left;
 }
 
+.tx-beauty-image {
+  width: 100%;
+  height: 340px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+/* ---------- 補助アプローチ ---------- */
+.tx-extra-list {
+  list-style: none;
+  margin: 40px 0 0;
+  padding: 0;
+  text-align: left;
+}
+
+.tx-extra-list li {
+  padding: 16px 0 16px 18px;
+  border-top: 1px solid #eee8dc;
+  font-size: 0.98rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  position: relative;
+}
+
+.tx-extra-list li:last-child {
+  border-bottom: 1px solid #eee8dc;
+}
+
+.tx-extra-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #c0a062;
+}
+
+/* ---------- テキストリンク / CTA ---------- */
+.tx-text-link {
+  display: inline-block;
+  margin-top: 28px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  border-bottom: 1px solid #c0a062;
+  padding-bottom: 3px;
+  text-decoration: none;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.tx-text-link:hover {
+  color: #8fa3c1;
+}
+
+.tx-cta-section {
+  padding-bottom: 140px;
+}
+
+.tx-cta-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.tx-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  min-height: 48px;
+  padding: 14px 32px;
+  background-color: #1E3A5F;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: 30px;
+  border: 1.5px solid #1E3A5F;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.25s ease;
+}
+
+.tx-cta-btn:hover {
+  background-color: #16304A;
+  transform: translateY(-1px);
+}
+
+.tx-cta-btn--outline {
+  background-color: transparent;
+  color: #1E3A5F;
+}
+
+.tx-cta-btn--outline:hover {
+  background-color: #1E3A5F;
+  color: #ffffff;
+}
+
+.tx-br-pc {
+  display: inline;
+}
+
 /* ---------- HOMEボタン ---------- */
-.home-btn {
+.treatment-page .home-btn {
   position: fixed;
   bottom: 25px;
   right: 25px;
@@ -110,10 +350,10 @@
   align-items: center;
   gap: 10px;
   background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 40px;
   padding: 10px 16px 10px 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   text-decoration: none;
   color: #1E3A5F;
   font-weight: 600;
@@ -122,13 +362,13 @@
   z-index: 1000;
 }
 
-.home-btn:hover {
+.treatment-page .home-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   background: #f8f9fb;
 }
 
-.home-btn img {
+.treatment-page .home-btn img {
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -136,202 +376,175 @@
 }
 
 /* ===============================
-   💻 1024px（タブレット横向き）対応：3列維持
-   =============================== */
+   タブレット
+=============================== */
 @media (max-width: 1024px) {
-  .treatment-wrapper {
-    padding: 80px 8% 120px; /* ← 左右余白を広げる */
+  .tx-hero {
+    padding: 96px 8% 56px;
   }
 
-  /* 🔹 2列で幅いっぱい、中央寄せ */
-  .treatment-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(320px, 1fr)); /* ← 各カード幅を確保 */
-    gap: 40px 48px; /* ← 横48pxで余白を強調 */
-    justify-content: center;
-    align-items: start;
+  .tx-section {
+    padding: 72px 8% 80px;
   }
 
-  /* 🔹 カードの見栄えと干渉リセット */
-  .treatment-card {
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    padding: 32px 26px 38px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    width: 100%;
-    max-width: 480px; /* ✅ 広げすぎ防止 */
-    height: 100%;
-    margin: 0 auto;
-    box-sizing: border-box;
+  .tx-pillars {
+    gap: 40px 24px;
   }
 
-  .treatment-card img {
-    display: block !important;
-    width: 100% !important;
-    height: 220px !important;
-    object-fit: cover !important;
-    border-radius: 14px !important;
-    margin-bottom: 20px !important;
+  .tx-pillar-image {
+    height: 200px;
   }
 
-  .treatment-card h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: #1E3A5F;
+  .tx-pillar-title {
+    font-size: 1.08rem;
   }
 
-  .treatment-card p {
-    font-size: 1rem;
-    line-height: 1.8;
-    color: #1E3A5F;
-    margin: 0;
+  .tx-beauty {
+    gap: 40px;
   }
 
-  /* 🔹 HOMEボタン調整 */
-  .home-btn {
-    bottom: 18px;
-    right: 18px;
-    padding: 10px 14px;
-    font-size: 0.85rem;
-  }
-
-  .home-btn img {
-    width: 26px !important;
-    height: 26px !important;
+  .tx-beauty-image {
+    height: 280px;
   }
 }
 
-
-
-
 /* ===============================
-   📱 768px（タブレット縦 / スマホ横）対応
-   2列×余白とgap最適化バージョン
-   =============================== */
+   スマートフォン
+=============================== */
 @media (max-width: 768px) {
-  .treatment-wrapper {
-    padding: 60px 6% 100px;
+  .tx-hero {
+    padding: 88px 8% 48px;
   }
 
-  /* 🔹 1列構成（中央寄せ・呼吸感あり） */
-  .treatment-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 40px; /* 上下の余白 */
-    justify-items: center;
+  .tx-hero-title {
+    font-size: 1.7rem;
   }
 
-  /* 🔹 カードを広めに（スマホでも狭く見せない） */
-  .treatment-card {
-    width: 100%;
-    max-width: 540px;
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    padding: 28px 22px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    margin: 0 auto;
-  }
-
-  .treatment-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
-  }
-
-  /* 🔹 画像調整 */
-  .treatment-image {
-    width: 100%;
-    height: 220px;
-    border-radius: 14px;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
-
-  .treatment-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  .treatment-card:hover .treatment-image img {
-    transform: scale(1.03);
-  }
-
-  /* 🔹 テキスト調整 */
-  .treatment-card h3 {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-  }
-
-  .treatment-card p {
+  .tx-hero-lead {
     font-size: 0.95rem;
-    line-height: 1.8;
+    line-height: 1.95;
+    margin-top: 24px;
   }
 
-  /* 🔹 HOMEボタン（親指で押しやすく） */
-  .home-btn {
+  .tx-br-pc {
+    display: none;
+  }
+
+  .tx-section {
+    padding: 68px 8% 76px;
+  }
+
+  .tx-heading {
+    font-size: 1.38rem;
+    line-height: 1.55;
+    letter-spacing: 0.04em;
+  }
+
+  .tx-body {
+    margin-top: 28px;
+  }
+
+  .tx-body p,
+  .tx-section-lead,
+  .tx-pillar-text {
+    font-size: 0.94rem;
+    line-height: 2.05;
+  }
+
+  .tx-pillars {
+    grid-template-columns: 1fr;
+    margin-top: 40px;
+    gap: 40px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .tx-beauty {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .tx-pillar + .tx-pillar {
+    padding-top: 40px;
+    border-top: 1px solid #eee8dc;
+  }
+
+  .tx-pillar-image {
+    height: 200px;
+    margin-bottom: 18px;
+  }
+
+  .tx-pillar-title {
+    font-size: 1.08rem;
+  }
+
+  .tx-beauty-image {
+    height: 210px;
+  }
+
+  .tx-catch {
+    font-size: 1.05rem;
+  }
+
+  .tx-extra-list {
+    margin-top: 28px;
+  }
+
+  .tx-extra-list li {
+    padding: 14px 0 14px 16px;
+    font-size: 0.95rem;
+  }
+
+  .tx-cta-section {
+    padding-bottom: 120px;
+  }
+
+  .tx-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .tx-cta-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+  }
+
+  .treatment-page .home-btn {
     bottom: 15px;
     right: 15px;
     padding: 10px 14px;
     font-size: 0.8rem;
-    border-radius: 40px;
   }
 
-  .home-btn img {
-    width: 26px !important;
-    height: 26px !important;
+  .treatment-page .home-btn img {
+    width: 26px;
+    height: 26px;
   }
 }
 
-/* ===============================
-   💙 「整体だけ小さい」修正パッチ
-   nth-child(3)のmax-width制限を無効化
-=============================== */
-.treatment-wrapper .treatment-card:nth-child(3) {
-  max-width: 540px;
-  margin: 0;
-}
-
-
-
-/* ===============================
-   💙 480px以下（スマホ用最終調整）
-=============================== */
 @media (max-width: 480px) {
-  .treatment-wrapper {
-    padding: 60px 4% 80px; /* 全体の余白を軽く */
+  .tx-hero {
+    padding: 80px 6% 40px;
   }
 
-  .treatment-grid {
-    grid-template-columns: 1fr; /* ✅ 1列表示に */
-    gap: 28px; /* カード間に少し余白 */
+  .tx-section {
+    padding: 64px 6% 72px;
   }
 
-  .treatment-card {
-    max-width: 100%;
-    width: 100%;
-    padding: 22px 18px 28px;
-    border-radius: 14px;
+  .tx-heading {
+    font-size: 1.28rem;
   }
 
-  .treatment-image {
-    height: 180px; /* ✅ スマホで縦横比を整える */
+  .tx-pillar-image,
+  .tx-beauty-image {
+    height: 180px;
     border-radius: 12px;
-    margin-bottom: 14px;
-  }
-
-  .treatment-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 8px;
-  }
-
-  .treatment-card p {
-    font-size: 0.9rem;
-    line-height: 1.7;
   }
 }

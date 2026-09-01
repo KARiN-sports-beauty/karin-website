@@ -4,40 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ============================
-       🔥 SEO最適化（完全版）
-  ============================ -->
-  <title>施術内容（鍼灸・整体・美容鍼・トレーニング） | KARiN. ~Sports & Beauty~</title>
+  <title>施術内容（鍼灸・整体・トレーニング） | KARiN. ~Sports & Beauty~</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
-  <link rel="canonical" href="{{ request.url }}">
-  <meta name="description" content="KARiN.では国家資格保有の鍼灸師による鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術をご提供。東京（代々木上原）・福岡（薬院）にて出張専門で対応しています。">
-  <meta name="keywords" content="施術内容, 鍼灸, スポーツマッサージ, マッサージ, 整体, 美容鍼, トレーニング, オイルトリートメント, コンディショニング, 出張施術, 代々木上原, 薬院, KARiN">
+  <link rel="canonical" href="https://karin-sb.jp/treatment">
+  <meta name="description" content="KARiN.では、決まった施術を当てはめるのではなく、その日の身体の状態や目的に合わせて鍼灸・整体・コンディショニング・トレーニングなどを組み合わせます。東京（代々木上原）・福岡（薬院）。">
+  <meta name="keywords" content="施術内容, 鍼灸, 整体, コンディショニング, 美容鍼, トレーニング, 代々木上原, 薬院, KARiN">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
-  <!-- ============================
-       🔥 OGP（SNS最適化）
-  ============================ -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="施術内容（鍼灸・整体・美容鍼・トレーニング） | KARiN.">
-  <meta property="og:description" content="鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術。心身をトータルで整えるKARiN.の施術をご紹介します。">
-  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:title" content="施術内容（鍼灸・整体・トレーニング） | KARiN.">
+  <meta property="og:description" content="その日の身体の状態や目的を見ながら、鍼灸・整体・コンディショニング・トレーニングなどを組み合わせて整えます。">
+  <meta property="og:url" content="https://karin-sb.jp/treatment">
   <meta property="og:image" content="{{ url_for('static', filename='images/logoname.jpg', _external=True) }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ============================
-       🔥 構造化データ（Service + LocalBusiness）
-  ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Service",
-        "serviceType": "鍼灸・整体・美容鍼・トレーニング",
+        "name": "KARiN.の施術",
+        "serviceType": "鍼灸・整体・コンディショニング・トレーニング",
         "provider": {
           "@type": "LocalBusiness",
           "name": "KARiN. ~Sports & Beauty~",
@@ -74,79 +66,151 @@
           "openingHoursSpecification": [{
             "@type": "OpeningHoursSpecification",
             "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-            "opens": "12:00",
-            "closes": "26:00"
+            "opens": "10:00",
+            "closes": "19:00"
           }],
-          "url": "{{ request.url_root }}"
+          "url": "https://karin-sb.jp/"
         },
-        "description": "KARiN.では国家資格を持つ鍼灸師が、鍼灸・整体・美容鍼・トレーニングを組み合わせたオーダーメイド施術を行います。"
+        "description": "決まった施術を当てはめるのではなく、その日の身体の状態や目的を見ながら、鍼灸・整体・コンディショニング・トレーニングなどを組み合わせて整えます。"
       },
       {
         "@type": "WebPage",
         "name": "施術内容",
-        "url": "{{ request.url }}",
-        "about": "鍼灸・整体・美容鍼・オイルトリートメント・トレーニングなどの施術メニュー紹介ページ"
+        "url": "https://karin-sb.jp/treatment",
+        "about": "KARiN.が身体の状態や目的に合わせて、鍼灸・整体・コンディショニング・トレーニングなどをどのように組み合わせて整えているかを紹介するページ"
       }
     ]
   }
   </script>
 
-  <!-- ============================
-       🔥 CSS & フォント & AOS
-  ============================ -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/treatment.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 </head>
 
+<body class="treatment-page">
 
-<body>
+  <section class="tx-hero" aria-labelledby="treatment-heading">
+    <h1 id="treatment-heading" class="tx-hero-title" data-aos="fade-up">施術内容</h1>
+    <p class="tx-hero-lead" data-aos="fade-up" data-aos-delay="80">
+      KARiN.では、決まった施術を当てはめるのではなく、<br class="tx-br-pc">
+      その日の身体の状態や目的を見ながら、必要なアプローチを組み合わせています。
+    </p>
+  </section>
 
-<section class="treatment-wrapper">
-  <h1 class="treatment-title" data-aos="fade-up">施術内容</h1>
-  <p class="treatment-lead" data-aos="fade-up" data-aos-delay="100">
-    KARiN.では、鍼灸・整体・トレーニング・美容など、<br>
-    一人ひとりの身体・目的に合わせたオーダーメイドのケアを行っています。
-  </p>
-
-  <div class="treatment-grid">
-    {% for title, description, image in items %}
-    <div class="treatment-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
-      <div class="treatment-image">
-        <img src="{{ url_for('static', filename='images/' ~ image) }}" alt="{{ title }}">
+  <section class="tx-section tx-section--muted" aria-labelledby="tx-philosophy-heading">
+    <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
+      <h2 id="tx-philosophy-heading" class="tx-heading">整えるだけで終わらせない。</h2>
+      <div class="tx-body">
+        <p>痛みや不調があるときは、まず身体を整える。<br>そして、動ける状態をつくり、日々の生活やスポーツの中で良い状態を保てる身体へ。</p>
+        <p>鍼灸・整体・コンディショニング・トレーニングなどを、その方の状態や目的に合わせて組み合わせながら、身体と向き合っていきます。</p>
       </div>
-      <h3>{{ title }}</h3>
-      <p>{{ description }}</p>
     </div>
-    {% endfor %}
-  </div>
+  </section>
 
-  <div style="text-align: center; margin-top: 40px; padding-top: 40px; border-top: 1px solid #e0e0e0;">
-    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-      <a href="{{ url_for('lp_yoyogiuehara') }}" style="display: inline-block; padding: 12px 30px; background-color: #1E3A5F; color: #fff; border-radius: 28px; text-decoration: none; font-size: 0.85rem; transition: background-color 0.3s ease;">代々木上原で鍼灸をお探しの方へ</a>
-      <a href="{{ url_for('lp_yakuin') }}" style="display: inline-block; padding: 12px 30px; background-color: #1E3A5F; color: #fff; border-radius: 28px; text-decoration: none; font-size: 0.85rem; transition: background-color 0.3s ease;">薬院で鍼灸をお探しの方へ</a>
+  <section class="tx-section" aria-labelledby="tx-pillars-heading">
+    <div class="tx-inner">
+      <h2 id="tx-pillars-heading" class="tx-heading" data-aos="fade-up">身体を整えるために。</h2>
+      <div class="tx-pillars">
+        <article class="tx-pillar" data-aos="fade-up">
+          <div class="tx-pillar-image">
+            <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸" width="720" height="480">
+          </div>
+          <p class="tx-num">01</p>
+          <p class="tx-label">鍼灸</p>
+          <h3 class="tx-pillar-title">身体の状態を見ながら、内側から整える。</h3>
+          <p class="tx-pillar-text">痛みや不調だけでなく、疲労や自律神経の乱れなど、その日の身体の状態を見ながら施術します。身体のバランスを整え、本来の状態へ戻っていくための土台をつくります。</p>
+        </article>
+        <article class="tx-pillar" data-aos="fade-up" data-aos-delay="80">
+          <div class="tx-pillar-image">
+            <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体・コンディショニング" width="720" height="480">
+          </div>
+          <p class="tx-num">02</p>
+          <p class="tx-label">整体・コンディショニング</p>
+          <h3 class="tx-pillar-title">動きやすい身体をつくる。</h3>
+          <p class="tx-pillar-text">姿勢や可動域、筋肉の状態などを見ながら、身体全体のバランスを整えます。痛いところだけを見るのではなく、身体全体を見ながら、動きやすく負担の少ない状態を目指します。</p>
+        </article>
+        <article class="tx-pillar" data-aos="fade-up" data-aos-delay="160">
+          <div class="tx-pillar-image">
+            <img src="{{ url_for('static', filename='images/treatment6.jpg') }}" alt="トレーニング" width="720" height="480">
+          </div>
+          <p class="tx-num">03</p>
+          <p class="tx-label">トレーニング</p>
+          <h3 class="tx-pillar-title">整えた身体を、使える身体へ。</h3>
+          <p class="tx-pillar-text">整えるだけで終わらず、身体をどう使うかまで考えます。姿勢や動き、筋力などを整えながら、良いコンディションを維持し、再び不調を繰り返さない身体づくりにつなげます。</p>
+        </article>
+      </div>
     </div>
-  </div>
+  </section>
 
-</section>
+  <section class="tx-section tx-section--muted" aria-labelledby="tx-beauty-heading">
+    <div class="tx-inner tx-beauty" data-aos="fade-up">
+      <div class="tx-beauty-image">
+        <img src="{{ url_for('static', filename='images/treatment2.jpg') }}" alt="美容鍼" width="720" height="480">
+      </div>
+      <div class="tx-beauty-body">
+        <p class="tx-eyebrow">Beauty</p>
+        <h2 id="tx-beauty-heading" class="tx-heading tx-heading--left">美容鍼</h2>
+        <p class="tx-catch">身体を整えることから、美しさへ。</p>
+        <div class="tx-body tx-body--left">
+          <p>美容鍼も、KARiN.が大切にしている「身体を整える」という考え方のひとつです。</p>
+          <p>お顔だけを見るのではなく、身体全体の状態にも目を向けながら、その方に合わせたケアを行います。</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<!-- ✅ AOSスクリプト -->
-<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-<script>
-  AOS.init({
-    duration: 800,
-    once: true
-  });
-</script>
+  <section class="tx-section" aria-labelledby="tx-extra-heading">
+    <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
+      <h2 id="tx-extra-heading" class="tx-heading">その日の状態に合わせて、必要なものを。</h2>
+      <p class="tx-section-lead">鍼灸や整体、トレーニングを軸に、必要に応じてさまざまなアプローチを組み合わせます。</p>
+      <ul class="tx-extra-list">
+        <li>ストレッチ</li>
+        <li>リコンディショニング</li>
+        <li>筋膜へのアプローチ</li>
+        <li>カッピング</li>
+        <li>コンプレフロス</li>
+        <li>アクティベーター</li>
+        <li>オイルトリートメント</li>
+      </ul>
+    </div>
+  </section>
 
+  <section class="tx-section tx-section--muted" aria-labelledby="tx-trainer-heading">
+    <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
+      <h2 id="tx-trainer-heading" class="tx-heading">チームや現場でのコンディショニングも。</h2>
+      <p class="tx-section-lead">選手・チームの状態に合わせて、施術・コンディショニング・トレーニングまで、現場でサポートします。</p>
+      <a href="{{ url_for('contact') }}" class="tx-text-link">トレーナー帯同について相談する ↓</a>
+    </div>
+  </section>
 
-<!-- ✅ ホームボタン（左下固定） -->
-<a href="{{ url_for('index') }}" class="home-btn">
-  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
-  <span>ホームに戻る</span>
-</a>
+  <section class="tx-section tx-cta-section" aria-labelledby="tx-cta-heading">
+    <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
+      <h2 id="tx-cta-heading" class="tx-heading">何を受ければいいか分からなくても、大丈夫です。</h2>
+      <div class="tx-body">
+        <p>身体の状態や目的によって、必要な施術は一人ひとり異なります。</p>
+        <p>「どんな施術を受ければいいか分からない」という方も、まずはお気軽にご相談ください。</p>
+      </div>
+      <div class="tx-cta-row">
+        <a href="{{ url_for('contact') }}" class="tx-cta-btn tx-cta-btn--outline">相談する ↓</a>
+        <a href="{{ url_for('book_page') }}" class="tx-cta-btn">予約する ↓</a>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 800,
+      once: true
+    });
+  </script>
+
+  <a href="{{ url_for('index') }}" class="home-btn">
+    <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
+    <span>ホームに戻る</span>
+  </a>
 
 </body>
 </html>
-
