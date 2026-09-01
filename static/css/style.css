@@ -703,7 +703,7 @@ section, header, footer {
 
 /* ---------- プロフィール（旧：院長あいさつ） ---------- */
 .greeting-section {
-  background-color: #fafafa;
+  background-color: #ffffff;
   padding: 100px 5% 90px;
   display: flex;
   justify-content: center;
@@ -864,7 +864,7 @@ section, header, footer {
   transform: scaleY(0.9);
   opacity: 0;
   max-height: 0;
-  background-color: #fafafa;   /* ★ セクションと同じ色のまま */
+  background-color: #ffffff;
   border-radius: 15px;
   margin-top: 15px;
   line-height: 1.7;            /* 本文と合わせて少し詰める */
