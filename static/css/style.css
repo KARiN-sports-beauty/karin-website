@@ -711,11 +711,19 @@ section, header, footer {
 }
 
 .intro-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "image title"
+    "image content";
+  align-items: start;
+  column-gap: 60px;
+  row-gap: 12px;
   max-width: 1200px;
-  gap: 60px;
+}
+
+.intro-image {
+  grid-area: image;
 }
 
 .intro-image img {
@@ -726,19 +734,21 @@ section, header, footer {
 }
 
 .intro-content {
-  flex: 1;
+  grid-area: content;
   color: #1E3A5F;
 }
 
 .greeting-section .section-title {
+  grid-area: title;
   display: inline-block;
+  justify-self: start;
   position: relative;
   font-size: 1.72rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.65;
   color: #1E3A5F;
-  margin: 0 0 28px;
+  margin: 0 0 8px;
   padding: 0 0 16px;
 }
 
@@ -755,7 +765,7 @@ section, header, footer {
 }
 
 .intro-role {
-  font-size: 0.92rem;
+  font-size: 1.08rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   color: #1E3A5F;
@@ -844,7 +854,7 @@ section, header, footer {
   cursor: pointer;
   transition: color 0.3s ease, opacity 0.3s ease;
   text-align: left;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   position: relative;
@@ -2241,9 +2251,10 @@ section[id],
   }
 
   .intro-container {
+    display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 40px;
+    gap: 22px;
   }
 
   .intro-image {
@@ -2263,7 +2274,12 @@ section[id],
   .greeting-section .section-title {
     font-size: 1.45rem;
     letter-spacing: 0.04em;
-    margin-bottom: 24px;
+    margin: 0 0 4px;
+    justify-self: auto;
+  }
+
+  .intro-role {
+    font-size: 1.15rem;
   }
 
   .intro-role,
@@ -2281,14 +2297,17 @@ section[id],
 
   .intro-quote {
     text-align: left;
-    font-size: 1.02rem;
+    font-size: clamp(0.78rem, 3.6vw, 0.95rem);
+    letter-spacing: 0.01em;
+    padding-left: 10px;
+    white-space: nowrap;
   }
 
   .accordion-btn {
     display: inline-block;
     margin: 28px auto 0;
     padding: 0 0 3px;
-    font-size: 0.88rem;
+    font-size: 1rem;
   }
 
 
@@ -2669,7 +2688,7 @@ section[id],
   .intro-container {
     flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 20px;
   }
 
   .intro-image img {
@@ -2686,6 +2705,11 @@ section[id],
     line-height: 1.7;
     padding-left: 8px;
     padding-right: 8px;
+    margin-bottom: 0;
+  }
+
+  .intro-role {
+    font-size: 1.18rem;
   }
 
   .intro-role,
@@ -2701,16 +2725,19 @@ section[id],
   }
 
   .intro-quote {
-    margin-left: 8px;
-    margin-right: 8px;
-    font-size: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    font-size: clamp(0.75rem, 3.55vw, 0.92rem);
+    letter-spacing: 0;
+    padding-left: 8px;
+    white-space: nowrap;
   }
 
   .accordion-btn {
     display: inline-block;
     margin: 24px auto 0;
     padding: 0 0 3px;
-    font-size: 0.86rem;
+    font-size: 1rem;
   }
 
 
