@@ -133,7 +133,7 @@
       <a href="{{ url_for('index') }}">ホーム</a>
       <a href="#news">お知らせ</a>
       <a href="#profile">プロフィール</a>
-      <a href="#initial-section">初診案内</a>
+      <a href="#initial-section">初めての方へ</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表</a>
       <a href="{{ url_for('index') }}#blog">KARiN.NOTES</a>
@@ -353,30 +353,86 @@
 
 
   <!-- ==========================
-       初診案内
+       初めての方へ／施術の流れ
   =========================== -->
   <section id="initial-section" class="initial-section" data-aos="fade-up">
-    <div class="initial-container">
-      <div class="initial-text">
-        <h2>初診の方へ</h2>
-        <p>
-          「KARiN.（かりん）」という名前は、私がトレーナーとして現場に立っていた頃、
-          関係者の方々から自然に呼ばれていたあだ名が由来です。<br /><br />
-          技術を提供するだけでなく、「あの人がいると安心して動ける」「また頑張ろうと思える」そんな存在でありたいという想いを込めて、
-          この名前をそのまま屋号にしました。<br /><br />
-          KARiN.では、身体だけでなく心にも寄り添い、
-          その人が“自分らしく健やかに生きる力”を取り戻すサポートをしています。<br /><br />
-          鍼灸・整体・トレーニング・美容のアプローチを組み合わせ、
-          一人ひとりの身体の状態や生活スタイルに合わせたオーダーメイドのケアを行っています。<br /><br />
-          トレーナー帯同や出張専門での施術・トレーニングサポートを
-          福岡（薬院中心）・東京（代々木上原中心）を拠点として活動中です。<br /><br />
-          KARiN.は、施術を受ける場所であると同時に、
-          「また頑張ろう」と思えるきっかけでいれるよう走り続けます。
-        </p>
+    <div class="initial-inner">
+      <h2 class="initial-heading">初めての方へ</h2>
+      <p class="initial-lead">
+        初めての方も、どうぞお気軽にご相談ください。<br>
+        施術内容は、あらかじめ決めていただく必要はありません。<br>
+        お身体の状態や目的を伺い、その日の状態に合わせて施術を組み立てます。
+      </p>
+
+      <div class="initial-paths">
+        <article class="initial-path">
+          <p class="initial-path-label">Webから予約する</p>
+          <h3 class="initial-path-title">日時・メニューが決まっている方</h3>
+          <p class="initial-path-text">Web上で空き状況を確認し、そのまま日時・メニューを選んで予約できます。</p>
+          <a href="{{ url_for('book_page') }}" class="initial-btn">Web予約</a>
+        </article>
+        <article class="initial-path">
+          <p class="initial-path-label">相談してから決める</p>
+          <h3 class="initial-path-title">施術内容や日時など、相談してから決めたい方</h3>
+          <p class="initial-path-text">お問い合わせ、またはLINEからお気軽にご相談ください。帯同・直前のご相談などもこちらから。</p>
+          <div class="initial-path-ctas">
+            <a href="{{ url_for('contact') }}" class="initial-btn">お問い合わせ</a>
+            <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn initial-btn--line">LINEで相談</a>
+          </div>
+        </article>
       </div>
-      <div class="initial-side">
-        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. logo" class="initial-logo" />
-        <a href="{{ url_for('form') }}" class="cta-btn"><span>初診受付フォームは</span>こちら</a>
+
+      <div class="initial-intake">
+        <p class="initial-intake-text">
+          初めての方には、施術前に「初診問診票」へのご入力をお願いしています。<br>
+          お身体の状態やこれまでの経過などを事前にお聞かせください。
+        </p>
+        <a href="{{ url_for('form') }}" class="initial-intake-link">初診問診票</a>
+      </div>
+
+      <div class="initial-flow">
+        <h3 class="initial-flow-heading">施術の流れ</h3>
+        <ol class="initial-steps">
+          <li class="initial-step">
+            <span class="initial-step-num">01</span>
+            <h4 class="initial-step-title">ご予約・ご相談</h4>
+            <p class="initial-step-text">Web予約、またはお問い合わせ・LINEからご予約ください。</p>
+          </li>
+          <li class="initial-step">
+            <span class="initial-step-num">02</span>
+            <h4 class="initial-step-title">初診問診票</h4>
+            <p class="initial-step-text">初めての方には、施術前に初診問診票へのご入力をお願いしています。</p>
+          </li>
+          <li class="initial-step">
+            <span class="initial-step-num">03</span>
+            <h4 class="initial-step-title">当日の準備</h4>
+            <p class="initial-step-text">出張の場合は、開始時刻までにご指定の場所でお待ちください。施術を受けやすい、動きやすい服装がおすすめです。</p>
+          </li>
+          <li class="initial-step">
+            <span class="initial-step-num">04</span>
+            <h4 class="initial-step-title">カウンセリング・施術</h4>
+            <p class="initial-step-text">当日のお身体の状態や目的を伺い、鍼灸・整体・トレーニングなどから必要なものを組み合わせて施術します。</p>
+          </li>
+          <li class="initial-step">
+            <span class="initial-step-num">05</span>
+            <h4 class="initial-step-title">施術後</h4>
+            <p class="initial-step-text">お身体の状態を確認し、必要に応じて今後のケアや再診についてご案内します。</p>
+          </li>
+        </ol>
+      </div>
+
+      <p class="initial-note">
+        現在は出張施術を中心に承っております。<br>
+        代々木上原での院内施術は準備中です。
+      </p>
+
+      <div class="initial-close">
+        <h3 class="initial-close-heading">何を受ければいいか分からなくても、大丈夫です。</h3>
+        <p class="initial-close-text">どんな施術を受ければいいか分からない方も、まずはお気軽にご相談ください。</p>
+        <div class="initial-close-ctas">
+          <a href="{{ url_for('contact') }}" class="initial-btn">お問い合わせ</a>
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn initial-btn--line">LINEで相談</a>
+        </div>
       </div>
     </div>
   </section>

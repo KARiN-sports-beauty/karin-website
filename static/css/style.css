@@ -966,74 +966,274 @@ section, header, footer {
 
 
 /* ===============================
-   🩵 初診案内（initial-section）
-   2025.11 PC版 修正版
+   🩵 初めての方へ／施術の流れ（initial-section）
 =============================== */
 .initial-section {
   background-color: #ffffff;
-  padding: 90px 5% 80px;
+  padding: 90px 8% 96px;
   color: #1E3A5F;
-}
-
-/* コンテナ：左右2カラム（中央揃え） */
-.initial-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* ← 上下中央揃えに変更 */
-  gap: 60px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* 左側テキストブロック */
-.initial-text {
-  flex: 1 1 60%;
-  line-height: 1.9;
-}
-
-.initial-text h2 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #1E3A5F;
-  margin-bottom: 25px;
-}
-
-/* 見出し下ライン削除 */
-.initial-text h2::after {
-  display: none !important;
-}
-
-.initial-text p {
-  font-size: 1rem;
-  color: #1E3A5F;
-  opacity: 0.95;
-  margin-top: 25px;
-}
-
-/* 右側サイドブロック（中央配置） */
-.initial-side {
-  flex: 1 1 35%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; /* ← 縦中央揃え */
   text-align: center;
 }
 
-/* ロゴ画像：ボタンと同幅 */
-.initial-logo {
-  width: 260px; /* ボタン幅と揃える目安 */
-  height: auto;
-  margin-bottom: 25px;
-  opacity: 0.9;
-  transition: opacity 0.3s ease;
+.initial-inner {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
-.initial-logo:hover {
-  opacity: 1;
+.initial-heading {
+  display: inline-block;
+  position: relative;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
 }
 
-/* CTAボタン：ロゴと同幅 */
+.initial-heading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.initial-lead {
+  max-width: 640px;
+  margin: 28px auto 0;
+  font-size: 0.98rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2.05;
+  color: #1E3A5F;
+  opacity: 0.86;
+}
+
+.initial-paths {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 40px;
+  margin: 56px auto 0;
+  text-align: left;
+}
+
+.initial-path {
+  padding: 0;
+}
+
+.initial-path-label {
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #c0a062;
+  margin: 0 0 10px;
+}
+
+.initial-path-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+  margin: 0 0 14px;
+}
+
+.initial-path-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0 0 22px;
+}
+
+.initial-path-ctas,
+.initial-close-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.initial-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  min-height: 48px;
+  padding: 12px 28px;
+  background-color: #1E3A5F;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: 30px;
+  border: 1.5px solid #1E3A5F;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.25s ease;
+}
+
+.initial-btn:hover {
+  background-color: #16304A;
+  transform: translateY(-1px);
+}
+
+.initial-btn--line {
+  background-color: #06C755;
+  border-color: #06C755;
+}
+
+.initial-btn--line:hover {
+  background-color: #05b34e;
+  border-color: #05b34e;
+}
+
+.initial-intake {
+  margin: 56px auto 0;
+  padding-top: 40px;
+  border-top: 1px solid #eee8dc;
+  max-width: 640px;
+}
+
+.initial-intake-text {
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.78;
+  margin: 0 0 16px;
+}
+
+.initial-intake-link {
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  border-bottom: 1px solid #c0a062;
+  padding-bottom: 3px;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.initial-intake-link:hover {
+  color: #8fa3c1;
+}
+
+.initial-flow {
+  margin: 72px auto 0;
+}
+
+.initial-flow-heading {
+  display: inline-block;
+  position: relative;
+  font-size: 1.48rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #1E3A5F;
+  margin: 0 0 12px;
+  padding: 0 0 16px;
+}
+
+.initial-flow-heading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.initial-steps {
+  list-style: none;
+  margin: 48px auto 0;
+  padding: 0;
+  max-width: 640px;
+  text-align: left;
+}
+
+.initial-step + .initial-step {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid #eee8dc;
+}
+
+.initial-step-num {
+  display: block;
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #c0a062;
+  margin-bottom: 8px;
+}
+
+.initial-step-title {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+  margin: 0 0 10px;
+}
+
+.initial-step-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0;
+}
+
+.initial-note {
+  margin: 48px auto 0;
+  max-width: 640px;
+  font-size: 0.88rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.62;
+}
+
+.initial-close {
+  margin: 64px auto 0;
+  padding-top: 48px;
+  border-top: 1px solid #eee8dc;
+}
+
+.initial-close-heading {
+  font-size: 1.28rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  margin: 0 0 16px;
+}
+
+.initial-close-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+  margin: 0 0 28px;
+}
+
+.initial-close-ctas {
+  justify-content: center;
+}
+
+/* CTAボタン：他セクション共通 */
 .cta-btn {
   display: inline-block;
   width: 260px; /* ロゴと同じ幅で統一 */
@@ -1912,42 +2112,13 @@ section[id],
     padding: 0 6%;
   }
 
-  /* ---------- 初診の方へ ---------- */
+  /* ---------- 初めての方へ ---------- */
   .initial-section {
-    padding-top: 45px;
+    padding: 80px 8% 88px;
   }
 
-  .initial-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 50px;
-  }
-
-  /* 左側テキスト：やや広めに確保（3:2 バランス） */
-  .initial-text {
-    flex: 3;
-    text-align: left;
-    color: #1E3A5F;
-    line-height: 1.8;
-    font-size: 1rem;
-  }
-
-  /* 右側ロゴ＋ボタン：コンパクト配置 */
-  .initial-side {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-  }
-
-  /* ロゴは大きめに */
-  .initial-logo {
-    width: 220px; /* ← 以前180px → 大きく */
-    height: auto;
+  .initial-paths {
+    gap: 32px 28px;
   }
 
   /* ボタンはやや小さく */
@@ -2362,32 +2533,83 @@ section[id],
 
 
   /* ==========================
-     初診の方へ（Initial Section）
+     初めての方へ
   ========================== */
   .initial-section {
-    padding: 70px 5%;
+    padding: 68px 8% 76px;
   }
 
-  .initial-container {
+  .initial-heading {
+    font-size: 1.7rem;
+  }
+
+  .initial-lead {
+    font-size: 0.95rem;
+    line-height: 2.05;
+  }
+
+  .initial-paths {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: 44px;
+  }
+
+  .initial-path + .initial-path {
+    margin-top: 36px;
+    padding-top: 36px;
+    border-top: 1px solid #eee8dc;
+  }
+
+  .initial-path-ctas,
+  .initial-close-ctas {
     flex-direction: column;
-    align-items: center;
-    gap: 35px;
+    align-items: stretch;
   }
 
-  .initial-text {
-    text-align: left;
+  .initial-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
   }
 
-  .initial-side {
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
+  .initial-intake {
+    margin-top: 44px;
+    padding-top: 36px;
   }
 
-  .initial-logo {
-    width: 180px;
-    margin-bottom: 0;
+  .initial-flow {
+    margin-top: 56px;
+  }
+
+  .initial-flow-heading {
+    font-size: 1.32rem;
+  }
+
+  .initial-steps {
+    margin-top: 36px;
+  }
+
+  .initial-step + .initial-step {
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+
+  .initial-step-title {
+    font-size: 1.08rem;
+  }
+
+  .initial-step-text {
+    font-size: 0.94rem;
+    line-height: 2.05;
+  }
+
+  .initial-close {
+    margin-top: 52px;
+    padding-top: 40px;
+  }
+
+  .initial-close-heading {
+    font-size: 1.15rem;
   }
 
   .cta-btn {
@@ -2792,27 +3014,10 @@ section[id],
 
 
   /* ==========================
-     初診の方へ
+     初めての方へ
   ========================== */
-  .initial-container {
-    flex-direction: column;
-    gap: 28px;
-  }
-
-  .initial-text {
-    margin: 0 15px;
-    text-align: left;
-  }
-
-  .initial-side {
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .initial-logo {
-    width: 130px;
+  .initial-section {
+    padding: 64px 8% 72px;
   }
 
   .cta-btn {
@@ -3081,14 +3286,14 @@ section[id],
 
 
   /* ==========================
-      初診案内
+      初めての方へ
   ========================== */
-  .initial-container {
-    gap: 30px;
+  .initial-heading {
+    font-size: 1.55rem;
   }
 
-  .initial-logo {
-    width: 150px;
+  .initial-close-heading {
+    font-size: 1.08rem;
   }
 
   .cta-btn {
@@ -3489,10 +3694,14 @@ section[id],
   }
 
   /* ==========================
-       初診案内
+       初めての方へ
   ========================== */
-  .initial-logo {
-    width: 140px;
+  .initial-section {
+    padding: 60px 6% 68px;
+  }
+
+  .initial-heading {
+    font-size: 1.45rem;
   }
 
   .cta-btn {
