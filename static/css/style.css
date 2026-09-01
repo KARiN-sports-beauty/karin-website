@@ -422,9 +422,28 @@ section, header, footer {
 =============================== */
 .for-you-section {
   background-color: #ffffff;
+  background-image: url("/static/images/faq-bg-pc.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
   padding: 100px 8% 110px;
   text-align: center;
   position: relative;
+  isolation: isolate;
+}
+
+.for-you-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.78);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.for-you-section > * {
+  position: relative;
+  z-index: 1;
 }
 
 .for-you-title {
@@ -2208,6 +2227,12 @@ section[id],
   ========================== */
   .for-you-section {
     padding: 80px 8% 88px;
+    background-image: url("/static/images/faq-bg-sp.jpg");
+    background-position: center top;
+  }
+
+  .for-you-section::before {
+    background: rgba(255, 255, 255, 0.84);
   }
 
   .for-you-title {
