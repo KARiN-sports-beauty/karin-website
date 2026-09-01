@@ -132,7 +132,7 @@
     <nav class="nav" id="nav-menu">
       <a href="{{ url_for('index') }}">ホーム</a>
       <a href="#news">お知らせ</a>
-      <a href="#greeting">院長あいさつ</a>
+      <a href="#profile">プロフィール</a>
       <a href="#initial-section">初診案内</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表</a>
@@ -265,52 +265,31 @@
 
 
   <!-- ==========================
-       News Section
+       Profile
   =========================== -->
-  <section id="news" class="news-section" data-aos="fade-up">
-    <h2 class="section-title">お知らせ</h2>
-    <p class="section-subtitle">休診情報・営業時間のお知らせなどを掲載しています</p>
-    <div class="news-container">
-      {% for item in latest_news %}
-      <div class="news-card">
-        <a href="{{ url_for('show_news', slug=item.slug) }}">
-          <span class="news-title">{{ item.title }}</span>
-          <span class="news-date">{{ item.date }}</span>
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="news-cta">
-    <a href="{{ url_for('news_list') }}" class="btn-more">お知らせ一覧はこちら</a>
-    </div>
-  </section>
-
-
-  <!-- ==========================
-       Greeting Section
-  =========================== -->
-  <section id="greeting" class="greeting-section" data-aos="fade-up">
+  <section id="profile" class="greeting-section" data-aos="fade-up">
     <div class="intro-container" data-aos="fade-up" data-aos-delay="150">
       <div class="intro-image">
         <img src="{{ url_for('static', filename='images/koji_profile.png') }}" alt="KARiN.代表 藤田幸士" />
       </div>
       <div class="intro-content">
-        <h2 class="section-title">院長あいさつ</h2>
-        <h3 class="intro-name">KARiN.代表<br />藤田 幸士（ふじた こうじ）</h3>
+        <h2 class="section-title">身体と向き合い続けて、約20年。</h2>
+        <p class="intro-role"><span class="intro-role-brand">KARiN.</span>代表</p>
+        <h3 class="intro-name">藤田 幸士<span class="intro-kana">（ふじた こうじ）</span></h3>
         <p class="intro-subtitle">鍼灸師 / アスレティックトレーナー</p>
-        <p class="intro-message">
-          はじめまして。KARiN.代表の藤田です。<br />
-          小さい頃からスポーツが好きで、プレーヤーとしてもいろんな経験をしてきました。<br />
-          その中で、「ケガをした選手を支える立場になりたい」と思ったことが、トレーナーや鍼灸師を目指すきっかけでした。<br /><br />
-          これまで、約20年プロからアマチュアまで幅広いスポーツの現場で選手をサポートしてきたほか、
-          アーティストやパフォーマー、働く大人の方々まで、たくさんの身体と向き合ってきました。<br /><br />
-          ただ施術するだけでなく、「この人に会うとちょっと前向きになれる」「また頑張れそう」って思ってもらえるような、
-          そんな存在でいたいと思っています。<br />
-          調子が悪くなる前に、ふと思い出してもらえるような、
-          そんな“かかりつけ”みたいな感覚で頼ってもらえたら嬉しいです。<br /><br />
-          現在福岡は薬院、東京は代々木上原を中心に活動しています。
-        </p>
-        <button class="accordion-btn" type="button">続きを読む</button>
+        <div class="intro-body">
+          <p class="intro-message">はじめまして。KARiN.代表の藤田です。</p>
+          <p class="intro-message">小さい頃からスポーツが好きで、プレーヤーとしてもさまざまな経験をしてきました。</p>
+          <p class="intro-message">その中で、ケガをした選手を支える立場になりたいと思ったことが、トレーナーや鍼灸師を目指すきっかけでした。</p>
+          <p class="intro-message">これまで約20年、プロからアマチュアまで幅広いスポーツの現場で選手をサポートしてきました。また、アーティストやパフォーマー、働く方々まで、たくさんの身体と向き合ってきました。</p>
+          <p class="intro-message">ただ施術をするだけではなく、</p>
+          <p class="intro-quote">「この人に会うと、ちょっと前向きになれる」</p>
+          <p class="intro-quote">「また頑張れそう」</p>
+          <p class="intro-message">そう思ってもらえるような存在でありたいと思っています。</p>
+          <p class="intro-message">調子が悪くなったときだけではなく、何かあったときにふと思い出してもらえる。</p>
+          <p class="intro-message">そんな“かかりつけ”のような感覚で、頼ってもらえたら嬉しいです。</p>
+        </div>
+        <button class="accordion-btn" type="button">資格・略歴を見る ↓</button>
         <div class="accordion-content">
           <p>
             <strong>所有資格</strong><br />
@@ -330,6 +309,28 @@
           <button class="close-btn" type="button">閉じる</button>
         </div>
       </div>
+    </div>
+  </section>
+
+
+  <!-- ==========================
+       News Section
+  =========================== -->
+  <section id="news" class="news-section" data-aos="fade-up">
+    <h2 class="section-title">お知らせ</h2>
+    <p class="section-subtitle">休診情報・営業時間のお知らせなどを掲載しています</p>
+    <div class="news-container">
+      {% for item in latest_news %}
+      <div class="news-card">
+        <a href="{{ url_for('show_news', slug=item.slug) }}">
+          <span class="news-title">{{ item.title }}</span>
+          <span class="news-date">{{ item.date }}</span>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="news-cta">
+    <a href="{{ url_for('news_list') }}" class="btn-more">お知らせ一覧はこちら</a>
     </div>
   </section>
 

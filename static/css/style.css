@@ -701,10 +701,10 @@ section, header, footer {
 
 
 
-/* ---------- 院長あいさつ ---------- */
+/* ---------- プロフィール（旧：院長あいさつ） ---------- */
 .greeting-section {
   background-color: #fafafa;
-  padding: 100px 5% 50px;
+  padding: 100px 5% 90px;
   display: flex;
   justify-content: center;
   animation: fadeIn 1s ease-in;
@@ -731,54 +731,130 @@ section, header, footer {
 }
 
 .greeting-section .section-title {
-  font-size: 2rem;
+  display: inline-block;
+  position: relative;
+  font-size: 1.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.65;
   color: #1E3A5F;
-  margin-bottom: 10px;
-  /* ★ ゴールドライン無し（::afterつけない） */
+  margin: 0 0 28px;
+  padding: 0 0 16px;
+}
+
+.greeting-section .section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 1.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+.intro-role {
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  margin: 0 0 6px;
+}
+
+.intro-role-brand {
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .intro-name {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 600;
   color: #1E3A5F;
-  margin-bottom: 5px;
-  line-height: 1.6;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.intro-kana {
+  display: inline-block;
+  margin-left: 0.35em;
+  font-size: 0.78em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
 }
 
 .intro-subtitle {
   color: #1E3A5F;
-  font-size: 1rem;
-  margin-bottom: 20px;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  margin: 0 0 28px;
+  opacity: 0.85;
+}
+
+.intro-body {
+  text-align: left;
 }
 
 .intro-message {
   color: #1E3A5F;
-  line-height: 1.7;          /* ★ 少しだけ行間を詰める（1.8 → 1.7） */
+  line-height: 2;
   font-size: 1.05rem;
+  letter-spacing: 0.03em;
   text-align: left;
+  margin: 0 0 1.05em;
 }
 
-/* ---------- 続きを読むボタン ---------- */
+.intro-message:last-child {
+  margin-bottom: 0;
+}
+
+.intro-quote {
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  color: #1E3A5F;
+  margin: 0.15em 0 0.15em;
+  padding: 0 0 0 14px;
+  border-left: 1.5px solid #c0a062;
+}
+
+.intro-quote + .intro-quote {
+  margin-bottom: 1em;
+}
+
+.intro-quote + .intro-message {
+  margin-top: 1.15em;
+}
+
+/* ---------- 資格・略歴（アコーディオン） ---------- */
 .accordion-btn {
-  display: block;
-  margin: 25px auto 0;
-  background-color: #1E3A5F;
-  color: #fff;
-  padding: 10px 25px;
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  margin: 28px 0 0;
+  background: none;
+  color: #1E3A5F;
+  padding: 0 0 3px;
   border: none;
-  border-radius: 25px;
+  border-bottom: 1px solid #c0a062;
+  border-radius: 0;
   cursor: pointer;
-  transition: all 0.6s ease-in-out;
-  text-align: center;
-  font-size: 1rem;
-  letter-spacing: 0.5px;
+  transition: color 0.3s ease, opacity 0.3s ease;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   position: relative;
   left: 0;
 }
 
 .accordion-btn:hover {
-  background-color: #16304A;
-  transform: scale(1.05);
+  background: none;
+  color: #8fa3c1;
+  transform: none;
 }
 
 /* ---------- 続き本文（トーン同じ・背景も同じ系統） ---------- */
@@ -816,16 +892,20 @@ section, header, footer {
 .close-btn {
   display: block;
   margin: 30px auto 10px;
-  background-color: #1E3A5F;   /* ★ ネイビーで統一（ゴールドやめる） */
-  color: #fff;
-  padding: 10px 25px;
+  background: none;
+  color: #1E3A5F;
+  padding: 0 0 3px;
   border: none;
-  border-radius: 25px;
+  border-bottom: 1px solid #c0a062;
+  border-radius: 0;
   cursor: pointer;
-  transition: 0.3s;
+  transition: color 0.3s ease;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 0.8s ease forwards;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
 }
 
 /* ✅ 閉じるボタンの表示トリガー修正 */
@@ -844,7 +924,8 @@ section, header, footer {
 
 
 .close-btn:hover {
-  background-color: #16304A;
+  background: none;
+  color: #8fa3c1;
 }
 
 /* fadeInUp は元の定義をそのまま使う想定
@@ -2156,7 +2237,7 @@ section[id],
      院長あいさつ（Greeting）
   ========================== */
   .greeting-section {
-    padding: 70px 5% 60px;
+    padding: 80px 5% 72px;
   }
 
   .intro-container {
@@ -2179,6 +2260,13 @@ section[id],
     text-align: center;
   }
 
+  .greeting-section .section-title {
+    font-size: 1.45rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 24px;
+  }
+
+  .intro-role,
   .intro-name,
   .intro-subtitle {
     text-align: center;
@@ -2187,12 +2275,20 @@ section[id],
   .intro-message {
     text-align: left;
     font-size: 1rem;
-    margin-top: 15px;
+    line-height: 2.05;
+    margin-top: 0;
+  }
+
+  .intro-quote {
+    text-align: left;
+    font-size: 1.02rem;
   }
 
   .accordion-btn {
-    display: block;
-    margin: 25px auto 0;
+    display: inline-block;
+    margin: 28px auto 0;
+    padding: 0 0 3px;
+    font-size: 0.88rem;
   }
 
 
@@ -2563,7 +2659,7 @@ section[id],
      院長あいさつ
   ========================== */
   .greeting-section {
-    padding: 60px 5% 40px !important;
+    padding: 72px 5% 64px !important;
   }
 
   .section-title {
@@ -2582,25 +2678,39 @@ section[id],
   }
 
   .intro-content {
-    text-align: left;
+    text-align: center;
   }
 
+  .greeting-section .section-title {
+    font-size: 1.32rem;
+    line-height: 1.7;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .intro-role,
   .intro-name,
   .intro-subtitle {
     text-align: center;
   }
 
   .intro-message {
-    font-size: 0.95rem;
-    line-height: 1.8;
-    margin: 0 15px;
+    font-size: 1rem;
+    line-height: 2.05;
+    margin: 0 8px 1.05em;
+  }
+
+  .intro-quote {
+    margin-left: 8px;
+    margin-right: 8px;
+    font-size: 1rem;
   }
 
   .accordion-btn {
-    display: block;
-    margin: 25px auto 0;
-    padding: 10px 25px;
-    font-size: 0.9rem;
+    display: inline-block;
+    margin: 24px auto 0;
+    padding: 0 0 3px;
+    font-size: 0.86rem;
   }
 
 
@@ -2870,7 +2980,7 @@ section[id],
       院長あいさつ
   ========================== */
   .greeting-section {
-    padding: 60px 5% 40px !important;
+    padding: 68px 5% 60px !important;
   }
 
   .intro-image img {
