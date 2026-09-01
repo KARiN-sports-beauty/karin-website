@@ -340,6 +340,18 @@
   .tx-cta-section .tx-inner--narrow {
     max-width: 920px;
   }
+
+  .tx-label {
+    font-size: 1.32rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+
+  .tx-pillar-title {
+    font-size: 1.02rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
 }
 
 @media (hover: hover) and (min-width: 1025px) {
