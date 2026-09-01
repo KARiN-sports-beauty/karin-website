@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>初診受付フォーム | KARiN. ~Sports & Beauty~</title>
+  <title>初診問診票 | KARiN. ~Sports & Beauty~</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
@@ -12,8 +12,8 @@
        SEO基本設定
   ============================ -->
   <link rel="canonical" href="https://karin-sb.jp/form">
-  <meta name="description" content="KARiN.の初診受付フォームです。東京（代々木上原）・福岡（薬院）にて鍼灸・整体・美容鍼・トレーニングを提供。出張対応のため、ご住所や希望日時を事前にお伺いしています。">
-  <meta name="keywords" content="初診, 予約, KARiN, 鍼灸, スポーツマッサージ, マッサージ, 整体, 美容鍼, トレーニング, 出張施術, 代々木上原, 薬院">
+  <meta name="description" content="KARiN.の初診問診票です。初めてご利用の方に、施術前にお身体の状態やこれまでの経過、施術に関するご希望などを伺います。">
+  <meta name="keywords" content="初診, 問診票, KARiN, 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
@@ -21,8 +21,8 @@
        OGP設定
   ============================ -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="初診受付フォーム | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN.の初診受付フォーム。出張施術のため、事前にご住所やご希望日時をお伺いします。">
+  <meta property="og:title" content="初診問診票 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="初めてKARiN.をご利用の方に、施術前にお身体の状態やご希望を伺う初診問診票です。">
   <meta property="og:url" content="https://karin-sb.jp/form">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
@@ -37,9 +37,9 @@
     "@graph": [
       {
         "@type": "ContactPage",
-        "name": "初診受付フォーム",
+        "name": "初診問診票",
         "url": "https://karin-sb.jp/form",
-        "about": "初診の方向けの鍼灸・整体・美容鍼・トレーニングの予約フォーム",
+        "about": "初めてKARiN.をご利用の方向けの初診問診票",
         "contactOption": {
           "@type": "ContactPoint",
           "telephone": "+81-90-8154-9313",
@@ -101,11 +101,11 @@
 <body>
 
 <section class="form-wrapper">
-  <h1 class="form-title">初診受付フォーム</h1>
+  <h1 class="form-title">初診問診票</h1>
   <p class="form-lead">
-    初めての方は、こちらの内容をご記入ください。<br>
-    出張対応のため、住所やご希望内容を事前にお伺いしています。<br>
-    2回目以降の方はラインもしくはメールにてご連絡ください。
+    初めてKARiN.をご利用の方に、施術前にお身体の状態やこれまでの経過、施術に関するご希望などを伺うためのフォームです。<br>
+    ご予約確定後に、こちらへご入力ください。<br>
+    予約の変更・ご相談は、Web予約またはお問い合わせ・公式LINEをご利用ください。
   </p>
 
   <form action="{{ url_for('submit_form') }}" method="POST" class="form-card h-adr">
@@ -160,80 +160,39 @@
       </label>
 
       <div class="form-field">
-        <span>郵便番号</span>
+        <span>郵便番号（任意）</span>
         <input type="text" class="p-postal-code" size="8" maxlength="8" name="postal_code" placeholder="例：123-4567 または 1234567">
       </div>
-      
+
       <div class="form-field">
-        <span>住所（出張希望の場所等）</span>
-        <input type="text" class="p-region p-locality p-street-address p-extended-address" name="address" placeholder="院内のみの場合は空欄でも構いません">
+        <span>ご住所（任意）</span>
+        <input type="text" class="p-region p-locality p-street-address p-extended-address" name="address" placeholder="例：東京都渋谷区代々木">
+        <p class="form-note">出張での施術をご希望の場合は、出張先の住所をご記入ください。</p>
       </div>
-      
 
       <label class="form-field">
         <span>紹介者（任意）</span>
         <input type="text" name="introducer" placeholder="紹介者がいらっしゃる場合はご記入ください">
-      </label>      
+      </label>
     </div>
 
-        <!-- 予約希望日 -->
+    <!-- お身体について -->
     <div class="form-block">
-    <h2 class="block-title">ご予約希望日</h2>
-
-    <p class="form-note">
-        ご希望の日時を第1〜第3希望までご記入ください（未確定の場合は空欄のままでも送信できます）。<br>
-        可能な限りご希望に沿って調整いたします。
-    </p>
-
-    <!-- 今週のスケジュール -->
-    <section class="schedule-mini">
-      <h3>📅 直近スケジュール</h3>
-      <div class="schedule-mini-row">
-        {% for s in schedule %}
-          {% set date_md = s.date[5:].replace('-', '/') %}
-          <div class="schedule-mini-cell {% if s.date == today %}today{% elif s.status == 'unset' or s.place == '—' %}unset-day{% elif '休' in s.place %}off-day{% endif %}">
-            <strong>{{ date_md }}</strong>：{{ s.place }}
-          </div>
-        {% endfor %}
-      </div>
-    </section>
-
-
-
-    <div class="form-group">
-      <label>ご予約希望日時（第1〜第3希望）</label>
-      <div class="preferred-dates">
-        <div>
-          <label for="preferred_date1">第1希望</label>
-          <input type="datetime-local" id="preferred_date1" name="preferred_date1">
-        </div>
-        <div>
-          <label for="preferred_date2">第2希望</label>
-          <input type="datetime-local" id="preferred_date2" name="preferred_date2">
-        </div>
-        <div>
-          <label for="preferred_date3">第3希望</label>
-          <input type="datetime-local" id="preferred_date3" name="preferred_date3">
-        </div>
-      </div>
-    </div>
-
-
-
-</div>
-
-    <!-- 2. 現在のお悩み・目的 -->
-    <div class="form-block">
-      <h2 class="block-title">現在のお悩み・目的</h2>
-      <p style="margin-bottom: 16px; color: #666; font-size: 0.9rem; line-height: 1.6;">下記カルテ反映のため可能な範囲でご回答お願いいたします</p>
+      <h2 class="block-title">お身体について</h2>
+      <p class="form-note">可能な範囲でご回答ください。施術時の参考にいたします。</p>
 
       <label class="form-field">
-        <span>主訴（どのような症状・目的をお持ちですか？）</span>
-        <textarea name="chief_complaint" rows="4"></textarea>
+        <span>今回のお悩み・症状</span>
+        <textarea name="chief_complaint" rows="4" placeholder="気になっている部位や症状など"></textarea>
       </label>
 
       <label class="form-field">
-        <span>発症時期・気になり始めたタイミング</span>
+        <span>施術を受ける目的</span>
+        <textarea name="purpose" rows="3" placeholder="痛みの改善、コンディション維持、美容 など"></textarea>
+      </label>
+
+      <label class="form-field">
+        <span>いつ頃から気になっているか</span>
         <input type="text" name="onset" placeholder="例：1週間前から / 半年前から など">
       </label>
 
@@ -247,11 +206,16 @@
           <label><input type="radio" name="pain_level" value="非常に強い"> 非常に強い</label>
         </div>
       </div>
+
+      <label class="form-field">
+        <span>その他、身体について伝えておきたいこと</span>
+        <textarea name="body_note" rows="3" placeholder="任意"></textarea>
+      </label>
     </div>
 
-    <!-- 3. 刺激の好み -->
+    <!-- 施術について -->
     <div class="form-block">
-      <h2 class="block-title">刺激の好み・ご希望</h2>
+      <h2 class="block-title">施術について</h2>
 
       <div class="form-field">
         <span>鍼灸について</span>
@@ -319,9 +283,11 @@
       </label>
     </div>
 
-    <!-- 5. 同意書（※元の全文） -->
+    <!-- 同意事項 -->
     <div class="form-block">
-      <h2 class="block-title">🧾 施術同意書（鍼灸・整体・リラクゼーション・トレーニング）</h2>
+      <h2 class="block-title">同意事項</h2>
+      <p class="form-note">以下の同意書をご確認のうえ、同意チェックへお進みください。</p>
+      <h3 class="block-title" style="font-size: 1.05rem; margin-top: 8px;">施術同意書（鍼灸・整体・リラクゼーション・トレーニング）</h3>
 
       <div class="agreement-text-scroll" style="max-height: 150px; overflow-y: auto; padding: 16px; background: #f5f7fb; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; line-height: 1.6; font-size: 0.9rem;">
         <p><strong>【施術の目的・内容について】</strong><br>

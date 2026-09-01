@@ -2006,8 +2006,8 @@ def send_booking_confirmation_email(
 {arrival_note}
 キャンセル・変更はお早めにご連絡ください。
 
-初めてご利用の方は、事前に初診受付フォームへのご入力をお願いしております。
-▼ 初診受付フォーム
+初めてご利用の方は、事前に初診問診票へのご入力をお願いしております。
+▼ 初診問診票
 {first_visit_url}
 
 ご不明点がございましたら、お気軽にご連絡ください。
@@ -3027,16 +3027,11 @@ def price():
 
 @app.route("/form", methods=["GET"])
 def form():
-    years = list(range(datetime.now().year, datetime.now().year - 5, -1))
-    months = list(range(1, 13))
-    days = list(range(1, 32))
-    schedule = load_schedule()
-    today = datetime.now().strftime("%Y-%m-%d")
-    return render_template("form.html", years=years, months=months, days=days, schedule=schedule, today=today)
+    return render_template("form.html")
 
 
 # ===================================================
-# 初診フォーム送信
+# 初診問診票送信
 # ===================================================
 @app.route("/submit_form", methods=["POST"])
 def submit_form():
@@ -3059,6 +3054,9 @@ def submit_form():
         address = request.form.get("address", "").strip() or None
         introducer = request.form.get("introducer", "").strip()
         chief_complaint = request.form.get("chief_complaint", "").strip()
+        purpose = request.form.get("purpose", "").strip()
+        if purpose:
+            chief_complaint = (f"{chief_complaint}\n" if chief_complaint else "") + f"【目的】{purpose}"
         onset = request.form.get("onset", "").strip()
         pain_level = request.form.get("pain_level", "").strip()
         shinkyu_pref = request.form.get("shinkyu_pref", "").strip()
@@ -3070,16 +3068,17 @@ def submit_form():
         chronic = request.form.get("chronic", "").strip()
         surgery = request.form.get("surgery", "").strip()
         under_medical = request.form.get("under_medical", "").strip()
+        note = request.form.get("body_note", "").strip()
         # 同意書確認チェックボックス
         agreement_confirmed = request.form.get("agreement_confirmed") == "on"
         if not agreement_confirmed:
             flash("同意書を確認の上、チェックボックスにチェックを入れてください", "error")
             return redirect(url_for("form"))
         
-        # 希望日をフォーマット
-        preferred_date1 = normalize_datetime(request.form.get("preferred_date1"))
-        preferred_date2 = normalize_datetime(request.form.get("preferred_date2"))
-        preferred_date3 = normalize_datetime(request.form.get("preferred_date3"))
+        # 希望日カラムは既存スキーマ維持のため空で保存（問診票では扱わない）
+        preferred_date1 = None
+        preferred_date2 = None
+        preferred_date3 = None
 
         # agreed_atは送信日時で自動設定（YYYY-MM-DD形式）
         agreed_at = datetime.now(JST).strftime("%Y-%m-%d")
@@ -3120,7 +3119,7 @@ def submit_form():
             "signature": signature,  # 後方互換性のため姓名を保存
             "agreed_at": agreed_at,  # 送信日時で自動設定
             "agreement_confirmed": True,  # チェックボックスで確認済み
-            "note": "",  # 空でも入れる
+            "note": note,
             "visibility": "all",  # 可視性制御（将来のstaff_role対応用、現時点では'all'固定）
             "created_at": now_iso(),
         }
@@ -3133,7 +3132,7 @@ def submit_form():
         # 🟢 LINE通知（introducerも追記）
         age_display = calc_age(birthday) if birthday else "未入力"
         line_message = f"""
-【初診フォーム】
+【初診問診票】
 お名前：{name}
 ふりがな：{kana}
 生年月日：{birthday if birthday else '未入力'}
@@ -3143,14 +3142,13 @@ def submit_form():
 メール：{email}
 住所：{address if address else '未入力'}
 紹介者：{introducer if introducer else 'なし'}
-第1希望：{to_jst(preferred_date1) if preferred_date1 else "未入力"}
 主訴：{chief_complaint}
 """
         send_line_message(line_message)
 
         return redirect(url_for(
             "thanks",
-            message="初診受付フォームを送信しました。<br>担当者よりご連絡いたします。"
+            message="初診問診票を受け付けました。<br>ご入力ありがとうございました。"
         ))
 
     except Exception as e:
