@@ -1119,6 +1119,14 @@ section, header, footer {
   opacity: 0.95;
 }
 
+.treatment-overview .treatment-note {
+  max-width: 720px;
+  margin: 0 auto 36px;
+  font-size: 0.98rem;
+  line-height: 1.95;
+  opacity: 0.88;
+}
+
 /* CTAボタン */
 .treatment-cta {
   text-align: center;
