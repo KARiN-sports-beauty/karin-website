@@ -422,7 +422,7 @@ section, header, footer {
 =============================== */
 .for-you-section {
   background-color: #ffffff;
-  background-image: url("/static/images/faq-bg-pc.jpg");
+  background-image: url("/static/images/lp-philosophy.jpg");
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -436,7 +436,7 @@ section, header, footer {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.86);
   pointer-events: none;
   z-index: 0;
 }
@@ -2227,12 +2227,12 @@ section[id],
   ========================== */
   .for-you-section {
     padding: 80px 8% 88px;
-    background-image: url("/static/images/faq-bg-sp.jpg");
-    background-position: center top;
+    background-image: url("/static/images/lp-philosophy.jpg");
+    background-position: center 30%;
   }
 
   .for-you-section::before {
-    background: rgba(255, 255, 255, 0.84);
+    background: rgba(255, 255, 255, 0.9);
   }
 
   .for-you-title {
