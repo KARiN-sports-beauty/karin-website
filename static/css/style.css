@@ -2092,9 +2092,38 @@ body.index-page .access-section .access-schedule-note {
 .contact-buttons {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 36px 24px;
+}
+
+.contact-cta-item {
+  flex: 1 1 220px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.contact-cta-lead {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #4a5f7a;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  white-space: normal;
+}
+
+.contact-cta-note {
+  margin: 12px 0 0;
+  max-width: 240px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #8a97a8;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  white-space: normal;
 }
 
 /* ---------- 各ボタン ---------- */
@@ -2110,6 +2139,15 @@ body.index-page .access-section .access-schedule-note {
   text-align: center;
   min-width: 200px;          /* ✅ ← 最小幅を狭く設定 */
   white-space: nowrap;
+}
+
+.contact-section .contact-btn {
+  background-color: #1E3A5F;
+}
+
+.contact-section .contact-btn:hover {
+  background-color: #16304A;
+  transform: translateY(-3px);
 }
 
 /* ---------- 各ボタンの色 ---------- */
@@ -2460,8 +2498,13 @@ section[id],
     display: flex;
     flex-wrap: nowrap;
     justify-content: center;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .contact-cta-item {
+    flex: 1 1 0;
+    max-width: 240px;
   }
 
   .contact-btn {
@@ -3445,7 +3488,14 @@ section[id],
 
   .contact-buttons {
     flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .contact-cta-item {
+    flex: none;
+    width: 100%;
+    max-width: 280px;
   }
 
   .contact-btn {
@@ -3660,7 +3710,8 @@ section[id],
   ========================== */
   .contact-buttons {
     flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    gap: 28px;
   }
 
   .contact-btn {
@@ -4110,7 +4161,8 @@ section[id],
   ========================== */
   .contact-buttons {
     flex-direction: column;
-    gap: 14px;
+    align-items: center;
+    gap: 28px;
   }
 
   .contact-btn {
@@ -4331,11 +4383,17 @@ section[id],
 @media (min-width: 481px) and (max-width: 777px) {
   #contact-section .contact-buttons {
     display: flex !important;
-    flex-wrap: wrap !important;
-    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    flex-direction: column !important;
     justify-content: center !important;
-    align-items: stretch !important;
-    gap: 14px !important;
+    align-items: center !important;
+    gap: 28px !important;
+  }
+
+  #contact-section .contact-cta-item {
+    width: 100%;
+    max-width: 280px;
+    flex: none;
   }
 
   #contact-section .contact-btn {
@@ -4345,17 +4403,13 @@ section[id],
     text-align: center !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
-    width: auto !important;
+    width: 80% !important;
     min-width: 210px !important;
-    max-width: 100% !important;
+    max-width: 260px !important;
     flex: 0 1 auto !important;
     padding: 11px 22px !important;
     font-size: 0.88rem !important;
     line-height: 1.35 !important;
-  }
-
-  #contact-section .contact-btn.repeat {
-    letter-spacing: 0 !important;
   }
 }
 
