@@ -434,14 +434,33 @@
       <p class="blog-lead-catch">身体と向き合う、きっかけを。</p>
       <p class="blog-lead-text">運動や身体のケア、健康について、日々の生活に取り入れられるヒントを<span class="karin-brand">KARiN.</span>の視点から綴っています。</p>
     </div>
-    <div class="blog-container">
+    <div class="notes-home-grid">
       {% for blog in latest_blogs %}
-      <div class="blog-card">
-        <a href="{{ url_for('show_blog', slug=blog.slug) }}">
-          <h3 class="blog-title">{{ blog.title }}</h3>
-          <p class="blog-date">{{ blog.date }}</p>
+      <article class="notes-home-card">
+        <a href="{{ url_for('show_blog', slug=blog.slug) }}" class="notes-home-card__link">
+          <div class="notes-home-card__thumb{% if not blog.image %} notes-home-card__thumb--empty{% endif %}">
+            {% if blog.image %}
+            <img src="{{ blog.image }}" alt="{{ blog.title }}" width="640" height="427" loading="lazy" decoding="async">
+            {% endif %}
+          </div>
+          <div class="notes-home-card__body">
+            {% if blog.tags_list %}
+            <p class="notes-home-card__tags">
+              {% for tag in blog.tags_list[:3] %}
+              <span class="notes-home-card__tag">{{ tag }}</span>
+              {% endfor %}
+            </p>
+            {% endif %}
+            <h3 class="notes-home-card__title">{{ blog.title }}</h3>
+            {% if blog.excerpt %}
+            <p class="notes-home-card__excerpt">{{ blog.excerpt }}</p>
+            {% endif %}
+            {% if blog.category %}
+            <p class="notes-home-card__category">{{ blog.category }}</p>
+            {% endif %}
+          </div>
         </a>
-      </div>
+      </article>
       {% endfor %}
     </div>
     <div class="blog-cta">

@@ -1440,52 +1440,149 @@ section, header, footer {
   margin: 0;
 }
 
-/* コンテナ */
-.blog-container {
+/* 最新3記事（トップ専用） */
+body.index-page .blog-section .notes-home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px 28px;
+  max-width: 1080px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+body.index-page .blog-section .notes-home-card {
+  min-width: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+body.index-page .blog-section .notes-home-card__link {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  max-width: 850px;
-  margin: 0 auto;
-}
-
-/* KARiN.NOTES一覧の各カード */
-.blog-card {
-  width: 100%;
-  border-bottom: 1px solid #eaeaea;
-  padding: 14px 0;
-  transition: background-color 0.3s ease;
-}
-
-.blog-card:hover {
-  background-color: #f8f9fa;
-}
-
-/* カード内リンク */
-.blog-card a {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  height: 100%;
+  color: inherit;
   text-decoration: none;
-  color: #1E3A5F;
 }
 
-/* 記事タイトル（トップ一覧） */
-.blog-title {
-  text-align: left;
-  font-weight: 500;
-  font-size: 1.1rem;
-  line-height: 1.6;
+body.index-page .blog-section .notes-home-card__thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: #eceae6;
+}
+
+body.index-page .blog-section .notes-home-card__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1);
+  transition: transform 0.55s ease;
+}
+
+body.index-page .blog-section .notes-home-card__body {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  padding-top: 16px;
 }
 
-/* 日付 */
-.blog-date {
-  font-size: 0.9rem;
-  color: #7a8ba8;
-  white-space: nowrap;
-  margin-left: 12px;
+body.index-page .blog-section .notes-home-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+body.index-page .blog-section .notes-home-card__tag {
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  opacity: 0.55;
+}
+
+body.index-page .blog-section .notes-home-card__tag:not(:last-child)::after {
+  content: " / ";
+  opacity: 0.7;
+}
+
+body.index-page .blog-section .notes-home-card__title {
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+  margin: 0 0 10px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+body.index-page .blog-section .notes-home-card__excerpt {
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.85;
+  color: #1E3A5F;
+  opacity: 0.78;
+  margin: 0 0 14px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+body.index-page .blog-section .notes-home-card__category {
+  margin: auto 0 0;
+  padding-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: #1E3A5F;
+  opacity: 0.42;
+}
+
+@media (hover: hover) {
+  body.index-page .blog-section .notes-home-card__link:hover .notes-home-card__thumb img {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.index-page .blog-section .notes-home-card__thumb img {
+    transition: none;
+  }
+
+  body.index-page .blog-section .notes-home-card__link:hover .notes-home-card__thumb img {
+    transform: none;
+  }
+}
+
+@media (min-width: 769px) {
+  body.index-page .blog-section .notes-home-card__title {
+    min-height: calc(1.6em * 2);
+  }
+
+  body.index-page .blog-section .notes-home-card__excerpt {
+    min-height: calc(1.85em * 3);
+  }
+}
+
+@media (max-width: 768px) {
+  body.index-page .blog-section .notes-home-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    gap: 40px;
+  }
 }
 
 /* ボタン部分 */
@@ -2146,11 +2243,6 @@ section[id],
   .blog-section {
     padding-top: 50px;
     padding-bottom: 25px !important; /* 下余白さらに少し詰める */
-  }
-
-  .blog-container {
-    max-width: 850px;
-    margin: 0 auto;
   }
 
   /* ---------- アクセス・営業時間 ---------- */
@@ -3094,12 +3186,6 @@ section[id],
   ========================== */
   .blog-section {
     padding: 70px 7% 80px;
-  }
-
-  .blog-container {
-    width: 100%;
-    max-width: 95%;
-    margin: 0 auto;
   }
 
 

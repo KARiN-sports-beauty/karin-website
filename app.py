@@ -5674,6 +5674,8 @@ def index():
     for b in latest_blogs:
         if not b.get("date") and b.get("created_at"):
             b["date"] = str(b["created_at"])[:10]
+        b["image"] = normalize_blog_image_url(b.get("image"))
+        b["tags_list"] = normalize_blog_tags(b.get("tags"))
     latest_news = fetch_published_news(limit=3)
 
     # ----------------------------------------
