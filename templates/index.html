@@ -346,9 +346,7 @@
       美容鍼など、美容を目的とした施術にも対応しています。
     </p>
     <div class="treatment-cta">
-      <div style="text-align: center; margin-bottom: 20px;">
-      <a href="{{ url_for('treatment') }}" class="cta-btn">詳しく見る</a>
-      </div>
+      <a href="{{ url_for('treatment') }}" class="services-link">詳しく見る ↓</a>
     </div>
   </section>
 
@@ -389,7 +387,7 @@
           <li class="initial-step">
             <span class="initial-step-num">01</span>
             <h4 class="initial-step-title">ご予約・ご相談</h4>
-            <p class="initial-step-text">Web予約、またはお問い合わせ・LINEからご予約ください。</p>
+            <p class="initial-step-text">Web予約、またはお問い合わせ・LINEからご予約・ご相談ください。</p>
           </li>
           <li class="initial-step">
             <span class="initial-step-num">02</span>
@@ -431,8 +429,11 @@
        KARiN.NOTES
   =========================== -->
   <section id="blog" class="blog-section" data-aos="fade-up">
-    <h2 class="section-title">KARiN.NOTES</h2>
-    <p class="section-subtitle">日々のケア・体づくりのヒントをお届けします</p>
+    <h2 class="section-title"><span class="karin-brand">KARiN.</span>NOTES</h2>
+    <div class="blog-lead">
+      <p class="blog-lead-catch">身体と向き合う、きっかけを。</p>
+      <p class="blog-lead-text">運動や身体のケア、健康について、日々の生活に取り入れられるヒントを<span class="karin-brand">KARiN.</span>の視点から綴っています。</p>
+    </div>
     <div class="blog-container">
       {% for blog in latest_blogs %}
       <div class="blog-card">
@@ -444,7 +445,7 @@
       {% endfor %}
     </div>
     <div class="blog-cta">
-      <a href="{{ url_for('blog') }}" class="btn-more">その他の記事はこちら</a>
+      <a href="{{ url_for('blog') }}" class="services-link"><span class="karin-brand">KARiN.</span>NOTESをもっと見る →</a>
     </div>
   </section>
 

@@ -94,6 +94,12 @@ section, header, footer {
   letter-spacing: 0.04em;
 }
 
+.karin-brand {
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* ---------- PC用ナビ ---------- */
 .nav {
   display: flex;
@@ -1358,31 +1364,14 @@ section, header, footer {
   opacity: 0.88;
 }
 
-/* CTAボタン */
+/* CTA（サービスと同じテキストリンク） */
 .treatment-cta {
   text-align: center;
   margin-top: 20px;
 }
 
-.treatment-cta .cta-btn {
-  display: inline-block;
-  background-color: #1E3A5F;
-  color: #ffffff;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 28px;
-  padding: 12px 40px;       /* ← テキスト周囲だけ、最小限に */
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
-  transition: all 0.3s ease;
-  width: auto;             /* ← 横幅を固定せず文字に合わせる */
-  min-width: auto;         /* ← 余白強制も解除 */
-  text-align: center;
-}
-
-.treatment-cta .cta-btn:hover {
-  background-color: #16304A;
-  transform: translateY(-1px);
+.treatment-cta .services-link {
+  margin-top: 0;
 }
 
 
@@ -1427,6 +1416,28 @@ section, header, footer {
   margin-top: 25px;
   margin-bottom: 50px;
   opacity: 0.9;
+}
+
+.blog-lead {
+  max-width: 640px;
+  margin: 28px auto 48px;
+}
+
+.blog-lead-catch {
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #1E3A5F;
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+.blog-lead-text {
+  font-size: 0.95rem;
+  line-height: 1.95;
+  color: #1E3A5F;
+  opacity: 0.9;
+  margin: 0;
 }
 
 /* コンテナ */
@@ -1483,31 +1494,17 @@ section, header, footer {
   margin-top: 45px;
 }
 
+.blog-cta .services-link {
+  margin-top: 0;
+}
+
 .news-cta {
   text-align: center;
   margin-top: 45px;
 }
 
 
-/* ボタン（サブCTAデザイン・スマート系） */
-.blog-cta .btn-more {
-  display: inline-block;
-  padding: 10px 25px;
-  background-color: #1E3A5F;
-  color: #ffffff;
-  text-decoration: none;
-  border-radius: 28px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.03em;
-  transition: all 0.3s ease;
-}
-
-.blog-cta .btn-more:hover {
-  background-color: #16304A;
-  transform: translateY(-2px);
-}
-
+/* ボタン（お知らせ） */
 .news-cta .btn-more {
   display: inline-block;
   padding: 10px 25px;
