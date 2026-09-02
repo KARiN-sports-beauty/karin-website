@@ -492,41 +492,69 @@
 
 
   <!-- ==========================
-      アクセス・営業時間＋直近スケジュール
+       対応エリア・営業時間＋直近スケジュール
   =========================== -->
   <section id="access" class="access-section" data-aos="fade-up">
-    <h2 class="section-title">アクセス・営業時間</h2>
+    <h2 class="section-title">対応エリア・営業時間</h2>
+    <p class="area-hours-lead">
+      東京・福岡を中心に、出張施術を行っています。<br>
+      完全予約制で、お身体の状態やご希望に合わせて対応しています。
+    </p>
 
-    <div class="access-container">
-      <div class="access-info">
-        <h3>KARiN. ~Sports & Beauty~</h3>
-        <p>📍 <strong>活動拠点：</strong> 東京（代々木上原周辺）／福岡（薬院周辺）</p>
-        <p>🏠 登録所在地：福岡県福岡市中央区</p>
-        <p>🚉 最寄駅：代々木上原駅・薬院駅 <small>（※出張対応）</small><br> <small>（必要あればレンタルスペースもご相談ください）</small></p>
-        <p class="tel-row">📞 <a href="tel:09081549313" class="tel-link">090-8154-9313</a><br>施術中は電話に出られない場合がございます。ご予約お問い合わせはLINEまたはフォーム（24時間受付）をご利用ください。</p>
-        <p class="mail-row">✉️ <a href="mailto:info@karin-sb.jp" class="tel-link">info@karin-sb.jp</a></p>
-        <p>🕒 営業時間：12:00〜26:00（東京）<br>　　　　　　10:00〜19:00（福岡）<br>（その他のお時間はご相談ください）<br>　※事前予約制となっております。</p>
-        <p>❌ 定休日：不定休 <br>（下記の直近スケジュールでご確認いただくか、または直接ご連絡ください）</p>
-      </div>
+    <div class="area-hours">
+      <ul class="area-hours-meta">
+        <li>完全予約制</li>
+        <li>出張施術</li>
+        <li>東京・福岡対応</li>
+      </ul>
 
-      <div class="access-map" data-aos="fade-up" data-aos-delay="150">
-        <!-- タブ -->
-        <div class="map-tabs">
-          <button class="map-tab active" data-map="tokyo">東京</button>
-          <button class="map-tab" data-map="fukuoka">福岡</button>
-        </div>
+      <div class="area-hours-files">
+        <article class="area-file" aria-labelledby="area-tokyo-heading">
+          <p class="area-file__tab" aria-hidden="true">TOKYO</p>
+          <div class="area-file__body">
+            <h3 id="area-tokyo-heading" class="area-file__city">東京</h3>
+            <p class="area-file__area">代々木上原周辺</p>
+            <dl class="area-file__facts">
+              <div class="area-file__fact">
+                <dt>営業時間</dt>
+                <dd class="area-file__hours">12:00〜26:00</dd>
+              </div>
+              <div class="area-file__fact">
+                <dt>定休日</dt>
+                <dd>不定休</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
 
-        <!-- 地図（iframe は1つ） -->
-        <iframe id="mapFrame"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3241.323374196838!2d139.679!3d35.6696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6018f3d13f4e3a91%3A0xa1d949af0bcae153!2z44CSMTUxLTAwNjQg5p2x5Lqs6YO95p2x5Lqs5Yy65a-M5bGx5Yy65bCP6YeO77yT5LiB55uu77yR77yW4oiS77yR77yS!5e0!3m2!1sja!2sjp!4v1735669000001"
-          allowfullscreen loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <article class="area-file" aria-labelledby="area-fukuoka-heading">
+          <p class="area-file__tab" aria-hidden="true">FUKUOKA</p>
+          <div class="area-file__body">
+            <h3 id="area-fukuoka-heading" class="area-file__city">福岡</h3>
+            <p class="area-file__area">薬院周辺</p>
+            <dl class="area-file__facts">
+              <div class="area-file__fact">
+                <dt>営業時間</dt>
+                <dd class="area-file__hours">10:00〜19:00</dd>
+              </div>
+              <div class="area-file__fact">
+                <dt>定休日</dt>
+                <dd>不定休</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
       </div>
     </div>
 
-    <!-- 🩵 スケジュールを同セクション内に -->
+    <!-- TODO: 東京で院内施術開始後、代々木上原のGoogle Mapを追加 -->
+    <!-- TODO: 福岡で院内施術開始後、薬院のGoogle Mapを追加 -->
+
+    <div class="area-hours-divider" aria-hidden="true"></div>
+
     <div class="access-schedule" data-aos="fade-up" data-aos-delay="200">
-      <h3>📅 直近スケジュール</h3>
+      <h3>直近スケジュール</h3>
+      <p class="access-schedule-lead">東京・福岡の直近の対応予定をご確認いただけます。</p>
       <div class="schedule-table">
         {% for s in schedule %}
           <div class="schedule-card">
@@ -556,14 +584,9 @@
           </div>
         {% endfor %}
       </div>
-      <p style="text-align: center; font-size: 0.85rem; color: #666; margin-top: 16px;">
+      <p class="access-schedule-note">
         トレーナー帯同の日はお休みとさせていただいておりますのでご了承ください
       </p>
-    </div>
-
-    <div class="access-area-cta" style="text-align: center; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 40px;">
-      <a href="{{ url_for('lp_yoyogiuehara') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">代々木上原で鍼灸をお探しの方へ</a>
-      <a href="{{ url_for('lp_yakuin') }}" class="cta-btn" style="display: inline-block; font-size: 0.85rem;">薬院で鍼灸をお探しの方へ</a>
     </div>
   </section>
 

@@ -138,6 +138,7 @@ window.addEventListener("scroll", () => {
 document.addEventListener("DOMContentLoaded", () => {
   const mapFrame = document.getElementById("mapFrame");
   const tabs = document.querySelectorAll(".map-tab");
+  if (!mapFrame || !tabs.length) return;
 
   const MAP_URL = {
     tokyo:

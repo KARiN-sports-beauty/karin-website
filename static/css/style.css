@@ -1645,12 +1645,195 @@ body.index-page #contact-section {
   z-index: 1;
 }
 
-/* ---------- タイトル（金ライン削除） ---------- */
+/* ---------- タイトル ---------- */
 .access-section .section-title {
+  display: inline-block;
+  position: relative;
   font-size: 2rem;
   font-weight: 600;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
   color: #1E3A5F;
+}
+
+.access-section .section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 2.5px;
+  background-color: #c0a062;
+  border-radius: 2px;
+}
+
+/* ---------- 対応エリア（ファイル風・専用） ---------- */
+body.index-page .access-section .area-hours-lead {
+  max-width: 560px;
+  margin: 0 auto 32px;
+  font-size: 0.98rem;
+  line-height: 1.95;
+  color: #1E3A5F;
+  opacity: 0.9;
+}
+
+body.index-page .access-section .area-hours {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+body.index-page .access-section .area-hours-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 22px;
+  margin: 0 0 40px;
+  padding: 0;
+  list-style: none;
+}
+
+body.index-page .access-section .area-hours-meta li {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: #1E3A5F;
+  opacity: 0.5;
+}
+
+body.index-page .access-section .area-hours-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 32px;
+  text-align: left;
+}
+
+body.index-page .access-section .area-file {
+  position: relative;
+  padding-top: 27px;
+  background: none;
+  box-shadow: none;
+}
+
+body.index-page .access-section .area-file__tab {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 7px 16px 8px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: #c0a062;
+  background: #ffffff;
+  border: 1px solid #ddd6c8;
+  border-bottom-color: #ffffff;
+  border-radius: 8px 8px 0 0;
+  z-index: 1;
+}
+
+body.index-page .access-section .area-file__body {
+  padding: 32px 28px 28px;
+  background: #ffffff;
+  border: 1px solid #ddd6c8;
+  border-radius: 0 10px 10px 10px;
+}
+
+body.index-page .access-section .area-file__city {
+  font-size: 1.32rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  margin: 0 0 6px;
+}
+
+body.index-page .access-section .area-file__area {
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  opacity: 0.68;
+  margin: 0 0 22px;
+}
+
+body.index-page .access-section .area-file__facts {
+  margin: 0;
+}
+
+body.index-page .access-section .area-file__fact {
+  margin: 0;
+}
+
+body.index-page .access-section .area-file__fact + .area-file__fact {
+  margin-top: 18px;
+}
+
+body.index-page .access-section .area-file__facts dt {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #1E3A5F;
+  opacity: 0.45;
+  margin: 0 0 6px;
+}
+
+body.index-page .access-section .area-file__facts dd {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+}
+
+body.index-page .access-section .area-file__hours {
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-size: 1.28rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+body.index-page .access-section .area-hours-divider {
+  width: 70px;
+  height: 1.5px;
+  margin: 52px auto 8px;
+  background: #c0a062;
+  border-radius: 2px;
+}
+
+body.index-page .access-section .access-schedule-lead {
+  max-width: 480px;
+  margin: 0 auto 28px;
+  font-size: 0.92rem;
+  line-height: 1.85;
+  color: #1E3A5F;
+  opacity: 0.8;
+}
+
+body.index-page .access-section .access-schedule-note {
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: #666;
+  margin: 16px auto 0;
+  max-width: 520px;
+}
+
+@media (max-width: 768px) {
+  body.index-page .access-section .area-hours {
+    max-width: 440px;
+  }
+
+  body.index-page .access-section .area-hours-files {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  body.index-page .access-section .area-file__body {
+    padding: 28px 24px 24px;
+  }
 }
 
 /* ---------- コンテナ（左右並び） ---------- */
@@ -1725,7 +1908,7 @@ body.index-page #contact-section {
 .access-schedule h3 {
   font-size: 1.4rem;
   font-weight: 600;
-  margin-bottom: 25px;
+  margin-bottom: 12px;
   color: #1E3A5F;
 }
 
