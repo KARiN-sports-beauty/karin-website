@@ -479,10 +479,18 @@ section, header, footer {
   padding: 0;
 }
 
+.for-you-item:not(:last-child)::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-top: 36px;
+  background-color: #c0a062;
+  opacity: 0.45;
+}
+
 .for-you-item + .for-you-item {
   margin-top: 36px;
-  padding-top: 36px;
-  border-top: 1px solid #eee8dc;
 }
 
 .for-you-num {
@@ -2419,9 +2427,12 @@ section[id],
     margin-top: 48px;
   }
 
+  .for-you-item:not(:last-child)::after {
+    margin-top: 32px;
+  }
+
   .for-you-item + .for-you-item {
     margin-top: 32px;
-    padding-top: 32px;
   }
 
   .for-you-item-title {
@@ -2888,9 +2899,12 @@ section[id],
     margin-top: 44px;
   }
 
+  .for-you-item:not(:last-child)::after {
+    margin-top: 28px;
+  }
+
   .for-you-item + .for-you-item {
     margin-top: 28px;
-    padding-top: 28px;
   }
 
   .for-you-num {

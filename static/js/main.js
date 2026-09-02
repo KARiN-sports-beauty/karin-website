@@ -6,9 +6,19 @@ document.addEventListener("DOMContentLoaded", () => {
   let index = 0;
   let interval;
 
+  function loadSlideImage(slide) {
+    if (!slide) return;
+    const img = slide.querySelector("img");
+    if (!img || img.getAttribute("src")) return;
+    const nextSrc = img.dataset.src;
+    if (nextSrc) img.setAttribute("src", nextSrc);
+  }
+
   function showSlide() {
     slides.forEach((slide) => slide.classList.remove("active"));
     slides[index].classList.add("active");
+    loadSlideImage(slides[index]);
+    loadSlideImage(slides[index + 1]);
 
     if (index === slides.length - 1) {
       clearInterval(interval);

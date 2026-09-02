@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える</title>
+  <link rel="preload" as="image" href="{{ url_for('static', filename='images/slide1.jpg') }}" fetchpriority="high">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
@@ -151,19 +152,19 @@
     <div class="slider">
       <div class="slide active">
         <div class="text right">己と向き合い</div>
-        <img src="{{ url_for('static', filename='images/slide1.jpg') }}" alt="slide1" />
+        <img src="{{ url_for('static', filename='images/slide1.jpg') }}" alt="slide1" width="1376" height="768" fetchpriority="high" decoding="async" />
       </div>
       <div class="slide">
         <div class="text left">より逞しく</div>
-        <img src="{{ url_for('static', filename='images/slide2.jpg') }}" alt="slide2" />
+        <img data-src="{{ url_for('static', filename='images/slide2.jpg') }}" alt="slide2" width="1376" height="768" decoding="async" />
       </div>
       <div class="slide">
         <div class="text right">より美しく</div>
-        <img src="{{ url_for('static', filename='images/slide3.jpg') }}" alt="slide3" />
+        <img data-src="{{ url_for('static', filename='images/slide3.jpg') }}" alt="slide3" width="1376" height="768" decoding="async" />
       </div>
       <div class="slide">
         <div class="text left">より健康に</div>
-        <img src="{{ url_for('static', filename='images/slide4.jpg') }}" alt="slide4" />
+        <img data-src="{{ url_for('static', filename='images/slide4.jpg') }}" alt="slide4" width="1536" height="1024" decoding="async" />
       </div>
       <div class="slide last">
         <div class="brand">
