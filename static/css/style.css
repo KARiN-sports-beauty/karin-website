@@ -797,6 +797,10 @@ section, header, footer {
   border-radius: 2px;
 }
 
+.greeting-section .profile-title-br-sp {
+  display: none;
+}
+
 .intro-role {
   font-size: 1.08rem;
   font-weight: 500;
@@ -1600,24 +1604,8 @@ body.index-page .blog-section .notes-home-card__category {
   margin-top: 45px;
 }
 
-
-/* ボタン（お知らせ） */
-.news-cta .btn-more {
-  display: inline-block;
-  padding: 10px 25px;
-  background-color: #1E3A5F;
-  color: #ffffff;
-  text-decoration: none;
-  border-radius: 28px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.03em;
-  transition: all 0.3s ease;
-}
-
-.news-cta .btn-more:hover {
-  background-color: #16304A;
-  transform: translateY(-2px);
+.news-cta .services-link {
+  margin-top: 0;
 }
 
 /* セクション間の余白を微調整 */
@@ -3085,6 +3073,10 @@ section[id],
     padding-left: 8px;
     padding-right: 8px;
     margin-bottom: 0;
+  }
+
+  .greeting-section .profile-title-br-sp {
+    display: block;
   }
 
   .intro-role {
