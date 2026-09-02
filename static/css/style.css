@@ -1126,6 +1126,10 @@ section, header, footer {
   color: #8fa3c1;
 }
 
+.initial-step .initial-intake-link {
+  margin-top: 14px;
+}
+
 .initial-flow {
   margin: 72px auto 0;
 }

@@ -382,14 +382,6 @@
         </article>
       </div>
 
-      <div class="initial-intake">
-        <p class="initial-intake-text">
-          初めての方には、施術前に「初診問診票」へのご入力をお願いしています。<br>
-          お身体の状態やこれまでの経過などを事前にお聞かせください。
-        </p>
-        <a href="{{ url_for('form') }}" class="initial-intake-link">初診問診票</a>
-      </div>
-
       <div class="initial-flow">
         <h3 class="initial-flow-heading">施術の流れ</h3>
         <ol class="initial-steps">
@@ -402,6 +394,7 @@
             <span class="initial-step-num">02</span>
             <h4 class="initial-step-title">初診問診票</h4>
             <p class="initial-step-text">初めての方には、施術前に初診問診票へのご入力をお願いしています。</p>
+            <a href="{{ url_for('form') }}" class="initial-intake-link">初診問診票</a>
           </li>
           <li class="initial-step">
             <span class="initial-step-num">03</span>
@@ -420,11 +413,6 @@
           </li>
         </ol>
       </div>
-
-      <p class="initial-note">
-        現在は出張施術を中心に承っております。<br>
-        代々木上原での院内施術は準備中です。
-      </p>
 
       <div class="initial-close">
         <h3 class="initial-close-heading">何を受ければいいか分からなくても、大丈夫です。</h3>

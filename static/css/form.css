@@ -39,6 +39,10 @@ body {
   margin-bottom: 40px;
 }
 
+.form-lead-br-pc {
+  display: inline;
+}
+
 /* ---------- カード全体 ---------- */
 .form-card {
   display: flex;
@@ -716,6 +720,10 @@ body {
   .form-lead {
     font-size: 0.9rem;
     margin-bottom: 25px;
+  }
+
+  .form-lead-br-pc {
+    display: none;
   }
 
   .contact-cta {
