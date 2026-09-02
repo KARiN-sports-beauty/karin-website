@@ -7,21 +7,9 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
-  <!-- 🔹SEO（送信完了ページなので簡易でOK） -->
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="https://karin-sb.jp/thanks">
   <meta name="description" content="お問い合わせ・ご予約の送信が完了しました。折り返しご連絡いたします。">
   <meta name="robots" content="noindex, follow">
-
-  <!-- 🔹構造化データ（WebPage のみ） -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "送信完了ページ",
-    "url": "{{ request.url }}",
-    "description": "お問い合わせ・ご予約の送信が完了した旨をお知らせするページです。"
-  }
-  </script>
 
   <style>
     /* ========== BASE ========== */

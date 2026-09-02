@@ -10,12 +10,12 @@
 
 
   <meta name="description" content="{{ blog.excerpt }}">
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="https://karin-sb.jp/blog/{{ blog.slug }}">
 
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ blog.title }} | KARiN.NOTES">
   <meta property="og:description" content="{{ blog.excerpt }}">
-  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:url" content="https://karin-sb.jp/blog/{{ blog.slug }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
   {% if blog.image %}
@@ -26,34 +26,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
 
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": {{ blog.title | tojson }},
-    {% if blog.image %}
-      "image": "{{ blog.image }}",
-    {% endif %}
-    "author": {
-      "@type": "Person",
-      "name": {{ (author_info.name if author_info else "藤田 幸士（KARiN.代表）") | tojson }}
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "KARiN. ~Sports & Beauty~",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://karin-sb.jp/static/images/logoname.jpg"
-      }
-    },
-    "datePublished": "{{ blog.date }}",
-    "description": {{ (blog.excerpt or '') | tojson }},
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": "{{ request.url }}"
-    }
-  }
-  </script>
+  {% include "notes/_article_jsonld.html" %}
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260611">

@@ -29,67 +29,19 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- ===========================
-       JSON-LD（ContactPage + LocalBusiness）
+       JSON-LD（ContactPage）
   ============================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "ContactPage",
-        "name": "お問い合わせ・ご予約",
-        "url": "https://karin-sb.jp/contact",
-        "about": "鍼灸・整体・美容鍼・トレーニングの予約・問い合わせフォーム",
-        "contactOption": {
-          "@type": "ContactPoint",
-          "telephone": "+81-90-8154-9313",
-          "contactType": "customer service",
-          "areaServed": ["JP"],
-          "availableLanguage": ["Japanese"]
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "KARiN. ~Sports & Beauty~",
-        "image": "https://karin-sb.jp/static/images/logoname.jpg",
-        "telephone": "+81-90-8154-9313",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "福岡市中央区",
-          "addressRegion": "福岡県",
-          "addressCountry": "JP"
-        },
-        "areaServed": [
-          {
-            "@type": "Place",
-            "name": "代々木上原",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "渋谷区",
-              "addressRegion": "東京都",
-              "addressCountry": "JP"
-            }
-          },
-          {
-            "@type": "Place",
-            "name": "薬院",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "福岡市中央区",
-              "addressRegion": "福岡県",
-              "addressCountry": "JP"
-            }
-          }
-        ],
-        "openingHoursSpecification": [{
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-          "opens": "12:00",
-          "closes": "26:00"
-        }],
-        "url": "https://karin-sb.jp/"
-      }
-    ]
+    "@type": "ContactPage",
+    "@id": "https://karin-sb.jp/contact#webpage",
+    "url": "https://karin-sb.jp/contact",
+    "name": "お問い合わせ・ご予約",
+    "description": "お問い合わせ・2回目以降の方のご予約はこちらからご連絡ください。LINEでも受け付けております。",
+    "isPartOf": {
+      "@id": "https://karin-sb.jp/#website"
+    }
   }
   </script>
 

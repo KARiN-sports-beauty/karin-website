@@ -29,51 +29,21 @@
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ===========================
-       JSON-LD（Blog + CollectionPage）
-  ============================ -->
+  <!-- JSON-LD（CollectionPage） -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "CollectionPage",
-        "name": "KARiN.NOTES 一覧",
-        "url": "https://karin-sb.jp/blog",
-        "description": "KARiN. ~Sports & Beauty~ の公式 KARiN.NOTES 一覧ページ。",
-        "isPartOf": {
-          "@type": "WebSite",
-          "url": "https://karin-sb.jp/"
-        }
-      },
-      {
-        "@type": "Blog",
-        "name": "KARiN.NOTES",
-        "url": "https://karin-sb.jp/blog",
-        "description": "健康・美容・セルフケアなどの記事を掲載しています。",
-        "publisher": {
-          "@type": "Organization",
-          "name": "KARiN. ~Sports & Beauty~",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://karin-sb.jp/static/images/logoname.jpg"
-          }
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "KARiN. ~Sports & Beauty~",
-        "image": "https://karin-sb.jp/static/images/logoname.jpg",
-        "telephone": "+81-90-8154-9313",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "福岡市中央区",
-          "addressRegion": "福岡県",
-          "addressCountry": "JP"
-        },
-        "url": "https://karin-sb.jp/"
-      }
-    ]
+    "@type": "CollectionPage",
+    "@id": "https://karin-sb.jp/blog#webpage",
+    "name": "KARiN.NOTES 一覧",
+    "url": "https://karin-sb.jp/blog",
+    "description": "身体づくり・セルフケア・ブランドの想いを、読み物としてお届けします。",
+    "isPartOf": {
+      "@id": "https://karin-sb.jp/#website"
+    },
+    "about": {
+      "@id": "https://karin-sb.jp/#organization"
+    }
   }
   </script>
 

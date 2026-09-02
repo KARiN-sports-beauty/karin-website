@@ -1,0 +1,43 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "@id": "https://karin-sb.jp/blog/{{ blog.slug }}#article",
+  "headline": {{ blog.title | tojson }},
+  "url": "https://karin-sb.jp/blog/{{ blog.slug }}",
+  {% if blog.image %}
+  "image": {{ blog.image | tojson }},
+  {% endif %}
+  "author": {% if author_info and author_info.name and '藤田' not in author_info.name %}{
+    "@type": "Person",
+    "name": {{ author_info.name | tojson }}
+  }{% else %}{
+    "@type": "Person",
+    "@id": "https://karin-sb.jp/#person-koji-fujita",
+    "name": "藤田 幸士"
+  }{% endif %},
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://karin-sb.jp/#organization",
+    "name": "KARiN. ~Sports & Beauty~",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://karin-sb.jp/static/images/logoname.jpg"
+    }
+  },
+  {% if blog.date_published_iso %}
+  "datePublished": {{ blog.date_published_iso | tojson }},
+  {% endif %}
+  {% if blog.date_modified_iso %}
+  "dateModified": {{ blog.date_modified_iso | tojson }},
+  {% endif %}
+  "description": {{ (blog.excerpt or '') | tojson }},
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://karin-sb.jp/blog/{{ blog.slug }}"
+  },
+  "isPartOf": {
+    "@id": "https://karin-sb.jp/#website"
+  }
+}
+</script>

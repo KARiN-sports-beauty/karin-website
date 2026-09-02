@@ -18,7 +18,7 @@
   ================================= -->
   <link rel="canonical" href="https://karin-sb.jp/">
 
-  <meta name="description" content="KARiN. ~Sports & Beauty~ は、鍼灸・整体・美容・トレーニングを組み合わせ、身体と心を整えるコンディショニングサロンです。東京（代々木上原）と福岡（薬院）を拠点に完全予約制で施術を行っています。受付時間は全地域共通で10:00〜19:00。LINE・フォームから24時間予約受付。">
+  <meta name="description" content="KARiN. ~Sports & Beauty~ は、鍼灸・整体・美容・トレーニングを組み合わせ、身体と心を整えるコンディショニングサロンです。東京（代々木上原）と福岡（薬院）を拠点に完全予約制で施術を行っています。営業時間は東京12:00〜26:00、福岡10:00〜19:00。LINE・フォームから24時間予約受付。">
   <meta name="keywords" content="鍼灸, スポーツマッサージ, マッサージ, 整体, 美容鍼, トレーニング, コンディショニング, 代々木上原, 薬院, 出張施術, スポーツケア, 整体院, プロトレーナー, パフォーマンス向上, KARiN">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
@@ -31,12 +31,11 @@
   <meta property="og:description" content="東京（代々木上原）・福岡（薬院）で国家資格者が出張施術。受付10:00〜19:00／LINE・フォーム24時間対応。">
   <meta property="og:url" content="https://karin-sb.jp/">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- ================================
-       ▼ 構造化データ（WebSite + LocalBusiness）
-       ※ Google推奨に合わせ「受付時間10〜19時」を登録
-       ※ 東京/福岡の施術時間は本文に記載されているためOK
+       ▼ 構造化データ（WebSite / Organization / Person）
   ================================= -->
   <script type="application/ld+json">
   {
@@ -44,63 +43,58 @@
     "@graph": [
       {
         "@type": "WebSite",
-        "name": "KARiN. Sports & Beauty",
+        "@id": "https://karin-sb.jp/#website",
+        "name": "KARiN. ~Sports & Beauty~",
+        "alternateName": "KARiN.",
         "url": "https://karin-sb.jp/",
-        "description": "鍼灸・整体・美容・トレーニングで身体と心を整えるコンディショニングサロン。",
         "publisher": {
-          "@type": "Organization",
-          "name": "KARiN. ~Sports & Beauty~",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://karin-sb.jp/static/images/logoname.jpg"
-          }
+          "@id": "https://karin-sb.jp/#organization"
         }
       },
       {
-        "@type": "LocalBusiness",
+        "@type": "Organization",
+        "@id": "https://karin-sb.jp/#organization",
         "name": "KARiN. ~Sports & Beauty~",
-        "image": "https://karin-sb.jp/static/images/logoname.jpg",
-        "telephone": "+81-90-8154-9313",
-        "description": "東京（代々木上原）・福岡（薬院）で鍼灸・整体・美容鍼・トレーニングを行う予約制サロン。受付時間10:00〜19:00。",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "福岡市中央区",
-          "addressRegion": "福岡県",
-          "addressCountry": "JP"
+        "url": "https://karin-sb.jp/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://karin-sb.jp/static/images/logoname.jpg"
+        },
+        "description": "鍼灸・整体・美容・トレーニングを組み合わせ、東京・福岡で出張施術を行う完全予約制のコンディショニングサロン。",
+        "founder": {
+          "@id": "https://karin-sb.jp/#person-koji-fujita"
         },
         "areaServed": [
           {
             "@type": "Place",
-            "name": "代々木上原",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "渋谷区",
-              "addressRegion": "東京都",
-              "addressCountry": "JP"
-            }
+            "name": "東京（代々木上原中心）"
           },
           {
             "@type": "Place",
-            "name": "薬院",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "福岡市中央区",
-              "addressRegion": "福岡県",
-              "addressCountry": "JP"
-            }
+            "name": "福岡（薬院中心）"
           }
-        ],
-        "openingHoursSpecification": [
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
-            ],
-            "opens": "12:00",
-            "closes": "26:00"
-          }
-        ],
-        "url": "https://karin-sb.jp/"
+        ]
+      },
+      {
+        "@type": "Person",
+        "@id": "https://karin-sb.jp/#person-koji-fujita",
+        "name": "藤田 幸士",
+        "jobTitle": "KARiN.代表 / 鍼灸師 / アスレティックトレーナー",
+        "worksFor": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://karin-sb.jp/#webpage",
+        "url": "https://karin-sb.jp/",
+        "name": "KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える",
+        "isPartOf": {
+          "@id": "https://karin-sb.jp/#website"
+        },
+        "about": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
       }
     ]
   }
@@ -513,7 +507,7 @@
           <p class="area-file__tab" aria-hidden="true">TOKYO</p>
           <div class="area-file__body">
             <h3 id="area-tokyo-heading" class="area-file__city">東京</h3>
-            <p class="area-file__area">代々木上原周辺</p>
+            <p class="area-file__area">代々木上原中心</p>
             <dl class="area-file__facts">
               <div class="area-file__fact">
                 <dt>営業時間</dt>
@@ -531,7 +525,7 @@
           <p class="area-file__tab" aria-hidden="true">FUKUOKA</p>
           <div class="area-file__body">
             <h3 id="area-fukuoka-heading" class="area-file__city">福岡</h3>
-            <p class="area-file__area">薬院周辺</p>
+            <p class="area-file__area">薬院中心</p>
             <dl class="area-file__facts">
               <div class="area-file__fact">
                 <dt>営業時間</dt>
@@ -632,9 +626,7 @@
         KARiN. <span>~Sports & Beauty~</span>
       </div>
       <div class="footer-area-links" style="text-align: center; margin: 10px 0; font-size: 0.85rem; color: #999;">
-        <a href="{{ url_for('lp_yoyogiuehara') }}" aria-label="代々木上原で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">代々木上原</a>
-        <span style="color: #ccc;">|</span>
-        <a href="{{ url_for('lp_yakuin') }}" aria-label="薬院で鍼灸をお探しの方へ" style="color: #999; text-decoration: none; margin: 0 8px;">薬院</a>
+        <a href="{{ url_for('lp') }}" aria-label="東京・福岡の出張施術について" style="color: #999; text-decoration: none;">東京・福岡の出張施術</a>
       </div>
       <ul class="footer-links">
         <li><a href="{{ url_for('index') }}">ホーム</a></li>

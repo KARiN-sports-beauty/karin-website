@@ -10,7 +10,7 @@
   <title>{{ news.title }} | KARiN. お知らせ</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="https://karin-sb.jp/news/{{ news.slug }}">
 
   <meta name="description" content="{{ news.excerpt }}">
   <meta name="keywords" content="KARiN, お知らせ, 鍼灸, スポーツマッサージ, マッサージ, 整体, 美容鍼, トレーニング, 福岡, 東京, 代々木上原, 薬院">
@@ -23,44 +23,49 @@
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ news.title }}">
   <meta property="og:description" content="{{ news.excerpt }}">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ news.image or url_for('static', filename='images/logoname.jpg', _external=True) }}">
+  <meta property="og:url" content="https://karin-sb.jp/news/{{ news.slug }}">
+  <meta property="og:image" content="{{ news.image or 'https://karin-sb.jp/static/images/logoname.jpg' }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ===========================
-       🧩 JSON-LD（Supabase URL 対応 完全版）
-  ============================ -->
+  <!-- JSON-LD（Article） -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    "headline": "{{ news.title }}",
-    "datePublished": "{{ news.date }}",
-    "dateModified": "{{ news.date }}",
-    "description": "{{ news.excerpt }}",
+    "@type": "Article",
+    "@id": "https://karin-sb.jp/news/{{ news.slug }}#article",
+    "headline": {{ news.title | tojson }},
+    "url": "https://karin-sb.jp/news/{{ news.slug }}",
+    {% if news.date_published_iso %}
+    "datePublished": {{ news.date_published_iso | tojson }},
+    {% endif %}
+    {% if news.date_modified_iso %}
+    "dateModified": {{ news.date_modified_iso | tojson }},
+    {% endif %}
+    "description": {{ (news.excerpt or '') | tojson }},
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "{{ request.url }}"
+      "@id": "https://karin-sb.jp/news/{{ news.slug }}"
     },
-    "image": [
-      {% if news.image %}
-      "{{ news.image }}"
-      {% else %}
-      "{{ url_for('static', filename='images/logoname.jpg', _external=True) }}"
-      {% endif %}
-    ],
+    {% if news.image %}
+    "image": {{ news.image | tojson }},
+    {% endif %}
     "author": {
       "@type": "Organization",
+      "@id": "https://karin-sb.jp/#organization",
       "name": "KARiN. ~Sports & Beauty~"
     },
     "publisher": {
       "@type": "Organization",
+      "@id": "https://karin-sb.jp/#organization",
       "name": "KARiN. ~Sports & Beauty~",
       "logo": {
         "@type": "ImageObject",
-        "url": "{{ url_for('static', filename='images/logoname.jpg', _external=True) }}"
+        "url": "https://karin-sb.jp/static/images/logoname.jpg"
       }
+    },
+    "isPartOf": {
+      "@id": "https://karin-sb.jp/#website"
     }
   }
   </script>

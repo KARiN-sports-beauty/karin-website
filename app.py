@@ -167,6 +167,16 @@ def fetch_published_blogs(limit=None, slug=None, category=None, query=None, colu
     return []
 
 
+def schema_iso_date(value):
+    """構造化データ用の YYYY-MM-DD。値がない場合は空文字。"""
+    if not value:
+        return ""
+    text = str(value).strip()
+    if len(text) >= 10 and text[4] == "-" and text[7] == "-":
+        return text[:10]
+    return ""
+
+
 def fetch_published_news(limit=None, slug=None, columns="*"):
     """公開中のお知らせを取得。失敗時は空リスト。"""
     last_error = None
@@ -183,6 +193,9 @@ def fetch_published_news(limit=None, slug=None, columns="*"):
             for n in items:
                 if not n.get("date"):
                     n["date"] = (n.get("created_at") or "")[:10]
+                published_iso = schema_iso_date(n.get("date")) or schema_iso_date(n.get("created_at"))
+                n["date_published_iso"] = published_iso
+                n["date_modified_iso"] = schema_iso_date(n.get("updated_at")) or published_iso
             return items
         except Exception as e:
             last_error = e
@@ -2323,6 +2336,9 @@ def prepare_blog_item(blog_item):
         blog_item["date_display"] = format_blog_date_display(blog_item.get("date"))
     blog_item["article_type"] = normalize_article_type(blog_item.get("article_type"))
     blog_item["tags_list"] = normalize_blog_tags(blog_item.get("tags"))
+    published_iso = schema_iso_date(created) or schema_iso_date(blog_item.get("date"))
+    blog_item["date_published_iso"] = published_iso
+    blog_item["date_modified_iso"] = schema_iso_date(blog_item.get("updated_at")) or published_iso
     return blog_item
 
 
@@ -3003,22 +3019,34 @@ def sort_key(p):
 def treatment():
     return render_template("treatment.html")
 
+@app.route("/lp")
+def lp():
+    """東京・福岡共通の初回向けLP"""
+    return render_template(
+        "lp.html",
+        public_booking_enabled=public_booking_enabled(),
+    )
+
+
 @app.route("/lp-yoyogiuehara")
 def lp_yoyogiuehara():
-    return render_template("lp-yoyogiuehara.html")
+    return redirect(url_for("lp"), code=301)
+
 
 @app.route("/lp-yakuin")
 def lp_yakuin():
-    return render_template("lp-yakuin.html")
+    return redirect(url_for("lp"), code=301)
 
-# 旧エリアページ → 新LP（SEO維持のため 301 リダイレクト）
+
+# 旧エリアページ → 共通LP（中間URLを挟まず直接 301）
 @app.route("/yoyogiuehara/shinkyu")
 def yoyogiuehara_shinkyu_redirect():
-    return redirect(url_for("lp_yoyogiuehara"), code=301)
+    return redirect(url_for("lp"), code=301)
+
 
 @app.route("/yakuin/shinkyu")
 def yakuin_shinkyu_redirect():
-    return redirect(url_for("lp_yakuin"), code=301)
+    return redirect(url_for("lp"), code=301)
 
 
 @app.route("/price")
@@ -5952,8 +5980,7 @@ def sitemap():
             ("/form", "weekly"),
             ("/blog", "daily"),
             ("/news", "daily"),
-            ("/lp-yoyogiuehara", "monthly"),
-            ("/lp-yakuin", "monthly"),
+            ("/lp", "monthly"),
         ]
         if public_booking_enabled():
             static_urls.append(("/book", "weekly"))

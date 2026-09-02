@@ -18,7 +18,7 @@
   <meta property="og:title" content="施術内容（鍼灸・整体・トレーニング） | KARiN.">
   <meta property="og:description" content="その日の身体の状態や目的を見ながら、鍼灸・整体・コンディショニング・トレーニングなどを組み合わせて整えます。">
   <meta property="og:url" content="https://karin-sb.jp/treatment">
-  <meta property="og:image" content="{{ url_for('static', filename='images/logoname.jpg', _external=True) }}">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
 
@@ -27,57 +27,26 @@
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": "https://karin-sb.jp/treatment#webpage",
+        "url": "https://karin-sb.jp/treatment",
+        "name": "施術内容",
+        "description": "決まった施術を当てはめるのではなく、その日の身体の状態や目的を見ながら、鍼灸・整体・コンディショニング・トレーニングなどを組み合わせて整えます。",
+        "isPartOf": {
+          "@id": "https://karin-sb.jp/#website"
+        },
+        "about": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
+      },
+      {
         "@type": "Service",
         "name": "KARiN.の施術",
         "serviceType": "鍼灸・整体・コンディショニング・トレーニング",
         "provider": {
-          "@type": "LocalBusiness",
-          "name": "KARiN. ~Sports & Beauty~",
-          "image": "{{ url_for('static', filename='images/logoname.jpg', _external=True) }}",
-          "telephone": "+81-90-8154-9313",
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "福岡市中央区",
-            "addressRegion": "福岡県",
-            "addressCountry": "JP"
-          },
-          "areaServed": [
-            {
-              "@type": "Place",
-              "name": "代々木上原",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "渋谷区",
-                "addressRegion": "東京都",
-                "addressCountry": "JP"
-              }
-            },
-            {
-              "@type": "Place",
-              "name": "薬院",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "福岡市中央区",
-                "addressRegion": "福岡県",
-                "addressCountry": "JP"
-              }
-            }
-          ],
-          "openingHoursSpecification": [{
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-            "opens": "10:00",
-            "closes": "19:00"
-          }],
-          "url": "https://karin-sb.jp/"
+          "@id": "https://karin-sb.jp/#organization"
         },
         "description": "決まった施術を当てはめるのではなく、その日の身体の状態や目的を見ながら、鍼灸・整体・コンディショニング・トレーニングなどを組み合わせて整えます。"
-      },
-      {
-        "@type": "WebPage",
-        "name": "施術内容",
-        "url": "https://karin-sb.jp/treatment",
-        "about": "KARiN.が身体の状態や目的に合わせて、鍼灸・整体・コンディショニング・トレーニングなどをどのように組み合わせて整えているかを紹介するページ"
       }
     ]
   }

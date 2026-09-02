@@ -10,7 +10,7 @@
   <title>お知らせ一覧 | KARiN. ~Sports & Beauty~</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="https://karin-sb.jp/news">
 
   <meta name="description" content="KARiN.のお知らせ一覧ページです。営業時間・休業日・最新情報などを掲載しています。">
   <meta name="keywords" content="KARiN, お知らせ, 新着情報, 鍼灸院, 整体, 美容鍼, 福岡, 東京, 代々木上原, 薬院">
@@ -22,8 +22,8 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="お知らせ一覧 | KARiN. ~Sports & Beauty~">
   <meta property="og:description" content="KARiN.のお知らせ一覧ページです。最新情報をいち早くお届けします。">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/logoname.jpg', _external=True) }}">
+  <meta property="og:url" content="https://karin-sb.jp/news">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
   <meta name="twitter:card" content="summary_large_image">
@@ -35,19 +35,14 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "ItemList",
+    "@type": "CollectionPage",
+    "@id": "https://karin-sb.jp/news#webpage",
     "name": "お知らせ一覧",
-    "itemListElement": [
-      {% for item in news_list %}
-      {
-        "@type": "ListItem",
-        "position": {{ loop.index }},
-        "url": "{{ url_for('show_news', slug=item.slug) }}",
-        "name": "{{ item.title }}",
-        "datePublished": "{{ item.date }}"
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    ]
+    "url": "https://karin-sb.jp/news",
+    "description": "KARiN.のお知らせ一覧ページです。営業時間・休業日・最新情報などを掲載しています。",
+    "isPartOf": {
+      "@id": "https://karin-sb.jp/#website"
+    }
   }
   </script>
 
