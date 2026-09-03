@@ -1195,6 +1195,18 @@ body.nav-open {
   margin-top: 14px;
 }
 
+.initial-step-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.initial-step-links .initial-intake-link {
+  margin-top: 0;
+}
+
 .initial-flow {
   margin: 72px auto 0;
 }
