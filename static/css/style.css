@@ -2363,7 +2363,7 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .footer-nav li + li {
-  margin-top: 12px;
+  margin-top: 6px;
 }
 
 .footer-nav a {
@@ -3764,10 +3764,14 @@ section[id],
     grid-column: auto;
   }
 
-  .footer-nav a,
   .footer-facts a,
   .footer-book {
     min-height: 44px;
+  }
+
+  .footer-nav a {
+    min-height: 0;
+    line-height: 1.5;
   }
 
   .footer-nav a,
