@@ -600,12 +600,10 @@
         <a href="{{ url_for('lp') }}" class="contact-btn">LINEで相談する</a>
         <p class="contact-cta-note">※公式LINE登録で、ご登録者限定の特典をご用意しています。</p>
       </div>
-      {% if public_booking_enabled %}
       <div class="contact-cta-item">
         <p class="contact-cta-lead">日時・メニューが決まっている方</p>
         <a href="{{ url_for('book_page') }}" class="contact-btn">Web予約する</a>
       </div>
-      {% endif %}
       <div class="contact-cta-item">
         <p class="contact-cta-lead">トレーナー帯同・法人・その他のご相談</p>
         <a href="{{ url_for('contact') }}" class="contact-btn">お問い合わせ</a>
