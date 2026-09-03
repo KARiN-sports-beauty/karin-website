@@ -2083,12 +2083,19 @@ body.index-page .access-section .access-schedule-note {
   color: #94a3b8;
 }
 
-/* 今日 */
+/* 今日：配色は他の日と同じ。日付の下にゴールドの下線 */
 .schedule-cell.today {
-  background-color: #1E3A5F;
-  color: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedule-cell.today::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 2px;
+  background-color: #c0a062;
+  border-radius: 2px;
 }
 
 .schedule-cell span {
