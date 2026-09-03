@@ -43,84 +43,8 @@ body {
   display: inline;
 }
 
-body.contact-page .contact-guide {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin: 0 0 40px;
-}
-
-body.contact-page .contact-guide-card {
-  background: #fafafa;
-  border: 1px solid rgba(30, 58, 95, 0.08);
-  border-radius: 16px;
-  padding: 24px 22px 22px;
-}
-
-body.contact-page .contact-guide-title {
-  margin: 0 0 12px;
-  font-size: 1.08rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #1E3A5F;
-}
-
-body.contact-page .contact-guide-list {
-  margin: 0 0 14px;
-  padding-left: 1.2em;
-  color: #1E3A5F;
-  font-size: 0.92rem;
-  line-height: 1.9;
-}
-
-body.contact-page .contact-guide-text {
-  margin: 0 0 16px;
-  font-size: 0.92rem;
-  line-height: 1.85;
-  color: #4a5f7a;
-}
-
-body.contact-page .contact-guide-ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-body.contact-page .contact-guide-ctas .initial-btn {
-  min-width: 180px;
-}
-
 body.contact-page .faq-section {
   margin-bottom: 40px;
-}
-
-body.contact-page #contact-form {
-  scroll-margin-top: 80px;
-}
-
-@media (max-width: 768px) {
-  body.contact-page .contact-guide {
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  body.contact-page .contact-guide-card {
-    padding: 20px 16px 18px;
-  }
-
-  body.contact-page .contact-guide-title {
-    font-size: 1.02rem;
-  }
-
-  body.contact-page .contact-guide-ctas {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  body.contact-page .contact-guide-ctas .initial-btn {
-    width: 100%;
-    min-width: 0;
-  }
 }
 
 /* ---------- カード全体 ---------- */
@@ -1122,58 +1046,6 @@ body.contact-page #contact-form {
 
 
 /* ===============================
-   🩵 Contactページ 1024px対応
-   CTAボタン（LINE予約・初診）幅崩れ修正
-=============================== */
-@media (min-width: 769px) and (max-width: 1024px) {
-  body.contact-page .contact-cta {
-    flex-direction: row !important;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-  }
-
-  body.contact-page .contact-cta a {
-    width: auto !important;        /* ✅ 横幅を自然に */
-    max-width: none !important;    /* ✅ 固定解除 */
-    padding: 12px 30px !important; /* ✅ 見た目整える */
-    text-align: center;
-  }
-}
-
-/* ===============================
-   💚 Contactページ スマホ時CTAボタン統一（上品ver）
-=============================== */
-@media (max-width: 768px) {
-  body.contact-page .contact-cta {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 14px !important;
-  }
-
-  body.contact-page .contact-cta a {
-    display: inline-block;
-    width: 80% !important;          /* ✅ スッキリした幅 */
-    max-width: 300px !important;    /* ✅ 上限を軽めに調整 */
-    text-align: center;
-    padding: 13px 0 !important;     /* ✅ 少し軽い印象に */
-    font-size: 0.95rem;
-    border-radius: 28px;
-  }
-
-  body.contact-page .contact-cta .line-btn {
-    background-color: #06C755;
-  }
-
-  body.contact-page .contact-cta .cta-btn {
-    background: #ffffff;
-    color: #1E3A5F;
-    border: 1px solid rgba(30, 58, 95, 0.16);
-  }
-}
-
-
-/* ===============================
    🩵 Contact・Formページ ホームボタン右寄せ固定
 =============================== */
 body.contact-page .home-btn,
@@ -1185,7 +1057,7 @@ body.form-page .home-btn {
 
 
 /* ===============================
-   🩵 Contactページ 最終レスポンシブ補正 (2025.11)
+   🩵 Contactページ 最終レスポンシブ補正
 =============================== */
 
 /* --- タブレット (max-width: 1024px) --- */
@@ -1204,25 +1076,6 @@ body.form-page .home-btn {
   }
 
   body.contact-page .faq-question {
-    font-size: 1rem;
-  }
-
-  body.contact-page .schedule-mini {
-    margin-top: 25px;
-    padding: 22px 18px;
-  }
-
-  /* ✅ CTA横並びを維持 */
-  body.contact-page .contact-cta {
-    flex-direction: row !important;
-    justify-content: center;
-    align-items: center;
-    gap: 20px !important;
-  }
-
-  body.contact-page .contact-cta a {
-    width: auto !important;
-    padding: 12px 34px !important;
     font-size: 1rem;
   }
 }
@@ -1244,25 +1097,6 @@ body.form-page .home-btn {
   }
 
   body.contact-page .faq-question {
-    font-size: 0.95rem;
-  }
-
-  body.contact-page .schedule-mini {
-    margin-top: 25px;
-  }
-
-  /* ✅ CTA縦並び・中央寄せ */
-  body.contact-page .contact-cta {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 14px !important;
-  }
-
-  body.contact-page .contact-cta a {
-    width: 85% !important;
-    max-width: 300px !important;
-    padding: 13px 0 !important;
-    border-radius: 30px;
     font-size: 0.95rem;
   }
 }
@@ -1288,157 +1122,6 @@ body.form-page .home-btn {
 
   body.contact-page .faq-answer p {
     font-size: 0.85rem;
-  }
-
-  body.contact-page .schedule-mini h3 {
-    font-size: 1rem;
-  }
-
-  /* ✅ CTAボタン調整 */
-  body.contact-page .contact-cta a {
-    max-width: 260px !important;
-    font-size: 0.9rem;
-  }
-}
-
-/* ===============================
-   🩵 Contactページ 最終レスポンシブ補正 (2025.11)
-=============================== */
-
-/* --- タブレット (max-width: 1024px) --- */
-@media (max-width: 1024px) {
-  body.contact-page .form-wrapper {
-    max-width: 88%;
-    padding: 30px 28px 48px;
-  }
-
-  body.contact-page .faq-section {
-    margin: 25px auto 35px;
-  }
-
-  body.contact-page .faq-title {
-    font-size: 1.5rem;
-  }
-
-  body.contact-page .faq-question {
-    font-size: 1rem;
-  }
-
-  body.contact-page .schedule-mini {
-    margin-top: 25px;
-    padding: 22px 18px;
-  }
-
-  /* ✅ CTA横並びを維持 */
-  body.contact-page .contact-cta {
-    flex-direction: row !important;
-    justify-content: center;
-    align-items: center;
-    gap: 20px !important;
-  }
-
-  body.contact-page .contact-cta a {
-    width: auto !important;
-    padding: 12px 34px !important;
-    font-size: 1rem;
-  }
-}
-
-/* --- スマホ全般 (max-width: 768px) --- */
-@media (max-width: 768px) {
-  body.contact-page .form-wrapper {
-    width: 95%;
-    padding: 22px 18px 36px;
-  }
-
-  body.contact-page .faq-section {
-    margin: 28px auto 25px;
-    padding: 20px 16px;
-  }
-
-  body.contact-page .faq-title {
-    font-size: 1.25rem;
-  }
-
-  body.contact-page .faq-question {
-    font-size: 0.95rem;
-  }
-
-  body.contact-page .schedule-mini {
-    margin-top: 25px;
-  }
-
-  /* ✅ CTA縦並び・中央寄せ */
-  body.contact-page .contact-cta {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 14px !important;
-  }
-
-  body.contact-page .contact-cta a {
-    width: 85% !important;
-    max-width: 300px !important;
-    padding: 13px 0 !important;
-    border-radius: 30px;
-    font-size: 0.95rem;
-  }
-}
-
-/* --- 小型スマホ (max-width: 480px) --- */
-@media (max-width: 480px) {
-  body.contact-page .form-wrapper {
-    width: 94%;
-    padding: 18px 14px 28px;
-  }
-
-  body.contact-page .faq-section {
-    padding: 15px 12px;
-  }
-
-  body.contact-page .faq-title {
-    font-size: 1.15rem;
-  }
-
-  body.contact-page .faq-question {
-    font-size: 0.9rem;
-  }
-
-  body.contact-page .faq-answer p {
-    font-size: 0.85rem;
-  }
-
-  body.contact-page .schedule-mini h3 {
-    font-size: 1rem;
-  }
-
-  /* ✅ CTAボタン調整 */
-  body.contact-page .contact-cta a {
-    max-width: 260px !important;
-    font-size: 0.9rem;
-  }
-}
-
-/* ===============================
-   🩵 Contactページ 最終調整
-   ・お問い合わせ内容とスケジュール間の余白を縮める
-   ・480px以下でロゴ非表示
-=============================== */
-
-/* お問い合わせ内容とスケジュールの余白を調整 */
-body.contact-page .form-block + .schedule-mini {
-  margin-top: 8px !important; /* ← 今までの15pxよりさらに詰める */
-}
-
-/* --- 小型スマホ (max-width: 480px) --- */
-@media (max-width: 480px) {
-  /* ✅ フォームロゴ非表示 */
-  body.contact-page .form-logo-card {
-    display: none !important;
-  }
-
-  /* ✅ 余白をさらにコンパクトに */
-  body.contact-page .form-block + .schedule-mini {
-    margin-top: 6px !important;
   }
 }
 

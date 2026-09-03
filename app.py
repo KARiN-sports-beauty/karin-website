@@ -2972,7 +2972,7 @@ def build_calendar_shift_status_map(year, month, staff_name=None):
 
 
 def load_schedule():
-    """公開スケジュール（トップ・contact・form）。staff_work_shifts 由来。"""
+    """公開スケジュール（トップ）。staff_work_shifts 由来。"""
     try:
         return build_public_schedule_entries(days=10)
     except Exception as e:
@@ -3190,8 +3190,7 @@ def submit_form():
 # ===================================================
 @app.route("/contact")
 def contact():
-    schedule = load_schedule()
-    return render_template("contact.html", schedule=schedule)
+    return render_template("contact.html")
 
 
 # ===================================================

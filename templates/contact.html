@@ -12,7 +12,7 @@
        SEO基本設定
   ============================ -->
   <link rel="canonical" href="https://karin-sb.jp/contact">
-  <meta name="description" content="KARiN.へのお問い合わせ・ご相談ページ。施術内容、日時、トレーナー帯同、法人利用など、フォームまたはLINEからご相談いただけます。日時・メニューが決まっている方はWeb予約をご利用ください。">
+  <meta name="description" content="KARiN.へのお問い合わせ・ご相談ページ。施術内容、トレーナー帯同、法人利用など、お気軽にご相談ください。">
   <meta name="keywords" content="お問い合わせ, ご相談, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, トレーナー帯同">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
@@ -65,39 +65,6 @@
     施術についてのご相談や、トレーナー帯同・法人でのご利用など、<br class="form-lead-br-pc">お気軽にお問い合わせください。
   </p>
 
-  <div class="contact-guide">
-    <article class="contact-guide-card">
-      <h2 class="contact-guide-title">施術について相談したい方</h2>
-      <ul class="contact-guide-list">
-        <li>何を受ければいいかわからない</li>
-        <li>自分の身体について相談してから決めたい</li>
-        <li>施術内容について聞きたい</li>
-        <li>日時などを相談したい</li>
-      </ul>
-      <p class="contact-guide-text">下記のフォーム、またはLINEからご相談ください。</p>
-      <div class="contact-guide-ctas">
-        <a href="#contact-form" class="initial-btn">お問い合わせフォーム</a>
-        <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn">LINEで相談</a>
-      </div>
-    </article>
-
-    <article class="contact-guide-card">
-      <h2 class="contact-guide-title">日時・メニューが決まっている方</h2>
-      <p class="contact-guide-text">日時・メニューが決まっている方は、Web予約から空き状況をご確認いただけます。</p>
-      <div class="contact-guide-ctas">
-        <a href="{{ url_for('book_page') }}" class="initial-btn">Web予約する</a>
-      </div>
-    </article>
-
-    <article class="contact-guide-card">
-      <h2 class="contact-guide-title">トレーナー帯同・法人・その他のご相談</h2>
-      <p class="contact-guide-text">帯同や法人でのご利用、その他のご相談も、下記のフォームからお気軽にご連絡ください。</p>
-      <div class="contact-guide-ctas">
-        <a href="#contact-form" class="initial-btn">お問い合わせフォーム</a>
-      </div>
-    </article>
-  </div>
-
   <section class="faq-section" data-aos="fade-up">
     <h2 class="faq-title">よくあるご質問</h2>
 
@@ -137,7 +104,7 @@
     </div>
   </section>
 
-  <form id="contact-form" action="{{ url_for('submit_contact') }}" method="POST" class="form-card">
+  <form action="{{ url_for('submit_contact') }}" method="POST" class="form-card">
 
     <div class="form-block">
       <h2 class="block-title">基本情報</h2>
@@ -157,27 +124,13 @@
 
     <div class="form-block">
       <h2 class="block-title">お問い合わせ内容</h2>
-      <textarea name="message" rows="5" placeholder="ご相談内容や、ご希望の日時など、わかる範囲でご記入ください。" required></textarea>
+      <textarea name="message" rows="5" placeholder="ご相談内容など、わかる範囲でご記入ください。" required></textarea>
     </div>
-
-    <section class="schedule-mini">
-      <h3>今週のスケジュール</h3>
-      <div class="schedule-mini-row">
-        {% for s in schedule %}
-          {% set date_md = s.date[5:].replace('-', '/') %}
-          <div class="schedule-mini-cell {% if s.status == 'unset' or s.place == '—' %}unset-day{% elif '休' in s.place %}off-day{% endif %}">
-            <strong>{{ date_md }}</strong>：{{ s.place }}
-          </div>
-        {% endfor %}
-      </div>
-    </section>
 
     <div class="submit-area">
       <button class="submit-btn" type="submit">送信する</button>
     </div>
   </form>
-
-  <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN.ロゴ" class="form-logo-card">
 </section>
 
 <!-- ホームへ戻る -->
