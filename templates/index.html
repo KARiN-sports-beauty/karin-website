@@ -119,22 +119,18 @@
        Header
   =========================== -->
   <header class="header">
-    <div class="logo">KARiN.</div>
-    <!-- ハンバーガーアイコン -->
-    <div class="hamburger" id="hamburger">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
       <span></span><span></span><span></span>
-    </div>
+    </button>
+    <div class="nav-overlay" id="nav-overlay" hidden></div>
     <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('index') }}">ホーム</a>
-      <a href="#news">お知らせ</a>
-      <a href="#profile">プロフィール</a>
       <a href="#initial-section">初めての方へ</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表</a>
-      <a href="{{ url_for('index') }}#blog">KARiN.NOTES</a>
-      <!-- <a href="{{ url_for('login') }}">会員ログイン</a> -->
-      <a href="#access">アクセス・営業時間</a>
-      <a href="{{ url_for('contact') }}">ご予約・お問い合わせ</a>
+      <a href="#blog">KARiN.NOTES</a>
+      <a href="#profile">プロフィール</a>
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
     </nav>
   </header>
 

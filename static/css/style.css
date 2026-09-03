@@ -69,7 +69,7 @@ section, header, footer {
 
 
 /* =====================================================
-   HEADER（KARiN.）完全版：2025-11
+   HEADER（KARiN.）
 ===================================================== */
 .header {
   position: fixed;
@@ -84,6 +84,13 @@ section, header, footer {
   padding: 0 4%;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   z-index: 1000;
+  overflow: visible;
+}
+
+.header.shrink {
+  height: 58px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 8px rgba(30, 58, 95, 0.08);
 }
 
 .logo {
@@ -92,6 +99,11 @@ section, header, footer {
   font-weight: 700;
   color: #1E3A5F;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.header.shrink .logo {
+  font-size: 1.7rem;
 }
 
 .karin-brand {
@@ -103,55 +115,98 @@ section, header, footer {
 /* ---------- PC用ナビ ---------- */
 .nav {
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 26px;
 }
 
 .nav a {
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   color: #1E3A5F;
   transition: color 0.3s ease;
+  white-space: nowrap;
 }
 
-.nav a:hover {
+.nav a:hover:not(.nav-book) {
   color: #8fa3c1;
+}
+
+.nav-book {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 20px;
+  border: 1px solid rgba(30, 58, 95, 0.2);
+  border-radius: 40px;
+  background: #ffffff;
+  color: #1E3A5F;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@media (hover: hover) {
+  .nav a.nav-book:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.16);
+  }
+}
+
+.nav-overlay {
+  display: none;
+}
+
+body.nav-open {
+  overflow: hidden;
 }
 
 /* ---------- ハンバーガー ---------- */
 .hamburger {
   display: none;
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
-  width: 28px;
-  height: 22px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
   z-index: 1100;
 }
 
 .hamburger span {
   position: absolute;
-  left: 0;
-  width: 100%;
-  height: 3px;
+  left: 8px;
+  width: 28px;
+  height: 2px;
   background: #1E3A5F;
   border-radius: 2px;
-  transition: right 2s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease;
 }
 
-.hamburger span:nth-child(1) { top: 0; }
-.hamburger span:nth-child(2) { top: 9px; }
-.hamburger span:nth-child(3) { top: 18px; }
+.hamburger span:nth-child(1) { top: 13px; }
+.hamburger span:nth-child(2) { top: 21px; }
+.hamburger span:nth-child(3) { top: 29px; }
 
-/* ✖アニメーション */
 .hamburger.active span:nth-child(1) {
   transform: rotate(45deg);
-  top: 9px;
+  top: 21px;
 }
 .hamburger.active span:nth-child(2) {
   opacity: 0;
 }
 .hamburger.active span:nth-child(3) {
   transform: rotate(-45deg);
-  top: 9px;
+  top: 21px;
 }
 
 
@@ -2384,6 +2439,22 @@ section[id],
 
 
 
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .nav {
+    gap: 18px;
+  }
+
+  .nav a {
+    font-size: 0.82rem;
+  }
+
+  .nav-book {
+    padding: 7px 16px;
+    min-height: 36px;
+    font-size: 0.8rem;
+  }
+}
+
 /* ===============================
    🩵 トップページ 1024px レスポンシブ調整
    （ノートPC・タブレット横向き）
@@ -2397,30 +2468,62 @@ section[id],
 
   /* ---------- ヘッダー ---------- */
   .hamburger {
-    display: block !important;
+    display: block;
     cursor: pointer;
+  }
+
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 58, 95, 0.28);
+    z-index: 1040;
+  }
+
+  .nav-overlay.active {
+    display: block;
   }
 
   .nav {
     position: fixed;
     top: 0;
     right: -100%;
-    width: 70%;
-    max-width: 360px;
+    width: min(78%, 360px);
     height: 100vh;
+    height: 100dvh;
     background: #ffffff;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    gap: 28px;
-    box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+    gap: 4px;
+    padding: 88px 24px calc(40px + env(safe-area-inset-bottom, 0px));
+    box-shadow: -4px 0 16px rgba(0,0,0,0.08);
     z-index: 1050;
     opacity: 0;
     transform: translateX(80px);
+    overflow-y: auto;
     transition:
-      right 0.7s ease,
-      opacity 0.7s ease,
-      transform 0.7s ease;
+      right 0.4s ease,
+      opacity 0.4s ease,
+      transform 0.4s ease;
+  }
+
+  .nav a {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    padding: 12px 8px;
+    box-sizing: border-box;
+  }
+
+  .nav .nav-book {
+    width: 80%;
+    max-width: 240px;
+    margin-top: 20px;
+    min-height: 48px;
   }
 
   .nav.active {

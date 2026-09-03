@@ -40,20 +40,38 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
   const hamburger = document.querySelector(".hamburger");
   const nav = document.querySelector(".nav");
+  const overlay = document.querySelector(".nav-overlay");
 
-  if (!hamburger || !nav) return; // ← 要素がない場合スキップ
+  if (!hamburger || !nav) return;
+
+  const setOpen = (open) => {
+    hamburger.classList.toggle("active", open);
+    nav.classList.toggle("active", open);
+    hamburger.setAttribute("aria-expanded", open ? "true" : "false");
+    hamburger.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+    document.body.classList.toggle("nav-open", open);
+    if (overlay) {
+      overlay.classList.toggle("active", open);
+      overlay.hidden = !open;
+    }
+  };
 
   hamburger.addEventListener("click", () => {
-    hamburger.classList.toggle("active");
-    nav.classList.toggle("active");
+    setOpen(!nav.classList.contains("active"));
   });
 
-  // ナビ内リンククリックでメニュー閉じる
-  nav.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      hamburger.classList.remove("active");
-      nav.classList.remove("active");
-    });
+  if (overlay) {
+    overlay.addEventListener("click", () => setOpen(false));
+  }
+
+  nav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => setOpen(false));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && nav.classList.contains("active")) {
+      setOpen(false);
+    }
   });
 });
 
