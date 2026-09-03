@@ -1085,31 +1085,33 @@ section, header, footer {
   min-width: 160px;
   min-height: 48px;
   padding: 12px 28px;
-  background-color: #1E3A5F;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1E3A5F;
   font-size: 0.92rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-decoration: none;
-  border-radius: 30px;
-  border: 1.5px solid #1E3A5F;
+  border-radius: 40px;
+  border: 1px solid rgba(30, 58, 95, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  transition: background-color 0.3s ease, color 0.3s ease, transform 0.25s ease;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.initial-btn:hover {
-  background-color: #16304A;
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .initial-btn:hover,
+  .initial-btn--line:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    transform: none;
+  }
 }
 
 .initial-btn--line {
-  background-color: #06C755;
-  border-color: #06C755;
-}
-
-.initial-btn--line:hover {
-  background-color: #05b34e;
-  border-color: #05b34e;
+  background: #ffffff;
+  border-color: rgba(30, 58, 95, 0.16);
 }
 
 .initial-intake {
@@ -1259,20 +1261,28 @@ section, header, footer {
 .cta-btn {
   display: inline-block;
   width: 260px; /* ロゴと同じ幅で統一 */
-  background-color: #1E3A5F;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1E3A5F;
   font-weight: 600;
   text-decoration: none;
-  border-radius: 30px;
+  border-radius: 40px;
+  border: 1px solid rgba(30, 58, 95, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   padding: 14px 0;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  box-sizing: border-box;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   text-align: center;
 }
 
-.cta-btn:hover {
-  background-color: #16304A;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .cta-btn:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    transform: none;
+  }
 }
 
 /* ボタン内のテキスト（改行対応） */
@@ -2142,12 +2152,22 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .contact-section .contact-btn {
-  background-color: #1E3A5F;
+  background: #ffffff;
+  color: #1E3A5F;
+  border: 1px solid rgba(30, 58, 95, 0.16);
+  border-radius: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-.contact-section .contact-btn:hover {
-  background-color: #16304A;
-  transform: translateY(-3px);
+@media (hover: hover) {
+  .contact-section .contact-btn:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    transform: none;
+  }
 }
 
 /* ---------- 各ボタンの色 ---------- */

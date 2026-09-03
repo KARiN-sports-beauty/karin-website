@@ -310,20 +310,21 @@
   min-width: 200px;
   min-height: 48px;
   padding: 14px 32px;
-  background-color: #1E3A5F;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1E3A5F;
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-decoration: none;
-  border-radius: 30px;
-  border: 1.5px solid #1E3A5F;
+  border-radius: 40px;
+  border: 1px solid rgba(30, 58, 95, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .tx-cta-btn--outline {
-  background-color: transparent;
+  background: #ffffff;
   color: #1E3A5F;
 }
 
@@ -355,16 +356,13 @@
 }
 
 @media (hover: hover) and (min-width: 1025px) {
-  .tx-cta-btn:hover {
-    background-color: transparent;
-    color: #1E3A5F;
-    transform: translateY(-1px);
-  }
-
+  .tx-cta-btn:hover,
   .tx-cta-btn--outline:hover {
-    background-color: #1E3A5F;
+    background: #1E3A5F;
     color: #ffffff;
-    transform: translateY(-1px);
+    border-color: #1E3A5F;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    transform: none;
   }
 }
 
