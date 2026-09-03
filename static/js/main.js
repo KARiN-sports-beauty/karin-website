@@ -140,15 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-window.addEventListener("scroll", () => {
-  const header = document.querySelector(".header");
-  if (header && window.scrollY > 50) {
-    header.classList.add("shrink");
-  } else if (header) {
-    header.classList.remove("shrink");
-  }
-});
-
 // ------------------------------
 // 地図タブ切り替え
 // ------------------------------

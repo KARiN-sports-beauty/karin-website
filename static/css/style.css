@@ -87,12 +87,6 @@ section, header, footer {
   overflow: visible;
 }
 
-.header.shrink {
-  height: 58px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 1px 8px rgba(30, 58, 95, 0.08);
-}
-
 .logo {
   font-family: "Playfair Display", serif;
   font-size: 2rem;
@@ -100,10 +94,6 @@ section, header, footer {
   color: #1E3A5F;
   letter-spacing: 0.04em;
   flex-shrink: 0;
-}
-
-.header.shrink .logo {
-  font-size: 1.7rem;
 }
 
 .karin-brand {
@@ -2278,14 +2268,13 @@ body.index-page .access-section .access-schedule-note {
 
 
 /* ===============================
-   🩵 フッター（統一デザイン仕上げ）
-   2025.11 FINAL
+   フッター
 =============================== */
 .footer {
   background-color: #1E3A5F;
   color: #ffffff;
-  padding: 70px 5% 50px;
-  text-align: center;
+  padding: 80px 5% 40px;
+  text-align: left;
 }
 
 .footer-inner {
@@ -2293,85 +2282,177 @@ body.index-page .access-section .access-schedule-note {
   margin: 0 auto;
 }
 
-/* ---------- ロゴ ---------- */
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(0, 1.1fr);
+  gap: 48px 40px;
+  align-items: start;
+}
+
 .footer-logo {
   font-family: "Playfair Display", serif;
   font-size: 1.9rem;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 12px;
 }
 
 .footer-logo span {
   display: block;
   font-family: "Noto Sans JP", sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 400;
   color: #c0cbe0;
-  margin-top: 4px;
+  margin-top: 6px;
+  letter-spacing: 0.06em;
 }
 
-/* ---------- ナビリンク ---------- */
-.footer-links {
+.footer-role {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #c0a062;
+  line-height: 1.7;
+}
+
+.footer-lead {
+  margin: 0;
+  max-width: 28em;
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.9;
+  color: #c0cbe0;
+  letter-spacing: 0.04em;
+}
+
+.footer-heading {
+  margin: 0 0 18px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #c0a062;
+}
+
+.footer-nav ul {
   list-style: none;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 22px;
-  margin: 28px 0 36px;
+  margin: 0;
   padding: 0;
 }
 
-.footer-links a {
-  text-decoration: none;
+.footer-nav li + li {
+  margin-top: 12px;
+}
+
+.footer-nav a {
   color: #ffffff;
+  font-size: 0.92rem;
   font-weight: 500;
-  font-size: 0.95rem;
-  transition: opacity 0.3s ease;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  text-decoration: none;
+  transition: color 0.3s ease, opacity 0.3s ease;
 }
 
-.footer-links a:hover {
-  opacity: 0.7;
+.footer-nav a:hover {
+  color: #c0a062;
 }
 
-/* ---------- SNSボタン（再利用） ---------- */
-.footer-social {
-  display: flex;
+.footer-facts {
+  margin: 0 0 28px;
+}
+
+.footer-facts > div {
+  margin-bottom: 18px;
+}
+
+.footer-facts dt {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #c0a062;
+}
+
+.footer-facts dd {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: #e8edf4;
+}
+
+.footer-facts a {
+  color: #ffffff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(192, 160, 98, 0.55);
+  padding-bottom: 1px;
+}
+
+.footer-facts a:hover {
+  color: #c0a062;
+}
+
+.footer-book {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  min-height: 46px;
+  min-width: 180px;
+  padding: 10px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 40px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+@media (hover: hover) {
+  .footer-book:hover {
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: #ffffff;
+  }
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 16px;
-  margin-bottom: 28px;
-}
-
-/* 再利用クラス：contact-btn */
-.footer .contact-btn {
-  padding: 10px 26px;
-  font-size: 0.95rem;
-  border-radius: 30px;
-  transition: all 0.3s ease;
-}
-
-.footer .contact-btn.line {
-  background-color: #06C755;
-}
-.footer .contact-btn.line:hover {
-  background-color: #05b34e;
-  transform: translateY(-3px);
-}
-
-.footer .contact-btn.insta {
-  background: linear-gradient(90deg, #f58529, #dd2a7b, #8134af, #515bd4);
-}
-.footer .contact-btn.insta:hover {
-  filter: brightness(1.1);
-  transform: translateY(-3px);
-}
-
-/* ---------- コピーライト ---------- */
-.footer-copy {
-  font-size: 0.85rem;
-  color: #c0cbe0;
-  margin-top: 20px;
+  margin-top: 56px;
+  padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 20px;
+}
+
+.footer-sns {
+  display: flex;
+  gap: 22px;
+}
+
+.footer-sns a {
+  color: #c0cbe0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.footer-sns a:hover {
+  color: #c0a062;
+}
+
+.footer-copy {
+  font-size: 0.8rem;
+  color: #c0cbe0;
+  margin: 0;
 }
 
 /* ===============================
@@ -2638,22 +2719,16 @@ section[id],
 
   /* ---------- フッター ---------- */
   .footer {
-    padding: 20px 20px; /* 上下20px */
+    padding: 64px 5% 36px;
   }
 
-  .footer-logo {
-    font-size: 1.9rem; /* ロゴ少し大きめ */
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 32px;
   }
 
-  .footer-links {
-    flex-wrap: wrap;
-    gap: 18px;
-  }
-
-  .footer .contact-btn {
-    min-width: 130px;
-    padding: 9px 16px;
-    font-size: 0.85rem;
+  .footer-brand {
+    grid-column: 1 / -1;
   }
 
   .footer-copy {
@@ -3633,21 +3708,39 @@ section[id],
      フッター
   ========================== */
   .footer {
-    padding: 50px 5% 40px;
+    padding: 56px 6% 36px;
   }
 
-  .footer-links {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .footer-brand {
+    grid-column: auto;
+  }
+
+  .footer-nav a,
+  .footer-facts a,
+  .footer-book {
+    min-height: 44px;
+  }
+
+  .footer-nav a,
+  .footer-facts a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .footer-book {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .footer-bottom {
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .footer .contact-btn {
-    width: 80%;
-    max-width: 240px;
-  }
-
-  .footer-copy {
-    font-size: 0.75rem;
+    align-items: flex-start;
+    margin-top: 40px;
   }
 }
 
@@ -3863,16 +3956,7 @@ section[id],
       フッター
   ========================== */
   .footer {
-    padding: 55px 5% 40px;
-  }
-
-  .footer-links {
-    gap: 14px;
-  }
-
-  .footer .contact-btn {
-    width: 80%;
-    max-width: 240px;
+    padding: 52px 6% 32px;
   }
 
   /* セクション本体 */
