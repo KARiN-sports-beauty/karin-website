@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~</title>
+  <title>お問い合わせ・ご相談 | KARiN. ~Sports & Beauty~</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
@@ -12,8 +12,8 @@
        SEO基本設定
   ============================ -->
   <link rel="canonical" href="https://karin-sb.jp/contact">
-  <meta name="description" content="KARiN.へのご予約・お問い合わせページ。東京（代々木上原）・福岡（薬院）を拠点に、鍼灸・整体・美容鍼・トレーニングを行っています。LINE・フォームから24時間受付。">
-  <meta name="keywords" content="お問い合わせ, 予約, KARiN., 鍼灸, スポーツマッサージ, マッサージ, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, 再診, 初診">
+  <meta name="description" content="KARiN.へのお問い合わせ・ご相談ページ。施術内容、日時、トレーナー帯同、法人利用など、フォームまたはLINEからご相談いただけます。日時・メニューが決まっている方はWeb予約をご利用ください。">
+  <meta name="keywords" content="お問い合わせ, ご相談, KARiN., 鍼灸, 整体, 美容鍼, トレーニング, 代々木上原, 薬院, 出張施術, トレーナー帯同">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
@@ -21,8 +21,8 @@
        OGP設定
   ============================ -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="お問い合わせ・ご予約 | KARiN. ~Sports & Beauty~">
-  <meta property="og:description" content="KARiN.では、東京（代々木上原）・福岡（薬院）を中心に鍼灸・整体・美容鍼を完全予約制で行っています。LINEやフォームからお気軽にご相談ください。">
+  <meta property="og:title" content="お問い合わせ・ご相談 | KARiN. ~Sports & Beauty~">
+  <meta property="og:description" content="施術についてのご相談や、トレーナー帯同・法人でのご利用など、お気軽にお問い合わせください。">
   <meta property="og:url" content="https://karin-sb.jp/contact">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
@@ -37,8 +37,8 @@
     "@type": "ContactPage",
     "@id": "https://karin-sb.jp/contact#webpage",
     "url": "https://karin-sb.jp/contact",
-    "name": "お問い合わせ・ご予約",
-    "description": "お問い合わせ・2回目以降の方のご予約はこちらからご連絡ください。LINEでも受け付けております。",
+    "name": "お問い合わせ・ご相談",
+    "description": "施術についてのご相談や、トレーナー帯同・法人でのご利用など、お気軽にお問い合わせください。",
     "isPartOf": {
       "@id": "https://karin-sb.jp/#website"
     }
@@ -60,22 +60,85 @@
 <body class="contact-page">
 
 <section class="form-wrapper">
-  <h1 class="form-title">お問い合わせ・ご予約</h1>
+  <h1 class="form-title">お問い合わせ・ご相談</h1>
   <p class="form-lead">
-    お問い合わせ・2回目以降の方のご予約はこちらからご連絡ください。<br>
-    必要事項をご記入のうえ、送信ボタンを押してください。<br>
-    LINEでも受け付けております。初診の方のご予約は"初診の方はこちら"からご入力お願い致します。
+    施術についてのご相談や、トレーナー帯同・法人でのご利用など、<br class="form-lead-br-pc">お気軽にお問い合わせください。
   </p>
 
-  <!-- ✅ CTAボタン -->
-  <div class="contact-cta">
-    <a href="https://lin.ee/rVEbNhl5" target="_blank" class="line-btn">LINE予約はこちら</a>
-    <a href="{{ url_for('form') }}" class="cta-btn">初診の方はこちら</a>
+  <div class="contact-guide">
+    <article class="contact-guide-card">
+      <h2 class="contact-guide-title">施術について相談したい方</h2>
+      <ul class="contact-guide-list">
+        <li>何を受ければいいかわからない</li>
+        <li>自分の身体について相談してから決めたい</li>
+        <li>施術内容について聞きたい</li>
+        <li>日時などを相談したい</li>
+      </ul>
+      <p class="contact-guide-text">下記のフォーム、またはLINEからご相談ください。</p>
+      <div class="contact-guide-ctas">
+        <a href="#contact-form" class="initial-btn">お問い合わせフォーム</a>
+        <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn">LINEで相談</a>
+      </div>
+    </article>
+
+    <article class="contact-guide-card">
+      <h2 class="contact-guide-title">日時・メニューが決まっている方</h2>
+      <p class="contact-guide-text">日時・メニューが決まっている方は、Web予約から空き状況をご確認いただけます。</p>
+      <div class="contact-guide-ctas">
+        <a href="{{ url_for('book_page') }}" class="initial-btn">Web予約する</a>
+      </div>
+    </article>
+
+    <article class="contact-guide-card">
+      <h2 class="contact-guide-title">トレーナー帯同・法人・その他のご相談</h2>
+      <p class="contact-guide-text">帯同や法人でのご利用、その他のご相談も、下記のフォームからお気軽にご連絡ください。</p>
+      <div class="contact-guide-ctas">
+        <a href="#contact-form" class="initial-btn">お問い合わせフォーム</a>
+      </div>
+    </article>
   </div>
 
-  <form action="{{ url_for('submit_contact') }}" method="POST" class="form-card">
+  <section class="faq-section" data-aos="fade-up">
+    <h2 class="faq-title">よくあるご質問</h2>
 
-    <!-- 基本情報 -->
+    <div class="faq-item">
+      <button type="button" class="faq-question">Q1. 初めてでも大丈夫ですか？</button>
+      <div class="faq-answer">
+        <p>もちろんです。初回はカウンセリングから丁寧に行いますので、ご安心ください。</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question">Q2. どんな服装がいいですか？</button>
+      <div class="faq-answer">
+        <p>ストレッチや動作の確認をすることもあるので、動きやすい服装をおすすめしています。</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question">Q3. クレジットカードやPayPayは使えますか？</button>
+      <div class="faq-answer">
+        <p>はい、Squareを通じて主要なクレジットカード・PayPay・タッチ決済に対応しています。</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question">Q4. どのくらいの頻度で通えばいいですか？</button>
+      <div class="faq-answer">
+        <p>お身体の状態により異なりますが、痛みがある場合は1〜2週間に1回を目安に、その後は月1回のメンテナンスをおすすめしています。</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question">Q5. 自宅以外の場所はありますか？</button>
+      <div class="faq-answer">
+        <p>基本的にはご自宅・会社・ホテルに伺う方が多いですが、レンタルスペースのご利用も可能ですのでご相談ください。</p>
+      </div>
+    </div>
+  </section>
+
+  <form id="contact-form" action="{{ url_for('submit_contact') }}" method="POST" class="form-card">
+
     <div class="form-block">
       <h2 class="block-title">基本情報</h2>
       <label class="form-field">
@@ -92,54 +155,13 @@
       </label>
     </div>
 
-    <section class="faq-section" data-aos="fade-up">
-      <h2 class="faq-title">よくあるご質問</h2>
-
-      <div class="faq-item">
-        <button class="faq-question">Q1. 初めてでも大丈夫ですか？</button>
-        <div class="faq-answer">
-          <p>もちろんです。初回はカウンセリングから丁寧に行いますので、ご安心ください。</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Q2. どんな服装がいいですか？</button>
-        <div class="faq-answer">
-          <p>ストレッチや動作の確認をすることもあるので動きやすい服装をおすすめしています。</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Q3. クレジットカードやpaypayは使えますか？</button>
-        <div class="faq-answer">
-          <p>はい、Squareを通じて主要なクレジットカード・paypay・タッチ決済に対応しています。</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Q4. どのくらいの頻度で通えばいいですか？</button>
-        <div class="faq-answer">
-          <p>お身体の状態により異なりますが、痛みがある場合は1〜2週間に1回を目安に、その後は月1回のメンテナンスをおすすめしています。</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Q5. 自宅以外の場所はありますか？</button>
-        <div class="faq-answer">
-          <p>基本的にはご自宅・会社・ホテルに呼ばれる方が多いですが、レンタルスペースのご利用も可能ですのでご相談ください。</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 内容 -->
     <div class="form-block">
       <h2 class="block-title">お問い合わせ内容</h2>
-      <textarea name="message" rows="5" placeholder="ご予約希望日・お問い合わせ内容などをお書きください" required></textarea>
+      <textarea name="message" rows="5" placeholder="ご相談内容や、ご希望の日時など、わかる範囲でご記入ください。" required></textarea>
     </div>
 
-    <!-- 今週のスケジュール -->
     <section class="schedule-mini">
-      <h3>📅 今週のスケジュール</h3>
+      <h3>今週のスケジュール</h3>
       <div class="schedule-mini-row">
         {% for s in schedule %}
           {% set date_md = s.date[5:].replace('-', '/') %}
@@ -164,5 +186,13 @@
   <span>ホームに戻る</span>
 </a>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,
+    easing: 'ease-out',
+    once: true,
+  });
+</script>
 </body>
 </html>

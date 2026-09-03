@@ -2434,15 +2434,34 @@ body.index-page .access-section .access-schedule-note {
 
 .footer-sns {
   display: flex;
-  gap: 22px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
 .footer-sns a {
-  color: #c0cbe0;
-  font-size: 0.82rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(192, 203, 224, 0.7);
+  font-size: 0.7rem;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-decoration: none;
+}
+
+.footer-sns svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+.footer-sns svg.is-fill {
+  fill: currentColor;
+  stroke: none;
 }
 
 .footer-sns a:hover {
@@ -3735,12 +3754,26 @@ section[id],
   .footer-book {
     width: 100%;
     max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .footer-bottom {
     flex-direction: column;
-    align-items: flex-start;
-    margin-top: 40px;
+    align-items: center;
+    text-align: center;
+    margin-top: 32px;
+    padding-top: 8px;
+    border-top: none;
+  }
+
+  .footer-sns {
+    justify-content: center;
+    margin-bottom: 22px;
+  }
+
+  .footer-copy {
+    margin-top: 4px;
   }
 }
 
