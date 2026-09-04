@@ -12,7 +12,7 @@
   {% endfor %}
 {% endif %}
 
-<form method="POST" action="/admin/reservations/new" id="admin-reservation-form" style="max-width: 800px;">
+<form method="POST" action="/admin/reservations/new" id="admin-reservation-form" class="admin-reservation-new-form">
   <!-- 区分（最初に配置） -->
   <div style="margin-bottom: 20px;">
     <label class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">区分（必須）</label>
@@ -88,14 +88,36 @@
     </div>
   </div>
   
-  <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none;">
+  <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none; position: relative;">
     <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input" step="900" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;" {% if initial_date %}value="{{ initial_date }}"{% endif %}>
+    <div class="admin-reservation-start-pickers">
+      <div class="admin-reservation-native-input-wrap">
+        <input type="date" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日">
+      </div>
+      <div class="admin-reservation-native-input-wrap">
+        <input type="time" id="reserved_at_time" class="admin-reservation-start-time" step="900" aria-label="開始時刻">
+      </div>
+    </div>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input admin-reservation-datetime-sr" step="900"{% if initial_date %} value="{{ initial_date }}"{% endif %}>
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
-    <input type="text" name="field_end_time" id="field_end_time" value="19:00" inputmode="numeric" placeholder="例: 26:00" autocomplete="off" style="width: 100%; max-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    <div class="admin-reservation-end-time-pickers" role="group" aria-labelledby="field_end_time_label">
+      <select id="field_end_hour" aria-label="終了時" class="admin-reservation-end-time-select">
+        {% for h in range(0, 27) %}
+        <option value="{{ '%02d'|format(h) }}"{% if h == 19 %} selected{% endif %}>{{ '%02d'|format(h) }}</option>
+        {% endfor %}
+      </select>
+      <span class="admin-reservation-end-time-sep" aria-hidden="true">:</span>
+      <select id="field_end_minute" aria-label="終了分" class="admin-reservation-end-time-select">
+        <option value="00" selected>00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+    </div>
+    <input type="hidden" name="field_end_time" id="field_end_time" value="19:00">
     <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可。翌日早朝は 01:00 等でも可）。</small>
   </div>
   
@@ -708,6 +730,7 @@ function setTimeBlockEndDefaults() {
   const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
   const em = String(endMin % 60).padStart(2, '0');
   fend.value = `${eh}:${em}`;
+  if (typeof syncFieldEndTimePickersFromInput === 'function') syncFieldEndTimePickersFromInput();
 }
 
 // 現場区分に応じてフィールドを表示/非表示
@@ -809,6 +832,7 @@ function updatePlaceTypeFields() {
     if (fieldDurHint) fieldDurHint.textContent = '開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。';
     if (fend && !fend.value) {
       fend.value = '19:00';
+      if (typeof syncFieldEndTimePickersFromInput === 'function') syncFieldEndTimePickersFromInput();
     }
   }
   // 休憩・予定：時間・担当・理由
@@ -870,6 +894,7 @@ function updatePlaceTypeFields() {
 
   const reservedAtInput = document.getElementById('reserved_at');
   if (reservedAtInput) snapDatetimeLocalInput(reservedAtInput);
+  if (typeof syncReservedAtPartsFromInput === 'function') syncReservedAtPartsFromInput();
 }
 
 bindAdminReservationMenuListeners();
@@ -922,6 +947,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
   }
   
   const reservedAtInput = document.querySelector('input[name="reserved_at"]');
+  if (typeof syncReservedAtFromParts === 'function') syncReservedAtFromParts();
   snapDatetimeLocalInput(reservedAtInput);
   const fieldEndInput = document.getElementById('field_end_time');
   if (fieldEndInput) snapExtendedTimeInput(fieldEndInput);

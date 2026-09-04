@@ -102,10 +102,25 @@ const RESERVATION_TIMELINE_END_HOUR = 26;
 const RESERVATION_TIME_STEP_MINUTES = 15;
 
 function parseExtendedHmToMinute(s) {
-  const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return null;
-  const hh = parseInt(m[1], 10);
-  const mm = parseInt(m[2], 10);
+  const raw = String(s || '').trim();
+  let hh;
+  let mm;
+  const colon = raw.match(/^(\d{1,2}):(\d{1,2})$/);
+  if (colon) {
+    hh = parseInt(colon[1], 10);
+    mm = parseInt(colon[2], 10);
+  } else {
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.length <= 2) {
+      hh = parseInt(digits, 10);
+      mm = 0;
+    } else {
+      hh = parseInt(digits.slice(0, -2), 10);
+      mm = parseInt(digits.slice(-2), 10);
+    }
+  }
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
   if (hh < 0 || hh > RESERVATION_TIMELINE_END_HOUR || mm < 0 || mm > 59) return null;
   return hh * 60 + mm;
 }
@@ -122,11 +137,40 @@ function snapTotalMinutesToStep(totalMinutes) {
   return Math.round(totalMinutes / RESERVATION_TIME_STEP_MINUTES) * RESERVATION_TIME_STEP_MINUTES;
 }
 
+function getFieldEndTimePickers() {
+  return {
+    hourEl: document.getElementById('field_end_hour'),
+    minEl: document.getElementById('field_end_minute'),
+    hidden: document.getElementById('field_end_time'),
+  };
+}
+
+function writeFieldEndTimeFromPickers() {
+  const { hourEl, minEl, hidden } = getFieldEndTimePickers();
+  if (!hourEl || !minEl || !hidden) return;
+  hidden.value = `${hourEl.value}:${minEl.value}`;
+}
+
+function syncFieldEndTimePickersFromInput() {
+  const { hourEl, minEl, hidden } = getFieldEndTimePickers();
+  if (!hourEl || !minEl || !hidden) return;
+  let total = parseExtendedHmToMinute(hidden.value.trim());
+  if (total === null) total = 19 * 60;
+  const hm = formatExtendedHm(snapTotalMinutesToStep(total));
+  hidden.value = hm;
+  const parts = hm.split(':');
+  hourEl.value = parts[0];
+  minEl.value = parts[1];
+}
+
 function snapExtendedTimeInput(input) {
-  if (!input || !input.value) return;
+  if (!input) return;
+  if (input.id === 'field_end_time') writeFieldEndTimeFromPickers();
+  if (!input.value) return;
   const total = parseExtendedHmToMinute(input.value.trim());
   if (total === null) return;
   input.value = formatExtendedHm(snapTotalMinutesToStep(total));
+  if (input.id === 'field_end_time') syncFieldEndTimePickersFromInput();
 }
 
 function snapDatetimeLocalInput(input) {
@@ -136,21 +180,73 @@ function snapDatetimeLocalInput(input) {
   if (Number.isNaN(h) || Number.isNaN(m)) return;
   const snapped = snapTotalMinutesToStep(h * 60 + m);
   input.value = `${datePart}T${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+  syncReservedAtPartsFromInput();
+}
+
+function getReservedAtParts() {
+  return {
+    dateEl: document.getElementById('reserved_at_date'),
+    timeEl: document.getElementById('reserved_at_time'),
+    input: document.getElementById('reserved_at'),
+  };
+}
+
+function syncReservedAtPartsFromInput() {
+  const { dateEl, timeEl, input } = getReservedAtParts();
+  if (!dateEl || !timeEl || !input || !input.value || input.value.length < 16) return;
+  dateEl.value = input.value.slice(0, 10);
+  timeEl.value = input.value.slice(11, 16);
+}
+
+function syncReservedAtFromParts() {
+  const { dateEl, timeEl, input } = getReservedAtParts();
+  if (!dateEl || !timeEl || !input) return;
+  if (!dateEl.value || !timeEl.value) return;
+  input.value = `${dateEl.value}T${timeEl.value.slice(0, 5)}`;
+  snapDatetimeLocalInput(input);
 }
 
 function bindReservationDatetimeInput(input) {
-  if (!input || input.dataset.timeStepBound) return;
-  input.dataset.timeStepBound = '1';
-  input.addEventListener('change', () => snapDatetimeLocalInput(input));
-  input.addEventListener('blur', () => snapDatetimeLocalInput(input));
-  snapDatetimeLocalInput(input);
+  if (input && !input.dataset.timeStepBound) {
+    input.dataset.timeStepBound = '1';
+    input.addEventListener('change', () => snapDatetimeLocalInput(input));
+    input.addEventListener('blur', () => snapDatetimeLocalInput(input));
+    snapDatetimeLocalInput(input);
+  }
+  const dateEl = document.getElementById('reserved_at_date');
+  const timeEl = document.getElementById('reserved_at_time');
+  if (dateEl && timeEl && !dateEl.dataset.timePartBound) {
+    dateEl.dataset.timePartBound = '1';
+    dateEl.addEventListener('change', syncReservedAtFromParts);
+    timeEl.addEventListener('change', syncReservedAtFromParts);
+    syncReservedAtPartsFromInput();
+  }
 }
 
 function bindReservationTimeInputs() {
   bindReservationDatetimeInput(document.getElementById('reserved_at'));
   const fieldEndInput = document.getElementById('field_end_time');
-  if (!fieldEndInput || fieldEndInput.dataset.timeStepBound) return;
+  if (!fieldEndInput) return;
+
+  const hourEl = document.getElementById('field_end_hour');
+  const minEl = document.getElementById('field_end_minute');
+  if (hourEl && minEl) {
+    if (!fieldEndInput.dataset.timePickerBound) {
+      fieldEndInput.dataset.timePickerBound = '1';
+      const onPick = () => snapExtendedTimeInput(fieldEndInput);
+      hourEl.addEventListener('change', onPick);
+      minEl.addEventListener('change', onPick);
+    }
+    syncFieldEndTimePickersFromInput();
+    return;
+  }
+
+  if (fieldEndInput.dataset.timeStepBound) return;
   fieldEndInput.dataset.timeStepBound = '1';
+  fieldEndInput.addEventListener('input', () => {
+    const digits = fieldEndInput.value.replace(/\D/g, '').slice(0, 4);
+    fieldEndInput.value = digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
+  });
   fieldEndInput.addEventListener('change', () => snapExtendedTimeInput(fieldEndInput));
   fieldEndInput.addEventListener('blur', () => snapExtendedTimeInput(fieldEndInput));
   snapExtendedTimeInput(fieldEndInput);

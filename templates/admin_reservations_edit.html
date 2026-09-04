@@ -56,18 +56,36 @@
     </select>
   </div>
 
-  <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none;">
+  <div id="reservation_datetime_section" style="margin-bottom: 20px; display: none; position: relative;">
     <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（開始）{% elif reservation.place_type == 'personal' %}予定時間（開始）{% elif reservation.place_type == 'field' %}帯同日時{% else %}予約日時{% endif %}</label>
-    <div class="admin-reservation-native-input-wrap">
-      <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input" step="900">
+    <div class="admin-reservation-start-pickers">
+      <div class="admin-reservation-native-input-wrap">
+        <input type="date" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日">
+      </div>
+      <div class="admin-reservation-native-input-wrap">
+        <input type="time" id="reserved_at_time" class="admin-reservation-start-time" step="900" aria-label="開始時刻">
+      </div>
     </div>
+    <input type="datetime-local" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local }}" required class="reservation-datetime-input admin-reservation-datetime-sr" step="900">
   </div>
 
   <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（終了）{% elif reservation.place_type == 'personal' %}予定時間（終了）{% else %}帯同時間（終了）{% endif %}</label>
-    <div class="admin-reservation-native-input-wrap">
-      <input type="text" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}" class="admin-field-end-time-input" inputmode="numeric" placeholder="例: 26:00" autocomplete="off">
+    <div class="admin-reservation-end-time-pickers" role="group" aria-labelledby="field_end_time_label">
+      <select id="field_end_hour" aria-label="終了時" class="admin-reservation-end-time-select">
+        {% for h in range(0, 27) %}
+        <option value="{{ '%02d'|format(h) }}">{{ '%02d'|format(h) }}</option>
+        {% endfor %}
+      </select>
+      <span class="admin-reservation-end-time-sep" aria-hidden="true">:</span>
+      <select id="field_end_minute" aria-label="終了分" class="admin-reservation-end-time-select">
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
     </div>
+    <input type="hidden" name="field_end_time" id="field_end_time" value="{{ reservation.field_end_time_display or '19:00' }}">
     <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">{% if reservation.place_type == 'break' %}開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。{% else %}開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。{% endif %}</small>
   </div>
 
@@ -522,6 +540,7 @@ function setBreakEndTimeDefault() {
   const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
   const em = String(endMin % 60).padStart(2, '0');
   fend.value = `${eh}:${em}`;
+  if (typeof syncFieldEndTimePickersFromInput === 'function') syncFieldEndTimePickersFromInput();
 }
 
 // 現場区分に応じてフィールドを表示/非表示
@@ -764,6 +783,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const editForm = document.getElementById('admin-reservation-edit-form');
   if (editForm) {
     editForm.addEventListener('submit', function() {
+      if (typeof syncReservedAtFromParts === 'function') syncReservedAtFromParts();
       snapDatetimeLocalInput(document.getElementById('reserved_at'));
       snapExtendedTimeInput(document.getElementById('field_end_time'));
     });
