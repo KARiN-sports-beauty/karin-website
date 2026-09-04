@@ -14,7 +14,7 @@ sys.path.insert(0, ROOT)
 
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(ROOT, ".env"))
+load_dotenv(os.path.join(ROOT, ".env"), override=True)
 
 from ai_knowledge import (  # noqa: E402
     EMBEDDING_DIMS,
