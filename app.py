@@ -73,9 +73,11 @@ import uuid
 
 
 # =====================================
-# ▼ .envを読み込む
+# ▼ .envを読み込む（RAGと同様、プロジェクトの .env を優先）
 # =====================================
-load_dotenv()
+from pathlib import Path as _Path
+
+load_dotenv(_Path(__file__).resolve().parent / ".env", override=True)
 
 
 # ===============================
@@ -5738,6 +5740,28 @@ def book_page():
 @app.route("/book/complete")
 def book_complete():
     return render_template("book_complete.html")
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    """KARiN.chatbot C2。RAG接続済み。予約API未接続。会話履歴はまだ持たない。"""
+    from karin_chat import CHAT_UNAVAILABLE, MAX_MESSAGE_CHARS, generate_chat_reply
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": CHAT_UNAVAILABLE}), 400
+    message = data.get("message")
+    if not isinstance(message, str) or not message.strip():
+        return jsonify({"error": CHAT_UNAVAILABLE}), 400
+    if len(message.strip()) > MAX_MESSAGE_CHARS:
+        return jsonify({"error": CHAT_UNAVAILABLE}), 400
+    try:
+        reply = generate_chat_reply(message)
+    except ValueError:
+        return jsonify({"error": CHAT_UNAVAILABLE}), 400
+    except Exception:
+        return jsonify({"error": CHAT_UNAVAILABLE}), 503
+    return jsonify({"reply": reply})
 
 
 @app.route("/api/book/meta")
