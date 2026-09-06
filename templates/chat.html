@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>KARiN.chatbot | KARiN. ~Sports & Beauty~</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="canonical" href="https://karin-sb.jp/chat">
+  <meta name="description" content="KARiN.chatbotに、身体の悩みや施術について相談できます。予約したい場合は既存のWeb予約ページへ進めます。">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="KARiN.chatbot | KARiN.">
+  <meta property="og:description" content="身体のことで気になることがあれば、お気軽にご相談ください。">
+  <meta property="og:url" content="https://karin-sb.jp/chat">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="karin-chat-page">
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-overlay" id="nav-overlay" hidden></div>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('index') }}">ホーム</a>
+      <a href="{{ url_for('treatment') }}">施術内容</a>
+      <a href="{{ url_for('price') }}">料金表</a>
+      <a href="{{ url_for('chat_page') }}" aria-current="page">相談する</a>
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
+    </nav>
+  </header>
+
+  {% set karin_chat_mode = 'page' %}
+  {% include '_karin_chat.html' %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

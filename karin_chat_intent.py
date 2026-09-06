@@ -70,11 +70,43 @@ def _needs_official_for_treatment(text: str) -> bool:
     return bool(_OFFICIAL_SERVICE_HINT.search(text))
 
 
-def detect_intents(text: str) -> IntentResult:
+def is_deictic_followup(text: str) -> bool:
+    """現在の発話だけだと指示対象が足りない続き。"""
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    if _has(r"鍼|整体|美容鍼|料金|いくら|予約|割引|出張|病院", raw):
+        return False
+    return bool(
+        re.search(r"^(それ|その|あれ|じゃあ)|それって|それなら|どっち|どちら", raw)
+    )
+
+
+def detect_intents(
+    text: str, prior_user_texts: list[str] | None = None
+) -> IntentResult:
+    """現在の発話を最優先し、不足するときだけ過去ターンを補助に使う。Intentは固定しない。"""
+    current = _detect_from_text(text)
+    priors = [p.strip() for p in (prior_user_texts or []) if (p or "").strip()]
+    if not priors:
+        return current
+    if current.primary_intent != INTENT_UNCLEAR:
+        return current
+    combined = " ".join(priors[-2:] + [(text or "").strip()])
+    return _detect_from_text(combined)
+
+
+def _detect_from_text(text: str) -> IntentResult:
     raw = (text or "").strip()
     matched: list[str] = []
 
-    if _consult_only(raw):
+    if _consult_only(raw) or _has(
+        r"聞いても(いい|良い)|ちょっと聞|質問しても", raw
+    ):
+        matched.append(INTENT_CONSULTATION)
+    elif _has(r"初めて(利用|来|お願い|受け)", raw) and not _has(
+        r"割引|特典|安く", raw
+    ):
         matched.append(INTENT_CONSULTATION)
 
     if _has(

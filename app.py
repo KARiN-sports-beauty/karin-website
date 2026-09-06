@@ -5731,6 +5731,12 @@ def index():
 
 
 
+@app.route("/chat")
+def chat_page():
+    """KARiN.chatbot 公開チャットUI。相談ロジックは /api/chat 側。"""
+    return render_template("chat.html")
+
+
 @app.route("/book")
 def book_page():
     """院内Web予約（クライアント向け）"""
@@ -5744,8 +5750,8 @@ def book_complete():
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
-    """KARiN.chatbot C2。RAG接続済み。予約API未接続。会話履歴はまだ持たない。"""
-    from karin_chat import CHAT_UNAVAILABLE, MAX_MESSAGE_CHARS, generate_chat_reply
+    """KARiN.chatbot C4。RAG接続済み。短期会話継続。空き確認は既存予約処理へ委譲。予約確定はしない。staff sessionは使わない。"""
+    from karin_chat import CHAT_UNAVAILABLE, MAX_MESSAGE_CHARS, run_chat
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -5755,13 +5761,18 @@ def api_chat():
         return jsonify({"error": CHAT_UNAVAILABLE}), 400
     if len(message.strip()) > MAX_MESSAGE_CHARS:
         return jsonify({"error": CHAT_UNAVAILABLE}), 400
+    raw_cid = data.get("conversation_id")
+    conversation_id = raw_cid if isinstance(raw_cid, str) else None
     try:
-        reply = generate_chat_reply(message)
+        turn = run_chat(message, conversation_id=conversation_id)
     except ValueError:
         return jsonify({"error": CHAT_UNAVAILABLE}), 400
     except Exception:
         return jsonify({"error": CHAT_UNAVAILABLE}), 503
-    return jsonify({"reply": reply})
+    return jsonify({
+        "reply": turn.reply,
+        "conversation_id": turn.conversation_id,
+    })
 
 
 @app.route("/api/book/meta")
@@ -5827,6 +5838,40 @@ def api_book_dates():
     })
 
 
+def list_web_booking_slots(area, day_str, duration_minutes=90, place_type="visit", course_type="total_conditioning"):
+    """Web予約の空き枠。判定は既存のシフト・衝突・12時間前ロジックに委譲する。"""
+    area = normalize_staff_area(area)
+    place_type = normalize_booking_place_type(place_type)
+    duration, _course_type = resolve_booking_course(
+        duration_minutes if duration_minutes is not None else 90,
+        course_type or "total_conditioning",
+    )
+    if duration is None:
+        duration = 90
+    day_str = (day_str or "").strip()
+    if not day_str:
+        raise ValueError("date_required")
+    datetime.strptime(day_str, "%Y-%m-%d")
+
+    staff_entries = load_approved_staff_entries_for_booking()
+    names = [s["name"] for s in staff_entries]
+    shifts_map = fetch_booking_day_shifts(day_str, names)
+    day_reservations = fetch_booking_day_reservations(day_str)
+    working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
+    now_jst = datetime.now(JST)
+    staff_rows, free_row_slots = build_booking_slot_list(
+        working, day_str, duration, day_reservations, now_jst, place_type
+    )
+    return {
+        "date": day_str,
+        "area": area,
+        "place_type": place_type,
+        "duration_minutes": duration,
+        "staff": staff_rows,
+        "free_row": {"staff_name": "フリー", "slots": free_row_slots},
+    }
+
+
 @app.route("/api/book/slots")
 def api_book_slots():
     area = normalize_staff_area(request.args.get("area"))
@@ -5847,23 +5892,11 @@ def api_book_slots():
     if not day_str:
         return jsonify({"success": False, "message": "日付が必要です"}), 400
 
-    staff_entries = load_approved_staff_entries_for_booking()
-    names = [s["name"] for s in staff_entries]
-    shifts_map = fetch_booking_day_shifts(day_str, names)
-    day_reservations = fetch_booking_day_reservations(day_str)
-    working = working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_reservations)
-    now_jst = datetime.now(JST)
-    staff_rows, free_row_slots = build_booking_slot_list(
-        working, day_str, duration, day_reservations, now_jst, place_type
+    payload = list_web_booking_slots(
+        area, day_str, duration, place_type,
+        request.args.get("course_type") or "total_conditioning",
     )
-    return jsonify({
-        "date": day_str,
-        "area": area,
-        "place_type": place_type,
-        "duration_minutes": duration,
-        "staff": staff_rows,
-        "free_row": {"staff_name": "フリー", "slots": free_row_slots},
-    })
+    return jsonify(payload)
 
 
 @app.route("/api/book", methods=["POST"])
@@ -6004,6 +6037,7 @@ def sitemap():
             ("/blog", "daily"),
             ("/news", "daily"),
             ("/lp", "monthly"),
+            ("/chat", "weekly"),
         ]
         if public_booking_enabled():
             static_urls.append(("/book", "weekly"))

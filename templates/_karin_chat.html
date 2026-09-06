@@ -1,0 +1,83 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/karin_chat.css') }}">
+
+<div
+  id="karin-chat-root"
+  class="karin-chat"
+  data-mode="{{ karin_chat_mode|default('widget') }}"
+  data-icon-url="{{ url_for('static', filename='images/chatbotfaceicon.jpg') }}"
+  data-book-url="{{ url_for('book_page') }}"
+>
+  <button
+    type="button"
+    class="karin-chat-fab"
+    data-karin-fab
+    aria-label="KARiN.chatbotを開く"
+    aria-expanded="false"
+    aria-controls="karin-chat-panel"
+  >
+    <span class="karin-chat-fab-face" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/chatbotfaceicon.jpg') }}" alt="">
+    </span>
+    <span class="karin-chat-fab-label">相談する</span>
+  </button>
+
+  <div
+    id="karin-chat-panel"
+    class="karin-chat-panel"
+    data-karin-panel
+    role="dialog"
+    aria-labelledby="karin-chat-title"
+    aria-modal="{{ 'false' if karin_chat_mode == 'page' else 'true' }}"
+    {% if karin_chat_mode != 'page' %}hidden{% endif %}
+  >
+    <div class="karin-chat-panel-head">
+      <div class="karin-chat-avatar" aria-hidden="true">
+        <img src="{{ url_for('static', filename='images/chatbotfaceicon.jpg') }}" alt="">
+      </div>
+      <div class="karin-chat-panel-titlewrap">
+        <p id="karin-chat-title" class="karin-chat-panel-title">KARiN.chatbot</p>
+        <p class="karin-chat-panel-sub">身体の相談</p>
+      </div>
+      <div class="karin-chat-head-actions">
+        <button type="button" class="karin-chat-text-btn" data-karin-reset>
+          新しく相談する
+        </button>
+        <a class="karin-chat-text-btn is-quiet" href="{{ url_for('book_page') }}">ご予約</a>
+        {% if karin_chat_mode != 'page' %}
+        <button type="button" class="karin-chat-icon-btn" data-karin-close aria-label="チャットを閉じる">×</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <div
+      class="karin-chat-messages"
+      data-karin-log
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
+    ></div>
+
+    <div class="karin-chat-samples" data-karin-samples></div>
+
+    <form class="karin-chat-composer" data-karin-form>
+      <label class="karin-chat-visually-hidden" for="karin-chat-input">相談内容</label>
+      <textarea
+        id="karin-chat-input"
+        class="karin-chat-input"
+        name="message"
+        rows="1"
+        maxlength="2000"
+        placeholder="気になることを書いてください"
+        autocomplete="off"
+        enterkeyhint="send"
+      ></textarea>
+      <button type="submit" class="karin-chat-send" data-karin-send>送信</button>
+    </form>
+
+    <p class="karin-chat-disclaimer">
+      AIによる回答です。回答には誤りが含まれる場合があります。重要な情報は公式情報をご確認ください。また、会話の中で緊急性が高いと判断した場合、医療機関への受診をおすすめする場合があります。
+    </p>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/karin_chat.js') }}" defer></script>

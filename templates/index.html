@@ -130,6 +130,7 @@
       <a href="{{ url_for('price') }}">料金表</a>
       <a href="#blog">KARiN.NOTES</a>
       <a href="#profile">プロフィール</a>
+      <a href="{{ url_for('chat_page') }}">相談する</a>
       <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
     </nav>
   </header>
@@ -735,6 +736,7 @@
   });
   </script>
 
+  {% include '_karin_chat.html' %}
 
 </body>
 </html>
