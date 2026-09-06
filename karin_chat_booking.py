@@ -262,7 +262,9 @@ def build_booking_context(result: BookingLookupResult) -> str:
         "予約可能枠を勝手に追加しないでください。",
         "Knowledgeの営業時間から空いている／空いていないと判断しないでください。",
         "理由（営業時間外、予約がいっぱい、など）を推測して断定しないでください。",
-        "氏名・電話・メールを聞いて予約を確定しないでください。空きの案内までです。必要ならWeb予約ページ(/book)へ誘導してよいです。",
+        "氏名・電話・メールを聞いて予約を確定しないでください。空きの案内までです。",
+        "具体的な空き時刻（18:00 など）は本文に書かないでください。時刻の一覧は画面側で表示します。",
+        "URLや「/book」は本文に書かないでください。予約へ進むボタンは画面側で出します。",
     ]
     if result.api_status == "skipped_insufficient":
         labels = {"area": "東京か福岡か", "date": "希望日", "place_type": "出張か院内か"}
@@ -280,16 +282,21 @@ def build_booking_context(result: BookingLookupResult) -> str:
     lines.append(f"requested_place_type={result.requested_place_type}")
     lines.append(f"requested_duration={result.requested_duration}")
     lines.append(f"requested_date={result.requested_date}")
-    lines.append(f"requested_time={result.requested_time}")
     lines.append(f"requested_time_range={result.requested_time_range}")
     if result.requested_time:
-        lines.append(
-            f"requested_time_available={result.requested_time_available}"
-        )
+        if result.requested_time_available:
+            lines.append("requested_time_available=yes")
+            lines.append("希望の時刻は予約システム上で空きとして確認できました。その具体時刻は本文に書かないでください。")
+        else:
+            lines.append("requested_time_available=no")
+            lines.append("希望の時刻は、予約システムが返した空き枠にはありませんでした。別の時刻を作って提案しないでください。")
     if result.available_slots:
-        lines.append("available_slots=" + ", ".join(result.available_slots))
-        lines.append("上記 available_slots に無い時刻を空いていると言わないでください。")
+        lines.append("booking_slots_found=yes")
+        lines.append(f"booking_slot_count={len(result.available_slots)}")
+        lines.append("予約システムで確認済みの空き枠があります。具体的な時刻は本文に書かず、確認できたことだけ伝えてください。")
+        lines.append("画面に出ていない時刻を空いていると言わないでください。")
     else:
-        lines.append("available_slots=(なし)")
+        lines.append("booking_slots_found=no")
         lines.append("予約システムが返した空き枠はありません。枠を作って提示しないでください。")
+        lines.append("ご希望の条件では、現在確認できる空き枠がありませんでした、と伝えてよいです。")
     return "\n".join(lines)

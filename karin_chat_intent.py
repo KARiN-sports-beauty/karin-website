@@ -146,7 +146,8 @@ def _detect_from_text(text: str) -> IntentResult:
         matched.append(INTENT_HOURS)
 
     how_to_book = _has(r"予約", raw) and _has(
-        r"予約(って)?どう|どうやって取|LINEから.{0,10}予約|何を入力|予約するとき|どうしたらいい",
+        r"予約(って)?どう|どうやって(取|予約)|LINEから.{0,10}予約|何を入力|"
+        r"予約するとき|予約するならどう|どうしたらいい|どうすればいい",
         raw,
     )
     if how_to_book:
@@ -158,6 +159,12 @@ def _detect_from_text(text: str) -> IntentResult:
         raw,
     ) or (
         _has(r"(明日|今日|今夜).{0,20}お願いしたい", raw) and not capability_ask
+    ) or (
+        _has(r"(明日|今日|今夜).{0,12}(夜|夕方).{0,16}(どう|いかが)", raw)
+        and not capability_ask
+    ) or (
+        _has(r"(東京|福岡).{0,24}\d+分.{0,16}お願いしたい", raw)
+        and not capability_ask
     )
     if want_booking and not _consult_only(raw):
         if INTENT_RESERVATION_INFO not in matched or _has(r"空いて", raw):
@@ -165,7 +172,7 @@ def _detect_from_text(text: str) -> IntentResult:
 
     if _has(
         r"(鍼|整体|美容鍼).{0,24}(どっち|どちら|向いて|違う|合い)|"
-        r"鍼と整体|整体と鍼|"
+        r"鍼と整体|整体と鍼|鍼とか整体|鍼や整体|"
         r"どんなときに受ける|どんな施術が合い|どの施術",
         raw,
     ):
@@ -178,7 +185,7 @@ def _detect_from_text(text: str) -> IntentResult:
     ):
         matched.append(INTENT_SERVICE)
 
-    body_talk = _has(r"痛|こり|こります|つら|温め|重い|しび", raw)
+    body_talk = _has(r"痛|こり|こります|凝って|つら|温め|重い|しび", raw)
     if body_talk and INTENT_SAFETY not in matched and INTENT_TREATMENT not in matched:
         matched.append(INTENT_CONSULTATION)
 

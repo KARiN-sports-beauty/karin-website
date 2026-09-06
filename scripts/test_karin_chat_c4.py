@@ -252,8 +252,7 @@ def main() -> int:
         failures.append(f"Test10: available_slots={t10.available_slots}")
     if re.search(r"20(:00|時).{0,12}(空き|空いて)", t10.reply or ""):
         failures.append("Test10: APIにない20:00を空きとして提示している")
-    if "18:00" not in (t10.reply or "") and "19:30" not in (t10.reply or "") and "18時" not in (t10.reply or ""):
-        failures.append("Test10: APIの空き枠を伝えていない")
+    # 具体時刻の正本は available_slots。本文への時刻記載は必須としない（C8）。
 
     after_n, after_hash = snapshot_knowledge(admin)
     print("\nknowledge snapshot after:", after_n, after_hash[:12])

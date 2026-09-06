@@ -375,6 +375,41 @@ body.karin-chat-page .karin-chat[data-mode="page"] .karin-chat-panel {
   outline: none;
 }
 
+.karin-chat-slots {
+  margin-top: 10px;
+}
+
+.karin-chat-slots-lead {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--karin-muted);
+}
+
+.karin-chat-slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.karin-chat-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 72px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--karin-white);
+  box-shadow: 0 0 0 1px rgba(30, 58, 95, 0.12);
+  color: var(--karin-navy);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .karin-chat-samples {
   display: flex;
   flex-wrap: wrap;

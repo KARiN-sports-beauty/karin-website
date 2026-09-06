@@ -71,13 +71,16 @@ def get_or_create_conversation(conversation_id: str | None) -> ConversationState
     cid = normalize_conversation_id(conversation_id)
     now = time.time()
     with _LOCK:
-        _purge_locked(now)
         if cid and cid in _STORE:
             state = _STORE[cid]
-            state.updated_at = now
-            return state
+            if now - state.updated_at <= TTL_SECONDS:
+                state.updated_at = now
+                _purge_locked(now)
+                return state
+            _STORE.pop(cid, None)
         state = ConversationState(conversation_id=cid or new_conversation_id(), updated_at=now)
         _STORE[state.conversation_id] = state
+        _purge_locked(now)
         return state
 
 

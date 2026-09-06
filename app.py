@@ -5751,7 +5751,7 @@ def book_complete():
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     """KARiN.chatbot C4。RAG接続済み。短期会話継続。空き確認は既存予約処理へ委譲。予約確定はしない。staff sessionは使わない。"""
-    from karin_chat import CHAT_UNAVAILABLE, MAX_MESSAGE_CHARS, run_chat
+    from karin_chat import CHAT_UNAVAILABLE, MAX_MESSAGE_CHARS, chat_public_payload, run_chat
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -5769,10 +5769,7 @@ def api_chat():
         return jsonify({"error": CHAT_UNAVAILABLE}), 400
     except Exception:
         return jsonify({"error": CHAT_UNAVAILABLE}), 503
-    return jsonify({
-        "reply": turn.reply,
-        "conversation_id": turn.conversation_id,
-    })
+    return jsonify(chat_public_payload(turn))
 
 
 @app.route("/api/book/meta")

@@ -33,7 +33,6 @@
   var conversationId = null;
   var sending = false;
   var lastRole = null;
-  var lastUserWantsBooking = false;
   var thinkingRow = null;
 
   function isMobile() {
@@ -110,17 +109,43 @@
     return /救急|医療機関/.test(String(text || ""));
   }
 
-  function shouldOfferBookLink(reply) {
-    if (!lastUserWantsBooking) return false;
-    if (looksLikeEmergencyReply(reply)) return false;
-    return true;
+  function normalizeSlots(raw) {
+    if (!Array.isArray(raw)) return [];
+    var out = [];
+    raw.forEach(function (item) {
+      if (typeof item !== "string") return;
+      var label = item.trim();
+      if (!/^\d{1,2}:\d{2}$/.test(label)) return;
+      if (out.indexOf(label) === -1) out.push(label);
+    });
+    return out;
   }
 
-  function appendBookLink(parent) {
+  function appendSlots(parent, slots) {
+    if (!slots.length) return;
+    var wrap = document.createElement("div");
+    wrap.className = "karin-chat-slots";
+    var lead = document.createElement("p");
+    lead.className = "karin-chat-slots-lead";
+    lead.textContent = "ご希望の条件で確認しました。";
+    wrap.appendChild(lead);
+    var list = document.createElement("ul");
+    list.className = "karin-chat-slot-list";
+    slots.forEach(function (time) {
+      var item = document.createElement("li");
+      item.className = "karin-chat-slot";
+      item.textContent = time;
+      list.appendChild(item);
+    });
+    wrap.appendChild(list);
+    parent.appendChild(wrap);
+  }
+
+  function appendBookCta(parent) {
     var link = document.createElement("a");
-    link.className = "karin-chat-book-link";
+    link.className = "karin-chat-book-link karin-chat-book-cta";
     link.href = bookUrl;
-    link.textContent = "Web予約ページへ進む";
+    link.textContent = "Web予約へ進む";
     parent.appendChild(link);
   }
 
@@ -164,8 +189,11 @@
         renderSafeText(bubble, text);
       }
       col.appendChild(bubble);
-      if (!options.thinking && shouldOfferBookLink(text)) {
-        appendBookLink(col);
+      if (!options.thinking) {
+        appendSlots(col, normalizeSlots(options.availableSlots));
+        if (options.showBookingCta && !looksLikeEmergencyReply(text)) {
+          appendBookCta(col);
+        }
       }
       row.appendChild(col);
     } else {
@@ -203,7 +231,6 @@
     conversationId = null;
     sending = false;
     lastRole = null;
-    lastUserWantsBooking = false;
     thinkingRow = null;
     if (logEl) logEl.replaceChildren();
     if (sendBtn) sendBtn.disabled = false;
@@ -236,16 +263,10 @@
     }
   }
 
-  function userAskedBooking(message) {
-    if (/まだ予約|決めてな|相談だけ|相談しても/.test(message)) return false;
-    return /予約したい|予約をお願い|空いて|空き枠|空き.*確認/.test(message);
-  }
-
   function sendMessage(raw) {
     var message = String(raw || "").trim();
     if (!message || sending) return;
 
-    lastUserWantsBooking = userAskedBooking(message);
     if (samplesEl) samplesEl.hidden = true;
     appendMessage("user", message);
     input.value = "";
@@ -278,7 +299,10 @@
         var nextId = result.body && result.body.conversation_id;
         if (result.ok && reply) {
           if (typeof nextId === "string" && nextId) conversationId = nextId;
-          appendMessage("ai", reply);
+          appendMessage("ai", reply, {
+            availableSlots: result.body.available_slots,
+            showBookingCta: result.body.show_booking_cta === true,
+          });
           return;
         }
         appendMessage("ai", USER_ERROR);
