@@ -19,7 +19,9 @@ load_dotenv(os.path.join(ROOT, ".env"), override=True)
 
 from ai_knowledge import get_admin_client, match_ai_knowledge  # noqa: E402
 
-MATCH_COUNT = 10
+# チャット側の RAG と同じ候補数。必須キーは変えない。
+# health 追加後も「関連 notes が候補に入るか」を見る（1位固定ではない）。
+MATCH_COUNT = 25
 INDEX_SELECT = "id,title,source_key,source_type,status"
 
 

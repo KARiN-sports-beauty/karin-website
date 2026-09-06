@@ -26,7 +26,7 @@ SNAPSHOT_SELECT = (
     "source_key,source_url,effective_from,effective_to,updated_at,embedding"
 )
 
-ICON_PATH = "/static/images/chatbotfaceicon.jpg"
+ICON_PATH = "/static/images/chatbotfaceicon.png"
 USER_SAFE_ERROR = "申し訳ありません。現在うまくご案内できないようです。少し時間をおいてもう一度お試しください。"
 SECRET_MARKERS = (
     "OPENAI",
@@ -205,10 +205,10 @@ def main() -> int:
         icon = client.get(ICON_PATH)
         print("icon_status:", icon.status_code, "content_type:", icon.content_type)
         if icon.status_code != 200:
-            failures.append("Test9: chatbotfaceicon.jpg が静的パスから読めない")
-        if "jpeg" not in (icon.content_type or "") and "jpg" not in (icon.content_type or ""):
+            failures.append("Test9: chatbotfaceicon.png が静的パスから読めない")
+        if "png" not in (icon.content_type or "").lower():
             failures.append(f"Test9: 画像の Content-Type が不正: {icon.content_type}")
-        if "chatbotfaceicon.jpg" not in chat_text or "chatbotfaceicon.jpg" not in widget:
+        if "chatbotfaceicon.png" not in chat_text or "chatbotfaceicon.png" not in widget:
             failures.append("Test9: テンプレートが顔アイコンを参照していない")
         if 'img.alt = "KARiN.chatbot"' not in js:
             failures.append("Test9: AIアイコンの alt がない")

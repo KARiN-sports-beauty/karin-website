@@ -17,6 +17,7 @@ INTENT_SERVICE = "service_info"
 INTENT_RESERVATION_INFO = "reservation_info"
 INTENT_RESERVATION = "reservation_intent"
 INTENT_CONSULTATION = "consultation"
+INTENT_HEALTH = "health_general"
 INTENT_UNCLEAR = "unclear"
 
 # primary を決めるときの具体性。Knowledge種別の優先順位ではない。
@@ -30,6 +31,7 @@ _PRIMARY_ORDER = (
     INTENT_RESERVATION_INFO,
     INTENT_RESERVATION,
     INTENT_CONSULTATION,
+    INTENT_HEALTH,
     INTENT_UNCLEAR,
 )
 
@@ -68,6 +70,17 @@ def _consult_only(text: str) -> bool:
 
 def _needs_official_for_treatment(text: str) -> bool:
     return bool(_OFFICIAL_SERVICE_HINT.search(text))
+
+
+def _is_general_health_topic(text: str) -> bool:
+    """睡眠・水分・暑さ・運動などの一般健康の話。KARiN事実の判定ではない。"""
+    return _has(
+        r"睡眠|寝つき|眠れ|眠気|寝不足|就寝|起床|"
+        r"水分|脱水|のどが渇|"
+        r"熱中症|暑い日|暑さ|"
+        r"運動(を始め|後|中|するとき|時|して)|いきなり頑張",
+        text,
+    )
 
 
 def is_deictic_followup(text: str) -> bool:
@@ -169,6 +182,9 @@ def _detect_from_text(text: str) -> IntentResult:
     if body_talk and INTENT_SAFETY not in matched and INTENT_TREATMENT not in matched:
         matched.append(INTENT_CONSULTATION)
 
+    if _is_general_health_topic(raw):
+        matched.append(INTENT_HEALTH)
+
     uniq: list[str] = []
     for item in matched:
         if item not in uniq:
@@ -193,10 +209,15 @@ def source_types_for_intents(
             selected.append(kind)
 
     for intent in [primary, *secondary]:
-        if intent in (INTENT_CONSULTATION, INTENT_SAFETY, INTENT_UNCLEAR):
+        if intent == INTENT_HEALTH:
+            add("health")
+        elif intent in (INTENT_CONSULTATION, INTENT_SAFETY, INTENT_UNCLEAR):
             add("notes")
+            if intent == INTENT_CONSULTATION:
+                add("health")
         elif intent == INTENT_TREATMENT:
             add("notes")
+            add("health")
             # 美容鍼・帯同などKARiNの具体サービスに触れるときは official も候補。
             if _needs_official_for_treatment(text) or _has(r"鍼|整体|トレーニング", text):
                 add("official")
