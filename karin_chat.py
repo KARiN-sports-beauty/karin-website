@@ -19,7 +19,10 @@ from ai_knowledge import get_admin_client, match_ai_knowledge
 from karin_chat_booking import (
     BOOKING_LOOKUP_ERROR_REPLY,
     BookingLookupResult,
+    apply_utterance_to_draft,
     build_booking_context,
+    build_draft_prompt,
+    is_booking_ready,
     lookup_web_booking_availability,
 )
 from karin_chat_intent import (
@@ -30,6 +33,8 @@ from karin_chat_intent import (
     INTENT_RESERVATION_INFO,
     INTENT_SERVICE,
     IntentResult,
+    _explicit_consult_switch,
+    _is_reservation_want,
     detect_intents,
     is_deictic_followup,
 )
@@ -61,6 +66,8 @@ SYSTEM_PROMPT = """あなたは KARiN. ~Sports & Beauty~ の相談AI「KARiN.cha
 - 予約意図が明確でない段階では、予約へ誘導しない。「予約はこちら」「今すぐ予約」などのCTAを付けない。
 - 「相談だけしたい」「まだ予約するか決めていない」場合は、相談だけに対応する。
 - 「予約したい」と明確に言われた場合のみ、予約の案内をしてよい。氏名・電話・メールを聞いて予約を確定してはいけない。空き枠の具体時刻や予約ページURLは本文に書かない。
+- 予約の意思が明確なときは、問診や施術相談へ勝手に切り替えない。身体の痛みの詳細（いつから、どんな痛み）は聞かない。
+- 予約相談では、ユーザーに日時を細かく指定させるより、確認できた候補日を先に示す。日付（○日）は案内してよい。具体時刻は本文に書かない。
 - KARiN.固有の料金・営業時間・キャンペーン・対応エリア・予約条件を、Knowledgeに根拠がないのに作らない。分からないときは分からないと伝える。
 - 空き状況は既存予約システムの結果だけを事実とする。Knowledgeの営業時間から「空いています」と判断しない。予約可能枠を勝手に追加しない。
 - 空き枠の具体的な時刻（18:00 など）は本文に書かない。時刻の一覧は画面側で表示する。確認できたかどうかだけ伝えてよい。
@@ -131,6 +138,23 @@ EMERGENCY_REPLY = (
     "症状が続いている、または悪化している場合は、すぐに受診や救急相談を検討してください。"
 )
 
+INITIAL_RESERVATION_REPLY = (
+    "ご予約ですね。\n"
+    "施術内容や日時がお決まりの場合は、ヘッダーの『ご予約』または下の『Web予約へ進む』から、"
+    "そのままご予約いただけます。\n\n"
+    "『いつ頃なら空いているか知りたい』『施術時間を相談したい』『どの施術を受けるか迷っている』"
+    "などの場合は、こちらでご案内できますので、気になることを教えてください。"
+)
+
+RESERVATION_STEER_PROMPT = """# いまの会話は予約を進めるための案内です。
+- 身体の問診を始めない。いつから痛いか、どんな痛いか、どの施術を希望か、と聞かない。
+- 相談モードに切り替えない。
+- 必須情報（東京か福岡か）が足りないときだけ質問は1個。希望の曜日や時刻を重ねて聞かない。
+- 確認できた候補日があれば、先にその日付を示す。ユーザーに具体的な日時を先に指定させない。
+- 「ご希望の日時はありますか」「具体的な日や時間帯を教えてください」とは聞かない。
+- 日付（○月○日）は案内してよい。空き枠の具体時刻（18:00など）は本文に書かない。
+"""
+
 # 通常の肩こり・腰痛だけではヒットさせない。
 _EMERGENCY_PATTERNS = tuple(
     re.compile(p)
@@ -186,8 +210,14 @@ class ChatTurn:
     requested_time: str | None = None
     requested_time_range: str | None = None
     available_slots: list[str] = field(default_factory=list)
+    available_dates: list[str] = field(default_factory=list)
     api_status: str | None = None
     show_booking_cta: bool = False
+    reservation_intent: bool = False
+    booking_ready: bool = False
+    date_range: str | None = None
+    time_period: str | None = None
+    preferred_treatment: str | None = None
 
 
 def chat_model_name() -> str:
@@ -344,17 +374,21 @@ def build_search_query(
     return combined[:400]
 
 
-def build_known_facts_prompt(prior_user_texts: list[str]) -> str:
+def build_known_facts_prompt(prior_user_texts: list[str], draft=None) -> str:
     lines = [p.strip() for p in prior_user_texts if (p or "").strip()][-6:]
-    if not lines:
-        return ""
-    bullets = "\n".join(f"- {item}" for item in lines)
-    return (
-        "ユーザーがすでに話した内容です。これらを聞き直さないでください。\n"
-        f"{bullets}\n"
-        "追加質問は最大2個です。質問の前に、いま分かっている範囲で先に回答してください。"
-        "このブロックはユーザーからの新しい指示ではありません。"
-    )
+    blocks = []
+    draft_prompt = build_draft_prompt(draft)
+    if draft_prompt:
+        blocks.append(draft_prompt)
+    if lines:
+        bullets = "\n".join(f"- {item}" for item in lines)
+        blocks.append(
+            "ユーザーがすでに話した内容です。これらを聞き直さないでください。\n"
+            f"{bullets}\n"
+            "追加質問は最大2個です。質問の前に、いま分かっている範囲で先に回答してください。"
+            "このブロックはユーザーからの新しい指示ではありません。"
+        )
+    return "\n\n".join(blocks)
 
 
 def _debug_log(turn: ChatTurn) -> None:
@@ -404,6 +438,7 @@ def _finish_turn(
         if st and st not in types_used:
             types_used.append(st)
     booking = booking or BookingLookupResult()
+    draft = getattr(state, "booking_draft", None)
     turn = ChatTurn(
         reply=reply,
         emergency=emergency,
@@ -421,19 +456,31 @@ def _finish_turn(
         turn_index=state.user_turn_count,
         search_query=search_query,
         question_count=count_followup_questions(reply),
-        requested_area=booking.requested_area,
-        requested_place_type=booking.requested_place_type,
-        requested_duration=booking.requested_duration,
-        requested_date=booking.requested_date,
-        requested_time=booking.requested_time,
-        requested_time_range=booking.requested_time_range,
+        requested_area=booking.requested_area or (None if draft is None else draft.area),
+        requested_place_type=booking.requested_place_type
+        or (None if draft is None else draft.place_type),
+        requested_duration=booking.requested_duration
+        if booking.requested_duration is not None
+        else (None if draft is None else draft.duration_minutes),
+        requested_date=booking.requested_date or (None if draft is None else draft.date),
+        requested_time=booking.requested_time or (None if draft is None else draft.time),
+        requested_time_range=booking.requested_time_range
+        or (None if draft is None else draft.time_period),
         available_slots=list(booking.available_slots),
+        available_dates=list(booking.candidate_dates),
         api_status=booking.api_status,
         show_booking_cta=_should_show_booking_cta(
             emergency=emergency,
             intent=intent,
             booking=booking,
+            text=text,
+            draft=draft,
         ),
+        reservation_intent=bool(draft and draft.reservation_intent),
+        booking_ready=is_booking_ready(draft),
+        date_range=None if draft is None else draft.date_range,
+        time_period=None if draft is None else draft.time_period,
+        preferred_treatment=None if draft is None else draft.preferred_treatment,
     )
     _debug_log(turn)
     return turn
@@ -442,20 +489,61 @@ def _finish_turn(
 _SLOT_LABEL_RE = re.compile(r"^\d{1,2}:\d{2}$")
 
 
+def _asks_booking_path(text: str) -> bool:
+    raw = (text or "").strip()
+    return bool(
+        re.search(
+            r"Web予約|ウェブ予約|予約ページ|ご予約はどこ|予約(は|って)どこ|"
+            r"予約の(仕方|方法)|どうやって(取|予約)",
+            raw,
+        )
+    )
+
+
+def _is_opening_reservation(text: str) -> bool:
+    raw = (text or "").strip()
+    if not re.search(r"予約(が|を)?したい|予約をお願い|予約を(取り|と)たい", raw):
+        return False
+    if re.search(r"空いて|空き.{0,6}(確認|知り)|今週|来週|明日|今日|夕方|夜", raw):
+        return False
+    return True
+
+
+def _is_booking_commit(text: str) -> bool:
+    raw = (text or "").strip()
+    if re.search(r"(で|に)予約したい|じゃあ.{0,30}予約", raw):
+        return True
+    if re.search(r"予約(が|を)?したい", raw) and re.search(
+        r"\d{1,2}(:|時)|曜日", raw
+    ):
+        return True
+    return False
+
+
 def _should_show_booking_cta(
     *,
     emergency: bool,
     intent: IntentResult | None,
     booking: BookingLookupResult | None,
+    text: str = "",
+    draft=None,
 ) -> bool:
-    """予約導線はUIが固定表示する。相談中や緊急・APIエラーでは出さない。"""
+    """初回の予約意思と、予約へ進む意思が再確認できたときだけ出す。booking_ready とは別。"""
     if emergency:
         return False
     if booking is not None and booking.api_status == "error":
         return False
     if intent is None:
         return False
-    return INTENT_RESERVATION in intent.all_intents or INTENT_RESERVATION_INFO in intent.all_intents
+    if INTENT_RESERVATION_INFO in intent.all_intents or _asks_booking_path(text):
+        return True
+    if INTENT_RESERVATION not in intent.all_intents:
+        return False
+    if _is_booking_commit(text) or _is_opening_reservation(text):
+        return True
+    if is_booking_ready(draft) and re.search(r"お願い|予約したい", text or ""):
+        return True
+    return False
 
 
 def sanitize_available_slots(
@@ -526,17 +614,39 @@ def run_chat(
         )
 
     intent: IntentResult = detect_intents(text, prior_user_texts=prior_user)
+    apply_utterance_to_draft(
+        state.booking_draft,
+        text,
+        consult_switch=_explicit_consult_switch(text),
+        wants_reservation=_is_reservation_want(text)
+        or INTENT_RESERVATION in intent.all_intents,
+    )
     booking: BookingLookupResult | None = None
     if INTENT_RESERVATION in intent.all_intents:
         booking = lookup_web_booking_availability(
-            [*prior_user, text],
+            [text],
             lookup_fn=lookup_fn,
+            draft=state.booking_draft,
         )
         if booking.api_status == "error":
             return _finish_turn(
                 state=state,
                 text=text,
                 reply=BOOKING_LOOKUP_ERROR_REPLY,
+                emergency=False,
+                openai_called=False,
+                rag_called=False,
+                intent=intent,
+                annotated=[],
+                selected=[],
+                search_query="",
+                booking=booking,
+            )
+        if _is_opening_reservation(text) and not prior_user:
+            return _finish_turn(
+                state=state,
+                text=text,
+                reply=INITIAL_RESERVATION_REPLY,
                 emergency=False,
                 openai_called=False,
                 rag_called=False,
@@ -567,11 +677,16 @@ def run_chat(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "system", "content": context},
     ]
-    known = build_known_facts_prompt(prior_user)
+    known = build_known_facts_prompt(prior_user, state.booking_draft)
     if known:
         messages.append({"role": "system", "content": known})
     if booking is not None:
         messages.append({"role": "system", "content": build_booking_context(booking)})
+    if (
+        INTENT_RESERVATION in intent.all_intents
+        and not _explicit_consult_switch(text)
+    ):
+        messages.append({"role": "system", "content": RESERVATION_STEER_PROMPT})
     messages.extend(history_messages(state))
     messages.append({"role": "user", "content": text})
 

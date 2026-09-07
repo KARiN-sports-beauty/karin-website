@@ -68,6 +68,49 @@ def _consult_only(text: str) -> bool:
     )
 
 
+def _explicit_consult_switch(text: str) -> bool:
+    """予約の途中でも、ユーザーが相談へ戻したいと明示したとき。"""
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    if _consult_only(raw):
+        return True
+    return _has(
+        r"詳しく相談|予約する前に.{0,24}相談|"
+        r"身体の(こと|悩み).{0,16}相談|"
+        r"(鍼|整体).{0,20}(どちら|どっち).{0,16}(詳しく|相談)",
+        raw,
+    )
+
+
+def _is_reservation_want(text: str) -> bool:
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    capability_ask = _has(r"(でき|できます)か|お願いすることは", raw)
+    return _has(
+        r"予約(が|を)?したい|予約をお願い|予約を(取り|と)たい|"
+        r"施術をお願いしたい|予約できるか|空いてますか|空き.{0,6}(確認|知り)|"
+        r"どこか空いて",
+        raw,
+    ) or (
+        _has(r"(明日|今日|今夜).{0,20}お願いしたい", raw) and not capability_ask
+    ) or (
+        _has(r"(明日|今日|今夜).{0,12}(夜|夕方).{0,16}(どう|いかが)", raw)
+        and not capability_ask
+    ) or (
+        _has(r"(東京|福岡).{0,24}\d+分.{0,16}お願いしたい", raw)
+        and not capability_ask
+    )
+
+
+def _prior_had_reservation(prior_user_texts: list[str]) -> bool:
+    for item in prior_user_texts:
+        if _is_reservation_want(item) and not _consult_only(item):
+            return True
+    return False
+
+
 def _needs_official_for_treatment(text: str) -> bool:
     return bool(_OFFICIAL_SERVICE_HINT.search(text))
 
@@ -101,6 +144,29 @@ def detect_intents(
     """現在の発話を最優先し、不足するときだけ過去ターンを補助に使う。Intentは固定しない。"""
     current = _detect_from_text(text)
     priors = [p.strip() for p in (prior_user_texts or []) if (p or "").strip()]
+    if _explicit_consult_switch(text):
+        if current.primary_intent != INTENT_UNCLEAR:
+            return current
+        if priors:
+            return _detect_from_text(" ".join(priors[-2:] + [(text or "").strip()]))
+        return current
+    if _prior_had_reservation(priors) and current.primary_intent in (
+        INTENT_UNCLEAR,
+        INTENT_CONSULTATION,
+        INTENT_HEALTH,
+        INTENT_TREATMENT,
+    ):
+        secondary = [
+            x
+            for x in current.all_intents
+            if x not in (INTENT_UNCLEAR, INTENT_RESERVATION)
+        ]
+        types = source_types_for_intents(INTENT_RESERVATION, [], text)
+        return IntentResult(
+            primary_intent=INTENT_RESERVATION,
+            secondary_intents=secondary,
+            source_types=types,
+        )
     if not priors:
         return current
     if current.primary_intent != INTENT_UNCLEAR:
@@ -154,18 +220,7 @@ def _detect_from_text(text: str) -> IntentResult:
         matched.append(INTENT_RESERVATION_INFO)
 
     capability_ask = _has(r"(でき|できます)か|お願いすることは", raw)
-    want_booking = _has(
-        r"予約したい|施術をお願いしたい|予約できるか|空いてますか|空き.{0,6}(確認|知り)",
-        raw,
-    ) or (
-        _has(r"(明日|今日|今夜).{0,20}お願いしたい", raw) and not capability_ask
-    ) or (
-        _has(r"(明日|今日|今夜).{0,12}(夜|夕方).{0,16}(どう|いかが)", raw)
-        and not capability_ask
-    ) or (
-        _has(r"(東京|福岡).{0,24}\d+分.{0,16}お願いしたい", raw)
-        and not capability_ask
-    )
+    want_booking = _is_reservation_want(raw)
     if want_booking and not _consult_only(raw):
         if INTENT_RESERVATION_INFO not in matched or _has(r"空いて", raw):
             matched.append(INTENT_RESERVATION)

@@ -183,8 +183,14 @@ def main() -> int:
         failures.append("×で起動UIを閉じる処理がない")
     if ".karin-chat-launcher:hover .karin-chat-fab-dismiss" not in css:
         failures.append("PCでhover時に×を出す指定がない")
-    if "width: 44px" not in css or "(hover: none)" not in css:
+    if re.search(r"\.karin-chat-fab-dismiss\s*\{[^}]*opacity:\s*0", css) is None:
+        failures.append("PCで非hover時に×が隠れない")
+    if "(hover: none)" not in css:
         failures.append("スマホでタップ可能な×指定がない")
+    if ".karin-chat-fab-dismiss::before" not in css or "inset: -13px" not in css:
+        failures.append("起動UIの×のタップ範囲拡張がない")
+    if re.search(r"\.karin-chat-fab-dismiss\s*\{[^}]*width:\s*18px", css) is None:
+        failures.append("起動UIの×の見た目が小さくなっていない")
 
     print("\n===== 書体・安全 =====")
     if '"Playfair Display"' not in css or ".karin-chat-brand" not in css:

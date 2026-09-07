@@ -7,6 +7,8 @@ import time
 import uuid
 from dataclasses import dataclass, field
 
+from karin_chat_booking import BookingDraft
+
 # 直近の相談をつなぐための上限。長期記憶ではない。
 MAX_USER_TURNS = 8
 TTL_SECONDS = 45 * 60
@@ -25,6 +27,7 @@ class ConversationState:
     conversation_id: str
     messages: list[dict] = field(default_factory=list)
     updated_at: float = field(default_factory=time.time)
+    booking_draft: BookingDraft = field(default_factory=BookingDraft)
 
     @property
     def user_turn_count(self) -> int:
