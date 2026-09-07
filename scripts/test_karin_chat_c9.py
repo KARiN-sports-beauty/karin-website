@@ -19,8 +19,8 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(ROOT, ".env"), override=True)
 
 from ai_knowledge import get_admin_client  # noqa: E402
-from karin_chat import run_chat  # noqa: E402
-from karin_chat_booking import build_staff_note  # noqa: E402
+from karin_chat import chat_public_payload, run_chat  # noqa: E402
+from karin_chat_booking import build_staff_note, format_booking_datetime  # noqa: E402
 from karin_chat_memory import get_or_create_conversation, reset_store_for_tests  # noqa: E402
 
 SNAPSHOT_SELECT = (
@@ -194,8 +194,12 @@ def main() -> int:
     print("  D2 pref", d2.preferred_duration, "conf", d2.confirmed_duration, "phase", d2.booking_phase)
     if d2.preferred_duration != 90:
         failures.append("D: 了承後に preferred 90 が消えた")
-    if d2.confirmed_duration != 60:
-        failures.append(f"D: confirmed={d2.confirmed_duration}")
+    if d2.requested_duration != 60:
+        failures.append(f"D: working duration={d2.requested_duration}")
+    if d2.confirmed_duration == 60:
+        failures.append("D: 最終確認前に confirmed が60になっている")
+    if d2.booking_phase != "confirming":
+        failures.append(f"D: phase={d2.booking_phase}")
     if d2.booking_completed or d2.booking_create_called:
         failures.append("D: 代替了承だけで予約確定している")
 
@@ -259,8 +263,10 @@ def main() -> int:
     print("  I time", i1.requested_time, "period", i1.time_period)
     if i1.requested_time == "19:00":
         failures.append("I: 夜を19:00に変換している")
-    if i1.time_period != "evening":
+    if i1.time_period != "night":
         failures.append(f"I: time_period={i1.time_period}")
+    if "夕方" in (i1.reply or ""):
+        failures.append("I: 夜を夕方に言い換えている")
 
     print("\n===== J お願いします → 最終確認（未確定） =====")
     reset_store_for_tests()
@@ -284,7 +290,7 @@ def main() -> int:
     print("  K2 phase", j2.booking_phase, "create", j2.booking_create_called)
     if j2.booking_create_called or creates:
         failures.append("K: 個人情報前に予約作成している")
-    if "メール" not in (j2.reply or "") or "電話" not in (j2.reply or ""):
+    if "お名前" not in (j2.reply or "") and "氏名" not in (j2.reply or ""):
         failures.append("K: 個人情報の取得がない")
     j3 = continue_chat(
         "山田 太郎、09012345678、taro@example.com、出張先は渋谷",
@@ -307,6 +313,166 @@ def main() -> int:
         print("  K note", note)
         if "山田" not in str(args) and "太郎" not in str(args):
             failures.append("K: 氏名が予約処理に渡っていない")
+
+    print("\n===== UX A-T 確認・はい・表示 =====")
+    if format_booking_datetime("2026-09-17", "18:00", 90) != "9月17日18:00〜19:30":
+        failures.append("J: 90分の表示が 18:00〜19:30 でない")
+    if format_booking_datetime("2026-09-17", "18:00", 60) != "9月17日18:00〜19:00":
+        failures.append("Kfmt: 60分の表示が 18:00〜19:00 でない")
+    if format_booking_datetime("2026-09-17", "18:00", 120) != "9月17日18:00〜20:00":
+        failures.append("Lfmt: 120分の表示が 18:00〜20:00 でない")
+
+    reset_store_for_tests()
+    creates.clear()
+    lookup_yes = mock_slots("18:00")
+    y0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
+    y1 = continue_chat("東京で9/10 18:00、90分", y0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
+    y2 = continue_chat("お願いします", y1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
+    py2 = chat_public_payload(y2)
+    print("  confirming", y2.booking_phase, "cta", py2.get("show_booking_cta"), "slots", py2.get("available_slots"))
+    if y2.booking_phase != "confirming":
+        failures.append(f"confirm: phase={y2.booking_phase}")
+    if py2.get("show_booking_cta"):
+        failures.append("E: confirming で show_booking_cta")
+    if py2.get("available_slots"):
+        failures.append(f"F: confirming で available_slots={py2.get('available_slots')}")
+    if "施術：未指定" in (y2.reply or ""):
+        failures.append("G: 施術：未指定 が残っている")
+    if "ご要望：特になし" not in (y2.reply or ""):
+        failures.append("H: ご要望：特になし がない")
+    if "18:00〜19:30" not in (y2.reply or ""):
+        failures.append("J: 確認文に 18:00〜19:30 がない")
+
+    y_yes = continue_chat("はい", y2, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
+    print("  はい", y_yes.booking_phase, (y_yes.reply or "")[:60], "create", y_yes.booking_create_called)
+    if y_yes.booking_phase != "guest_info":
+        failures.append(f"A: はい で guest_info にならない phase={y_yes.booking_phase}")
+    if "お名前" not in (y_yes.reply or ""):
+        failures.append("A: はい のあと名前確認がない")
+    if "予約内容をご確認ください" in (y_yes.reply or ""):
+        failures.append("A: はいで確認文がループしている")
+    if y_yes.booking_create_called or y_yes.booking_completed or creates:
+        failures.append("P: はい の時点で予約作成している")
+    if "予約が完了" in (y_yes.reply or "") or "ご予約が完了しました" in (y_yes.reply or ""):
+        failures.append("R: 個人情報前に予約完了と表示している")
+
+    reset_store_for_tests()
+    creates.clear()
+    lookup_yes2 = mock_slots("18:00")
+    z0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes2, book_fn=book_fn)
+    z1 = continue_chat("東京で9/10 18:00、90分", z0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes2, book_fn=book_fn)
+    z2 = continue_chat("お願いします", z1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes2, book_fn=book_fn)
+    z_b = continue_chat("お願いします", z2, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes2, book_fn=book_fn)
+    if z_b.booking_phase != "guest_info":
+        failures.append(f"B: お願いします で guest_info にならない {z_b.booking_phase}")
+    reset_store_for_tests()
+    creates.clear()
+    lookup_yes3 = mock_slots("18:00")
+    w0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes3, book_fn=book_fn)
+    w1 = continue_chat("東京で9/10 18:00、90分", w0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes3, book_fn=book_fn)
+    w2 = continue_chat("お願いします", w1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes3, book_fn=book_fn)
+    w_c = continue_chat("この内容でお願いします", w2, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes3, book_fn=book_fn)
+    if w_c.booking_phase != "guest_info":
+        failures.append(f"C: この内容でお願いします で guest_info にならない {w_c.booking_phase}")
+
+    reset_store_for_tests()
+    creates.clear()
+    lookup_chg = mock_slots_by_duration({90: ["18:00"], 60: ["18:00"]})
+    ch0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_chg, book_fn=book_fn)
+    ch1 = continue_chat("東京で9/10 18:00、90分", ch0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_chg, book_fn=book_fn)
+    ch2 = continue_chat("お願いします", ch1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_chg, book_fn=book_fn)
+    ch3 = continue_chat("60分に変更したい", ch2, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_chg, book_fn=book_fn)
+    print("  change", ch3.booking_phase, ch3.requested_duration, (ch3.reply or "")[:80])
+    if ch3.booking_phase == "guest_info":
+        failures.append("Dchg: 60分変更で guest_info に進んでいる")
+    if ch3.requested_duration != 60:
+        failures.append(f"Dchg: duration={ch3.requested_duration}")
+    if "お名前" in (ch3.reply or ""):
+        failures.append("Dchg: 変更なのに名前確認へ進んでいる")
+
+    reset_store_for_tests()
+    lookup_tr = mock_slots("18:00")
+    tr0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_tr, book_fn=book_fn)
+    tr1 = continue_chat("腰が痛いので鍼を受けたい。東京で9/10 18:00、90分", tr0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_tr, book_fn=book_fn)
+    tr2 = continue_chat("お願いします", tr1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_tr, book_fn=book_fn)
+    if "ご要望：鍼を希望" not in (tr2.reply or ""):
+        failures.append("Ireq: ご要望：鍼を希望 がない")
+
+    reset_store_for_tests()
+    night_times = []
+    h, m = 16, 0
+    while h * 60 + m <= 24 * 60 + 30:
+        night_times.append(f"{h:02d}:{m:02d}")
+        m += 15
+        if m >= 60:
+            h += 1
+            m = 0
+    lookup_n = mock_slots(*night_times)
+
+    def night_by_date(**kwargs):
+        lookup_n.calls.append(dict(kwargs))
+        date = str(kwargs.get("date") or "")
+        day = int(date.split("-")[2]) if date else 0
+        if day % 2 == 0:
+            times = [t for t in night_times if t <= "21:00"]
+        else:
+            times = list(night_times)
+        return {
+            "date": kwargs.get("date"),
+            "area": kwargs.get("area"),
+            "place_type": kwargs.get("place_type"),
+            "duration_minutes": kwargs.get("duration_minutes"),
+            "staff": [],
+            "free_row": {"staff_name": "フリー", "slots": [{"time": t, "available": True} for t in times]},
+        }
+
+    night_by_date.calls = []  # type: ignore[attr-defined]
+    n0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    n1 = continue_chat("東京で90分、平日", n0, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    n2 = continue_chat("夜空いてるのは？", n1, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    print("  night", n2.time_period, (n2.reply or "")[:180])
+    if n2.time_period != "night":
+        failures.append(f"M: time_period={n2.time_period}")
+    if "夕方" in (n2.reply or ""):
+        failures.append("M: 夜を夕方に変換している")
+    if "16:00〜26:00" not in (n2.reply or "") and "18:00〜26:00" not in (n2.reply or ""):
+        failures.append(f"N: 16:00〜26:00 相当の表示がない {(n2.reply or '')[:200]}")
+
+    n3 = continue_chat("17日の18:00〜", n2, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    print("  pick", n3.selected_date, n3.selected_time, (n3.reply or "")[:120])
+    pn3 = chat_public_payload(n3)
+    if "18:00〜19:30" not in (n3.reply or ""):
+        failures.append("O18: 18:00〜19:30 がない")
+    if "頃で空き" in (n3.reply or ""):
+        failures.append("O18: 曖昧な頃表現がある")
+    if pn3.get("available_slots"):
+        failures.append("O: 選択後に構造化枠が重複している")
+    other_days = [d for d in (n2.available_dates or []) if d != n3.requested_date]
+    if any(f"{int(d.split('-')[1])}月{int(d.split('-')[2])}日" in (n3.reply or "") for d in other_days[:5]):
+        failures.append("O: 候補選択後に以前の候補日が再表示されている")
+
+    n4 = continue_chat("お願いします", n3, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    n5 = continue_chat("はい", n4, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    n6 = continue_chat(
+        "山田 太郎、09012345678、taro@example.com、出張先は渋谷",
+        n5,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=night_by_date,
+        book_fn=book_fn,
+    )
+    print("  booked", n6.booking_create_called, n6.booking_completed, "n", len(creates))
+    if n5.booking_create_called:
+        failures.append("Q: guest_info 完了前に予約作成している")
+    if not n6.booking_create_called or not creates:
+        failures.append("Q: guest_info 完了後に atomic_create 相当を呼んでいない")
+    if not n6.booking_completed or "ご予約が完了しました" not in (n6.reply or ""):
+        failures.append("Q: 成功後の完了表示がない")
+
+    src = open(os.path.join(ROOT, "karin_chat_booking.py"), encoding="utf-8").read()
+    src_chat = open(os.path.join(ROOT, "karin_chat.py"), encoding="utf-8").read()
+    if "/api/book" in src or "/api/book" in src_chat:
+        failures.append("S: /api/book の HTTP POST がある")
 
     print("\n===== L Knowledge DB =====")
     after_n, after_h = snapshot_knowledge(admin)

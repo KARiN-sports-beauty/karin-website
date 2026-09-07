@@ -131,7 +131,7 @@ def main() -> int:
     if any(p in (t_b2.reply or "") for p in ASK_SPECIFIC):
         failures.append("B: 問診へ移行している")
     steer = "\n".join(m.get("content") or "" for batch in captured_b for m in batch)
-    if "問診を始めない" not in steer:
+    if captured_b and "問診を始めない" not in steer:
         failures.append("B: 予約相談の方針プロンプトがない")
 
     print("\n===== C 今週の平日 → エリアだけ確認 =====")
@@ -270,7 +270,10 @@ def main() -> int:
     print("  H time", t_h.requested_time, "cta", t_h.show_booking_cta, "slots", t_h.available_slots)
     if t_h.requested_time != "19:00":
         failures.append(f"H: time={t_h.requested_time}")
-    if not t_h.show_booking_cta:
+    if t_h.booking_phase == "confirming":
+        if t_h.show_booking_cta:
+            failures.append("H: 最終確認で CTA がある")
+    elif not t_h.show_booking_cta:
         failures.append("H: 具体的な予約意思なのに CTA がない")
     if "20:00" in t_h.available_slots:
         failures.append("H: 存在しない枠を足している")
@@ -296,8 +299,10 @@ def main() -> int:
         match_fn=empty_match,
         complete_fn=lambda _m: "20:00も空いています。",
     )
-    if t_j.available_slots != ["18:00"]:
+    if t_j.available_slots not in (["18:00"], []):
         failures.append(f"J: slots={t_j.available_slots}")
+    if "18:00" not in (t_j.available_slots or []) and "18:00" not in (t_j.reply or ""):
+        failures.append("J: 18:00 の空きが本文にも構造化枠にもない")
     if "20:00" in t_j.available_slots:
         failures.append("J: 本文の20:00を枠に足した")
 

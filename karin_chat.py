@@ -19,8 +19,10 @@ from ai_knowledge import get_admin_client, match_ai_knowledge
 from karin_chat_booking import (
     BOOKING_LOOKUP_ERROR_REPLY,
     BookingLookupResult,
+    INITIAL_RESERVATION_REPLY,
     PHASE_ALT,
     PHASE_COLLECTING,
+    PHASE_COMPLETED,
     PHASE_CONFIRMING,
     PHASE_CONSULT,
     PHASE_GUEST,
@@ -31,16 +33,22 @@ from karin_chat_booking import (
     build_confirmation_reply,
     build_draft_prompt,
     build_guest_info_ask,
+    build_missing_conditions_reply,
     build_staff_note,
     complete_chat_booking,
     enter_confirming,
     guest_info_complete,
     is_accepting_alternative,
+    is_booking_condition_change,
+    is_booking_defer,
     is_booking_ready,
-    is_explicit_booking_confirm,
+    is_confirming_affirmative,
     is_soft_proceed,
     lookup_web_booking_availability,
     parse_guest_info,
+    reopen_collecting_from_confirming,
+    should_hide_slot_ui,
+    accept_final_confirmation,
 )
 from karin_chat_intent import (
     INTENT_CAMPAIGN,
@@ -160,14 +168,6 @@ EMERGENCY_REPLY = (
     "お話の内容からは、KARiN.の施術相談より先に、医療機関や救急への相談・受診を優先してください。"
     "ここで病名や原因を判断することはできません。"
     "症状が続いている、または悪化している場合は、すぐに受診や救急相談を検討してください。"
-)
-
-INITIAL_RESERVATION_REPLY = (
-    "ご予約ですね。\n"
-    "施術内容や日時がお決まりの場合は、ヘッダーの『ご予約』または下の『Web予約へ進む』から、"
-    "そのままご予約いただけます。\n\n"
-    "『いつ頃なら空いているか知りたい』『施術時間を相談したい』『どの施術を受けるか迷っている』"
-    "などの場合は、こちらでご案内できますので、気になることを教えてください。"
 )
 
 TRAINER_ACCOMPANY_REPLY = (
@@ -539,7 +539,9 @@ def _finish_turn(
         time_from=None if draft is None else draft.time_from,
         selected_date=None if draft is None else draft.selected_date,
         selected_time=None if draft is None else draft.selected_time,
-        available_slots=list(booking.available_slots),
+        available_slots=[]
+        if should_hide_slot_ui(draft, reply)
+        else list(booking.available_slots),
         available_dates=list(booking.candidate_dates),
         api_status=booking.api_status,
         show_booking_cta=_should_show_booking_cta(
@@ -627,11 +629,11 @@ def _should_show_booking_cta(
         return True
     if INTENT_RESERVATION not in intent.all_intents:
         return False
+    if draft is not None and draft.phase in (PHASE_CONFIRMING, PHASE_GUEST, PHASE_COMPLETED):
+        return False
     if _is_booking_commit(text) or _is_opening_reservation(text):
         return True
     if is_booking_ready(draft) and re.search(r"お願い|予約したい|この内容で", text or ""):
-        return True
-    if draft is not None and draft.phase in (PHASE_CONFIRMING, PHASE_GUEST):
         return True
     return False
 
@@ -873,11 +875,25 @@ def _scripted_booking_turn(text, state, intent, prior_user, lookup_fn, book_fn):
         return build_guest_info_ask(draft), empty, False, False
 
     if draft.phase == PHASE_CONFIRMING:
-        if is_explicit_booking_confirm(text):
-            draft.phase = PHASE_GUEST
+        if is_confirming_affirmative(text):
+            accept_final_confirmation(draft)
             return build_guest_info_ask(draft), empty, False, False
-        if is_soft_proceed(text):
-            return build_confirmation_reply(draft), empty, False, False
+        if is_booking_condition_change(text):
+            reopen_collecting_from_confirming(draft)
+        elif is_booking_defer(text):
+            return (
+                "承知しました。ご希望の変更があれば教えてください。",
+                empty,
+                False,
+                False,
+            )
+        else:
+            return (
+                "ご希望の変更があれば教えてください。この内容でよろしければ「はい」とお送りください。",
+                empty,
+                False,
+                False,
+            )
 
     if draft.phase == PHASE_ALT and is_accepting_alternative(text, draft):
         enter_confirming(draft)
@@ -893,8 +909,14 @@ def _scripted_booking_turn(text, state, intent, prior_user, lookup_fn, book_fn):
     )
     if booking.api_status == "error":
         return BOOKING_LOOKUP_ERROR_REPLY, booking, False, False
-    if _is_opening_reservation(text) and not prior_user:
-        return INITIAL_RESERVATION_REPLY, booking, False, False
+    missing = booking.missing_fields or []
+    if (
+        _is_opening_reservation(text)
+        and not prior_user
+        and ("area" in missing or "duration" in missing)
+    ):
+        ask = build_missing_conditions_reply(draft, missing) or INITIAL_RESERVATION_REPLY
+        return ask, booking, False, False
 
     time_ok = booking.requested_time_available is not False
     if (

@@ -81,9 +81,19 @@ PHASE_COMPLETED = "completed"
 PHASE_CONSULT = "consult"
 
 DURATION_ASK_REPLY = (
-    "施術時間は、60分・90分・120分からお選びいただけます。"
-    "ご希望の時間を教えてください。"
+    "ありがとうございます。施術時間は60分・90分・120分のどれをご希望ですか？"
 )
+
+AREA_ASK_REPLY = "ご希望のエリアを教えてください。東京と福岡のどちらですか？"
+
+INITIAL_RESERVATION_REPLY = (
+    "ご希望のエリアと施術時間を教えてください。\n"
+    "例：東京・90分"
+)
+
+AREA_AND_DURATION_FOLLOW_REPLY = "ご希望のエリアと施術時間も教えてください。"
+
+DATE_WINDOW_ASK_REPLY = "ご希望の日付や時間帯があれば教えてください。"
 
 
 @dataclass
@@ -188,6 +198,8 @@ def draft_context_texts(draft: BookingDraft | None) -> list[str]:
         bits.append(draft.time)
     elif draft.time_from:
         bits.append(f"{draft.time_from}以降")
+    elif draft.time_period == "night":
+        bits.append("夜")
     elif draft.time_period == "evening":
         bits.append("夕方")
     elif draft.time_period == "morning":
@@ -364,18 +376,15 @@ def apply_confirmed_from_working(draft: BookingDraft) -> None:
 def apply_alternative_acceptance(draft: BookingDraft) -> None:
     if draft.alt_duration_minutes in (60, 90, 120):
         draft.duration_minutes = draft.alt_duration_minutes
-        draft.confirmed_duration_minutes = draft.alt_duration_minutes
     if draft.alt_date:
         draft.date = draft.alt_date
-        draft.confirmed_date = draft.alt_date
+        draft.selected_date = draft.alt_date
+        draft.date_candidates = [draft.alt_date]
     if draft.alt_time:
         draft.time = draft.alt_time
         draft.time_period = None
-        draft.confirmed_time = draft.alt_time
-    if draft.area:
-        draft.confirmed_area = draft.area
-    if draft.place_type:
-        draft.confirmed_place_type = draft.place_type
+        draft.selected_time = draft.alt_time
+        draft.time_from = None
     remember_preferred(draft)
 
 
@@ -392,12 +401,13 @@ def build_staff_note(draft: BookingDraft | None) -> str:
         head.append(f"{draft.preferred_treatment}希望")
 
     pref_d = draft.preferred_duration_minutes
-    conf_d = draft.confirmed_duration_minutes
-    if pref_d and conf_d and pref_d != conf_d:
-        head.append(f"第一希望は{pref_d}分だったが、空き状況により{conf_d}分で予約。")
+    current_d = draft.confirmed_duration_minutes or draft.duration_minutes
+    if pref_d and current_d and pref_d != current_d:
+        head.append(f"第一希望は{pref_d}分だったが、空き状況により{current_d}分で予約。")
 
     pref_date, pref_time = draft.preferred_date, draft.preferred_time
-    conf_date, conf_time = draft.confirmed_date, draft.confirmed_time
+    conf_date = draft.confirmed_date or draft.date
+    conf_time = draft.confirmed_time or draft.time
     if (pref_date and conf_date and pref_date != conf_date) or (
         pref_time and conf_time and pref_time != conf_time
     ):
@@ -584,7 +594,7 @@ def parse_booking_request(
             req.time_from = None
             req.time_range = None
         elif re.search(r"夜|今夜|仕事終わり", text):
-            req.time_range = "evening"
+            req.time_range = "night"
             req.time = None
         elif re.search(r"夕方", text):
             req.time_range = "evening"
@@ -809,6 +819,8 @@ def _in_time_range(time_label: str, time_range: str | None) -> bool:
     hour = _hour(time_label)
     if hour is None or not time_range:
         return True
+    if time_range == "night":
+        return hour >= 18
     if time_range == "evening":
         return hour >= 16
     if time_range == "morning":
@@ -1125,6 +1137,49 @@ def _format_jp_date_short(iso: str) -> str:
     return f"{int(month)}月{int(day)}日"
 
 
+def add_minutes_to_hm(start_time: str, duration_minutes: int) -> str | None:
+    """開始時刻に施術時間を足す。26:00 のような 24時超も許可する。"""
+    mins = _time_to_min(start_time)
+    if mins is None:
+        return None
+    try:
+        added = int(duration_minutes)
+    except (TypeError, ValueError):
+        return None
+    if added <= 0:
+        return None
+    total = mins + added
+    hour, minute = divmod(total, 60)
+    return f"{hour:02d}:{minute:02d}"
+
+
+def format_booking_datetime(
+    date: str | None,
+    start_time: str | None,
+    duration_minutes: int | None = None,
+) -> str:
+    """表示用。内部の ISO / HH:MM は変えない。"""
+    date_s = _format_jp_date_short(date) if date else ""
+    start_s = (start_time or "").strip()
+    if not date_s and not start_s:
+        return ""
+    if duration_minutes in (60, 90, 120) and start_s:
+        end_s = add_minutes_to_hm(start_s, duration_minutes)
+        if end_s:
+            return f"{date_s}{start_s}〜{end_s}"
+    return f"{date_s}{start_s}".strip()
+
+
+def _period_label(period: str | None) -> str:
+    return {
+        "night": "夜",
+        "evening": "夕方",
+        "daytime": "昼間",
+        "afternoon": "午後",
+        "morning": "午前",
+    }.get(period or "", "")
+
+
 def _area_label(area: str | None) -> str:
     if area == "tokyo":
         return "東京"
@@ -1137,7 +1192,7 @@ def is_soft_proceed(text: str) -> bool:
     raw = (text or "").strip()
     if not raw:
         return False
-    if re.search(r"詳しく相談|予約する前に", raw):
+    if re.search(r"詳しく相談|予約する前に|変更したい|ちょっと待って|やっぱり|じゃなくて", raw):
         return False
     return bool(re.search(r"お願い(します|しますね)?|それで(お願い|大丈夫|いい)|はい[。．]?$", raw))
 
@@ -1151,6 +1206,59 @@ def is_explicit_booking_confirm(text: str) -> bool:
             raw,
         )
     )
+
+
+def is_confirming_affirmative(text: str) -> bool:
+    """confirming 中の最終確認への肯定。条件変更や保留は含めない。"""
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    if is_booking_condition_change(raw) or is_booking_defer(raw):
+        return False
+    if is_explicit_booking_confirm(raw):
+        return True
+    return bool(
+        re.search(
+            r"^(はい|お願いします|大丈夫です|"
+            r"この内容でお願いします|これでお願いします|"
+            r"それでお願いします)([。．!！]?)$",
+            raw,
+        )
+    )
+
+
+def is_booking_defer(text: str) -> bool:
+    raw = (text or "").strip()
+    return bool(re.search(r"ちょっと待って|待ってて|あとで", raw)) and not bool(
+        re.search(r"変更|じゃなく", raw)
+    )
+
+
+def is_booking_condition_change(text: str) -> bool:
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    if re.search(r"変更したい|やっぱり|じゃなくて", raw):
+        return True
+    if re.search(r"(?<!\d)(60|90|120)分", raw) and re.search(r"変更|じゃなく|にして", raw):
+        return True
+    return False
+
+
+def accept_final_confirmation(draft: BookingDraft) -> None:
+    apply_confirmed_from_working(draft)
+    if not draft.confirmed_place_type:
+        draft.confirmed_place_type = _selectable_place_type(draft.place_type)
+    draft.phase = PHASE_GUEST
+
+
+def reopen_collecting_from_confirming(draft: BookingDraft) -> None:
+    draft.phase = PHASE_COLLECTING
+    draft.confirmed_date = None
+    draft.confirmed_time = None
+    draft.confirmed_duration_minutes = None
+    draft.confirmed_area = None
+    draft.confirmed_place_type = None
 
 
 def is_accepting_alternative(text: str, draft: BookingDraft) -> bool:
@@ -1250,10 +1358,18 @@ def _consecutive_bands(times: list[str]) -> list[tuple[str, str]]:
     return bands
 
 
-def _format_bands(times: list[str]) -> str:
+def _format_bands(times: list[str], duration_minutes: int | None = None) -> str:
     parts: list[str] = []
-    for start, end in _consecutive_bands(times):
-        parts.append(start if start == end else f"{start}〜{end}")
+    for start, last_start in _consecutive_bands(times):
+        end = last_start
+        if duration_minutes in (60, 90, 120):
+            computed = add_minutes_to_hm(last_start, duration_minutes)
+            if computed:
+                end = computed
+        if start == end:
+            parts.append(start)
+        else:
+            parts.append(f"{start}〜{end}")
     return "、".join(parts)
 
 
@@ -1266,11 +1382,18 @@ def _group_times_by_date(labels: list[tuple[str, str]]) -> dict[str, list[str]]:
     return grouped
 
 
-def _band_rows(grouped: dict[str, list[str]]) -> str:
+def _band_rows(grouped: dict[str, list[str]], duration_minutes: int | None = None) -> str:
     lines = []
     for date, times in grouped.items():
-        lines.append(f"・{_format_jp_date_short(date)}　{_format_bands(times)}")
+        lines.append(f"・{_format_jp_date_short(date)} {_format_bands(times, duration_minutes)}")
     return "\n".join(lines)
+
+
+def should_hide_slot_ui(draft: BookingDraft | None, reply: str = "") -> bool:
+    """本文で日時が完結している／最終確認以降は構造化枠を出さない。"""
+    if draft is not None and draft.phase in (PHASE_CONFIRMING, PHASE_GUEST, PHASE_COMPLETED):
+        return True
+    return "この日時でご予約を進めますか" in (reply or "")
 
 
 def remember_offers(draft: BookingDraft, result: BookingLookupResult) -> None:
@@ -1285,22 +1408,39 @@ def _selected_datetime_reply(draft: BookingDraft, date_iso: str, slot: str) -> s
     draft.time = slot
     draft.time_from = None
     draft.date_candidates = [date_iso]
+    when = format_booking_datetime(date_iso, slot, draft.duration_minutes)
     return (
-        f"{_format_jp_date_short(date_iso)} {slot}に空きが確認できました。\n"
+        f"{when}で空きが確認できました。\n"
         "この日時でご予約を進めますか？"
     )
 
 
+def build_missing_conditions_reply(draft: BookingDraft, missing: list[str]) -> str | None:
+    need_area = "area" in missing or draft.area not in ("tokyo", "fukuoka")
+    need_duration = "duration" in missing or draft.duration_minutes not in (60, 90, 120)
+    has_window = bool(
+        draft.date or draft.date_candidates or draft.date_range or draft.time_period
+    )
+    if need_area and need_duration:
+        if has_window:
+            return AREA_AND_DURATION_FOLLOW_REPLY
+        return INITIAL_RESERVATION_REPLY
+    if need_area:
+        return AREA_ASK_REPLY
+    if need_duration:
+        return DURATION_ASK_REPLY
+    if "date" in missing:
+        return DATE_WINDOW_ASK_REPLY
+    return None
+
+
+def _period_word_for(draft: BookingDraft) -> str:
+    return _period_label(draft.time_period or draft.narrow_from_period)
+
+
 def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> str | None:
     if result.api_status == "skipped_insufficient":
-        missing = result.missing_fields or []
-        if "area" in missing:
-            return None
-        if "duration" in missing and (
-            draft.date or draft.time or draft.time_from or draft.date_range or draft.time_period
-        ):
-            return DURATION_ASK_REPLY
-        return None
+        return build_missing_conditions_reply(draft, result.missing_fields or [])
     if result.api_status != "ok":
         return None
     if result.alternative_duration:
@@ -1319,23 +1459,19 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
     if draft.date:
         draft.offered_dates = [draft.date]
 
-    period_word = {
-        "evening": "夕方",
-        "daytime": "昼間",
-        "afternoon": "午後",
-        "morning": "午前",
-    }.get(draft.time_period or draft.narrow_from_period or "", "")
+    duration = draft.duration_minutes if draft.duration_minutes in (60, 90, 120) else None
+    period_word = _period_word_for(draft)
     weekdayish = draft.date_filter == "weekdays" or "weekday" in (draft.date_range or "")
 
     if not dates and not labels:
-        if draft.time_from and (draft.narrow_from_period == "evening" or period_word == "夕方"):
+        if draft.time_from and period_word:
             return (
-                f"先ほどご案内した夕方の候補のうち、{draft.time_from}以降で確認できる空きはありませんでした。"
+                f"先ほどご案内した{period_word}の候補のうち、{draft.time_from}以降で確認できる空きはありませんでした。"
                 "別の時間帯でも探せますので、希望があれば教えてください。"
             )
-        if draft.time and draft.narrow_from_period == "evening":
+        if draft.time and period_word:
             return (
-                f"先ほどご案内した夕方の候補のうち、{draft.time}で確認できる空きはありませんでした。"
+                f"先ほどご案内した{period_word}の候補のうち、{draft.time}で確認できる空きはありませんでした。"
                 "別の時間帯でも探せますので、希望があれば教えてください。"
             )
         return (
@@ -1348,50 +1484,55 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
         return _selected_datetime_reply(draft, date_iso, slot)
 
     if draft.time_from and grouped:
-        rows = _band_rows(grouped)
-        intro = f"{draft.time_from}以降で空きが確認できました。"
-        if draft.narrow_from_period == "evening" or period_word == "夕方":
-            intro = (
-                f"先ほどご案内した夕方の候補のうち、{draft.time_from}以降で空きがあるのは以下です。"
-            )
-        prompt = "ご都合の良い日時があれば教えてください。"
-        if len(grouped) == 1 and len(next(iter(grouped.values()))) == 1:
+        if draft.date:
+            times = grouped.get(draft.date) or []
+            if draft.time_from in times:
+                return _selected_datetime_reply(draft, draft.date, draft.time_from)
+        if len(grouped) == 1:
             date_iso = next(iter(grouped))
-            slot = grouped[date_iso][0]
-            return _selected_datetime_reply(draft, date_iso, slot)
-        return f"{intro}\n\n{rows}\n\n{prompt}"
+            times = grouped[date_iso]
+            if draft.time_from in times:
+                return _selected_datetime_reply(draft, date_iso, draft.time_from)
+            if len(times) == 1:
+                return _selected_datetime_reply(draft, date_iso, times[0])
+        rows = _band_rows(grouped, duration)
+        intro = f"{draft.time_from}以降で空きが確認できました。"
+        if period_word:
+            intro = (
+                f"先ほどご案内した{period_word}の候補のうち、{draft.time_from}以降で空きがあるのは以下です。"
+            )
+        return f"{intro}\n\n{rows}\n\nご希望の日や開始時間があれば教えてください。"
 
     if (
-        draft.time_period in ("evening", "daytime", "afternoon", "morning")
+        draft.time_period in ("night", "evening", "daytime", "afternoon", "morning")
         and grouped
         and not draft.time
         and not draft.time_from
     ):
-        rows = _band_rows(grouped)
-        if weekdayish and draft.time_period == "evening":
-            title = "平日の夕方で空きが確認できる日時は以下です。"
-        elif weekdayish and draft.time_period == "daytime":
-            title = "平日の昼間で空きが確認できる日時は以下です。"
-        elif draft.time_period == "daytime":
-            title = "昼間で空きが確認できる日時は以下です。"
-        elif draft.time_period == "evening":
-            title = "夕方で空きが確認できる日時は以下です。"
-        else:
+        rows = _band_rows(grouped, duration)
+        if weekdayish and period_word:
+            title = f"平日の{period_word}で空きが確認できる日時は以下です。"
+        elif period_word:
             title = f"{period_word}で空きが確認できる日時は以下です。"
+        else:
+            title = "空きが確認できる日時は以下です。"
         return (
             f"{title}\n\n{rows}\n\n"
-            "この中でご都合の良い日、もしくはご希望の時間帯があれば教えてください。"
+            "ご希望の日や開始時間があれば教えてください。"
         )
 
     if len(dates) > 1 and not (draft.date and result.available_slots):
         if draft.time and grouped:
             rows = "\n".join(
-                f"・{_format_jp_date_short(d)} {draft.time}" for d in dates if d in grouped
+                f"・{format_booking_datetime(d, draft.time, duration)}"
+                for d in dates
+                if d in grouped
             )
-            intro = f"{draft.time}頃で空きが確認できました。"
-            if draft.narrow_from_period == "evening":
+            intro = f"{format_booking_datetime(None, draft.time, duration)}で空きが確認できました。"
+            if period_word:
                 intro = (
-                    f"先ほどご案内した夕方の候補のうち、{draft.time}で空きがあるのは以下です。"
+                    f"先ほどご案内した{period_word}の候補のうち、"
+                    f"{format_booking_datetime(None, draft.time, duration)}で空きがあるのは以下です。"
                 )
             return (
                 f"{intro}\n\n{rows}\n\n"
@@ -1400,12 +1541,12 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
         bullets = "\n".join(f"・{_format_jp_date_short(d)}" for d in dates)
         if weekdayish:
             return (
-                f"平日での空き状況を確認したところ、以下の日付に空きがあります。\n\n{bullets}\n\n"
-                "この中でご都合の良い日、もしくはご希望の時間帯があれば教えてください。"
+                f"平日の空き状況を確認したところ、以下の日付に空きがあります。\n\n{bullets}\n\n"
+                "この中でご都合の良い日、もしくはご希望の時間帯を教えてください。"
             )
         return (
             f"空きが確認できた日付は以下です。\n\n{bullets}\n\n"
-            "この中でご都合の良い日、もしくはご希望の時間帯があれば教えてください。"
+            "この中でご都合の良い日、もしくはご希望の時間帯を教えてください。"
         )
 
     slots = result.available_slots or [t for _d, t in labels]
@@ -1415,7 +1556,9 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
     if date_iso and len(slots) == 1:
         return _selected_datetime_reply(draft, date_iso, slots[0])
     if date_iso and slots:
-        rows = "\n".join(f"・{_format_jp_date_short(date_iso)} {t}" for t in slots)
+        rows = "\n".join(
+            f"・{format_booking_datetime(date_iso, t, duration)}" for t in slots
+        )
         return (
             f"{_format_jp_date_short(date_iso)}は以下の時間に空きがあります。\n\n{rows}\n\n"
             "ご都合の良い日時があれば教えてください。"
@@ -1423,43 +1566,49 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
     return None
 
 
+def _request_line(draft: BookingDraft) -> str:
+    if draft.preferred_treatment:
+        return f"ご要望：{draft.preferred_treatment}を希望"
+    return "ご要望：特になし"
+
+
 def build_confirmation_reply(draft: BookingDraft) -> str:
-    date_iso = draft.confirmed_date or draft.date
-    time_s = draft.confirmed_time or draft.time
-    duration = draft.confirmed_duration_minutes or draft.duration_minutes
-    area = _area_label(draft.confirmed_area or draft.area)
-    treatment = draft.preferred_treatment or "未指定"
-    note = build_staff_note(draft)
-    date_line = f"{_format_jp_date_short(date_iso) if date_iso else ''} {time_s or ''}".strip()
+    date_iso = draft.selected_date or draft.date
+    time_s = draft.selected_time or draft.time
+    duration = draft.duration_minutes
+    area = _area_label(draft.area)
+    date_line = format_booking_datetime(date_iso, time_s, duration)
     lines = [
         "予約内容をご確認ください。",
         "",
         f"日時：{date_line}",
         f"施術時間：{duration}分" if duration else "施術時間：未定",
         f"エリア：{area}" if area else "エリア：未定",
-        f"施術：{treatment}",
+        _request_line(draft),
+        "",
+        "この内容で予約を確定しますか？",
     ]
-    if note:
-        lines.extend(["", "希望伝達事項：", note])
-    lines.extend(["", "この内容で予約を確定しますか？"])
     return "\n".join(lines)
 
 
 def build_guest_info_ask(draft: BookingDraft) -> str:
     place = draft.confirmed_place_type or draft.place_type
-    extra = "出張先のエリア・住所も教えてください。" if place == "visit" else ""
-    return (
-        "この内容で予約を進める場合は、氏名（姓と名）、電話番号、メールアドレスを教えてください。"
-        + ((" " + extra) if extra else "")
-        + "\nまだ予約は確定していません。"
-    )
+    if not draft.guest_last_name or not draft.guest_first_name:
+        return "ありがとうございます。\nご予約者様のお名前を教えてください。"
+    if not draft.guest_phone:
+        return "お電話番号を教えてください。"
+    if not draft.guest_email:
+        return "メールアドレスを教えてください。"
+    if place == "visit" and not draft.guest_place_name:
+        return "出張先のエリア・住所を教えてください。"
+    return "予約に必要な情報を確認しています。"
 
 
 def build_booking_success_reply(draft: BookingDraft) -> str:
     date_iso = draft.confirmed_date or draft.date
     time_s = draft.confirmed_time or draft.time
     duration = draft.confirmed_duration_minutes or draft.duration_minutes
-    date_line = f"{_format_jp_date_short(date_iso) if date_iso else ''} {time_s or ''}".strip()
+    date_line = format_booking_datetime(date_iso, time_s, duration)
     return (
         "ご予約が完了しました。\n"
         f"日時：{date_line}\n"
@@ -1471,10 +1620,10 @@ def build_booking_success_reply(draft: BookingDraft) -> str:
 def enter_confirming(draft: BookingDraft) -> None:
     if draft.phase == PHASE_ALT:
         apply_alternative_acceptance(draft)
-    else:
-        apply_confirmed_from_working(draft)
-    if not draft.confirmed_place_type:
-        draft.confirmed_place_type = _selectable_place_type(draft.place_type)
+    draft.selected_date = draft.date
+    draft.selected_time = draft.time
+    if not draft.place_type:
+        draft.place_type = _selectable_place_type(draft.place_type)
     draft.phase = PHASE_CONFIRMING
 
 

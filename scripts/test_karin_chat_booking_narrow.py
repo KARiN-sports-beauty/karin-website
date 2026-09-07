@@ -260,12 +260,12 @@ def main() -> int:
     t, kw = start_weekday(lookup5)
     t_eve = continue_chat("夕方ぐらいで", t, **kw)
     print("  eve reply", (t_eve.reply or "")[:200])
-    if "17:00〜18:30" not in (t_eve.reply or "") and "18:00" not in (t_eve.reply or ""):
+    if "17:00" not in (t_eve.reply or "") and "18:00" not in (t_eve.reply or ""):
         failures.append("T5: 夕方の実在時間帯が出ていない")
     if t_eve.requested_time == "19:00":
         failures.append("T5: 夕方を19:00にしている")
-    if "17:00〜20:00" in (t_eve.reply or ""):
-        failures.append("T5: 存在しない20:00までを一括表示している")
+    if "17:00〜18:30" in (t_eve.reply or "") and "17:00〜20:00" not in (t_eve.reply or ""):
+        failures.append("T5: 開始時刻の幅のまま終了時刻を出していない")
 
     print("\n===== Test 6 昼間は実在枠の幅 =====")
     reset_store_for_tests()

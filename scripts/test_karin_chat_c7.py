@@ -307,7 +307,7 @@ def main() -> int:
             failures.append(f"A4: 東京/90分を再利用していない {args}")
     if a4.requested_time == "19:00":
         failures.append("A4: 夜を19:00に変換している")
-    if a4.requested_time_range != "evening":
+    if a4.requested_time_range != "night":
         failures.append(f"A4: time_range={a4.requested_time_range}")
     if set(a4.available_slots) != {"18:00", "19:30"}:
         failures.append(f"A4: available_slots={a4.available_slots}")
@@ -445,8 +445,10 @@ def main() -> int:
             failures.append(f"F2: 東京/90分未保持 {args}")
     if re.search(r"東京ですか|90分ですか", f2.reply or ""):
         failures.append("F2: 既知情報を聞き直している")
-    if f2.available_slots != ["19:00"]:
+    if f2.available_slots not in (["19:00"], []):
         failures.append(f"F2: slots={f2.available_slots}")
+    if "19:00" not in (f2.available_slots or []) and "19:00" not in (f2.reply or ""):
+        failures.append("F2: 19:00 の空きが本文にも構造化枠にもない")
 
     lookup_fe = mock_slots("10:00", "18:00", "19:30")
     fe1 = continue_chat("東京で90分をお願いしたいです。", None, lookup_fn=lookup_fe)
@@ -458,7 +460,7 @@ def main() -> int:
         failures.append("F-eve: 予約システム未使用")
     if fe2.requested_time == "19:00":
         failures.append("F-eve: 夜を19:00に変換している")
-    if fe2.requested_time_range != "evening":
+    if fe2.requested_time_range != "night":
         failures.append(f"F-eve: time_range={fe2.requested_time_range}")
     if set(fe2.available_slots) != {"18:00", "19:30"}:
         failures.append(f"F-eve: 夜フィルタ後 slots={fe2.available_slots}")

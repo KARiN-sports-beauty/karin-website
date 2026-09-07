@@ -140,14 +140,18 @@ def main() -> int:
 
     print("\n===== C 再質問防止 =====")
     joined = "\n".join(captured)
-    if re.search(r"東京・福岡|東京か福岡|東京ですか", joined) and "エリア: 東京" not in joined:
-        failures.append("C: 既知の東京を聞き直すプロンプトになっている")
-    if "エリア: 東京" not in joined:
-        failures.append("C: 既知エリアがプロンプトにない")
+    later = "\n".join([(t2.reply or ""), (t3.reply or ""), (t4.reply or ""), (t5.reply or ""), (t6.reply or "")])
+    if re.search(r"東京と福岡のどちら|東京・福岡", later):
+        failures.append("C: 既知の東京を聞き直している")
+    if captured:
+        if re.search(r"東京・福岡|東京か福岡|東京ですか", joined) and "エリア: 東京" not in joined:
+            failures.append("C: 既知の東京を聞き直すプロンプトになっている")
+        if "エリア: 東京" not in joined:
+            failures.append("C: 既知エリアがプロンプトにない")
+        if "これらを聞き直さないでください" not in joined:
+            failures.append("C: 既知条件の再利用指示がない")
     if t6.requested_duration == 60 and re.search(r"施術時間は何分", t6.reply or ""):
         failures.append("C: 60分のあと施術時間を聞き直している")
-    if "これらを聞き直さないでください" not in joined:
-        failures.append("C: 既知条件の再利用指示がない")
 
     print("\n===== D 大まかな条件を日時へ変換しない =====")
     reset_store_for_tests()
@@ -156,7 +160,7 @@ def main() -> int:
     print("  D date", d1.requested_date, "time", d1.requested_time, "period", d1.time_period, "range", d1.date_range)
     if d1.requested_time == "19:00":
         failures.append("D: 夜を19:00に変換している")
-    if d1.time_period != "evening":
+    if d1.time_period != "night":
         failures.append(f"D: time_period={d1.time_period}")
     if d1.requested_date and not d1.date_range:
         failures.append(f"D: 来週を具体1日にしている {d1.requested_date}")
@@ -215,7 +219,10 @@ def main() -> int:
         failures.append("H: 初回 CTA がない")
     if t2.show_booking_cta or t3.show_booking_cta or t4.show_booking_cta:
         failures.append("H: 候補確認中に CTA がある")
-    if not g2.show_booking_cta:
+    if g2.booking_phase == "confirming":
+        if g2.show_booking_cta:
+            failures.append("H: 最終確認で CTA がある")
+    elif not g2.show_booking_cta:
         failures.append("H: 具体的な予約意思なのに CTA がない")
     if g2.show_booking_cta == g2.booking_ready and g0.show_booking_cta == g0.booking_ready:
         failures.append("H: CTA と booking_ready が常に一致している")

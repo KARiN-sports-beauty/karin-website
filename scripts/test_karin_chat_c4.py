@@ -105,7 +105,7 @@ def main() -> int:
         failures.append(f"Test1: intent={t1.primary_intent}")
     if t1.requested_date != tomorrow:
         failures.append(f"Test1: date={t1.requested_date}")
-    if t1.requested_time_range != "evening":
+    if t1.requested_time_range != "night":
         failures.append("Test1: 夜が time_range になっていない")
     if t1.requested_time == "19:00":
         failures.append("Test1: 夜を19:00に変換している")
@@ -146,7 +146,7 @@ def main() -> int:
             failures.append(f"Test3: place_type={args.get('place_type')}")
         if "time" in args:
             failures.append("Test3: 夜を具体時刻としてAPIに渡している")
-    if t3.requested_time_range != "evening":
+    if t3.requested_time_range != "night":
         failures.append("Test3: 夜を保持していない")
     if "10:00" in t3.available_slots:
         failures.append("Test3: 夜以外の枠を夜の結果に混ぜている")
