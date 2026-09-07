@@ -135,13 +135,15 @@ def main() -> int:
     if re.search(r'["\']20:00["\']', js) or re.search(r'["\']18:00["\']', js):
         failures.append("Test2: UIが時刻をハードコードしている")
 
-    print("\n===== Test 3 本文に時刻がなくてもUIは枠を出せる =====")
-    if "18:00" in (p1["reply"] or "") or "19:30" in (p1["reply"] or ""):
-        failures.append("Test3: モック本文に時刻が入っている")
+    print("\n===== Test 3 本文と構造化枠 =====")
+    if p1["available_slots"] != ["18:00", "19:30"]:
+        failures.append("Test3: 構造化枠がない")
     if "available_slots" not in js or "normalizeSlots" not in js or "appendSlots" not in js:
         failures.append("Test3: UIが available_slots から枠を描画する経路がない")
-    if "ご希望の条件で確認しました。" not in js:
-        failures.append("Test3: 空き枠の案内文がない")
+    if "formatSlotLabel" not in js:
+        failures.append("Test3: 日時を1つにまとめる表示がない")
+    if "ご希望の条件で確認しました。" in js:
+        failures.append("Test3: 重複テロップが残っている")
 
     print("\n===== Test 4 LLMが20:00と書いても構造化枠に足さない =====")
     lookup4 = mock_slots("18:00", "19:30")

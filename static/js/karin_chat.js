@@ -142,20 +142,23 @@
     return out;
   }
 
-  function appendSlots(parent, slots) {
+  function formatSlotLabel(dateIso, time) {
+    if (!dateIso) return time;
+    var parts = String(dateIso).split("-");
+    if (parts.length !== 3) return time;
+    return Number(parts[1]) + "月" + Number(parts[2]) + "日 " + time;
+  }
+
+  function appendSlots(parent, slots, dateIso) {
     if (!slots.length) return;
     var wrap = document.createElement("div");
     wrap.className = "karin-chat-slots";
-    var lead = document.createElement("p");
-    lead.className = "karin-chat-slots-lead";
-    lead.textContent = "ご希望の条件で確認しました。";
-    wrap.appendChild(lead);
     var list = document.createElement("ul");
     list.className = "karin-chat-slot-list";
     slots.forEach(function (time) {
       var item = document.createElement("li");
       item.className = "karin-chat-slot";
-      item.textContent = time;
+      item.textContent = formatSlotLabel(dateIso, time);
       list.appendChild(item);
     });
     wrap.appendChild(list);
@@ -211,7 +214,7 @@
       }
       col.appendChild(bubble);
       if (!options.thinking) {
-        appendSlots(col, normalizeSlots(options.availableSlots));
+        appendSlots(col, normalizeSlots(options.availableSlots), options.availableDate);
         if (options.showBookingCta && !looksLikeEmergencyReply(text)) {
           appendBookCta(col);
         }
@@ -338,6 +341,7 @@
           if (typeof nextId === "string" && nextId) conversationId = nextId;
           appendMessage("ai", reply, {
             availableSlots: result.body.available_slots,
+            availableDate: result.body.available_date,
             showBookingCta: result.body.show_booking_cta === true,
           });
           return;

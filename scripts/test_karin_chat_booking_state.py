@@ -220,14 +220,16 @@ def main() -> int:
     if g2.show_booking_cta == g2.booking_ready and g0.show_booking_cta == g0.booking_ready:
         failures.append("H: CTA と booking_ready が常に一致している")
 
-    print("\n===== I 予約処理の非実行 =====")
+    print("\n===== I 予約処理の非実行（条件収集中） =====")
+    if t0.booking_create_called or t6.booking_create_called or g2.booking_create_called:
+        failures.append("I: 条件収集中に予約作成が呼ばれた")
     chat_src = read("karin_chat.py") + read("karin_chat_booking.py") + read("karin_chat_memory.py")
     if "/api/book" in chat_src:
-        failures.append("I: チャット経路に /api/book がある")
+        failures.append("I: チャット経路が HTTP の /api/book を呼んでいる")
     if re.search(r"reservations.+(insert|INSERT)|table\(\"reservations\"\)", chat_src):
         failures.append("I: チャット経路から reservations INSERT がある")
-    if "予約をお取りしました" in chat_src:
-        failures.append("I: 予約確定文言がある")
+    if "atomic_create_web_reservation" not in chat_src:
+        failures.append("I: 既存予約確定関数を再利用していない")
 
     after_n, after_h = snapshot_knowledge(admin)
     print("snapshot after:", after_n, after_h)

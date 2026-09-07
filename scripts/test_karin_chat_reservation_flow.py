@@ -149,13 +149,13 @@ def main() -> int:
     if t_c.show_booking_cta:
         failures.append("C: 空き確認の質問で CTA がある")
 
-    print("\n===== D 東京 → 今週平日の候補（聞き返さない） =====")
+    print("\n===== D 東京 → 施術時間 → 今週平日の候補 =====")
     lookup_d = mock_slots("18:00", "19:30")
     captured_d: list[str] = []
 
     def complete_d(messages):
         captured_d.append("\n".join(m.get("content") or "" for m in messages))
-        return "今週の平日ですと、候補の日に空きがあります。ご都合の合いそうな日があれば教えてください。"
+        return "東京と福岡のどちらをご希望ですか？"
 
     t_d1 = continue_chat(
         "今週の平日でどこか空いてますか？",
@@ -171,12 +171,25 @@ def main() -> int:
         complete_fn=complete_d,
         lookup_fn=lookup_d,
     )
-    print("  D2 calls", len(lookup_d.calls), "dates", t_d2.available_dates, "slots", t_d2.available_slots, "cta", t_d2.show_booking_cta)
+    t_d3 = continue_chat(
+        "90分で",
+        t_d2,
+        match_fn=empty_match,
+        complete_fn=complete_d,
+        lookup_fn=lookup_d,
+    )
+    print("  D2 api", t_d2.reservation_api_called, "D3 calls", len(lookup_d.calls), "dates", t_d3.available_dates)
+    if t_d2.reservation_api_called:
+        failures.append("D: 施術時間前に予約APIを呼んでいる")
+    if "60分" not in (t_d2.reply or "") or "90分" not in (t_d2.reply or ""):
+        failures.append("D: 施術時間の確認がない")
     if not lookup_d.calls:
-        failures.append("D: 東京指定後に予約APIを呼んでいない")
+        failures.append("D: 東京・90分後に予約APIを呼んでいない")
     else:
         if any(c.get("area") != "tokyo" for c in lookup_d.calls):
             failures.append("D: area が tokyo でない")
+        if any(c.get("duration_minutes") != 90 for c in lookup_d.calls):
+            failures.append("D: 90分以外で検索している")
         dates = [c.get("date") for c in lookup_d.calls]
         if len(dates) < 2:
             failures.append(f"D: 複数日を確認していない {dates}")
@@ -186,23 +199,22 @@ def main() -> int:
             weekdays.append(datetime(int(y), int(m), int(d)).weekday())
         if any(wd >= 5 for wd in weekdays):
             failures.append("D: 平日以外の日を見ている")
-    if t_d2.show_booking_cta:
+    if t_d3.show_booking_cta:
         failures.append("D: 候補提示で CTA がある")
-    if t_d2.available_slots:
-        failures.append(f"D: 複数日なのに時刻枠を混ぜている {t_d2.available_slots}")
-    if not t_d2.available_dates:
+    if t_d3.available_slots:
+        failures.append(f"D: 複数日なのに時刻枠を混ぜている {t_d3.available_slots}")
+    if not t_d3.available_dates:
         failures.append("D: 候補日がない")
-    joined = "\n".join(captured_d)
-    if any(p in (t_d2.reply or "") for p in ASK_SPECIFIC[:4]):
+    if "ご都合の良い日、もしくはご希望の時間帯" not in (t_d3.reply or ""):
+        failures.append("D: 日付または時間帯の次の入力を促していない")
+    if any(p in (t_d3.reply or "") for p in ASK_SPECIFIC[:4]):
         failures.append("D: 具体日時を聞き返している")
-    if "希望日や時刻を重ねて聞かない" not in joined and "候補日を示した" not in joined:
-        failures.append("D: 候補提示の方針がプロンプトにない")
 
     print("\n===== E 夕方 → 時間帯候補日、19:00へ変換しない =====")
     lookup_e = mock_slots("10:00", "18:00", "19:30")
     t_e = continue_chat(
         "夕方がいいです",
-        t_d2,
+        t_d3,
         match_fn=empty_match,
         complete_fn=lambda _m: "夕方ですと、候補の日に空きがあります。",
         lookup_fn=lookup_e,
@@ -220,7 +232,7 @@ def main() -> int:
         failures.append("E: 夕方の候補日がない")
 
     print("\n===== F 予約相談中は毎回CTAしない =====")
-    if t_d2.show_booking_cta or t_e.show_booking_cta:
+    if t_d3.show_booking_cta or t_e.show_booking_cta:
         failures.append("F: 候補確認中に CTA がある")
 
     print("\n===== G 水曜日の実在枠 =====")
