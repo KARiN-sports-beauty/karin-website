@@ -25,6 +25,7 @@
 
   var iconUrl = root.getAttribute("data-icon-url") || "";
   var bookUrl = root.getAttribute("data-book-url") || "/book";
+  var contactUrl = root.getAttribute("data-contact-url") || "/contact";
   var isPage = root.getAttribute("data-mode") === "page";
 
   var panel = root.querySelector("[data-karin-panel]");
@@ -173,6 +174,14 @@
     parent.appendChild(link);
   }
 
+  function appendContactCta(parent) {
+    var link = document.createElement("a");
+    link.className = "karin-chat-book-link karin-chat-contact-cta";
+    link.href = contactUrl;
+    link.textContent = "お問い合わせフォームへ";
+    parent.appendChild(link);
+  }
+
   function appendMessage(role, text, options) {
     options = options || {};
     var grouped = role === "ai" && lastRole === "ai" && !options.thinking;
@@ -215,7 +224,9 @@
       col.appendChild(bubble);
       if (!options.thinking) {
         appendSlots(col, normalizeSlots(options.availableSlots), options.availableDate);
-        if (options.showBookingCta && !looksLikeEmergencyReply(text)) {
+        if (options.showContactCta && !looksLikeEmergencyReply(text)) {
+          appendContactCta(col);
+        } else if (options.showBookingCta && !looksLikeEmergencyReply(text)) {
           appendBookCta(col);
         }
       }
@@ -343,6 +354,7 @@
             availableSlots: result.body.available_slots,
             availableDate: result.body.available_date,
             showBookingCta: result.body.show_booking_cta === true,
+            showContactCta: result.body.show_contact_cta === true,
           });
           return;
         }

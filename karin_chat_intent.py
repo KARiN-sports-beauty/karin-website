@@ -16,13 +16,26 @@ INTENT_HOURS = "business_hours"
 INTENT_SERVICE = "service_info"
 INTENT_RESERVATION_INFO = "reservation_info"
 INTENT_RESERVATION = "reservation_intent"
+INTENT_TRAINER_ACCOMPANY = "trainer_accompaniment"
+INTENT_CORPORATE_VISIT = "corporate_visit"
+INTENT_INQUIRY_REQUIRED = "inquiry_required"
 INTENT_CONSULTATION = "consultation"
 INTENT_HEALTH = "health_general"
 INTENT_UNCLEAR = "unclear"
 
+# チャットでは受け付けず、お問い合わせフォームへ誘導する依頼。
+INQUIRY_REQUIRED_INTENTS = frozenset(
+    {
+        INTENT_TRAINER_ACCOMPANY,
+        INTENT_CORPORATE_VISIT,
+    }
+)
+
 # primary を決めるときの具体性。Knowledge種別の優先順位ではない。
 _PRIMARY_ORDER = (
     INTENT_SAFETY,
+    INTENT_TRAINER_ACCOMPANY,
+    INTENT_CORPORATE_VISIT,
     INTENT_TREATMENT,
     INTENT_CAMPAIGN,
     INTENT_PRICE,
@@ -111,6 +124,60 @@ def _prior_had_reservation(prior_user_texts: list[str]) -> bool:
     return False
 
 
+def _is_inquiry_info_ask(text: str) -> bool:
+    return _has(r"(でき|できます)か|とは|って何|について(知り|教えて)", text)
+
+
+def _is_trainer_accompany_request(text: str) -> bool:
+    """チャットで帯同を依頼する明確な意思。案内や「できますか」は含めない。"""
+    raw = (text or "").strip()
+    if not raw or _is_inquiry_info_ask(raw):
+        return False
+    return _has(
+        r"トレーナー帯同を依頼|"
+        r"トレーナー帯同.{0,16}(お願いしたい|を依頼)|"
+        r"(トレーナー)?帯同を(依頼したい|お願いしたい)",
+        raw,
+    )
+
+
+def _is_corporate_visit_request(text: str) -> bool:
+    """チャットで企業訪問を依頼する明確な意思。案内や「できますか」は含めない。"""
+    raw = (text or "").strip()
+    if not raw or _is_inquiry_info_ask(raw):
+        return False
+    return _has(
+        r"企業訪問をお願いしたい|"
+        r"企業訪問を依頼|"
+        r"企業訪問.{0,16}(お願いしたい|を依頼)|"
+        r"法人(向け)?(の)?(訪問|コンディショニング).{0,16}(お願いしたい|を依頼)",
+        raw,
+    )
+
+
+def inquiry_request_kind(text: str) -> str | None:
+    """trainer_accompaniment / corporate_visit。どちらでも inquiry_required フロー。"""
+    if _is_trainer_accompany_request(text):
+        return INTENT_TRAINER_ACCOMPANY
+    if _is_corporate_visit_request(text):
+        return INTENT_CORPORATE_VISIT
+    return None
+
+
+def _prior_inquiry_kind(prior_user_texts: list[str] | None) -> str | None:
+    for item in reversed(prior_user_texts or []):
+        kind = inquiry_request_kind(item)
+        if kind:
+            return kind
+    return None
+
+
+def is_inquiry_required_intent(intent: IntentResult | None) -> bool:
+    if intent is None:
+        return False
+    return any(item in INQUIRY_REQUIRED_INTENTS for item in intent.all_intents)
+
+
 def _needs_official_for_treatment(text: str) -> bool:
     return bool(_OFFICIAL_SERVICE_HINT.search(text))
 
@@ -150,6 +217,24 @@ def detect_intents(
         if priors:
             return _detect_from_text(" ".join(priors[-2:] + [(text or "").strip()]))
         return current
+    current_inquiry = inquiry_request_kind(text)
+    if current_inquiry:
+        return IntentResult(
+            primary_intent=current_inquiry,
+            secondary_intents=[INTENT_INQUIRY_REQUIRED],
+            source_types=source_types_for_intents(current_inquiry, [INTENT_INQUIRY_REQUIRED], text),
+        )
+    prior_inquiry = _prior_inquiry_kind(priors)
+    if (
+        prior_inquiry
+        and not _is_reservation_want(text)
+        and current.primary_intent in (INTENT_UNCLEAR, INTENT_SERVICE)
+    ):
+        return IntentResult(
+            primary_intent=prior_inquiry,
+            secondary_intents=[INTENT_INQUIRY_REQUIRED],
+            source_types=source_types_for_intents(prior_inquiry, [INTENT_INQUIRY_REQUIRED], text),
+        )
     if _prior_had_reservation(priors) and current.primary_intent in (
         INTENT_UNCLEAR,
         INTENT_CONSULTATION,
@@ -293,6 +378,8 @@ def source_types_for_intents(
             add("official")
         elif intent == INTENT_RESERVATION:
             # 空きはKnowledgeで判断しない。方法・条件の事実だけ必要なら official。
+            add("official")
+        elif intent in INQUIRY_REQUIRED_INTENTS or intent == INTENT_INQUIRY_REQUIRED:
             add("official")
     if not selected:
         add("notes")
