@@ -50,7 +50,7 @@
   padding: 12px 12px 0 0;
   margin: -12px -12px 0 0;
   opacity: 0;
-  animation: karin-launcher-in 3s ease-out forwards;
+  animation: karin-launcher-in 10s ease-out forwards;
 }
 
 .karin-chat[data-mode="widget"] .karin-chat-launcher[hidden] {

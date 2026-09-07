@@ -173,8 +173,8 @@ def main() -> int:
         failures.append("AIアイコンURLがない")
 
     print("\n===== トップ起動UI =====")
-    if "karin-launcher-in 3s" not in css:
-        failures.append("約3秒のフェードインがない")
+    if "karin-launcher-in 10s" not in css:
+        failures.append("約10秒のフェードインがない")
     if "animation-fill-mode: forwards" not in css and "forwards" not in css:
         failures.append("フェードイン後に表示が定着しない")
     if "data-karin-dismiss-launcher" not in widget:
