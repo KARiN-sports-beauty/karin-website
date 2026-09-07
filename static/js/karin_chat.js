@@ -2,11 +2,18 @@
   "use strict";
 
   var GREETING =
-    "身体のことで気になることがあれば、お気軽にご相談ください。";
+    "気になることがあれば、お気軽にご相談ください。";
   var THINKING_LABEL = "考えています…";
   var USER_ERROR =
     "申し訳ありません。現在うまくご案内できないようです。少し時間をおいてもう一度お試しください。";
-  var SAMPLES = [
+  var ENTRY_SAMPLES = [
+    "予約がしたいです",
+    "身体の相談をしたいです",
+    "トレーナー帯同を依頼したいです",
+    "企業訪問をお願いしたいです",
+  ];
+  var BODY_CONSULT_MESSAGE = "身体の相談をしたいです";
+  var BODY_CONSULT_SAMPLES = [
     "腰が痛いんですが、何をしたらいいですか？",
     "鍼と整体、どちらが合いそうですか？",
     "初めてなんですが、どんな施術がありますか？",
@@ -21,7 +28,9 @@
   var isPage = root.getAttribute("data-mode") === "page";
 
   var panel = root.querySelector("[data-karin-panel]");
+  var launcher = root.querySelector("[data-karin-launcher]");
   var fab = root.querySelector("[data-karin-fab]");
+  var dismissLauncherBtn = root.querySelector("[data-karin-dismiss-launcher]");
   var closeBtn = root.querySelector("[data-karin-close]");
   var resetBtn = root.querySelector("[data-karin-reset]");
   var logEl = root.querySelector("[data-karin-log]");
@@ -34,6 +43,7 @@
   var sending = false;
   var lastRole = null;
   var thinkingRow = null;
+  var followupSamples = null;
 
   function isMobile() {
     return window.matchMedia("(max-width: 767px)").matches;
@@ -103,6 +113,17 @@
       p.textContent = line;
       target.appendChild(p);
     });
+  }
+
+  function fillBrandName(target) {
+    var brand = document.createElement("span");
+    brand.className = "karin-chat-brand";
+    brand.textContent = "KARiN.";
+    var rest = document.createElement("span");
+    rest.className = "karin-chat-title-rest";
+    rest.textContent = "chatbot";
+    target.appendChild(brand);
+    target.appendChild(rest);
   }
 
   function looksLikeEmergencyReply(text) {
@@ -177,7 +198,7 @@
       if (!grouped) {
         var name = document.createElement("p");
         name.className = "karin-chat-name";
-        name.textContent = "KARiN.chatbot";
+        fillBrandName(name);
         col.appendChild(name);
       }
       var bubble = document.createElement("div");
@@ -209,18 +230,31 @@
     return row;
   }
 
-  function showSamples() {
+  function hideSamples() {
     if (!samplesEl) return;
     samplesEl.replaceChildren();
-    SAMPLES.forEach(function (sample) {
+    samplesEl.hidden = true;
+  }
+
+  function setChipsDisabled(on) {
+    if (!samplesEl) return;
+    var chips = samplesEl.querySelectorAll(".karin-chat-chip");
+    for (var i = 0; i < chips.length; i += 1) {
+      chips[i].disabled = on;
+    }
+  }
+
+  function showSamples(items) {
+    if (!samplesEl) return;
+    samplesEl.replaceChildren();
+    (items || []).forEach(function (sample) {
       var chip = document.createElement("button");
       chip.type = "button";
       chip.className = "karin-chat-chip";
       chip.textContent = sample;
+      chip.disabled = sending;
       chip.addEventListener("click", function () {
-        if (!input || sending) return;
-        input.value = sample;
-        input.focus();
+        sendMessage(sample);
       });
       samplesEl.appendChild(chip);
     });
@@ -232,6 +266,7 @@
     sending = false;
     lastRole = null;
     thinkingRow = null;
+    followupSamples = null;
     if (logEl) logEl.replaceChildren();
     if (sendBtn) sendBtn.disabled = false;
     if (input) {
@@ -239,13 +274,14 @@
       input.disabled = false;
     }
     appendMessage("ai", GREETING);
-    showSamples();
+    showSamples(ENTRY_SAMPLES);
   }
 
   function setSending(on) {
     sending = on;
     if (sendBtn) sendBtn.disabled = on;
     if (input) input.disabled = on;
+    setChipsDisabled(on);
   }
 
   function removeThinking() {
@@ -267,9 +303,10 @@
     var message = String(raw || "").trim();
     if (!message || sending) return;
 
-    if (samplesEl) samplesEl.hidden = true;
+    followupSamples = message === BODY_CONSULT_MESSAGE ? BODY_CONSULT_SAMPLES : null;
+    hideSamples();
     appendMessage("user", message);
-    input.value = "";
+    if (input) input.value = "";
     setSending(true);
     thinkingRow = appendMessage("ai", THINKING_LABEL, { thinking: true });
 
@@ -305,18 +342,30 @@
           });
           return;
         }
+        followupSamples = null;
         appendMessage("ai", USER_ERROR);
       })
       .catch(function () {
+        followupSamples = null;
         removeThinking();
         appendMessage("ai", USER_ERROR);
       })
       .then(function () {
+        var nextSamples = followupSamples;
+        followupSamples = null;
         setSending(false);
+        if (nextSamples) showSamples(nextSamples);
         if (input && !isMobile()) input.focus();
       });
   }
 
+  if (dismissLauncherBtn) {
+    dismissLauncherBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (launcher) launcher.hidden = true;
+    });
+  }
   if (fab) {
     fab.addEventListener("click", function () {
       if (panel && !panel.hidden) closePanel();

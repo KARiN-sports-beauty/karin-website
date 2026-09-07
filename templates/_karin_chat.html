@@ -7,19 +7,27 @@
   data-icon-url="{{ url_for('static', filename='images/chatbotfaceicon.png') }}"
   data-book-url="{{ url_for('book_page') }}"
 >
-  <button
-    type="button"
-    class="karin-chat-fab"
-    data-karin-fab
-    aria-label="KARiN.chatbotを開く"
-    aria-expanded="false"
-    aria-controls="karin-chat-panel"
-  >
-    <span class="karin-chat-fab-face" aria-hidden="true">
-      <img src="{{ url_for('static', filename='images/chatbotfaceicon.png') }}" alt="">
-    </span>
-    <span class="karin-chat-fab-label">相談する</span>
-  </button>
+  <div class="karin-chat-launcher" data-karin-launcher>
+    <button
+      type="button"
+      class="karin-chat-fab-dismiss"
+      data-karin-dismiss-launcher
+      aria-label="起動UIを閉じる"
+    >×</button>
+    <button
+      type="button"
+      class="karin-chat-fab"
+      data-karin-fab
+      aria-label="KARiN.chatbotを開く"
+      aria-expanded="false"
+      aria-controls="karin-chat-panel"
+    >
+      <span class="karin-chat-fab-face" aria-hidden="true">
+        <img src="{{ url_for('static', filename='images/chatbotfaceicon.png') }}" alt="">
+      </span>
+      <span class="karin-chat-fab-label">相談する</span>
+    </button>
+  </div>
 
   <div
     id="karin-chat-panel"
@@ -31,12 +39,10 @@
     {% if karin_chat_mode != 'page' %}hidden{% endif %}
   >
     <div class="karin-chat-panel-head">
-      <div class="karin-chat-avatar" aria-hidden="true">
-        <img src="{{ url_for('static', filename='images/chatbotfaceicon.png') }}" alt="">
-      </div>
       <div class="karin-chat-panel-titlewrap">
-        <p id="karin-chat-title" class="karin-chat-panel-title">KARiN.chatbot</p>
-        <p class="karin-chat-panel-sub">身体の相談</p>
+        <p id="karin-chat-title" class="karin-chat-panel-title">
+          <span class="karin-chat-brand">KARiN.</span><span class="karin-chat-title-rest">chatbot</span>
+        </p>
       </div>
       <div class="karin-chat-head-actions">
         <button type="button" class="karin-chat-text-btn" data-karin-reset>
