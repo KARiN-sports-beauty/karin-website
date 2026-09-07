@@ -210,7 +210,7 @@ def main() -> int:
         failures.append("Test7: 固定の受診文でない")
     if t7.rag_called or t7.openai_called or t7.reservation_api_called:
         failures.append("Test7: 緊急時にRAG/OpenAI/予約APIを呼んだ")
-    if p7["available_slots"] or p7["show_booking_cta"]:
+    if p7["available_slots"] or p7["show_booking_cta"] or p7.get("show_inquiry_cta"):
         failures.append("Test7: 緊急時に枠またはCTAがある")
 
     print("\n===== 予約APIエラー =====")

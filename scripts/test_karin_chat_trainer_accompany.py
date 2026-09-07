@@ -70,6 +70,19 @@ def continue_chat(message: str, previous, **kwargs):
     return run_chat(message, conversation_id=cid, **kwargs)
 
 
+def expect_inquiry_cta(payload: dict, label: str, failures: list[str]) -> None:
+    if payload.get("show_inquiry_cta") is not True:
+        failures.append(f"{label}: show_inquiry_cta がない")
+    if payload.get("show_contact_cta") is not True:
+        failures.append(f"{label}: show_contact_cta 互換フラグがない")
+    if payload.get("inquiry_required") is not True:
+        failures.append(f"{label}: inquiry_required がない")
+    if payload.get("contact_url") != "/contact":
+        failures.append(f"{label}: contact_url が /contact でない")
+    if payload.get("show_booking_cta"):
+        failures.append(f"{label}: 予約CTAが出ている")
+
+
 def empty_match(*_a, **_k):
     return []
 
@@ -110,17 +123,14 @@ def main() -> int:
     print("\n===== 1 依頼したいです → フォーム案内 + CTA =====")
     t1 = run_chat("トレーナー帯同を依頼したいです", **kw)
     p1 = chat_public_payload(t1)
-    print("  intent", t1.primary_intent, "cta_contact", p1.get("show_contact_cta"), "cta_book", p1.get("show_booking_cta"))
+    print("  intent", t1.primary_intent, "inquiry_cta", p1.get("show_inquiry_cta"), "contact_url", p1.get("contact_url"))
     if t1.primary_intent != "trainer_accompaniment":
         failures.append(f"1: intent={t1.primary_intent}")
     if "inquiry_required" not in t1.secondary_intents:
         failures.append("1: inquiry_required にまとまっていない")
     if t1.reply != TRAINER_ACCOMPANY_REPLY:
         failures.append("1: 指定の案内文でない")
-    if not p1.get("show_contact_cta"):
-        failures.append("1: お問い合わせCTAがない")
-    if p1.get("show_booking_cta"):
-        failures.append("1: 予約CTAが出ている")
+    expect_inquiry_cta(p1, "1", failures)
     if t1.openai_called or t1.rag_called or t1.reservation_api_called:
         failures.append("1: LLM/RAG/予約APIを呼んでいる")
     if t1.booking_completed or t1.booking_create_called:
@@ -142,6 +152,7 @@ def main() -> int:
         failures.append("2: ヒアリングを始めている")
     if t2.openai_called or t2.reservation_api_called:
         failures.append("2: LLMまたは予約APIを呼んでいる")
+    expect_inquiry_cta(chat_public_payload(t2), "2", failures)
 
     print("\n===== 3 詳細を続けても手配しない =====")
     t3a = continue_chat("10/3〜25", t2, **kw)
@@ -156,8 +167,7 @@ def main() -> int:
             failures.append(f"{label}: フォーム案内を維持していない")
         if turn.openai_called or turn.reservation_api_called or turn.booking_create_called:
             failures.append(f"{label}: 予約/LLM を呼んでいる")
-        if chat_public_payload(turn).get("show_booking_cta"):
-            failures.append(f"{label}: 予約CTA")
+        expect_inquiry_cta(chat_public_payload(turn), label, failures)
     draft3 = get_or_create_conversation(t3d.conversation_id).booking_draft
     if draft3.date or draft3.time or draft3.booking_id:
         failures.append("3: 帯同内容を予約Draftへ入れている")
@@ -166,17 +176,14 @@ def main() -> int:
     reset_store_for_tests()
     c1 = run_chat("企業訪問をお願いしたいです", **kw)
     pc1 = chat_public_payload(c1)
-    print("  intent", c1.primary_intent, "cta_contact", pc1.get("show_contact_cta"), "cta_book", pc1.get("show_booking_cta"))
+    print("  intent", c1.primary_intent, "inquiry_cta", pc1.get("show_inquiry_cta"), "contact_url", pc1.get("contact_url"))
     if c1.primary_intent != "corporate_visit":
         failures.append(f"C1: intent={c1.primary_intent}")
     if "inquiry_required" not in c1.secondary_intents:
         failures.append("C1: inquiry_required にまとまっていない")
     if c1.reply != CORPORATE_VISIT_REPLY:
         failures.append("C1: 指定の案内文でない")
-    if not pc1.get("show_contact_cta"):
-        failures.append("C1: お問い合わせCTAがない")
-    if pc1.get("show_booking_cta"):
-        failures.append("C1: 予約CTAが出ている")
+    expect_inquiry_cta(pc1, "C1", failures)
     if c1.openai_called or c1.rag_called or c1.reservation_api_called:
         failures.append("C1: LLM/RAG/予約APIを呼んでいる")
     if c1.booking_completed or c1.booking_create_called:
@@ -198,6 +205,7 @@ def main() -> int:
         failures.append(f"C2: 禁止表現 {has_forbidden(c2.reply)}")
     if c2.openai_called or c2.reservation_api_called or c2.booking_create_called:
         failures.append("C2: 予約/LLM を呼んでいる")
+    expect_inquiry_cta(chat_public_payload(c2), "C2", failures)
 
     print("\n===== C3 ストレッチ希望でも手配しない =====")
     c3 = continue_chat("ストレッチをしてほしい", c2, **kw)
@@ -207,6 +215,7 @@ def main() -> int:
         failures.append(f"C3: 禁止表現 {has_forbidden(c3.reply)}")
     if c3.reservation_api_called or c3.booking_create_called:
         failures.append("C3: 予約処理を呼んでいる")
+    expect_inquiry_cta(chat_public_payload(c3), "C3", failures)
 
     print("\n===== C4 よろしくお願いします =====")
     c4a = continue_chat("特にありません", c3, **kw)
@@ -217,6 +226,7 @@ def main() -> int:
         failures.append(f"C4: 禁止表現 {has_forbidden(c4.reply)}")
     if c4.openai_called or c4.reservation_api_called:
         failures.append("C4: LLMまたは予約API")
+    expect_inquiry_cta(chat_public_payload(c4), "C4", failures)
     draft_c4 = get_or_create_conversation(c4.conversation_id).booking_draft
     if draft_c4.date or draft_c4.booking_id:
         failures.append("C4: 企業訪問を予約Draftへ入れている")
@@ -237,8 +247,11 @@ def main() -> int:
         failures.append("4: C9初回予約案内になっていない")
     if not t4.show_booking_cta:
         failures.append("4: 予約CTAがない")
-    if t4.show_contact_cta:
+    if t4.show_contact_cta or t4.show_inquiry_cta:
         failures.append("4: 通常予約にお問い合わせCTAがある")
+    p4 = chat_public_payload(t4)
+    if p4.get("show_inquiry_cta") or p4.get("contact_url"):
+        failures.append("4: 予約フローの公開JSONに inquiry CTA がある")
 
     print("\n===== 5 通常の身体相談 =====")
     t5 = run_chat(
@@ -248,10 +261,10 @@ def main() -> int:
         lookup_fn=boom_lookup,
         book_fn=boom_book,
     )
-    print("  5 intent", t5.primary_intent, "cta", t5.show_booking_cta, t5.show_contact_cta)
+    print("  5 intent", t5.primary_intent, "cta", t5.show_booking_cta, t5.show_inquiry_cta)
     if t5.primary_intent != "consultation":
         failures.append(f"5: intent={t5.primary_intent}")
-    if t5.show_contact_cta or t5.show_booking_cta:
+    if t5.show_contact_cta or t5.show_inquiry_cta or t5.show_booking_cta:
         failures.append("5: 相談中にCTAがある")
     if t5.reservation_api_called:
         failures.append("5: 相談で予約API")
@@ -261,16 +274,25 @@ def main() -> int:
     widget_path = os.path.join(ROOT, "templates", "_karin_chat.html")
     js = open(js_path, encoding="utf-8").read()
     widget = open(widget_path, encoding="utf-8").read()
-    if "appendContactCta" not in js or "showContactCta" not in js:
+    if "appendContactCta" not in js or "showInquiryCta" not in js:
         failures.append("6: お問い合わせCTAのDOM生成がない")
     if 'link.textContent = "お問い合わせフォームへ"' not in js:
         failures.append("6: CTA文言がない")
-    if "link.href = contactUrl" not in js:
+    if "resolveContactUrl" not in js or 'raw === "/contact"' not in js:
         failures.append("6: /contact への遷移がない")
+    if "show_inquiry_cta === true" not in js:
+        failures.append("6: show_inquiry_cta を見ていない")
+    if "if (options.showInquiryCta)" not in js or "appendContactCta(col, options.contactUrl)" not in js:
+        failures.append("6: 問い合わせCTAの描画条件がない")
+    inquiry_block = js.split("if (options.showInquiryCta)", 1)[-1].split("} else if", 1)[0]
+    if "looksLikeEmergencyReply" in inquiry_block:
+        failures.append("6: 問い合わせCTAが緊急判定で消える")
     if "data-contact-url" not in widget:
         failures.append("6: テンプレートに contact URL がない")
     if "innerHTML" in js:
         failures.append("6: innerHTML を使っている")
+    if "救急処置" not in TRAINER_ACCOMPANY_REPLY:
+        failures.append("6: 帯同案内の誤判定回帰が無効")
     from app import app
 
     with app.test_client() as client:
@@ -278,6 +300,72 @@ def main() -> int:
         print("  /contact", contact.status_code)
         if contact.status_code != 200:
             failures.append("6: /contact が開けない")
+
+        print("\n===== /api/chat 実レスポンス =====")
+        reset_store_for_tests()
+        trainer_api = client.post(
+            "/api/chat", json={"message": "トレーナー帯同を依頼したいです"}
+        )
+        trainer_body = trainer_api.get_json(silent=True) or {}
+        print("  trainer keys", sorted(trainer_body.keys()))
+        print(
+            "  trainer flags",
+            {
+                k: trainer_body.get(k)
+                for k in (
+                    "show_inquiry_cta",
+                    "show_contact_cta",
+                    "inquiry_required",
+                    "contact_url",
+                    "show_booking_cta",
+                )
+            },
+        )
+        if trainer_api.status_code != 200:
+            failures.append("API trainer: status != 200")
+        expect_inquiry_cta(trainer_body, "API trainer", failures)
+        if trainer_body.get("reply") != TRAINER_ACCOMPANY_REPLY:
+            failures.append("API trainer: 案内文が違う")
+        trainer_follow = client.post(
+            "/api/chat",
+            json={
+                "message": "ツアー帯同",
+                "conversation_id": trainer_body.get("conversation_id"),
+            },
+        )
+        expect_inquiry_cta(trainer_follow.get_json(silent=True) or {}, "API trainer follow", failures)
+
+        reset_store_for_tests()
+        corp_api = client.post(
+            "/api/chat", json={"message": "企業訪問をお願いしたいです"}
+        )
+        corp_body = corp_api.get_json(silent=True) or {}
+        print(
+            "  corporate flags",
+            {
+                k: corp_body.get(k)
+                for k in (
+                    "show_inquiry_cta",
+                    "show_contact_cta",
+                    "inquiry_required",
+                    "contact_url",
+                    "show_booking_cta",
+                )
+            },
+        )
+        if corp_api.status_code != 200:
+            failures.append("API corporate: status != 200")
+        expect_inquiry_cta(corp_body, "API corporate", failures)
+        if corp_body.get("reply") != CORPORATE_VISIT_REPLY:
+            failures.append("API corporate: 案内文が違う")
+        corp_follow = client.post(
+            "/api/chat",
+            json={
+                "message": "10月3日に20人でお願いしたい",
+                "conversation_id": corp_body.get("conversation_id"),
+            },
+        )
+        expect_inquiry_cta(corp_follow.get_json(silent=True) or {}, "API corporate follow", failures)
 
     print("\n===== 7 /api/book を呼ばない =====")
     src_chat = open(os.path.join(ROOT, "karin_chat.py"), encoding="utf-8").read()

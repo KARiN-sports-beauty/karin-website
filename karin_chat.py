@@ -268,6 +268,7 @@ class ChatTurn:
     available_dates: list[str] = field(default_factory=list)
     api_status: str | None = None
     show_booking_cta: bool = False
+    show_inquiry_cta: bool = False
     show_contact_cta: bool = False
     reservation_intent: bool = False
     booking_ready: bool = False
@@ -548,7 +549,8 @@ def _finish_turn(
             text=text,
             draft=draft,
         ),
-        show_contact_cta=_should_show_contact_cta(emergency=emergency, intent=intent),
+        show_inquiry_cta=_should_show_inquiry_cta(emergency=emergency, intent=intent),
+        show_contact_cta=_should_show_inquiry_cta(emergency=emergency, intent=intent),
         reservation_intent=bool(draft and draft.reservation_intent),
         booking_ready=is_booking_ready(draft),
         date_range=None if draft is None else draft.date_range,
@@ -634,10 +636,17 @@ def _should_show_booking_cta(
     return False
 
 
-def _should_show_contact_cta(*, emergency: bool, intent: IntentResult | None) -> bool:
+INQUIRY_CONTACT_PATH = "/contact"
+
+
+def _should_show_inquiry_cta(*, emergency: bool, intent: IntentResult | None) -> bool:
+    """予約CTAとは別。trainer_accompaniment / corporate_visit のみ。"""
     if emergency or intent is None:
         return False
     return is_inquiry_required_intent(intent)
+
+
+_should_show_contact_cta = _should_show_inquiry_cta
 
 
 def sanitize_available_slots(
@@ -663,6 +672,7 @@ def sanitize_available_slots(
 
 def chat_public_payload(turn: ChatTurn) -> dict:
     """/api/chat の公開JSON。reply と conversation_id の互換を維持する。"""
+    show_inquiry = bool(turn.show_inquiry_cta or turn.show_contact_cta) and not turn.emergency
     return {
         "reply": turn.reply,
         "conversation_id": turn.conversation_id,
@@ -672,7 +682,10 @@ def chat_public_payload(turn: ChatTurn) -> dict:
             api_status=turn.api_status,
         ),
         "show_booking_cta": bool(turn.show_booking_cta) and not turn.emergency,
-        "show_contact_cta": bool(turn.show_contact_cta) and not turn.emergency,
+        "show_inquiry_cta": show_inquiry,
+        "show_contact_cta": show_inquiry,
+        "inquiry_required": show_inquiry,
+        "contact_url": INQUIRY_CONTACT_PATH if show_inquiry else None,
         "available_date": turn.requested_date if turn.available_slots else None,
         "booking_completed": bool(turn.booking_completed),
     }
