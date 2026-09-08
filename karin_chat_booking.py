@@ -265,6 +265,7 @@ def apply_utterance_to_draft(
         draft.area = parsed.area
     if parsed.place_type:
         draft.place_type = parsed.place_type
+    apply_offered_place_type(draft)
     if parsed.duration_minutes in (60, 90, 120):
         draft.duration_minutes = parsed.duration_minutes
 
@@ -917,11 +918,41 @@ def _adjust_hour(hour: int, text: str) -> int:
     return hour
 
 
+def chat_in_house_booking_enabled() -> bool:
+    """院内チャット予約を有効化するか。Web予約の selectable と揃える。"""
+    from app import booking_place_type_selectable
+
+    return booking_place_type_selectable("in_house")
+
+
+def guest_fields_for_place(place_type: str | None) -> list[str]:
+    """施術場所ごとの必要項目。院内提供開始後もこの対応表を使う。"""
+    fields = ["name", "phone", "email"]
+    if place_type == "in_house":
+        return fields
+    return fields + ["dispatch_destination"]
+
+
+def current_chat_booking_place_type(draft: BookingDraft | None = None) -> str:
+    """現在のチャット予約で使う施術場所。院内は提供開始まで有効化しない。"""
+    requested = None
+    if draft is not None:
+        requested = draft.confirmed_place_type or draft.place_type
+    return _selectable_place_type(requested) or "visit"
+
+
+def apply_offered_place_type(draft: BookingDraft) -> None:
+    offered = current_chat_booking_place_type(draft)
+    draft.place_type = offered
+    if draft.confirmed_place_type:
+        draft.confirmed_place_type = offered
+
+
 def _selectable_place_type(requested: str | None) -> str | None:
     from app import BOOKING_PLACE_TYPE_OPTIONS, booking_place_type_selectable
 
-    if requested:
-        return requested if booking_place_type_selectable(requested) else requested
+    if requested and booking_place_type_selectable(requested):
+        return requested
     for opt in BOOKING_PLACE_TYPE_OPTIONS:
         if opt.get("selectable"):
             return opt["id"]
@@ -1174,7 +1205,7 @@ def build_booking_context(result: BookingLookupResult) -> str:
         labels = {
             "area": "東京か福岡か",
             "date": "希望の大まかな時期",
-            "place_type": "出張か院内か",
+            "place_type": "施術場所",
             "duration": "施術時間（60・90・120分）",
         }
         need = [labels.get(x, x) for x in result.missing_fields]
@@ -1403,8 +1434,8 @@ def is_booking_condition_change(text: str) -> bool:
 
 def accept_final_confirmation(draft: BookingDraft) -> None:
     apply_confirmed_from_working(draft)
-    if not draft.confirmed_place_type:
-        draft.confirmed_place_type = _selectable_place_type(draft.place_type)
+    apply_offered_place_type(draft)
+    draft.confirmed_place_type = current_chat_booking_place_type(draft)
     draft.phase = PHASE_GUEST
 
 
@@ -1426,38 +1457,198 @@ def is_accepting_alternative(text: str, draft: BookingDraft) -> bool:
     return is_soft_proceed(raw)
 
 
+def required_guest_fields(draft: BookingDraft) -> list[str]:
+    return guest_fields_for_place(current_chat_booking_place_type(draft))
+
+
+def missing_guest_fields(draft: BookingDraft) -> list[str]:
+    missing: list[str] = []
+    if not (draft.guest_last_name and draft.guest_first_name):
+        missing.append("name")
+    if not draft.guest_phone:
+        missing.append("phone")
+    if not draft.guest_email:
+        missing.append("email")
+    if "dispatch_destination" in required_guest_fields(draft) and not draft.guest_place_name:
+        missing.append("dispatch_destination")
+    return missing
+
+
 def guest_info_complete(draft: BookingDraft) -> bool:
-    if not (
-        draft.guest_last_name
-        and draft.guest_first_name
-        and draft.guest_phone
-        and draft.guest_email
-    ):
+    return not missing_guest_fields(draft)
+
+
+def guest_display_name(draft: BookingDraft) -> str | None:
+    if draft.guest_last_name and draft.guest_first_name:
+        return f"{draft.guest_last_name} {draft.guest_first_name}"
+    return None
+
+
+_NAME_TRAIL_RE = re.compile(
+    r"(です|ます|と申します|といいます|お願いします)。?$"
+)
+_NAME_PREFIX_RE = re.compile(r"^(?:お名前|氏名|名前)[は:：]?\s*")
+_LAST_LABEL_RE = re.compile(r"姓[は:：]\s*([^\s、,：:\n]+)")
+_FIRST_LABEL_RE = re.compile(r"(?<![お氏])名(?!前)[は:：]\s*([^\s、,：:\n]+)")
+_FULL_NAME_LABEL_RE = re.compile(r"(?:お名前|氏名|名前)[は:：]\s*([^\n、,]+)")
+_NOT_A_NAME = frozenset(
+    {
+        "はい",
+        "ええ",
+        "うん",
+        "いいえ",
+        "お願いします",
+        "お願い",
+        "大丈夫",
+        "大丈夫です",
+    }
+)
+_NAME_CHARS_RE = re.compile(r"^[一-龥々〆ヵヶぁ-んァ-ンA-Za-z]+$")
+
+
+def _clean_guest_token(token: str) -> str:
+    raw = _NAME_TRAIL_RE.sub("", (token or "").strip()).strip("。、, ")
+    if raw in _NOT_A_NAME:
+        return ""
+    return raw
+
+
+def _is_name_token(token: str) -> bool:
+    raw = _clean_guest_token(token)
+    if not raw or raw in _NOT_A_NAME or len(raw) > 15:
         return False
-    place = draft.confirmed_place_type or draft.place_type
-    if place == "visit" and not draft.guest_place_name:
+    if re.search(r"\d|@|http", raw):
         return False
-    return True
+    if re.search(r"お願い|確認|予約|メール|電話|出張", raw):
+        return False
+    if _looks_like_place(raw):
+        return False
+    return bool(_NAME_CHARS_RE.fullmatch(raw))
+
+
+def _split_explicit_name(token: str) -> tuple[str, str] | None:
+    """空白・中点で明確に分かれている場合だけ姓/名にする。文字数では推測しない。"""
+    raw = _NAME_PREFIX_RE.sub("", (token or "").strip())
+    raw = _NAME_TRAIL_RE.sub("", raw).strip("。、,")
+    if not raw or raw in _NOT_A_NAME:
+        return None
+    if re.search(r"\d|@|http", raw):
+        return None
+    if re.search(r"お願い|確認|予約|メール|電話|出張先", raw):
+        return None
+    parts = [p for p in re.split(r"[\s　・]+", raw) if p]
+    if len(parts) != 2:
+        return None
+    if not _is_name_token(parts[0]) or not _is_name_token(parts[1]):
+        return None
+    return parts[0], parts[1]
+
+
+def _looks_like_place(token: str) -> bool:
+    raw = _clean_guest_token(token)
+    if len(raw) < 2:
+        return False
+    return bool(re.search(r"区|市|町|村|都|道|府|県|丁目|番地|駅|出張", raw))
+
+
+def _extract_labeled(pattern: re.Pattern, text: str) -> tuple[str | None, str]:
+    match = pattern.search(text)
+    if not match:
+        return None, text
+    value = match.group(1)
+    rest = text[: match.start()] + " " + text[match.end() :]
+    return value, rest
+
+
+def _apply_name_parts(draft: BookingDraft, last: str | None, first: str | None) -> None:
+    last_c = _clean_guest_token(last or "")
+    first_c = _clean_guest_token(first or "")
+    if last_c and not draft.guest_last_name:
+        draft.guest_last_name = last_c
+    if first_c and not draft.guest_first_name:
+        draft.guest_first_name = first_c
 
 
 def parse_guest_info(draft: BookingDraft, text: str) -> BookingDraft:
+    """1ターンから last/first/phone/email/dispatch を、明確な値だけ取る。
+
+    空白なし氏名を文字数で姓・名に分割しない。既存値は消さない。
+    """
     raw = (text or "").strip()
+    if not raw:
+        return draft
+
+    last_v, raw = _extract_labeled(_LAST_LABEL_RE, raw)
+    first_v, raw = _extract_labeled(_FIRST_LABEL_RE, raw)
+    full_v, raw_after_full = _extract_labeled(_FULL_NAME_LABEL_RE, raw)
+    if last_v:
+        _apply_name_parts(draft, last_v, None)
+    if first_v:
+        _apply_name_parts(draft, None, first_v)
+    if full_v and not (draft.guest_last_name and draft.guest_first_name):
+        pair = _split_explicit_name(full_v)
+        if pair:
+            _apply_name_parts(draft, pair[0], pair[1])
+            raw = raw_after_full
+
     mail = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", raw)
     if mail:
-        draft.guest_email = mail.group(0)
+        if not draft.guest_email:
+            draft.guest_email = mail.group(0)
+        raw = raw[: mail.start()] + " " + raw[mail.end() :]
     phone = re.search(r"0\d{1,4}[-\s]?\d{1,4}[-\s]?\d{3,4}", raw)
     if phone:
-        draft.guest_phone = re.sub(r"[^\d]", "", phone.group(0))
-    name = re.search(
-        r"([一-龥ぁ-んァ-ンA-Za-z]{1,15})[\s　]+([一-龥ぁ-んァ-ンA-Za-z]{1,15})",
-        raw,
-    )
-    if name and not re.search(r"@|分|時", name.group(0)):
-        draft.guest_last_name = name.group(1)
-        draft.guest_first_name = name.group(2)
+        digits = re.sub(r"[^\d]", "", phone.group(0))
+        if not draft.guest_phone:
+            draft.guest_phone = digits
+        raw = raw[: phone.start()] + " " + raw[phone.end() :]
     place = re.search(r"出張先[は:：]?\s*(\S+)", raw)
     if place:
-        draft.guest_place_name = place.group(1).strip("。、")
+        if not draft.guest_place_name:
+            draft.guest_place_name = _clean_guest_token(place.group(1)) or place.group(1).strip("。、,")
+        raw = raw[: place.start()] + " " + raw[place.end() :]
+
+    chunks = [p.strip("。、, ") for p in re.split(r"[\n、,]+", raw) if p.strip("。、, ")]
+    leftover: list[str] = []
+    for chunk in chunks:
+        pair = _split_explicit_name(chunk)
+        if pair and not (draft.guest_last_name and draft.guest_first_name):
+            _apply_name_parts(draft, pair[0], pair[1])
+            continue
+        leftover.append(chunk)
+
+    name_tokens = [c for c in leftover if _is_name_token(c)]
+    if not (draft.guest_last_name and draft.guest_first_name):
+        if not draft.guest_last_name and not draft.guest_first_name and len(name_tokens) == 2:
+            _apply_name_parts(draft, name_tokens[0], name_tokens[1])
+            used = {_clean_guest_token(name_tokens[0]), _clean_guest_token(name_tokens[1])}
+            leftover = [c for c in leftover if _clean_guest_token(c) not in used]
+        elif draft.guest_last_name and not draft.guest_first_name and len(name_tokens) == 1:
+            _apply_name_parts(draft, None, name_tokens[0])
+            leftover = [c for c in leftover if _clean_guest_token(c) != _clean_guest_token(name_tokens[0])]
+        elif draft.guest_first_name and not draft.guest_last_name and len(name_tokens) == 1:
+            _apply_name_parts(draft, name_tokens[0], None)
+            leftover = [c for c in leftover if _clean_guest_token(c) != _clean_guest_token(name_tokens[0])]
+
+    if "dispatch_destination" in required_guest_fields(draft) and not draft.guest_place_name:
+        for part in leftover:
+            cleaned = _clean_guest_token(part)
+            if _looks_like_place(cleaned):
+                draft.guest_place_name = cleaned
+                break
+        if not draft.guest_place_name:
+            extras = []
+            for part in leftover:
+                cleaned = _clean_guest_token(part)
+                if (
+                    cleaned
+                    and len(cleaned) >= 3
+                    and not _is_name_token(cleaned)
+                    and not re.search(r"@|\d|電話|メール|番号|姓|名", cleaned)
+                ):
+                    extras.append(cleaned)
+            if len(extras) == 1:
+                draft.guest_place_name = extras[0]
     return draft
 
 
@@ -1806,11 +1997,20 @@ def _request_line(draft: BookingDraft) -> str:
     return "ご要望：特になし"
 
 
+def _place_label(place_type: str | None) -> str:
+    if place_type == "visit":
+        return "出張"
+    if place_type == "in_house":
+        return "院内"
+    return "未定"
+
+
 def build_confirmation_reply(draft: BookingDraft) -> str:
-    date_iso = draft.selected_date or draft.date
-    time_s = draft.selected_time or draft.time
-    duration = draft.duration_minutes
-    area = _area_label(draft.area)
+    date_iso = draft.confirmed_date or draft.selected_date or draft.date
+    time_s = draft.confirmed_time or draft.selected_time or draft.time
+    duration = draft.confirmed_duration_minutes or draft.duration_minutes
+    area = _area_label(draft.confirmed_area or draft.area)
+    place = draft.confirmed_place_type or draft.place_type
     date_line = format_booking_datetime(date_iso, time_s, duration)
     lines = [
         "予約内容をご確認ください。",
@@ -1818,24 +2018,76 @@ def build_confirmation_reply(draft: BookingDraft) -> str:
         f"日時：{date_line}",
         f"施術時間：{duration}分" if duration else "施術時間：未定",
         f"エリア：{area}" if area else "エリア：未定",
-        _request_line(draft),
-        "",
-        "この内容で予約を確定しますか？",
+        f"施術場所：{_place_label(place)}",
     ]
+    if place == "visit" and draft.guest_place_name:
+        lines.append(f"出張先：{draft.guest_place_name}")
+    if draft.guest_last_name and draft.guest_first_name:
+        lines.append(f"お名前：{draft.guest_last_name} {draft.guest_first_name}")
+    if draft.guest_phone:
+        lines.append(f"電話番号：{draft.guest_phone}")
+    if draft.guest_email:
+        lines.append(f"メールアドレス：{draft.guest_email}")
+    lines.extend(
+        [
+            _request_line(draft),
+            "",
+            "この内容で予約を確定しますか？",
+        ]
+    )
     return "\n".join(lines)
 
 
+_GUEST_FIELD_LABELS = {
+    "name": "姓と名",
+    "phone": "お電話番号",
+    "email": "メールアドレス",
+    "dispatch_destination": "出張先",
+}
+
+
 def build_guest_info_ask(draft: BookingDraft) -> str:
-    place = draft.confirmed_place_type or draft.place_type
-    if not draft.guest_last_name or not draft.guest_first_name:
-        return "ありがとうございます。\nご予約者様のお名前を教えてください。"
-    if not draft.guest_phone:
-        return "お電話番号を教えてください。"
-    if not draft.guest_email:
-        return "メールアドレスを教えてください。"
-    if place == "visit" and not draft.guest_place_name:
-        return "出張先のエリア・住所を教えてください。"
-    return "予約に必要な情報を確認しています。"
+    missing = missing_guest_fields(draft)
+    required = required_guest_fields(draft)
+    if not missing:
+        return "予約に必要な情報を確認しています。"
+    if missing == required:
+        lines = [
+            "ご予約に必要な情報をお伺いします。",
+            "以下をまとめてお送りください。",
+            "",
+            "姓：",
+            "名：",
+            "電話番号：",
+            "メールアドレス：",
+        ]
+        if "dispatch_destination" in required:
+            lines.append("出張先：")
+        lines.extend(["", "すべてまとめて入力いただいて大丈夫です。"])
+        return "\n".join(lines)
+
+    blocks: list[str] = ["ありがとうございます。"]
+    other = [k for k in missing if k != "name"]
+    if "name" in missing:
+        has_last = bool(draft.guest_last_name)
+        has_first = bool(draft.guest_first_name)
+        if not has_last and not has_first:
+            blocks.append("姓と名を分けてお伺いできますか？\n\n姓：\n名：")
+        elif has_last and not has_first:
+            blocks.append("名だけまだ確認できていません。\n名：")
+        else:
+            blocks.append("姓だけまだ確認できていません。\n姓：")
+    other_labels = [_GUEST_FIELD_LABELS[k] for k in other if k in _GUEST_FIELD_LABELS]
+    if other_labels:
+        if len(other_labels) == 1:
+            blocks.append(
+                f"{other_labels[0]}だけまだ確認できていません。\n"
+                f"{other_labels[0]}を教えてください。"
+            )
+        else:
+            joined = "と".join(other_labels)
+            blocks.append(f"{joined}を教えてください。")
+    return "\n".join(blocks)
 
 
 def build_booking_success_reply(draft: BookingDraft) -> str:
@@ -1856,8 +2108,7 @@ def enter_confirming(draft: BookingDraft) -> None:
         apply_alternative_acceptance(draft)
     draft.selected_date = draft.date
     draft.selected_time = draft.time
-    if not draft.place_type:
-        draft.place_type = _selectable_place_type(draft.place_type)
+    apply_offered_place_type(draft)
     draft.phase = PHASE_CONFIRMING
 
 
@@ -1879,7 +2130,7 @@ def complete_chat_booking(
     )
 
     area = draft.confirmed_area or draft.area
-    place_type = draft.confirmed_place_type or _selectable_place_type(draft.place_type)
+    place_type = current_chat_booking_place_type(draft)
     date = draft.confirmed_date or draft.date
     time_hm = draft.confirmed_time or draft.time
     duration = draft.confirmed_duration_minutes or draft.duration_minutes

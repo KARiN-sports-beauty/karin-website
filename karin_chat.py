@@ -100,6 +100,8 @@ SYSTEM_PROMPT = """あなたは KARiN. ~Sports & Beauty~ の相談AI「KARiN.cha
 - 施術時間が 60・90・120分で決まっていないときは、空き検索していない旨を伝え、施術時間を確認する。聞き直さない。
 - KARiN.固有の料金・営業時間・キャンペーン・対応エリア・予約条件を、Knowledgeに根拠がないのに作らない。分からないときは分からないと伝える。
 - 空き状況は既存予約システムの結果だけを事実とする。Knowledgeの営業時間から「空いています」と判断しない。予約可能枠を勝手に追加しない。
+- 現在チャット予約で案内できるのは出張施術のみ。院内施術は現在提供していないので、予約の選択肢として院内を出さない。院内で予約できるように案内・提案しない。
+- 院内についてユーザーから聞かれたときだけ、公式Knowledgeに基づいて現状を伝えてよい。こちらから院内を勧めない。
 - 「/book」やURLは本文に書かない。予約へ進むボタンは画面側で出す。画面に出ていない「Web予約へ進む」を本文だけで案内しない。
 - トレーナー帯同・企業訪問の依頼はチャットでは受け付けない。目的・日程・人数・実施内容を聞き出さない。
 - 「ご依頼を承知しました」「手配を進めます」「トレーナーを手配します」「こちらで調整します」「こちらから連絡します」「依頼を受け付けました」「訪問させていただきます」は禁止。フォーム送信前に連絡する約束をしない。
@@ -203,6 +205,7 @@ RESERVATION_STEER_PROMPT = """# いまの会話は予約を進めるための案
 - 「ご希望の日時はありますか」「具体的な日や時間帯を教えてください」とは聞かない。
 - 予約システムが返した日付と時刻は「○月○日 ○○:○○」として案内してよい。存在しない枠は出さない。
 - 「承りました」「予約をお取りしました」「予約が完了しました」は禁止。まだ予約は確定していない。
+- 現在案内できるのは出張施術のみ。院内を予約の選択肢として出さない。出張か院内かを聞かない。
 """
 
 # 通常の肩こり・腰痛だけではヒットさせない。
@@ -772,13 +775,14 @@ def run_chat(
             search_query="",
         )
 
-    apply_utterance_to_draft(
-        state.booking_draft,
-        text,
-        consult_switch=_explicit_consult_switch(text),
-        wants_reservation=_is_reservation_want(text)
-        or INTENT_RESERVATION in intent.all_intents,
-    )
+    if state.booking_draft.phase != PHASE_GUEST:
+        apply_utterance_to_draft(
+            state.booking_draft,
+            text,
+            consult_switch=_explicit_consult_switch(text),
+            wants_reservation=_is_reservation_want(text)
+            or INTENT_RESERVATION in intent.all_intents,
+        )
     scripted, booking, completed, create_called = _scripted_booking_turn(
         text,
         state,
@@ -874,34 +878,37 @@ def _scripted_booking_turn(text, state, intent, prior_user, lookup_fn, book_fn):
 
     draft = state.booking_draft
     empty = BookingLookupResult()
-    if _explicit_consult_switch(text) or draft.phase == PHASE_CONSULT:
-        return None, None, False, False
-
     if draft.phase == PHASE_GUEST:
         parse_guest_info(draft, text)
         if guest_info_complete(draft):
-            try:
-                complete_chat_booking(draft, lookup_fn=lookup_fn, create_fn=book_fn)
-                return (
-                    build_booking_success_reply(draft),
-                    BookingLookupResult(api_called=True, api_status="ok"),
-                    True,
-                    True,
-                )
-            except (BookingSlotConflictError, BookingInfrastructureError, ValueError, TypeError):
-                logger.warning("karin_chat booking_complete_failed")
-                draft.phase = PHASE_CONFIRMING
-                return (
-                    "予約を確定できませんでした。空き状況が変わった可能性があるため、"
-                    "別の日時を確認します。まだ予約は完了していません。",
-                    BookingLookupResult(api_called=True, api_status="error"),
-                    False,
-                    True,
-                )
+            draft.phase = PHASE_CONFIRMING
+            return build_confirmation_reply(draft), empty, False, False
         return build_guest_info_ask(draft), empty, False, False
+
+    if _explicit_consult_switch(text) or draft.phase == PHASE_CONSULT:
+        return None, None, False, False
 
     if draft.phase == PHASE_CONFIRMING:
         if is_confirming_affirmative(text):
+            if guest_info_complete(draft):
+                try:
+                    complete_chat_booking(draft, lookup_fn=lookup_fn, create_fn=book_fn)
+                    return (
+                        build_booking_success_reply(draft),
+                        BookingLookupResult(api_called=True, api_status="ok"),
+                        True,
+                        True,
+                    )
+                except (BookingSlotConflictError, BookingInfrastructureError, ValueError, TypeError):
+                    logger.warning("karin_chat booking_complete_failed")
+                    draft.phase = PHASE_CONFIRMING
+                    return (
+                        "予約を確定できませんでした。空き状況が変わった可能性があるため、"
+                        "別の日時を確認します。まだ予約は完了していません。",
+                        BookingLookupResult(api_called=True, api_status="error"),
+                        False,
+                        True,
+                    )
             accept_final_confirmation(draft)
             return build_guest_info_ask(draft), empty, False, False
         if is_booking_condition_change(text):

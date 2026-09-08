@@ -290,7 +290,7 @@ def main() -> int:
     print("  K2 phase", j2.booking_phase, "create", j2.booking_create_called)
     if j2.booking_create_called or creates:
         failures.append("K: 個人情報前に予約作成している")
-    if "お名前" not in (j2.reply or "") and "氏名" not in (j2.reply or ""):
+    if "姓" not in (j2.reply or "") or "名" not in (j2.reply or ""):
         failures.append("K: 個人情報の取得がない")
     j3 = continue_chat(
         "山田 太郎、09012345678、taro@example.com、出張先は渋谷",
@@ -300,12 +300,20 @@ def main() -> int:
         lookup_fn=lookup_j,
         book_fn=book_fn,
     )
-    print("  K3 create", j3.booking_create_called, "done", j3.booking_completed, "n", len(creates))
-    if not j3.booking_create_called or not creates:
+    print("  K3 phase", j3.booking_phase, "create", j3.booking_create_called, (j3.reply or "")[:80])
+    if j3.booking_create_called or creates:
+        failures.append("K: guest_info 入力時点で予約作成している")
+    if j3.booking_phase != "confirming":
+        failures.append(f"K: guest完了後 phase={j3.booking_phase}")
+    if "お名前" not in (j3.reply or "") or "山田" not in (j3.reply or ""):
+        failures.append("K: 最終確認にお名前がない")
+    j4 = continue_chat("はい", j3, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_j, book_fn=book_fn)
+    print("  K4 create", j4.booking_create_called, "done", j4.booking_completed, "n", len(creates))
+    if not j4.booking_create_called or not creates:
         failures.append("K: 既存予約処理を呼んでいない")
-    if not j3.booking_completed:
+    if not j4.booking_completed:
         failures.append("K: DB相当の成功後に完了になっていない")
-    if "ご予約が完了しました" not in (j3.reply or ""):
+    if "ご予約が完了しました" not in (j4.reply or ""):
         failures.append("K: 成功後の完了表示がない")
     if creates:
         args = creates[-1]["args"]
@@ -351,8 +359,8 @@ def main() -> int:
         failures.append(f"A: はい で guest_info にならない phase={y_yes.booking_phase}")
     if y_yes.show_booking_cta:
         failures.append("H: guest_info で show_booking_cta")
-    if "お名前" not in (y_yes.reply or ""):
-        failures.append("A: はい のあと名前確認がない")
+    if "姓" not in (y_yes.reply or "") or "名" not in (y_yes.reply or ""):
+        failures.append("A: はい のあと姓名確認がない")
     if "予約内容をご確認ください" in (y_yes.reply or ""):
         failures.append("A: はいで確認文がループしている")
     if y_yes.booking_create_called or y_yes.booking_completed or creates:
@@ -472,12 +480,18 @@ def main() -> int:
         lookup_fn=night_by_date,
         book_fn=book_fn,
     )
-    print("  booked", n6.booking_create_called, n6.booking_completed, "n", len(creates))
+    print("  guest done", n6.booking_phase, n6.booking_create_called)
     if n5.booking_create_called:
         failures.append("Q: guest_info 完了前に予約作成している")
-    if not n6.booking_create_called or not creates:
+    if n6.booking_create_called or creates:
+        failures.append("L: guest_info 入力時点で予約作成している")
+    if n6.booking_phase != "confirming":
+        failures.append(f"J: guest完了後 phase={n6.booking_phase}")
+    n7 = continue_chat("はい", n6, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    print("  booked", n7.booking_create_called, n7.booking_completed, "n", len(creates))
+    if not n7.booking_create_called or not creates:
         failures.append("Q: guest_info 完了後に atomic_create 相当を呼んでいない")
-    if not n6.booking_completed or "ご予約が完了しました" not in (n6.reply or ""):
+    if not n7.booking_completed or "ご予約が完了しました" not in (n7.reply or ""):
         failures.append("Q: 成功後の完了表示がない")
 
     src = open(os.path.join(ROOT, "karin_chat_booking.py"), encoding="utf-8").read()
