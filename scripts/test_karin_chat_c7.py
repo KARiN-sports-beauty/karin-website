@@ -322,8 +322,8 @@ def main() -> int:
         failures.append(f"A5: intent={a5.primary_intent}")
     if "確定しました" in (a5.reply or "") or "予約を完了" in (a5.reply or ""):
         failures.append("A5: 予約確定を実行している")
-    if not a5.show_booking_cta:
-        failures.append("A5: show_booking_cta がない")
+    if a5.show_booking_cta:
+        failures.append("A5: チャット予約開始後に Web予約CTA がある")
 
     print("\n===== B Health→KARiN相談→予約方法 =====")
     b1 = continue_chat("最近寝つきが悪いんですが、何か気をつけることありますか？", None)

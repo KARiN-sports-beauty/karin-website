@@ -103,10 +103,48 @@ def main() -> int:
         failures.append("A: 初回予約意図なのに CTA がない")
     if t_a.reply != INITIAL_RESERVATION_REPLY:
         failures.append("A: 初回予約案内になっていない")
+    for needle in (
+        "ヘッダーの『ご予約』",
+        "Web予約へ進む",
+        "このまま私との会話でご予約をお取りしたい場合",
+        "エリアと施術時間",
+    ):
+        if needle not in (t_a.reply or ""):
+            failures.append(f"B: 初回案内に「{needle}」がない")
+    if (t_a.reply or "").count("ご希望のエリアと施術時間を教えてください") > 1:
+        failures.append("C: エリアと施術時間の質問が重複している")
+    if "例：東京・90分" in (t_a.reply or ""):
+        failures.append("C: 別の重複した質問文がある")
     if t_a.reservation_api_called:
         failures.append("A: 情報不足なのに予約API")
     if t_a.openai_called:
         failures.append("A: 初回案内で LLM を呼んでいる")
+
+    print("\n===== A2 条件入力後は CTA なし =====")
+    t_tokyo = continue_chat("東京", t_a, match_fn=empty_match, complete_fn=lambda _m: "should-not-run")
+    print("  tokyo cta", t_tokyo.show_booking_cta, "area", t_tokyo.requested_area)
+    if t_tokyo.show_booking_cta:
+        failures.append("D: 東京入力後も CTA がある")
+    if t_tokyo.requested_area != "tokyo":
+        failures.append("D: 東京が保持されていない")
+
+    print("\n===== A3 東京で90分予約したい → 再質問せずC9へ =====")
+    reset_store_for_tests()
+    t_ready = run_chat(
+        "東京で90分予約したい",
+        match_fn=empty_match,
+        complete_fn=lambda _m: "should-not-run",
+        lookup_fn=mock_slots("18:00"),
+    )
+    print("  ready", t_ready.requested_area, t_ready.requested_duration, "cta", t_ready.show_booking_cta)
+    if t_ready.reply == INITIAL_RESERVATION_REPLY:
+        failures.append("E: 条件済みなのに初回案内へ戻っている")
+    if t_ready.requested_area != "tokyo" or t_ready.requested_duration != 90:
+        failures.append("E: 東京90分を使っていない")
+    if t_ready.show_booking_cta:
+        failures.append("E: 条件済みなのに Web予約CTA がある")
+    if "例：東京・90分" in (t_ready.reply or ""):
+        failures.append("E: 同じ質問を繰り返している")
 
     print("\n===== B 予約後の身体言及は問診へ行かない =====")
     captured_b: list[list] = []
@@ -258,7 +296,7 @@ def main() -> int:
     if t_g.show_booking_cta:
         failures.append("G: 曜日確認で CTA がある")
 
-    print("\n===== H 具体予約意思で CTA =====")
+    print("\n===== H 具体予約意思では CTA を出さない =====")
     lookup_h = mock_slots("18:00", "19:00")
     t_h = continue_chat(
         "じゃあ水曜日の19時で予約したいです",
@@ -270,11 +308,8 @@ def main() -> int:
     print("  H time", t_h.requested_time, "cta", t_h.show_booking_cta, "slots", t_h.available_slots)
     if t_h.requested_time != "19:00":
         failures.append(f"H: time={t_h.requested_time}")
-    if t_h.booking_phase == "confirming":
-        if t_h.show_booking_cta:
-            failures.append("H: 最終確認で CTA がある")
-    elif not t_h.show_booking_cta:
-        failures.append("H: 具体的な予約意思なのに CTA がない")
+    if t_h.show_booking_cta:
+        failures.append("H: チャット予約開始後に Web予約CTA がある")
     if "20:00" in t_h.available_slots:
         failures.append("H: 存在しない枠を足している")
 

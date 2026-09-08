@@ -219,11 +219,8 @@ def main() -> int:
         failures.append("H: 初回 CTA がない")
     if t2.show_booking_cta or t3.show_booking_cta or t4.show_booking_cta:
         failures.append("H: 候補確認中に CTA がある")
-    if g2.booking_phase == "confirming":
-        if g2.show_booking_cta:
-            failures.append("H: 最終確認で CTA がある")
-    elif not g2.show_booking_cta:
-        failures.append("H: 具体的な予約意思なのに CTA がない")
+    if g2.show_booking_cta:
+        failures.append("H: チャット予約開始後に Web予約CTA がある")
     if g2.show_booking_cta == g2.booking_ready and g0.show_booking_cta == g0.booking_ready:
         failures.append("H: CTA と booking_ready が常に一致している")
 

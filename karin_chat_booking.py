@@ -66,6 +66,7 @@ class BookingLookupResult:
     missing_fields: list[str] = field(default_factory=list)
     candidate_dates: list[str] = field(default_factory=list)
     broaden_dates: list[str] = field(default_factory=list)
+    unfiltered_slots: list[str] = field(default_factory=list)
     window_kind: str | None = None
     alternative_duration: int | None = None
     alternative_slots: list[str] = field(default_factory=list)
@@ -87,13 +88,19 @@ DURATION_ASK_REPLY = (
 AREA_ASK_REPLY = "ご希望のエリアを教えてください。東京と福岡のどちらですか？"
 
 INITIAL_RESERVATION_REPLY = (
-    "ご希望のエリアと施術時間を教えてください。\n"
-    "例：東京・90分"
+    "ヘッダーの『ご予約』または下記の『Web予約へ進む』からもご予約いただけます。\n"
+    "このまま私との会話でご予約をお取りしたい場合は、ご希望のエリアと施術時間を教えてください。"
 )
 
 AREA_AND_DURATION_FOLLOW_REPLY = "ご希望のエリアと施術時間も教えてください。"
 
-DATE_WINDOW_ASK_REPLY = "ご希望の日付や時間帯があれば教えてください。"
+DATE_WINDOW_ASK_REPLY = (
+    "ご希望の日付や時間帯があれば教えてください。\n"
+    "『直近で空いているところ』『平日の夜』『土日で空いている日』など、ざっくりしたご希望でも大丈夫です。"
+)
+_SOONEST_HORIZON_DAYS = 8
+_SOONEST_MATCH_LIMIT = 5
+_SOONEST_WINDOW_KINDS = frozenset({"soonest", "upcoming"})
 
 
 @dataclass
@@ -120,6 +127,7 @@ class BookingDraft:
     selected_date: str | None = None
     selected_time: str | None = None
     offered_dates: list[str] = field(default_factory=list)
+    last_expand_kind: str | None = None
     narrow_from_period: str | None = None
     preferred_treatment: str | None = None
     concern_summary: str | None = None
@@ -281,7 +289,7 @@ def apply_utterance_to_draft(
         draft.time_from = None
         draft.time_period = parsed.time_range
 
-    has_window = bool(re.search(r"今週|来週|平日|土日|週末", text or ""))
+    has_window = bool(re.search(r"今週|来週|平日|土日|週末|直近|一番早く|近い日|早め", text or ""))
     has_weekday = bool(re.search(r"[月火水木金土日]曜", text or ""))
     has_specific = bool(
         re.search(
@@ -291,15 +299,28 @@ def apply_utterance_to_draft(
             text or "",
         )
     )
-    if has_specific and parsed.date:
+    expand_kind = _search_expand_kind(text or "")
+    if expand_kind and not has_specific:
+        if re.search(r"平日", text or ""):
+            draft.date_filter = "weekdays"
+        elif re.search(r"土日|週末", text or ""):
+            draft.date_filter = "weekend"
+        _apply_search_expand(draft, expand_kind, today)
+    elif has_specific and parsed.date:
+        draft.last_expand_kind = None
         draft.date = parsed.date
         draft.date_candidates = [parsed.date]
         draft.selected_date = parsed.date
+        draft.date_range = None
     elif has_weekday and parsed.date:
+        draft.last_expand_kind = None
         draft.date = parsed.date
         draft.date_candidates = [parsed.date]
         draft.selected_date = parsed.date
+        draft.date_range = None
     elif has_window:
+        draft.last_expand_kind = None
+        draft.offered_dates = []
         draft.date = None
         draft.selected_date = None
         draft.date_range = parsed.window_kind
@@ -308,8 +329,23 @@ def apply_utterance_to_draft(
             draft.date_filter = "weekdays"
         elif re.search(r"土日|週末", text or ""):
             draft.date_filter = "weekend"
-    if parsed.date_candidates and not draft.date:
+        elif _is_soonest_phrase(text or ""):
+            draft.date_filter = None
+    else:
+        draft.last_expand_kind = None
+    if parsed.date_candidates and not draft.date and not expand_kind:
         draft.date_candidates = list(parsed.date_candidates)
+        if parsed.window_kind and not draft.date_range:
+            draft.date_range = parsed.window_kind
+    if (
+        not draft.date
+        and not draft.date_candidates
+        and (draft.time or draft.time_from or draft.time_period)
+        and not expand_kind
+    ):
+        day = today or _jst_today()
+        draft.date_candidates = [d.isoformat() for d in _soonest_dates(day)]
+        draft.date_range = draft.date_range or "upcoming"
 
     pref = _explicit_treatment_preference(text or "")
     if pref:
@@ -480,6 +516,98 @@ def _booking_horizon(today):
     return [today + timedelta(days=i) for i in range(int(BOOKING_DAYS_AHEAD) + 1)]
 
 
+def _soonest_dates(today):
+    return _booking_horizon(today)[:_SOONEST_HORIZON_DAYS]
+
+
+def _is_soonest_phrase(text: str) -> bool:
+    raw = text or ""
+    if re.search(r"直近|一番早く|近い日|早め", raw):
+        return True
+    if re.search(r"今週|来週|平日|土日|週末", raw):
+        return False
+    return bool(re.search(r"取れるところ|空いているところ|空いてるところ|空いている日|空いてる日", raw))
+
+
+def _search_expand_kind(text: str) -> str | None:
+    """前回候補の再表示ではなく、検索範囲の変更・拡張。"""
+    raw = (text or "").strip()
+    if not raw:
+        return None
+    if re.search(r"土日なら|週末なら|土日(で|は)(どう|お願い|空)", raw):
+        return None
+    if re.search(r"もっと先|もっと後|もう少し先|先の日付|先の方", raw):
+        return "further"
+    if re.search(
+        r"他の平日|ほかの平日|他の日|ほかの日|別の日|他の候補|"
+        r"ほかに(空|ある)|他に(空|ない|ある)|他には|"
+        r"他の|ほかの|別の",
+        raw,
+    ):
+        return "others"
+    return None
+
+
+def _matching_horizon_dates(
+    today,
+    date_filter: str | None,
+    *,
+    exclude: list[str] | None = None,
+    after: str | None = None,
+) -> list[str]:
+    excluded = set(exclude or [])
+    after_d = None
+    if after:
+        try:
+            after_d = datetime.strptime(after, "%Y-%m-%d").date()
+        except ValueError:
+            after_d = None
+    weekdays_only = None
+    if date_filter == "weekdays":
+        weekdays_only = True
+    elif date_filter == "weekend":
+        weekdays_only = False
+    out: list[str] = []
+    for d in _booking_horizon(today):
+        iso = d.isoformat()
+        if iso in excluded:
+            continue
+        if after_d is not None and d <= after_d:
+            continue
+        if weekdays_only is True and d.weekday() >= 5:
+            continue
+        if weekdays_only is False and d.weekday() < 5:
+            continue
+        out.append(iso)
+    return out
+
+
+def _apply_search_expand(draft: BookingDraft, kind: str, today) -> None:
+    """前回提示した日付を除き、同じ時間条件のまま対象日を広げる。"""
+    day = today or _jst_today()
+    offered = list(draft.offered_dates or [])
+    draft.date = None
+    draft.selected_date = None
+    draft.last_expand_kind = kind
+    date_filter = draft.date_filter
+    if kind == "further":
+        after = max(offered) if offered else None
+        draft.date_candidates = _matching_horizon_dates(
+            day, date_filter, exclude=offered, after=after
+        )
+        draft.date_range = "further"
+        return
+    remaining = [d for d in (draft.date_candidates or []) if d not in offered]
+    extra = _matching_horizon_dates(day, date_filter, exclude=offered)
+    merged: list[str] = []
+    for iso in remaining + extra:
+        if iso not in merged:
+            merged.append(iso)
+    draft.date_candidates = merged
+    if merged and draft.date_range in (None, "weekdays_ahead", "weekend", "this_week", "next_week"):
+        draft.date_range = "expanded"
+
+
 def _this_week_span(today):
     start = today - timedelta(days=today.weekday())
     return start, start + timedelta(days=6)
@@ -533,6 +661,7 @@ def parse_booking_request(
     day_filter = None
     named_weekday = None
     specific_date = None
+    soonest_ask = False
     for raw in texts:
         text = (raw or "").strip()
         if not text:
@@ -578,6 +707,8 @@ def parse_booking_request(
             day_filter = "weekdays"
         elif re.search(r"土日|週末", text):
             day_filter = "weekend"
+        if _is_soonest_phrase(text):
+            soonest_ask = True
 
         wd_match = re.search(r"([月火水木金土日])曜", text)
         if wd_match:
@@ -653,6 +784,9 @@ def parse_booking_request(
         if not candidates:
             nstart, nend = _next_week_span(day)
             candidates = _dates_in_span(nstart, nend, day, horizon_set, False)
+    elif soonest_ask:
+        req.window_kind = "soonest"
+        candidates = list(_soonest_dates(day))
 
     if named_weekday is not None:
         if candidates:
@@ -859,12 +993,15 @@ def _apply_draft_to_request(req: BookingRequest, draft: BookingDraft | None) -> 
         req.place_type = draft.place_type
     if draft.duration_minutes in (60, 90, 120):
         req.duration_minutes = draft.duration_minutes
-    if draft.date:
-        req.date = draft.date
-        req.date_candidates = [draft.date]
+    pick = draft.selected_date or draft.date
+    if pick:
+        req.date = pick
+        req.date_candidates = [pick]
         req.window_kind = None
     elif draft.date_candidates:
         req.date_candidates = list(draft.date_candidates)
+        if draft.date_range and not req.window_kind:
+            req.window_kind = draft.date_range
     if draft.time:
         req.time = draft.time
         req.time_from = None
@@ -904,6 +1041,15 @@ def lookup_web_booking_availability(
     preferred = None if draft is None else list(draft.offered_dates or draft.date_candidates or [])
     req = parse_booking_request(merged, today=today, preferred_dates=preferred)
     _apply_draft_to_request(req, draft)
+    if not req.date and not req.date_candidates:
+        if req.time or req.time_from or req.time_range:
+            day = today or _jst_today()
+            req.date_candidates = [d.isoformat() for d in _soonest_dates(day)]
+            req.window_kind = req.window_kind or "upcoming"
+            if draft is not None and not draft.date:
+                draft.date_candidates = list(req.date_candidates)
+                if not draft.date_range:
+                    draft.date_range = req.window_kind
     result = BookingLookupResult(
         requested_area=req.area,
         requested_place_type=req.place_type,
@@ -948,9 +1094,15 @@ def lookup_web_booking_availability(
     broaden_dates: list[str] = []
     last_times: list[str] = []
     last_matched: list[str] = []
+    last_unfiltered: list[str] = []
     datetime_labels: list[tuple[str, str]] = []
     saw_ok = False
     saw_error = False
+    match_cap = (
+        _SOONEST_MATCH_LIMIT
+        if (req.window_kind in _SOONEST_WINDOW_KINDS and not req.date)
+        else None
+    )
 
     for date in dates:
         try:
@@ -969,12 +1121,15 @@ def lookup_web_booking_availability(
         matched = _filter_times(times, req)
         if times:
             broaden_dates.append(date)
+            last_unfiltered = times
         if matched:
             matched_dates.append(date)
             last_times = times
             last_matched = matched
             for t in matched:
                 datetime_labels.append((date, t))
+            if match_cap and len(matched_dates) >= match_cap:
+                break
 
     result.api_called = True
     if not saw_ok:
@@ -985,6 +1140,7 @@ def lookup_web_booking_availability(
     result.candidate_dates = matched_dates
     result.broaden_dates = broaden_dates
     result.datetime_labels = datetime_labels
+    result.unfiltered_slots = last_unfiltered if len(dates) == 1 else []
     if req.time:
         result.requested_time_available = bool(last_matched) and req.time in last_matched
     if len(dates) == 1:
@@ -1101,7 +1257,7 @@ def _fill_duration_alternatives(
     caller,
 ) -> None:
     """希望時間で空きがないときだけ、短い施術時間を既存枠算出で確認する。"""
-    if result.available_slots or result.candidate_dates:
+    if result.available_slots or result.candidate_dates or result.broaden_dates:
         return
     if not req.time:
         return
@@ -1397,8 +1553,12 @@ def should_hide_slot_ui(draft: BookingDraft | None, reply: str = "") -> bool:
 
 
 def remember_offers(draft: BookingDraft, result: BookingLookupResult) -> None:
-    if result.candidate_dates:
-        draft.offered_dates = list(result.candidate_dates)
+    seen = list(draft.offered_dates or [])
+    for iso in result.candidate_dates or []:
+        if iso not in seen:
+            seen.append(iso)
+    if seen:
+        draft.offered_dates = seen
 
 
 def _selected_datetime_reply(draft: BookingDraft, date_iso: str, slot: str) -> str:
@@ -1419,7 +1579,12 @@ def build_missing_conditions_reply(draft: BookingDraft, missing: list[str]) -> s
     need_area = "area" in missing or draft.area not in ("tokyo", "fukuoka")
     need_duration = "duration" in missing or draft.duration_minutes not in (60, 90, 120)
     has_window = bool(
-        draft.date or draft.date_candidates or draft.date_range or draft.time_period
+        draft.date
+        or draft.date_candidates
+        or draft.date_range
+        or draft.time_period
+        or draft.time_from
+        or draft.time
     )
     if need_area and need_duration:
         if has_window:
@@ -1438,8 +1603,50 @@ def _period_word_for(draft: BookingDraft) -> str:
     return _period_label(draft.time_period or draft.narrow_from_period)
 
 
+def _ask_which_day(draft: BookingDraft, result: BookingLookupResult) -> bool:
+    return (draft.date_range in _SOONEST_WINDOW_KINDS) or (
+        result.window_kind in _SOONEST_WINDOW_KINDS
+    )
+
+
+def _other_slots_on_date_reply(draft: BookingDraft, slots: list[str]) -> str:
+    date_iso = draft.date or ""
+    duration = draft.duration_minutes if draft.duration_minutes in (60, 90, 120) else None
+    want = draft.time or (f"{draft.time_from}以降" if draft.time_from else "ご希望の時間")
+    rows = "\n".join(
+        f"・{format_booking_datetime(date_iso, t, duration)}" for t in slots
+    )
+    return (
+        f"{_format_jp_date_short(date_iso)}は{want}の空きがありませんでした。\n"
+        f"同じ日で空いている時間は以下です。\n\n{rows}\n\n"
+        "ご都合の良い日時があれば教えてください。"
+    )
+
+
+def _no_other_dates_reply(draft: BookingDraft) -> str:
+    shown = [_format_jp_date_short(d) for d in (draft.offered_dates or [])]
+    if draft.date_filter == "weekend" or draft.date_range == "weekend":
+        kind = "土日"
+    elif draft.date_filter == "weekdays" or "weekday" in (draft.date_range or ""):
+        kind = "平日"
+    else:
+        kind = "日"
+    if shown:
+        listed = "、".join(shown)
+        return (
+            f"現在の条件では{listed}以外の{kind}は空きがありませんでした。"
+            "時間帯や施術時間を変えて探すこともできます。"
+        )
+    return (
+        f"現在の条件では、他の{kind}に確認できる空きがありませんでした。"
+        "時間帯や施術時間を変えて探すこともできます。"
+    )
+
+
 def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> str | None:
     if result.api_status == "skipped_insufficient":
+        if draft.last_expand_kind:
+            return _no_other_dates_reply(draft)
         return build_missing_conditions_reply(draft, result.missing_fields or [])
     if result.api_status != "ok":
         return None
@@ -1464,6 +1671,12 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
     weekdayish = draft.date_filter == "weekdays" or "weekday" in (draft.date_range or "")
 
     if not dates and not labels:
+        if draft.last_expand_kind:
+            return _no_other_dates_reply(draft)
+        if draft.date and result.unfiltered_slots:
+            return _other_slots_on_date_reply(draft, result.unfiltered_slots)
+        if draft.date:
+            return _no_slots_on_date_reply(draft)
         if draft.time_from and period_word:
             return (
                 f"先ほどご案内した{period_word}の候補のうち、{draft.time_from}以降で確認できる空きはありませんでした。"
@@ -1486,22 +1699,33 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
     if draft.time_from and grouped:
         if draft.date:
             times = grouped.get(draft.date) or []
-            if draft.time_from in times:
-                return _selected_datetime_reply(draft, draft.date, draft.time_from)
+            if len(times) == 1:
+                return _selected_datetime_reply(draft, draft.date, times[0])
+            if times:
+                rows = _band_rows({draft.date: times}, duration)
+                return (
+                    f"{_format_jp_date_short(draft.date)}は{draft.time_from}以降で以下の空きがあります。\n\n"
+                    f"{rows}\n\nご都合の良い開始時間があれば教えてください。"
+                )
         if len(grouped) == 1:
             date_iso = next(iter(grouped))
             times = grouped[date_iso]
-            if draft.time_from in times:
-                return _selected_datetime_reply(draft, date_iso, draft.time_from)
             if len(times) == 1:
                 return _selected_datetime_reply(draft, date_iso, times[0])
         rows = _band_rows(grouped, duration)
         intro = f"{draft.time_from}以降で空きが確認できました。"
-        if period_word:
+        if draft.last_expand_kind:
+            intro = f"ほかの日で、{draft.time_from}以降の空きが確認できました。"
+        elif period_word:
             intro = (
                 f"先ほどご案内した{period_word}の候補のうち、{draft.time_from}以降で空きがあるのは以下です。"
             )
-        return f"{intro}\n\n{rows}\n\nご希望の日や開始時間があれば教えてください。"
+        ask = (
+            "どの日にしますか？"
+            if _ask_which_day(draft, result)
+            else "ご希望の日や開始時間があれば教えてください。"
+        )
+        return f"{intro}\n\n{rows}\n\n{ask}"
 
     if (
         draft.time_period in ("night", "evening", "daytime", "afternoon", "morning")
@@ -1529,7 +1753,9 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
                 if d in grouped
             )
             intro = f"{format_booking_datetime(None, draft.time, duration)}で空きが確認できました。"
-            if period_word:
+            if draft.last_expand_kind:
+                intro = f"ほかの日で、{format_booking_datetime(None, draft.time, duration)}の空きが確認できました。"
+            elif period_word:
                 intro = (
                     f"先ほどご案内した{period_word}の候補のうち、"
                     f"{format_booking_datetime(None, draft.time, duration)}で空きがあるのは以下です。"
@@ -1539,14 +1765,22 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
                 "ご都合の良い日時があれば教えてください。"
             )
         bullets = "\n".join(f"・{_format_jp_date_short(d)}" for d in dates)
+        ask = (
+            "どの日にしますか？"
+            if _ask_which_day(draft, result)
+            else "この中でご都合の良い日、もしくはご希望の時間帯を教えてください。"
+        )
         if weekdayish:
+            title = "平日の空き状況を確認したところ、以下の日付に空きがあります。"
+            if draft.last_expand_kind:
+                title = "ほかの平日で空きが確認できた日付は以下です。"
             return (
-                f"平日の空き状況を確認したところ、以下の日付に空きがあります。\n\n{bullets}\n\n"
-                "この中でご都合の良い日、もしくはご希望の時間帯を教えてください。"
+                f"{title}\n\n{bullets}\n\n"
+                f"{ask}"
             )
         return (
             f"空きが確認できた日付は以下です。\n\n{bullets}\n\n"
-            "この中でご都合の良い日、もしくはご希望の時間帯を教えてください。"
+            f"{ask}"
         )
 
     slots = result.available_slots or [t for _d, t in labels]

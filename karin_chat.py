@@ -608,6 +608,34 @@ def _is_booking_commit(text: str) -> bool:
     return False
 
 
+def _chat_booking_started(draft) -> bool:
+    """チャット上で予約条件の入力が始まったか。初回の案内専用CTA判定に使う。"""
+    if draft is None:
+        return False
+    if getattr(draft, "phase", None) in (
+        PHASE_ALT,
+        PHASE_CONFIRMING,
+        PHASE_GUEST,
+        PHASE_COMPLETED,
+    ):
+        return True
+    if getattr(draft, "area", None) in ("tokyo", "fukuoka"):
+        return True
+    if getattr(draft, "duration_minutes", None) in (60, 90, 120):
+        return True
+    if getattr(draft, "date", None) or getattr(draft, "date_range", None):
+        return True
+    if getattr(draft, "date_candidates", None):
+        return True
+    if getattr(draft, "time", None) or getattr(draft, "time_from", None):
+        return True
+    if getattr(draft, "time_period", None):
+        return True
+    if getattr(draft, "selected_date", None) or getattr(draft, "selected_time", None):
+        return True
+    return False
+
+
 def _should_show_booking_cta(
     *,
     emergency: bool,
@@ -616,7 +644,7 @@ def _should_show_booking_cta(
     text: str = "",
     draft=None,
 ) -> bool:
-    """初回の予約意思と、予約へ進む意思が再確認できたときだけ出す。booking_ready とは別。"""
+    """通常Web予約（/book）への導線。チャット予約開始後は出さない。"""
     if emergency:
         return False
     if booking is not None and booking.api_status == "error":
@@ -625,17 +653,15 @@ def _should_show_booking_cta(
         return False
     if is_inquiry_required_intent(intent):
         return False
+    if draft is not None and draft.phase in (PHASE_CONFIRMING, PHASE_GUEST, PHASE_COMPLETED):
+        return False
+    if _chat_booking_started(draft):
+        return False
     if INTENT_RESERVATION_INFO in intent.all_intents or _asks_booking_path(text):
         return True
     if INTENT_RESERVATION not in intent.all_intents:
         return False
-    if draft is not None and draft.phase in (PHASE_CONFIRMING, PHASE_GUEST, PHASE_COMPLETED):
-        return False
-    if _is_booking_commit(text) or _is_opening_reservation(text):
-        return True
-    if is_booking_ready(draft) and re.search(r"お願い|予約したい|この内容で", text or ""):
-        return True
-    return False
+    return _is_opening_reservation(text)
 
 
 INQUIRY_CONTACT_PATH = "/contact"

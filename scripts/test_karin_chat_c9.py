@@ -327,6 +327,8 @@ def main() -> int:
     lookup_yes = mock_slots("18:00")
     y0 = continue_chat("予約したいです", None, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
     y1 = continue_chat("東京で9/10 18:00、90分", y0, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
+    if y1.show_booking_cta:
+        failures.append("F: 空き確認中に show_booking_cta")
     y2 = continue_chat("お願いします", y1, match_fn=empty_match, complete_fn=complete, lookup_fn=lookup_yes, book_fn=book_fn)
     py2 = chat_public_payload(y2)
     print("  confirming", y2.booking_phase, "cta", py2.get("show_booking_cta"), "slots", py2.get("available_slots"))
@@ -347,6 +349,8 @@ def main() -> int:
     print("  はい", y_yes.booking_phase, (y_yes.reply or "")[:60], "create", y_yes.booking_create_called)
     if y_yes.booking_phase != "guest_info":
         failures.append(f"A: はい で guest_info にならない phase={y_yes.booking_phase}")
+    if y_yes.show_booking_cta:
+        failures.append("H: guest_info で show_booking_cta")
     if "お名前" not in (y_yes.reply or ""):
         failures.append("A: はい のあと名前確認がない")
     if "予約内容をご確認ください" in (y_yes.reply or ""):
@@ -440,18 +444,25 @@ def main() -> int:
 
     n3 = continue_chat("17日の18:00〜", n2, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
     print("  pick", n3.selected_date, n3.selected_time, (n3.reply or "")[:120])
-    pn3 = chat_public_payload(n3)
-    if "18:00〜19:30" not in (n3.reply or ""):
-        failures.append("O18: 18:00〜19:30 がない")
-    if "頃で空き" in (n3.reply or ""):
-        failures.append("O18: 曖昧な頃表現がある")
-    if pn3.get("available_slots"):
-        failures.append("O: 選択後に構造化枠が重複している")
+    if n3.time_from != "18:00":
+        failures.append(f"P: 17日の18:00〜 で time_from が消えた {n3.time_from}")
+    if "18:00" not in (n3.reply or ""):
+        failures.append("O18: 18:00以降の空き表示がない")
     other_days = [d for d in (n2.available_dates or []) if d != n3.requested_date]
     if any(f"{int(d.split('-')[1])}月{int(d.split('-')[2])}日" in (n3.reply or "") for d in other_days[:5]):
         failures.append("O: 候補選択後に以前の候補日が再表示されている")
 
-    n4 = continue_chat("お願いします", n3, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    n3b = continue_chat("18:00", n3, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
+    print("  pick time", n3b.selected_time, (n3b.reply or "")[:120])
+    pn3 = chat_public_payload(n3b)
+    if "18:00〜19:30" not in (n3b.reply or ""):
+        failures.append("O18: 18:00〜19:30 がない")
+    if "頃で空き" in (n3b.reply or ""):
+        failures.append("O18: 曖昧な頃表現がある")
+    if pn3.get("available_slots"):
+        failures.append("O: 選択後に構造化枠が重複している")
+
+    n4 = continue_chat("お願いします", n3b, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
     n5 = continue_chat("はい", n4, match_fn=empty_match, complete_fn=complete, lookup_fn=night_by_date, book_fn=book_fn)
     n6 = continue_chat(
         "山田 太郎、09012345678、taro@example.com、出張先は渋谷",
