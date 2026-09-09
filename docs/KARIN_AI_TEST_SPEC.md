@@ -594,6 +594,12 @@ KARiN.への予約を優先しない。
 
 期待：`chatbot_usage_logs` 相当の記録に choice_set / shown_choices / selected_choice / input_type / intent 遷移 / booking_started / booking_completed が入る。自由入力本文・氏名・電話・メールは保存しない。分析INSERT失敗でも応答と予約完了は成功する。既存C0〜C9・選択肢生成・RAG・予約判定は変えない。
 
+## USAGE-02
+
+入力：管理画面の利用分析ダッシュボード。0件・1件・複数conversation・期間フィルタ。
+
+期待：総会話数 / 予約開始 / 予約完了 / 完了率（0件除算なし）/ intent別 / choice_set別 / selected_choice別が正しい。`selected_choice` は前ターンの `choice_set` に紐づける。同じ行の `choice_set` と JOIN しない。会話全文・個人情報は出さない。分析読み取り失敗でも `/api/chat` と予約は止まらない。既存C0〜C9・選択肢・RAG・予約処理は変えない。管理者認証の配下のみ。
+
 ## CHOICE-01
 
 入力：「鍼と整体、どちらが合いそうですか？」

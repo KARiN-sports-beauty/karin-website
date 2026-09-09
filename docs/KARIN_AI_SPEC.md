@@ -924,6 +924,9 @@ Knowledgeの安定identity。titleではない。UUIDは物理ID。
 `chatbot_usage_logs` は会話全文・個人情報を保存しない補助テーブルである。
 C0〜C9・動的選択肢・RAG・予約確定より優先度が低い。
 記録失敗でチャット応答や予約を止めてはいけない。
+管理者は `/admin/chatbot-analytics` で集計を確認できる。
+同じ行の `choice_set` と `selected_choice` を直接JOINしない。
+AIが CHOICE_SETS や会話設計を自動変更することはしない。
 
 これらは役割を分離して設計する。
 

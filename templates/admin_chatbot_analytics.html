@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}KARiN.chatbot 利用分析 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">KARiN.chatbot 利用分析</h2>
+<p class="admin-subtitle">
+  会話全文・氏名・電話・メールは表示しません。選択肢の選択回数は、前のターンで出したセットに紐づけて集計しています。
+</p>
+
+<form class="analytics-filter" method="get" action="/admin/chatbot-analytics">
+  <label class="analytics-filter-label">
+    期間
+    <select name="range" class="admin-form-select analytics-filter-select" onchange="this.form.submit()">
+      <option value="today" {% if report.preset == "today" %}selected{% endif %}>今日</option>
+      <option value="7d" {% if report.preset == "7d" %}selected{% endif %}>過去7日</option>
+      <option value="30d" {% if report.preset == "30d" %}selected{% endif %}>過去30日</option>
+      <option value="all" {% if report.preset == "all" %}selected{% endif %}>全期間</option>
+      <option value="custom" {% if report.preset == "custom" %}selected{% endif %}>期間指定</option>
+    </select>
+  </label>
+  <label class="analytics-filter-label">
+    開始日
+    <input type="date" name="start" class="admin-form-input analytics-filter-date" value="{{ report.start_date }}">
+  </label>
+  <label class="analytics-filter-label">
+    終了日
+    <input type="date" name="end" class="admin-form-input analytics-filter-date" value="{{ report.end_date }}">
+  </label>
+  <button type="submit" class="admin-karte-detail-btn-primary">表示</button>
+</form>
+
+<p class="analytics-period-note">集計期間：{{ report.period_label }}</p>
+
+{% if report.error %}
+<p class="analytics-error">{{ report.error }}</p>
+{% endif %}
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">基本指標</h3>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>指標</th>
+          <th class="num">数値</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>総会話数</td>
+          <td class="num">{{ report.conversation_count }}</td>
+        </tr>
+        <tr>
+          <td>予約開始</td>
+          <td class="num">{{ report.booking_started_count }}</td>
+        </tr>
+        <tr>
+          <td>予約完了</td>
+          <td class="num">{{ report.booking_completed_count }}</td>
+        </tr>
+        <tr>
+          <td>予約開始率</td>
+          <td class="num">{{ report.booking_start_rate }}</td>
+        </tr>
+        <tr>
+          <td>予約開始 → 完了率</td>
+          <td class="num">{{ report.booking_complete_rate }}</td>
+        </tr>
+        <tr>
+          <td>総会話 → 完了率</td>
+          <td class="num">{{ report.booking_overall_rate }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">予約ファネル</h3>
+  <div class="analytics-funnel">
+    <div class="analytics-funnel-step">
+      <span class="analytics-funnel-value">{{ report.conversation_count }}</span>
+      <span class="analytics-funnel-label">会話</span>
+    </div>
+    <span class="analytics-funnel-arrow">↓</span>
+    <div class="analytics-funnel-step">
+      <span class="analytics-funnel-value">{{ report.booking_started_count }}</span>
+      <span class="analytics-funnel-label">予約開始</span>
+    </div>
+    <span class="analytics-funnel-arrow">↓</span>
+    <div class="analytics-funnel-step">
+      <span class="analytics-funnel-value">{{ report.booking_completed_count }}</span>
+      <span class="analytics-funnel-label">予約完了</span>
+    </div>
+  </div>
+</section>
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">Intent別</h3>
+  <p class="analytics-note">このターンで判定した primary_intent（ログの next_intent）です。</p>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>Intent</th>
+          <th class="num">件数</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in report.intents %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td class="num">{{ item.count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">選択肢セット利用状況</h3>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>Choice Set</th>
+          <th class="num">表示回数</th>
+          <th class="num">選択回数</th>
+          <th class="num">選択率</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in report.choice_sets %}
+        <tr>
+          <td>{{ item.key }}</td>
+          <td class="num">{{ item.displays }}</td>
+          <td class="num">{{ item.selections }}</td>
+          <td class="num">{{ item.rate }}</td>
+        </tr>
+        {% endfor %}
+        {% if not report.choice_sets %}
+        <tr>
+          <td colspan="4">この期間の選択肢表示はありません。</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">選択肢別</h3>
+  {% for group in report.choice_options %}
+  <h4 class="analytics-subheading">{{ group.choice_set }}</h4>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>選択肢</th>
+          <th class="num">選択回数</th>
+          <th class="num">選択率</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in group.options %}
+        <tr>
+          <td>{{ item.label }}</td>
+          <td class="num">{{ item.count }}</td>
+          <td class="num">{{ item.rate }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+  {% if not report.choice_options %}
+  <p class="analytics-note">この期間の選択肢データはありません。</p>
+  {% endif %}
+</section>
+
+<section class="analytics-section">
+  <h3 class="analytics-heading">日別推移</h3>
+  {% if report.daily %}
+  <div class="analytics-bars" aria-hidden="true">
+    {% for item in report.daily %}
+    <div class="analytics-bar-col" title="{{ item.date }} 会話 {{ item.conversations }}">
+      <div class="analytics-bar" style="height: {{ item.bar_pct }}%;"></div>
+      <span class="analytics-bar-label">{{ item.short_date }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th class="num">会話数</th>
+          <th class="num">予約開始</th>
+          <th class="num">予約完了</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in report.daily %}
+        <tr>
+          <td>{{ item.short_date }}</td>
+          <td class="num">{{ item.conversations }}</td>
+          <td class="num">{{ item.started }}</td>
+          <td class="num">{{ item.completed }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="analytics-note">この期間の日別データはありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

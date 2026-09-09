@@ -2355,3 +2355,156 @@ form .admin-news-btn {
     overflow-wrap: break-word;
   }
 }
+
+/* KARiN.chatbot 利用分析 */
+.analytics-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  margin: 0 0 12px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.analytics-filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #4a628a;
+}
+
+.analytics-filter-select,
+.analytics-filter-date {
+  width: auto;
+  min-width: 140px;
+  margin: 0;
+}
+
+.analytics-period-note,
+.analytics-note {
+  font-size: 0.9rem;
+  color: #4a628a;
+  margin: 0 0 18px;
+}
+
+.analytics-error {
+  color: #b42318;
+  background: #fef3f2;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+}
+
+.analytics-section {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.analytics-heading {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #1e3a5f;
+}
+
+.analytics-subheading {
+  margin: 16px 0 8px;
+  font-size: 0.98rem;
+  color: #1e3a5f;
+}
+
+.analytics-table-wrap {
+  overflow-x: auto;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.analytics-table th,
+.analytics-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e6ebf3;
+}
+
+.analytics-table th {
+  color: #4a628a;
+  font-weight: 600;
+}
+
+.analytics-table td.num,
+.analytics-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-funnel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.analytics-funnel-step {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.analytics-funnel-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.analytics-funnel-label {
+  color: #4a628a;
+}
+
+.analytics-funnel-arrow {
+  color: #8aa0c2;
+  margin-left: 12px;
+}
+
+.analytics-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  margin: 0 0 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.analytics-bar-col {
+  min-width: 28px;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.analytics-bar {
+  width: 14px;
+  min-height: 2px;
+  background: #1e3a5f;
+  border-radius: 4px 4px 0 0;
+}
+
+.analytics-bar-label {
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: #4a628a;
+  white-space: nowrap;
+}

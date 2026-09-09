@@ -2148,6 +2148,7 @@ def build_dashboard_permissions(staff):
             "revenue": True,
             "financial": True,
             "invoices": True,
+            "chatbot_analytics": True,
             "staff_page": False,
         }
     role = (staff.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
@@ -2173,6 +2174,7 @@ def build_dashboard_permissions(staff):
         "revenue": False,
         "financial": False,
         "invoices": False,
+        "chatbot_analytics": False,
         "staff_page": True,
         "staff_reports_card": R(STAFF_ROLE_RECEPTION, STAFF_ROLE_REGULAR, STAFF_ROLE_IRREGULAR),
     }
@@ -3924,6 +3926,20 @@ def admin_dashboard():
         staff_name=staff_name,
         dash_perm=dash_perm,
     )
+
+
+@app.route("/admin/chatbot-analytics")
+@admin_required
+def admin_chatbot_analytics():
+    """KARiN.chatbot 利用分析。chatbot_usage_logs の読み取り専用集計。"""
+    from karin_chat_analytics import load_usage_analytics
+
+    report = load_usage_analytics(
+        preset=request.args.get("range"),
+        start=request.args.get("start"),
+        end=request.args.get("end"),
+    )
+    return render_template("admin_chatbot_analytics.html", report=report)
 
 
 

@@ -177,6 +177,17 @@
         </a>
       {% endif %}
 
+      {% if dash_perm.chatbot_analytics %}
+        <a href="/admin/chatbot-analytics" class="dash-card">
+            <div class="dash-card-header">
+            <span class="dash-card-label">KARiN.chatbot 利用分析</span>
+            </div>
+            <p class="dash-card-text">
+            chatbot_usage_logs の集計を確認します。会話全文や個人情報は表示しません。
+            </p>
+        </a>
+      {% endif %}
+
       {% if dash_perm.financial %}
         <a href="/admin/financial" class="dash-card">
             <div class="dash-card-header">
