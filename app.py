@@ -3080,6 +3080,12 @@ def yakuin_shinkyu_redirect():
     return redirect(url_for("lp"), code=301)
 
 
+@app.route("/tokyo/seitai")
+def tokyo_seitai():
+    """東京の出張整体 SEOページ。既存の /lp /price /treatment とは独立。"""
+    return render_template("tokyo_seitai.html")
+
+
 @app.route("/price")
 def price():
     return render_template("price.html")
@@ -6085,6 +6091,7 @@ def sitemap():
             ("/blog", "daily"),
             ("/news", "daily"),
             ("/lp", "monthly"),
+            ("/tokyo/seitai", "weekly"),
             ("/chat", "weekly"),
         ]
         if public_booking_enabled():

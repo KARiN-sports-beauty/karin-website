@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>東京の出張整体｜鍼灸師×アスレティックトレーナー｜KARiN.</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <link rel="canonical" href="https://karin-sb.jp/tokyo/seitai">
+  <meta name="description" content="東京で受けられるKARiN.の出張整体。鍼灸師×アスレティックトレーナーが身体全体の状態や動きを見ながら、一人ひとりに合わせたコンディショニングをご提案します。ご自宅・ホテルなどへの出張に対応。">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="東京の出張整体｜鍼灸師×アスレティックトレーナー｜KARiN.">
+  <meta property="og:description" content="東京で受けられるKARiN.の出張整体。鍼灸師×アスレティックトレーナーが身体全体の状態や動きを見ながら、一人ひとりに合わせたコンディショニングをご提案します。ご自宅・ホテルなどへの出張に対応。">
+  <meta property="og:url" content="https://karin-sb.jp/tokyo/seitai">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://karin-sb.jp/tokyo/seitai#webpage",
+        "url": "https://karin-sb.jp/tokyo/seitai",
+        "name": "東京の出張整体｜鍼灸師×アスレティックトレーナー｜KARiN.",
+        "description": "東京で受けられるKARiN.の出張整体。鍼灸師×アスレティックトレーナーが身体全体の状態や動きを見ながら、一人ひとりに合わせたコンディショニングをご提案します。",
+        "isPartOf": {
+          "@id": "https://karin-sb.jp/#website"
+        },
+        "about": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
+      },
+      {
+        "@type": "Service",
+        "name": "東京の出張整体",
+        "serviceType": "出張整体・コンディショニング",
+        "provider": {
+          "@id": "https://karin-sb.jp/#organization"
+        },
+        "areaServed": {
+          "@type": "AdministrativeArea",
+          "name": "東京都"
+        },
+        "description": "ご自宅・ホテル・スタジオなどへ伺い、身体全体の状態や動きを見ながら整える出張整体。"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "自宅以外でも出張してもらえますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "はい。東京ではご自宅のほか、ホテル、スタジオ、レンタルスペースなど、対応可能な場所へ伺います。鍼灸を含む場合は、場所や条件を事前にご相談ください。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "初めてでも相談できますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "もちろんです。何を受ければよいか分からない場合も、身体の状態や目的を伺いながら一緒に考えます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "整体と鍼灸を組み合わせることはできますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "その日の状態に合わせて、整体を中心に、必要であれば鍼灸などを組み合わせることがあります。事前にメニューを決めなくても大丈夫です。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "スポーツをしていなくても受けられますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "受けられます。日常の疲れや姿勢、身体の重さなど、スポーツをしていない方のご相談も多くあります。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "何分コースがおすすめですか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "初めてで全身を見たい方は90分、気になる部分を中心に整えたい方は60分、複数箇所やコンディショニングまで含めたい方は120分を目安にご案内しています。状態を伺ってからご提案します。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "予約前に相談できますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "できます。施術内容や場所、時間について、予約前でもお気軽にご相談ください。"
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_seitai.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+</head>
+
+<body class="tokyo-seitai-page">
+
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-overlay" id="nav-overlay" hidden></div>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('treatment') }}">施術内容</a>
+      <a href="{{ url_for('price') }}">料金表</a>
+      <a href="{{ url_for('lp') }}">初回相談</a>
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="ts-hero" aria-labelledby="ts-hero-heading">
+      <p class="ts-eyebrow" data-aos="fade-up">Tokyo Visiting Seitai</p>
+      <h1 id="ts-hero-heading" class="ts-hero-title" data-aos="fade-up">
+        東京の出張整体<span class="ts-hero-bar">｜</span><br class="ts-br-sp">身体全体を見て整えるKARiN.
+      </h1>
+      <div class="ts-hero-body" data-aos="fade-up" data-aos-delay="80">
+        <p class="ts-lead">身体の一部分だけではなく、全身からコンディションを整える。</p>
+        <p>東京を中心に、ご自宅・ホテル・スタジオなどへ伺う出張整体。<br class="ts-br-pc">鍼灸師 × アスレティックトレーナーの視点から、身体の状態や動きに合わせた施術を行います。</p>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-for-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-for-heading" class="ts-heading">東京で出張整体を探している方へ</h2>
+        <div class="ts-body">
+          <p>整体院へ通いたい気持ちはあっても、仕事や移動のあいだに時間が取れないことがあります。東京の出張整体なら、ご自宅や滞在先のホテルなど、いつもの場所で身体を整える時間をつくれます。</p>
+          <p>痛い部分だけを見てほしい方もいれば、姿勢や動き、スポーツやトレーニングの疲れまで含めて相談したい方もいます。KARiN.は、その日の状態に合わせて、身体全体から考える施術をご提案します。</p>
+        </div>
+        <ul class="ts-concern-list">
+          <li>忙しくて整体院へ通う時間がない</li>
+          <li>自宅やホテルで施術を受けたい</li>
+          <li>痛い部分だけではなく、身体全体を見てほしい</li>
+          <li>スポーツやトレーニングによる疲労を整えたい</li>
+          <li>姿勢や身体の動きも含めて相談したい</li>
+          <li>自分の状態に合わせた施術を受けたい</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="ts-about-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-about-heading" class="ts-heading">KARiN.の出張整体とは</h2>
+        <blockquote class="ts-quote">
+          痛いところだけを揉む整体ではなく、<br class="ts-br-pc">身体全体の状態を見て整える。
+        </blockquote>
+        <div class="ts-body">
+          <p>不調が出ている場所は、身体からのサインのひとつです。KARiN.の出張整体では、姿勢や動き、筋肉の状態なども含めて見ていき、その方に必要な整え方を考えます。</p>
+          <p>身体の状態に応じて、整体を中心に、ストレッチ、コンディショニング、必要に応じた鍼灸、トレーニング・運動指導などを組み合わせてご提案します。</p>
+          <p>決まったメニューを当てはめるのではなく、<a href="{{ url_for('treatment') }}">施術内容</a>の考え方と同じく、その日の身体に合わせて必要なものを選びます。</p>
+        </div>
+        <ul class="ts-approach-list">
+          <li>整体</li>
+          <li>ストレッチ</li>
+          <li>コンディショニング</li>
+          <li>必要に応じた鍼灸</li>
+          <li>トレーニング・運動指導</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-view-heading">
+      <div class="ts-inner">
+        <h2 id="ts-view-heading" class="ts-heading" data-aos="fade-up">鍼灸師 × アスレティックトレーナーだからできる身体の見方</h2>
+        <div class="ts-view-list">
+          <article class="ts-view-item" data-aos="fade-up">
+            <p class="ts-num">01</p>
+            <h3 class="ts-view-title">身体全体を見て考える</h3>
+            <p>痛みや違和感のある部分だけではなく、姿勢・動き・筋肉の状態など、身体全体のつながりを考えて施術します。</p>
+          </article>
+          <article class="ts-view-item" data-aos="fade-up">
+            <p class="ts-num">02</p>
+            <h3 class="ts-view-title">鍼灸師 × アスレティックトレーナー</h3>
+            <p>施術だけで終わらせず、身体の使い方や日々のコンディショニングまで含めて考えます。整えたあとの動きやすさも、同じ視点で見ていきます。</p>
+          </article>
+          <article class="ts-view-item" data-aos="fade-up">
+            <p class="ts-num">03</p>
+            <h3 class="ts-view-title">スポーツ・アスリートの現場経験</h3>
+            <p>プロからアマチュアまで、約20年スポーツの現場で選手を支えてきました。競技やトレーニングによる負担を、現場の感覚を踏まえて整えます。</p>
+          </article>
+          <article class="ts-view-item" data-aos="fade-up">
+            <p class="ts-num">04</p>
+            <h3 class="ts-view-title">ダンサー・アーティストの現場経験</h3>
+            <p>エンターテイメントのダンサー帯同や、アーティスト・プロダンサーへの施術・調整も行ってきました。表現する身体に必要なコンディションを、現場の経験から支えます。</p>
+          </article>
+          <article class="ts-view-item" data-aos="fade-up">
+            <p class="ts-num">05</p>
+            <h3 class="ts-view-title">出張だからこその柔軟性</h3>
+            <p>ご自宅やホテルなど、ライフスタイルに合わせた場所へ伺います。通う時間を確保しにくい方でも、いつもの場所で整えることができます。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="ts-recommend-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-recommend-heading" class="ts-heading">こんな方におすすめです</h2>
+        <p class="ts-section-lead">不調のケアから、動きやすい身体づくりまで。東京の出張整体として、次のような方に選ばれています。</p>
+        <ul class="ts-recommend-list">
+          <li>首・肩・腰などの不調が気になる</li>
+          <li>身体が重い、疲れが抜けにくい</li>
+          <li>姿勢や身体のバランスを整えたい</li>
+          <li>運動後の疲労をケアしたい</li>
+          <li>トレーニングのパフォーマンスを高めたい</li>
+          <li>ケガを予防するために身体を整えたい</li>
+          <li>整体院に通う時間が取りにくい</li>
+          <li>自宅やホテルでゆっくり施術を受けたい</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-sport-heading">
+      <div class="ts-inner ts-feature" data-aos="fade-up">
+        <div class="ts-feature-image">
+          <img src="{{ url_for('static', filename='images/treatment6.jpg') }}" alt="トレーニング後の身体を整えるコンディショニング" width="720" height="480">
+        </div>
+        <div class="ts-feature-body">
+          <p class="ts-eyebrow ts-eyebrow--left">Athletes</p>
+          <h2 id="ts-sport-heading" class="ts-heading ts-heading--left">スポーツ・アスリートのコンディショニングにも</h2>
+          <div class="ts-body ts-body--left">
+            <p>トレーニングの前後、試合や大会の前後、身体の動かしづらさや残った疲労。競技を続けるほど、部分的なケアだけでは追いつかないことがあります。</p>
+            <p>KARiN.は、野球・ゴルフ・卓球の選手サポートや、テニスの国際大会など、スポーツ現場で約20年身体と向き合ってきました。ケガを予防しながらパフォーマンスを保つために、動きとコンディションの両方から整えます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="ts-dance-heading">
+      <div class="ts-inner ts-feature ts-feature--reverse" data-aos="fade-up">
+        <div class="ts-feature-image">
+          <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="身体の動きを整える整体・コンディショニング" width="720" height="480">
+        </div>
+        <div class="ts-feature-body">
+          <p class="ts-eyebrow ts-eyebrow--left">Artists</p>
+          <h2 id="ts-dance-heading" class="ts-heading ts-heading--left">ダンサー・アーティストなど身体を使って表現する方へ</h2>
+          <div class="ts-body ts-body--left">
+            <p>ダンス、舞台、ライブ。同じ動きを繰り返す現場では、痛みが出る前の違和感や、表現に必要な可動域の変化がコンディションを左右します。</p>
+            <p>KARiN.は、エンターテイメントダンサーのトレーナー帯同や、アーティスト・プロダンサーへの施術・調整を実際の現場で行ってきました。「対応できます」という一般論ではなく、表現する身体と向き合ってきた経験を、出張整体の中でも活かしています。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-place-heading">
+      <div class="ts-inner" data-aos="fade-up">
+        <h2 id="ts-place-heading" class="ts-heading">東京のご希望の場所へ伺います</h2>
+        <p class="ts-section-lead">東京を中心に、生活や滞在のリズムに合わせた場所で出張整体を受けていただけます。</p>
+        <ul class="ts-place-grid">
+          <li>ご自宅</li>
+          <li>ホテル</li>
+          <li>スタジオ</li>
+          <li>レンタルスペース</li>
+          <li>その他、対応可能な場所</li>
+        </ul>
+        <div class="ts-body ts-place-note">
+          <p>整体については、ご自宅やホテルのほか、スタジオ・レンタルスペースなどへも伺えます。鍼灸を含む場合は、対応可能な場所・条件について事前にご相談ください。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="ts-flow-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-flow-heading" class="ts-heading">出張整体の流れ</h2>
+        <ol class="ts-flow-list">
+          <li>
+            <p class="ts-num">01</p>
+            <h3>ご予約・ご相談</h3>
+            <p>気になることやご希望の場所、時間の目安をお伺いします。メニューが決まっていなくても大丈夫です。</p>
+          </li>
+          <li>
+            <p class="ts-num">02</p>
+            <h3>身体の状態を確認</h3>
+            <p>当日の疲れ方や不調の出方など、いまの身体の状態を丁寧に確認します。</p>
+          </li>
+          <li>
+            <p class="ts-num">03</p>
+            <h3>姿勢・動きなどをチェック</h3>
+            <p>気になる部分だけでなく、姿勢や動きの様子も見ながら、どこから整えるかを考えます。</p>
+          </li>
+          <li>
+            <p class="ts-num">04</p>
+            <h3>状態に合わせて施術</h3>
+            <p>整体を中心に、必要なアプローチを組み合わせて整えます。</p>
+          </li>
+          <li>
+            <p class="ts-num">05</p>
+            <h3>セルフケア・コンディショニングをご案内</h3>
+            <p>施術後の過ごし方や、日常でできる整え方をお伝えします。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-price-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-price-heading" class="ts-heading">料金</h2>
+        <p class="ts-section-lead">東京の出張整体の料金目安です。場所に応じて、別途出張費を頂戴しています。</p>
+        <ul class="ts-price-list">
+          <li><span>120分</span><span>22,000円</span></li>
+          <li><span>90分</span><span>16,500円</span></li>
+          <li><span>60分</span><span>11,000円</span></li>
+        </ul>
+        <a href="{{ url_for('price') }}" class="ts-text-link">東京・出張整体の料金について詳しく見る</a>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="ts-faq-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-faq-heading" class="ts-heading">よくあるご質問</h2>
+        <div class="ts-faq">
+          <details>
+            <summary>自宅以外でも出張してもらえますか？</summary>
+            <p>はい。東京ではご自宅のほか、ホテル、スタジオ、レンタルスペースなど、対応可能な場所へ伺います。鍼灸を含む場合は、場所や条件を事前にご相談ください。</p>
+          </details>
+          <details>
+            <summary>初めてでも相談できますか？</summary>
+            <p>もちろんです。何を受ければよいか分からない場合も、身体の状態や目的を伺いながら一緒に考えます。</p>
+          </details>
+          <details>
+            <summary>整体と鍼灸を組み合わせることはできますか？</summary>
+            <p>その日の状態に合わせて、整体を中心に、必要であれば鍼灸などを組み合わせることがあります。事前にメニューを決めなくても大丈夫です。</p>
+          </details>
+          <details>
+            <summary>スポーツをしていなくても受けられますか？</summary>
+            <p>受けられます。日常の疲れや姿勢、身体の重さなど、スポーツをしていない方のご相談も多くあります。</p>
+          </details>
+          <details>
+            <summary>何分コースがおすすめですか？</summary>
+            <p>初めてで全身を見たい方は90分、気になる部分を中心に整えたい方は60分、複数箇所やコンディショニングまで含めたい方は120分を目安にご案内しています。状態を伺ってからご提案します。</p>
+          </details>
+          <details>
+            <summary>予約前に相談できますか？</summary>
+            <p>できます。<a href="{{ url_for('lp') }}">初回相談</a>から、施術内容や場所、時間についてお気軽にご相談ください。</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section ts-cta-section" aria-labelledby="ts-cta-heading">
+      <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
+        <h2 id="ts-cta-heading" class="ts-heading">まずはKARiN.にご相談ください</h2>
+        <div class="ts-body">
+          <p>身体の状態やお悩み、施術内容について、初めての方もお気軽にご相談ください。</p>
+        </div>
+        <div class="ts-cta-row">
+          <a href="{{ url_for('lp') }}" class="ts-cta-btn ts-cta-btn--outline">初回相談</a>
+          <a href="{{ url_for('book_page') }}" class="ts-cta-btn">予約する</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="{{ url_for('index') }}" class="footer-logo">KARiN. <span>~Sports & Beauty~</span></a>
+          <p class="footer-role">鍼灸師 × アスレティックトレーナー</p>
+          <p class="footer-lead">出張施術。完全予約制。</p>
+        </div>
+
+        <nav class="footer-nav" aria-label="サイトナビゲーション">
+          <p class="footer-heading">ナビ</p>
+          <ul>
+            <li><a href="{{ url_for('index') }}">ホーム</a></li>
+            <li><a href="{{ url_for('treatment') }}">施術内容</a></li>
+            <li><a href="{{ url_for('price') }}">料金表</a></li>
+            <li><a href="{{ url_for('lp') }}">初回相談</a></li>
+            <li><a href="{{ url_for('book_page') }}">ご予約</a></li>
+          </ul>
+        </nav>
+
+        <div class="footer-info">
+          <p class="footer-heading">ご案内</p>
+          <dl class="footer-facts">
+            <div>
+              <dt>対応エリア</dt>
+              <dd>東京（代々木上原中心）／福岡（薬院中心）<br>出張施術・完全予約制</dd>
+            </div>
+            <div>
+              <dt>営業時間</dt>
+              <dd>東京 12:00〜26:00<br>福岡 10:00〜19:00<br>定休日：不定休</dd>
+            </div>
+          </dl>
+          <a href="{{ url_for('book_page') }}" class="footer-book">ご予約はこちら</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-sns">
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">
+            <svg class="is-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c-4.7 0-8.5 3.1-8.5 6.9 0 3.1 2.8 5.8 6.6 6.6.3.1.6.4.5.8l-.2 1.2c0 .3.3.5.6.4 2.5-1.1 4.3-1.9 5.4-2.4 2.8-.7 5.6-3.2 5.6-6.6 0-3.8-3.8-6.9-8.5-6.9z"/></svg>
+            <span>LINE</span>
+          </a>
+          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.6" cy="7.4" r="0.8" fill="currentColor" stroke="none"/></svg>
+            <span>Instagram</span>
+          </a>
+        </div>
+        <p class="footer-copy">© 2025 KARiN. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 800,
+      once: true
+    });
+  </script>
+
+  {% include '_karin_chat.html' %}
+
+</body>
+</html>
