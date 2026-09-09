@@ -3119,13 +3119,25 @@ section[id],
   .initial-path-ctas,
   .initial-close-ctas {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    width: 100%;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .initial-path > .initial-btn {
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .initial-btn {
-    width: 100%;
-    min-width: 0;
-    min-height: 52px;
+    width: 80%;
+    min-width: 210px;
+    max-width: 260px;
+    min-height: 0;
+    padding: 11px 22px;
+    font-size: 0.88rem;
   }
 
   .initial-intake {
@@ -3595,6 +3607,14 @@ section[id],
     font-size: 0.9rem;
   }
 
+  .initial-btn {
+    min-width: 0;
+    width: 80%;
+    max-width: 260px;
+    padding: 11px 0;
+    font-size: 0.9rem;
+  }
+
 
   /* ==========================
      施術内容
@@ -3905,6 +3925,12 @@ section[id],
   .cta-btn {
     padding: 11px 22px;
     font-size: 0.95rem;
+  }
+
+  .initial-btn {
+    width: 82%;
+    max-width: 260px;
+    padding: 12px 0;
   }
 
 
@@ -4435,6 +4461,12 @@ section[id],
   }
 
   .contact-btn {
+    width: 80%;
+    max-width: 240px;
+    padding: 10px 0;
+  }
+
+  .initial-btn {
     width: 80%;
     max-width: 240px;
     padding: 10px 0;
