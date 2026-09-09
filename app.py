@@ -739,16 +739,23 @@ def session_may_edit_reservation_row(reservation_staff_name):
 # 院内は1床想定：予約同士の前後に空ける分数（被り禁止・別スタッフ含む）
 IN_HOUSE_SINGLE_BED_GAP_MINUTES = 15
 # スタッフ同一人物の予定間隔
-# - 次が出張（または前が出張→次が院内）：終了後60分
+# - 出張予約同士、および出張↔院内：終了後60分
 # - 院内→院内の続き：終了後30分
+# - 個人予定・休憩・帯同：バッファなし（その時間だけブロック）
 VISIT_RELATED_GAP_MINUTES = 60
 IN_HOUSE_TO_IN_HOUSE_GAP_MINUTES = 30
 
 
 def staff_gap_minutes_between(prev_place_type, next_place_type):
-    """前の予定終了〜次の予定開始に必要な分数（同一スタッフ）。"""
+    """前の予定終了〜次の予定開始に必要な分数（同一スタッフ）。
+
+    出張予約同士（および出張↔院内）は前後60分。院内同士は30分。
+    個人予定・休憩・帯同は時間をブロックするだけで、前後バッファは付けない。
+    """
     prev_pt = (prev_place_type or "").strip()
     next_pt = (next_place_type or "").strip()
+    if is_time_block_reservation_place_type(prev_pt) or is_time_block_reservation_place_type(next_pt):
+        return 0
     if next_pt == "visit":
         return VISIT_RELATED_GAP_MINUTES
     if prev_pt == "visit" and next_pt == "in_house":

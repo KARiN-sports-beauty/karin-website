@@ -236,6 +236,33 @@ def _explicit_treatment_preference(text: str) -> str | None:
     return None
 
 
+def _is_flexible_time_phrase(text: str) -> bool:
+    """時間指定なし。日付範囲の希望とは別。"""
+    raw = text or ""
+    if re.search(r"直近|一番早く|近い日|早め", raw):
+        return False
+    return bool(
+        re.search(
+            r"いつでもいい|時間はいつでも|時間指定なし|時間は(なんでも|おまかせ)|"
+            r"空いて(る|いる)ところで|空いてる(時間|枠)で|"
+            r"何時でも|時間は気にしない",
+            raw,
+        )
+    )
+
+
+def _is_duration_reply(text: str) -> bool:
+    raw = (text or "").strip()
+    return bool(re.fullmatch(r"(じゃあ|では)?(60|90|120)\s*分(で|希望|でお願いします)?[。．]?", raw))
+
+
+def _activate_booking_collection(draft: BookingDraft) -> None:
+    draft.reservation_intent = True
+    if draft.phase == PHASE_CONSULT:
+        draft.phase = PHASE_COLLECTING
+        draft.booking_id = None
+
+
 def apply_utterance_to_draft(
     draft: BookingDraft,
     text: str,
@@ -263,15 +290,25 @@ def apply_utterance_to_draft(
 
     if parsed.area:
         draft.area = parsed.area
+        if draft.duration_minutes in (60, 90, 120) or draft.date or draft.date_candidates:
+            _activate_booking_collection(draft)
     if parsed.place_type:
         draft.place_type = parsed.place_type
     apply_offered_place_type(draft)
     if parsed.duration_minutes in (60, 90, 120):
         draft.duration_minutes = parsed.duration_minutes
+        if wants_reservation or _is_duration_reply(text or "") or draft.reservation_intent:
+            _activate_booking_collection(draft)
 
-    time_from = _parse_time_from(text or "")
-    clock = None if time_from else _parse_clock_time(text or "")
-    if time_from:
+    flexible_time = _is_flexible_time_phrase(text or "")
+    time_from = None if flexible_time else _parse_time_from(text or "")
+    clock = None if (flexible_time or time_from) else _parse_clock_time(text or "")
+    if flexible_time:
+        draft.time = None
+        draft.time_from = None
+        draft.time_period = None
+        draft.selected_time = None
+    elif time_from:
         if draft.time_period:
             draft.narrow_from_period = draft.time_period
         draft.time_from = time_from
@@ -313,12 +350,16 @@ def apply_utterance_to_draft(
         draft.date_candidates = [parsed.date]
         draft.selected_date = parsed.date
         draft.date_range = None
+        if draft.duration_minutes in (60, 90, 120) or draft.area in ("tokyo", "fukuoka"):
+            _activate_booking_collection(draft)
     elif has_weekday and parsed.date:
         draft.last_expand_kind = None
         draft.date = parsed.date
         draft.date_candidates = [parsed.date]
         draft.selected_date = parsed.date
         draft.date_range = None
+        if draft.duration_minutes in (60, 90, 120) or draft.area in ("tokyo", "fukuoka"):
+            _activate_booking_collection(draft)
     elif has_window:
         draft.last_expand_kind = None
         draft.offered_dates = []
@@ -332,6 +373,8 @@ def apply_utterance_to_draft(
             draft.date_filter = "weekend"
         elif _is_soonest_phrase(text or ""):
             draft.date_filter = None
+        if draft.duration_minutes in (60, 90, 120) or draft.area in ("tokyo", "fukuoka"):
+            _activate_booking_collection(draft)
     else:
         draft.last_expand_kind = None
     if parsed.date_candidates and not draft.date and not expand_kind:
@@ -343,6 +386,7 @@ def apply_utterance_to_draft(
         and not draft.date_candidates
         and (draft.time or draft.time_from or draft.time_period)
         and not expand_kind
+        and not flexible_time
     ):
         day = today or _jst_today()
         draft.date_candidates = [d.isoformat() for d in _soonest_dates(day)]
@@ -526,6 +570,8 @@ def _is_soonest_phrase(text: str) -> bool:
     if re.search(r"直近|一番早く|近い日|早め", raw):
         return True
     if re.search(r"今週|来週|平日|土日|週末", raw):
+        return False
+    if _is_flexible_time_phrase(raw):
         return False
     return bool(re.search(r"取れるところ|空いているところ|空いてるところ|空いている日|空いてる日", raw))
 
@@ -1796,9 +1842,42 @@ def _selected_datetime_reply(draft: BookingDraft, date_iso: str, slot: str) -> s
     )
 
 
+def _window_phrase(draft: BookingDraft) -> str:
+    kind = draft.date_range or ""
+    filt = draft.date_filter or ""
+    nextish = "next" in kind
+    if filt == "weekend" or kind == "weekend":
+        return "来週の土日" if nextish else "土日"
+    if filt == "weekdays" or "weekday" in kind:
+        return "来週の平日" if nextish else "平日"
+    if kind == "next_week":
+        return "来週"
+    if kind in ("this_week",):
+        return "今週"
+    if draft.date:
+        return _format_jp_date_short(draft.date)
+    return ""
+
+
+def draft_missing_for_lookup(draft: BookingDraft | None) -> list[str]:
+    if draft is None:
+        return ["area", "duration", "date"]
+    missing = []
+    if draft.area not in ("tokyo", "fukuoka"):
+        missing.append("area")
+    if draft.duration_minutes not in (60, 90, 120):
+        missing.append("duration")
+    if not draft.date and not draft.date_candidates:
+        missing.append("date")
+    return missing
+
+
 def build_missing_conditions_reply(draft: BookingDraft, missing: list[str]) -> str | None:
     need_area = "area" in missing or draft.area not in ("tokyo", "fukuoka")
     need_duration = "duration" in missing or draft.duration_minutes not in (60, 90, 120)
+    need_date = "date" in missing or (
+        not draft.date and not draft.date_candidates
+    )
     has_window = bool(
         draft.date
         or draft.date_candidates
@@ -1807,21 +1886,61 @@ def build_missing_conditions_reply(draft: BookingDraft, missing: list[str]) -> s
         or draft.time_from
         or draft.time
     )
+    window = _window_phrase(draft)
+    dur = (
+        f"{draft.duration_minutes}分"
+        if draft.duration_minutes in (60, 90, 120)
+        else ""
+    )
     if need_area and need_duration:
         if has_window:
             return AREA_AND_DURATION_FOLLOW_REPLY
         return INITIAL_RESERVATION_REPLY
     if need_area:
+        if window and dur:
+            return (
+                f"{window}で{dur}ですね。\n"
+                "東京・福岡のどちらでのご利用をご希望ですか？"
+            )
+        if dur and need_date:
+            return (
+                f"{dur}ですね。東京・福岡のどちらでのご利用をご希望ですか？"
+                "日付や時間帯の希望があれば、あわせて教えてください。"
+            )
+        if dur:
+            return f"{dur}ですね。東京・福岡のどちらでのご利用をご希望ですか？"
         return AREA_ASK_REPLY
     if need_duration:
         return DURATION_ASK_REPLY
-    if "date" in missing:
+    if need_date:
         return DATE_WINDOW_ASK_REPLY
     return None
 
 
 def _period_word_for(draft: BookingDraft) -> str:
     return _period_label(draft.time_period or draft.narrow_from_period)
+
+
+def _availability_intro(draft: BookingDraft) -> str:
+    window = _window_phrase(draft)
+    dur = (
+        f"{draft.duration_minutes}分"
+        if draft.duration_minutes in (60, 90, 120)
+        else ""
+    )
+    area = "東京" if draft.area == "tokyo" else ("福岡" if draft.area == "fukuoka" else "")
+    if area and dur and window:
+        head = f"{area}で{dur}、{window}ですね。"
+    else:
+        bits = [x for x in (area, dur, window) if x]
+        head = f"{'、'.join(bits)}ですね。" if bits else ""
+    if not draft.time and not draft.time_from and not draft.time_period:
+        if head:
+            return f"{head}時間の希望がなければ、空いている時間を幅広く確認します。"
+        return "空きが確認できる日時は以下です。"
+    if head:
+        return f"{head}空きが確認できる日時は以下です。"
+    return "空きが確認できる日時は以下です。"
 
 
 def _ask_which_day(draft: BookingDraft, result: BookingLookupResult) -> bool:
@@ -1866,9 +1985,12 @@ def _no_other_dates_reply(draft: BookingDraft) -> str:
 
 def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> str | None:
     if result.api_status == "skipped_insufficient":
+        missing = result.missing_fields or draft_missing_for_lookup(draft)
+        if missing:
+            return build_missing_conditions_reply(draft, missing)
         if draft.last_expand_kind:
             return _no_other_dates_reply(draft)
-        return build_missing_conditions_reply(draft, result.missing_fields or [])
+        return build_missing_conditions_reply(draft, missing)
     if result.api_status != "ok":
         return None
     if result.alternative_duration:
@@ -1984,6 +2106,12 @@ def build_candidate_reply(result: BookingLookupResult, draft: BookingDraft) -> s
             return (
                 f"{intro}\n\n{rows}\n\n"
                 "ご都合の良い日時があれば教えてください。"
+            )
+        if grouped and not weekdayish:
+            rows = _band_rows(grouped, duration)
+            return (
+                f"{_availability_intro(draft)}\n\n{rows}\n\n"
+                "ご希望の日や開始時間があれば教えてください。"
             )
         bullets = "\n".join(f"・{_format_jp_date_short(d)}" for d in dates)
         ask = (

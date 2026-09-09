@@ -211,6 +211,78 @@ def test_availability_rules():
     report("24:00" in free_times and "24:30" in free_times, "90分の空き開始に 24:00 と 24:30 が含まれる", str(free_times[-6:]))
     report("24:45" not in free_times, "90分で26:00を超える 24:45 は開始できない")
 
+    from app import staff_gap_minutes_between
+
+    report(staff_gap_minutes_between("personal", "visit") == 0, "個人予定のあとに出張バッファを付けない")
+    report(staff_gap_minutes_between("visit", "personal") == 0, "出張のあとに個人予定バッファを付けない")
+    report(staff_gap_minutes_between("break", "visit") == 0, "休憩のあとに出張バッファを付けない")
+    report(staff_gap_minutes_between("visit", "visit") == 60, "出張予約同士は60分バッファ")
+    report(staff_gap_minutes_between("in_house", "visit") == 60, "院内のあとの出張は60分バッファ")
+
+    day16 = datetime(2026, 9, 16, tzinfo=JST).replace(hour=0, minute=0, second=0, microsecond=0)
+    now16 = day16 - timedelta(days=7)
+    shift_s16, shift_e16 = 19 * 60, 26 * 60
+
+    def slot16(hm):
+        hh, mm = [int(x) for x in hm.split(":")]
+        return day16 + timedelta(hours=hh, minutes=mm)
+
+    def available_times(rows, duration):
+        times = []
+        minute = shift_s16
+        while minute + duration <= shift_e16:
+            hh, mm = divmod(minute, 60)
+            label = f"{hh:02d}:{mm:02d}"
+            if is_booking_slot_available(
+                "A", slot16(label), duration, shift_s16, shift_e16, rows, now16, "visit", []
+            ):
+                times.append(label)
+            minute += 15
+        return times
+
+    personal_21_24 = {
+        "id": "personal-16",
+        "staff_name": "A",
+        "reserved_at": slot16("21:00").isoformat(),
+        "duration_minutes": 180,
+        "place_type": "personal",
+        "status": "reserved",
+    }
+    personal_times = available_times([personal_21_24], 90)
+    report(
+        personal_times == ["19:00", "19:15", "19:30", "24:00", "24:15", "24:30"],
+        "personal 21:00〜24:00 なら90分は 19:00〜19:30 と 24:00〜24:30",
+        str(personal_times),
+    )
+    report("23:45" not in personal_times, "personal 中の 23:45 は開始不可")
+    report("20:00" not in personal_times, "personal 開始に重なる 20:00 は開始不可")
+
+    visit_21_24 = dict(personal_21_24, id="visit-16", place_type="visit")
+    visit_90 = available_times([visit_21_24], 90)
+    report(
+        visit_90 == [],
+        "既存出張 21:00〜24:00 なら90分開始枠は成立しない",
+        str(visit_90),
+    )
+    visit_60 = available_times([visit_21_24], 60)
+    report(
+        visit_60 == ["19:00", "25:00"],
+        "既存出張 21:00〜24:00 なら60分は 19:00 と 25:00 のみ",
+        str(visit_60),
+    )
+    report(
+        not is_booking_slot_available(
+            "A", slot16("24:00"), 60, shift_s16, shift_e16, [visit_21_24], now16, "visit", []
+        ),
+        "既存出張終了直後の 24:00 は60分でも不可（バッファ）",
+    )
+    report(
+        is_booking_slot_available(
+            "A", slot16("24:00"), 90, shift_s16, shift_e16, [personal_21_24], now16, "visit", []
+        ),
+        "personal 終了直後の 24:00 は90分可",
+    )
+
 
 def test_http_fail_closed_and_lead_time():
     from app import app, BOOKING_LEAD_TIME_MESSAGE, BOOKING_LOCK_UNAVAILABLE_USER_MESSAGE
@@ -379,6 +451,86 @@ def test_live_double_book():
             print(f"  cleanup warning: {e}")
 
 
+def test_live_sept16_personal_windows():
+    """2026-09-16 の実シフト・personal で 24:00 台が消えていないこと。INSERTしない。"""
+    from app import (
+        fetch_booking_day_reservations,
+        fetch_booking_day_shifts,
+        list_web_booking_slots,
+        load_approved_staff_entries_for_booking,
+        reservation_interval_jst,
+        working_staff_for_booking_day,
+    )
+
+    day_str = "2026-09-16"
+    entries = load_approved_staff_entries_for_booking()
+    names = [s["name"] for s in entries]
+    shifts = fetch_booking_day_shifts(day_str, names)
+    rows = fetch_booking_day_reservations(day_str)
+    working = working_staff_for_booking_day("tokyo", day_str, entries, shifts, rows)
+    if not working:
+        print("SKIP: 2026-09-16 tokyo 勤務スタッフなし")
+        return
+
+    staff = working[0]
+    staff_name = staff["name"]
+    staff_rows = [r for r in rows if (r.get("staff_name") or "").strip() == staff_name]
+    personal_blocks = []
+    visit_blocks = []
+    other_blocks = []
+    for r in staff_rows:
+        rs, re = reservation_interval_jst(r)
+        if rs is None:
+            continue
+        item = (r.get("place_type"), rs, re)
+        if r.get("place_type") == "personal":
+            personal_blocks.append(item)
+        elif r.get("place_type") in ("visit", "in_house"):
+            visit_blocks.append(item)
+        else:
+            other_blocks.append(item)
+
+    payload = list_web_booking_slots("tokyo", day_str, 90, "visit")
+    times = [s["time"] for s in payload["free_row"]["slots"] if s.get("available")]
+    print(
+        "  live 9/16",
+        staff_name,
+        "shift",
+        staff["shift_start"],
+        staff["shift_end"],
+        "personal",
+        personal_blocks,
+        "visit",
+        visit_blocks,
+        "times",
+        times,
+    )
+    report(
+        "24:00" in times and "24:30" in times,
+        "9/16 の 24:00 台が personal によって消えていない",
+        str(times),
+    )
+
+    expected_shape = (
+        staff["shift_start"] == 19 * 60
+        and staff["shift_end"] == 26 * 60
+        and not visit_blocks
+        and not other_blocks
+        and len(personal_blocks) == 1
+        and personal_blocks[0][1].hour == 21
+        and personal_blocks[0][1].minute == 0
+        and (personal_blocks[0][2] - personal_blocks[0][1]) == timedelta(minutes=180)
+    )
+    if not expected_shape:
+        print("SKIP: 9/16 実データが シフト19:00〜26:00 / personal 21:00〜24:00 のみ、ではない")
+        return
+    report(
+        times == ["19:00", "19:15", "19:30", "24:00", "24:15", "24:30"],
+        "実データ 9/16 personal のみなら 19:00〜19:30 と 24:00〜24:30",
+        str(times),
+    )
+
+
 def main():
     from dotenv import load_dotenv
     load_dotenv(os.path.join(ROOT, ".env"))
@@ -387,6 +539,7 @@ def main():
     try:
         test_url_and_lock_helpers()
         test_availability_rules()
+        test_live_sept16_personal_windows()
         test_http_fail_closed_and_lead_time()
         test_advisory_lock_on_live_db()
         test_live_double_book()

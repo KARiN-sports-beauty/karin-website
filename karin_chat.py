@@ -200,10 +200,9 @@ RESERVATION_STEER_PROMPT = """# いまの会話は予約を進めるための案
 - 身体の問診を始めない。いつから痛いか、どんな痛いか、どの施術を希望か、と聞かない。
 - 相談モードに切り替えない。
 - 施術時間が未定なら、60分・90分・120分の希望だけを確認する。空きがあるとは言わない。
-- 必須情報（東京か福岡か）が足りないときだけ質問は1個。希望の曜日や時刻を重ねて聞かない。
-- 確認できた候補日があれば、先にその日付を示す。ご都合の良い日、もしくはご希望の時間帯を聞いてよい。
-- 「ご希望の日時はありますか」「具体的な日や時間帯を教えてください」とは聞かない。
-- 予約システムが返した日付と時刻は「○月○日 ○○:○○」として案内してよい。存在しない枠は出さない。
+- エリア（東京か福岡か）が未確定なら、空きがあるとは言わずエリアだけ確認する。日付や時刻を作らない。
+- 必須情報が足りないとき、確認できた項目は聞き直さない。
+- 予約システムが返していない日付・曜日・時刻は案内しない。◯月◯日、◯曜日、◯◯:◯◯ のようなプレースホルダーも禁止。
 - 「承りました」「予約をお取りしました」「予約が完了しました」は禁止。まだ予約は確定していない。
 - 現在案内できるのは出張施術のみ。院内を予約の選択肢として出さない。出張か院内かを聞かない。
 """
@@ -885,8 +884,18 @@ def _scripted_booking_turn(text, state, intent, prior_user, lookup_fn, book_fn):
             return build_confirmation_reply(draft), empty, False, False
         return build_guest_info_ask(draft), empty, False, False
 
-    if _explicit_consult_switch(text) or draft.phase == PHASE_CONSULT:
+    collecting = bool(
+        draft.reservation_intent
+        or INTENT_RESERVATION in intent.all_intents
+        or _is_reservation_want(text)
+    )
+    if _explicit_consult_switch(text) and not collecting:
         return None, None, False, False
+    if draft.phase == PHASE_CONSULT and not collecting:
+        return None, None, False, False
+    if collecting and draft.phase == PHASE_CONSULT:
+        draft.phase = PHASE_COLLECTING
+        draft.reservation_intent = True
 
     if draft.phase == PHASE_CONFIRMING:
         if is_confirming_affirmative(text):
@@ -965,6 +974,9 @@ def _scripted_booking_turn(text, state, intent, prior_user, lookup_fn, book_fn):
     scripted = build_candidate_reply(booking, draft)
     if scripted is not None:
         return scripted, booking, False, False
+    ask = build_missing_conditions_reply(draft, missing)
+    if ask:
+        return ask, booking, False, False
     return None, booking, False, False
 
 

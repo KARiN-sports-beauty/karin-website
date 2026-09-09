@@ -125,6 +125,29 @@ def main() -> int:
     if before_h != EXPECTED_HASH:
         failures.append(f"開始時 hash 不一致 {before_h}")
 
+    print("\n===== 実データ 9/16 personal（バッファなし） =====")
+    from app import list_web_booking_slots
+
+    live16 = list_web_booking_slots("tokyo", "2026-09-16", 90, "visit")
+    live_times = [s["time"] for s in live16["free_row"]["slots"] if s.get("available")]
+    live_iv = _availability_intervals(live_times, 90)
+    print("  live 9/16 starts", live_times, "intervals", live_iv)
+    if "24:00" not in live_times or "24:30" not in live_times:
+        failures.append(f"9/16 24:00台が無い {live_times}")
+    if "19:00" not in live_times or "19:30" not in live_times:
+        failures.append(f"9/16 19:00台が無い {live_times}")
+    live_pairs = [(x["start"], x["end"]) for x in live_iv]
+    if ("19:00", "21:00") not in live_pairs or ("24:00", "26:00") not in live_pairs:
+        failures.append(f"9/16 空き区間が 19:00〜21:00 と 24:00〜26:00 でない {live_iv}")
+    if any(x["end"] == x["last_start"] for x in live_iv):
+        failures.append("9/16 空き終了と最終開始を混同")
+
+    live17 = list_web_booking_slots("tokyo", "2026-09-17", 90, "visit")
+    live17_times = [s["time"] for s in live17["free_row"]["slots"] if s.get("available")]
+    print("  live 9/17 24h", [t for t in live17_times if t.startswith("24:")])
+    if "24:00" not in live17_times or "24:30" not in live17_times:
+        failures.append(f"9/17 24:00台が datetime.hour=0 で落ちている {live17_times[-8:]}")
+
     print("\n===== A 複数区間 =====")
     starts_a = hm_series("19:00", "19:30") + hm_series("24:00", "24:30")
     iv_a = _availability_intervals(starts_a, 90)
