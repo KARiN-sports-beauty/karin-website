@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 
 from karin_chat_booking import (
+    CONFIRM_BOOKING_CHOICE,
     PHASE_ALT,
     PHASE_COMPLETED,
     PHASE_CONFIRMING,
@@ -181,9 +182,12 @@ def select_followup_choices(
         return []
     if intent is not None and intent.primary_intent in INQUIRY_REQUIRED_INTENTS:
         return []
+    if draft is not None and draft.phase == PHASE_CONFIRMING:
+        if "この内容で予約を確定しますか" in (reply or "") or _CONFIRM_RE.search(reply or ""):
+            return [CONFIRM_BOOKING_CHOICE]
+        return []
     if draft is not None and draft.phase in (
         PHASE_GUEST,
-        PHASE_CONFIRMING,
         PHASE_COMPLETED,
         PHASE_ALT,
     ):

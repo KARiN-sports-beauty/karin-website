@@ -18,7 +18,7 @@ load_dotenv(os.path.join(ROOT, ".env"), override=True)
 
 from ai_knowledge import get_admin_client  # noqa: E402
 from karin_chat import INITIAL_RESERVATION_REPLY, chat_public_payload, run_chat  # noqa: E402
-from karin_chat_booking import BookingDraft, PHASE_GUEST  # noqa: E402
+from karin_chat_booking import BookingDraft, CONFIRM_BOOKING_CHOICE, PHASE_CONFIRMING, PHASE_GUEST  # noqa: E402
 from karin_chat_choices import (  # noqa: E402
     CHOICE_SETS,
     FREE_OTHER,
@@ -162,6 +162,14 @@ def main() -> int:
     g0 = run_chat("予約したいです", match_fn=empty_match, complete_fn=complete_ok, lookup_fn=lookup, book_fn=book_fn)
     g1 = continue_chat("東京で9/10 18:00、90分", g0, match_fn=empty_match, complete_fn=complete_ok, lookup_fn=lookup, book_fn=book_fn)
     g2 = continue_chat("お願いします", g1, match_fn=empty_match, complete_fn=complete_ok, lookup_fn=lookup, book_fn=book_fn)
+    print("  confirm", g2.booking_phase, g2.followup_choices)
+    if g2.booking_phase == "confirming":
+        if g2.followup_choices != [CONFIRM_BOOKING_CHOICE]:
+            failures.append(f"7: 最終確認ボタンがない {g2.followup_choices}")
+        if FREE_OTHER in (g2.followup_choices or []):
+            failures.append("7: 最終確認にその他がある")
+        if "この内容で予約を確定しますか？" not in (g2.reply or ""):
+            failures.append("7: 最終確認文がない")
     g3 = continue_chat("はい", g2, match_fn=empty_match, complete_fn=complete_ok, lookup_fn=lookup, book_fn=book_fn)
     print("  guest", g3.booking_phase, t_book.followup_choices if False else g3.followup_choices)
     if g3.booking_phase != "guest_info":
@@ -203,6 +211,16 @@ def main() -> int:
     )
     if guest_choices:
         failures.append(f"guest unit: {guest_choices}")
+    confirm_choices = select_followup_choices(
+        user_text="お願いします",
+        reply="予約内容をご確認ください。\nこの内容で予約を確定しますか？",
+        intent=detect_intents("お願いします"),
+        draft=BookingDraft(phase=PHASE_CONFIRMING, reservation_intent=True),
+    )
+    if confirm_choices != [CONFIRM_BOOKING_CHOICE]:
+        failures.append(f"confirm unit: {confirm_choices}")
+    if FREE_OTHER in confirm_choices:
+        failures.append("confirm unit: その他がある")
     if FREE_OTHER not in CHOICE_SETS["treatment_goal"] and FREE_OTHER not in choice_set("treatment_goal"):
         failures.append("その他がセットに載っていない")
 

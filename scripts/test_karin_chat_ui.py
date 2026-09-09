@@ -195,6 +195,14 @@ def main() -> int:
         failures.append("起動UIの×のタップ範囲拡張がない")
     if re.search(r"\.karin-chat-fab-dismiss\s*\{[^}]*width:\s*18px", css) is None:
         failures.append("起動UIの×の見た目が小さくなっていない")
+    if "KARiN.に相談する" not in widget:
+        failures.append("起動UIのメイン文言がない")
+    if "予約やお身体の相談" not in widget:
+        failures.append("起動UIの補足文がない")
+    if 'class="karin-chat-fab-sub"' not in widget:
+        failures.append("起動UIの補足文クラスがない")
+    if ".karin-chat-fab-sub" not in css:
+        failures.append("起動UIの補足文スタイルがない")
 
     print("\n===== 書体・安全 =====")
     if '"Playfair Display"' not in css or ".karin-chat-brand" not in css:

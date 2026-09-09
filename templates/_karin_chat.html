@@ -19,14 +19,17 @@
       type="button"
       class="karin-chat-fab"
       data-karin-fab
-      aria-label="KARiN.chatbotを開く"
+      aria-label="KARiN.に相談する。予約やお身体の相談"
       aria-expanded="false"
       aria-controls="karin-chat-panel"
     >
       <span class="karin-chat-fab-face" aria-hidden="true">
         <img src="{{ url_for('static', filename='images/chatbotfaceicon.png') }}" alt="">
       </span>
-      <span class="karin-chat-fab-label">相談する</span>
+      <span class="karin-chat-fab-copy">
+        <span class="karin-chat-fab-label">KARiN.に相談する</span>
+        <span class="karin-chat-fab-sub">予約やお身体の相談</span>
+      </span>
     </button>
   </div>
 

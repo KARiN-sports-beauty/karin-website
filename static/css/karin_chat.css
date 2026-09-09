@@ -156,6 +156,11 @@ body:has(.home-btn) .karin-chat[data-mode="widget"] .karin-chat-launcher {
   .karin-chat-fab {
     padding: 5px 12px 5px 5px;
     font-size: 0.8rem;
+    gap: 8px;
+  }
+
+  .karin-chat-fab-sub {
+    font-size: 0.62rem;
   }
 
   body:has(.home-btn) .karin-chat[data-mode="widget"] .karin-chat-launcher {
@@ -196,6 +201,27 @@ body:has(.home-btn) .karin-chat[data-mode="widget"] .karin-chat-launcher {
 .karin-chat-fab-face {
   width: 40px;
   height: 40px;
+}
+
+.karin-chat-fab-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.karin-chat-fab-label {
+  white-space: nowrap;
+}
+
+.karin-chat-fab-sub {
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  opacity: 0.72;
+  white-space: nowrap;
 }
 
 .karin-chat-fab-face img,

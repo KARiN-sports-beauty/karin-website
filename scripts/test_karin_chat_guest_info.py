@@ -21,11 +21,14 @@ from ai_knowledge import get_admin_client  # noqa: E402
 from karin_chat import run_chat  # noqa: E402
 from karin_chat_booking import (  # noqa: E402
     BookingDraft,
+    NAME_NEWLINE_ASK,
+    CONFIRM_BOOKING_CHOICE,
     build_guest_info_ask,
     chat_in_house_booking_enabled,
     guest_display_name,
     guest_fields_for_place,
     guest_info_complete,
+    is_confirming_affirmative,
     missing_guest_fields,
     parse_guest_info,
     required_guest_fields,
@@ -208,6 +211,18 @@ def main() -> int:
     ask_d = build_guest_info_ask(d_d)
     if "姓" not in ask_d or "名" not in ask_d:
         failures.append(f"D: 姓・名の確認がない {ask_d}")
+    d_name_only = BookingDraft(
+        place_type="visit",
+        guest_phone="09012345678",
+        guest_email="test@example.com",
+        guest_place_name="渋谷",
+    )
+    parse_guest_info(d_name_only, "藤田幸士")
+    ask_name_only = build_guest_info_ask(d_name_only)
+    if ask_name_only != NAME_NEWLINE_ASK:
+        failures.append(f"D: 姓名案内が新しい文言でない {ask_name_only}")
+    if "あと、お名前の姓と名だけ" in ask_name_only:
+        failures.append("D: 旧案内が残っている")
     booking_src = open(os.path.join(ROOT, "karin_chat_booking.py"), encoding="utf-8").read()
     if "return raw[:2], raw[2:]" in booking_src or "raw[:2], raw[2:]" in booking_src:
         failures.append("D: 文字数による姓・名の推測分割が残っている")
@@ -222,8 +237,10 @@ def main() -> int:
     if missing_guest_fields(d_e) != ["name", "dispatch_destination"]:
         failures.append(f"E: missing={missing_guest_fields(d_e)}")
     ask_e = build_guest_info_ask(d_e)
-    if "姓" not in ask_e or "名" not in ask_e:
-        failures.append(f"E: 姓名確認がない {ask_e}")
+    if "姓と名を改行" not in ask_e or "山田" not in ask_e:
+        failures.append(f"E: 改行例の案内がない {ask_e}")
+    if "出張先" not in ask_e:
+        failures.append(f"E: 出張先確認がない {ask_e}")
     if "電話番号を教えて" in ask_e or "メールアドレスを教えて" in ask_e:
         failures.append(f"E: 保存済みの電話/メールを再質問 {ask_e}")
 
@@ -285,6 +302,17 @@ def main() -> int:
         failures.append(f"newline: {d_nl.guest_last_name}/{d_nl.guest_first_name}")
     if d_nl.guest_phone != "09012345678" or d_nl.guest_email != "test@example.com":
         failures.append("newline: phone/email 未保存")
+    d_ex = BookingDraft(
+        place_type="visit",
+        guest_phone="09012345678",
+        guest_email="test@example.com",
+        guest_place_name="渋谷",
+    )
+    parse_guest_info(d_ex, "山田\n太郎")
+    if d_ex.guest_last_name != "山田" or d_ex.guest_first_name != "太郎":
+        failures.append(f"newline-example: {d_ex.guest_last_name}/{d_ex.guest_first_name}")
+    if not is_confirming_affirmative(CONFIRM_BOOKING_CHOICE):
+        failures.append("confirm: 確定ボタン文言が肯定になっていない")
 
     print("\n===== unlabeled A ラベルなし5行 =====")
     d_seq = BookingDraft(place_type="visit")
@@ -502,10 +530,21 @@ def main() -> int:
         failures.append("E-chat: phone/email が保存されていない")
     if "電話番号を教えて" in (e1.reply or "") or "メールアドレスを教えて" in (e1.reply or ""):
         failures.append(f"E-chat: 保存済み連絡先を再質問 {e1.reply}")
-    if "姓" not in (e1.reply or ""):
-        failures.append(f"E-chat: 姓名確認がない {e1.reply}")
+    if "姓と名を改行" not in (e1.reply or "") or "山田" not in (e1.reply or ""):
+        failures.append(f"E-chat: 新しい姓名案内がない {e1.reply}")
     if e1.booking_create_called or creates:
         failures.append("M: 曖昧氏名ターンで予約作成している")
+    e2 = continue_chat(
+        "山田\n太郎",
+        e1,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=lookup_e,
+        book_fn=book_fn,
+    )
+    de2 = draft_of(e2)
+    if de2.guest_last_name != "山田" or de2.guest_first_name != "太郎":
+        failures.append("E-chat: 改行姓名が保存されていない")
 
     print("\n===== K 会話: 明確な姓名＋連絡先＋出張先 → 最終確認 =====")
     reset_store_for_tests()
@@ -549,6 +588,41 @@ def main() -> int:
             failures.append("L: 氏名が予約処理に渡っていない")
         if len(args) > 1 and args[1] != "visit":
             failures.append(f"L: place_type={args[1]}")
+
+    print("\n===== L2 確定ボタン → create 1件 =====")
+    reset_store_for_tests()
+    creates.clear()
+    lookup_btn = mock_slots("18:00")
+    g_btn = reach_guest(book_fn, lookup_btn, place_type="visit")
+    b1 = continue_chat(
+        "姓：藤田、名：幸士、090-1234-5678、test@example.com、東京都渋谷区神南",
+        g_btn,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=lookup_btn,
+        book_fn=book_fn,
+    )
+    if b1.booking_phase != "confirming":
+        failures.append(f"L2: phase={b1.booking_phase}")
+    if "この内容で予約を確定しますか？" not in (b1.reply or ""):
+        failures.append("L2: 最終確認文がない")
+    if b1.followup_choices != [CONFIRM_BOOKING_CHOICE]:
+        failures.append(f"L2: 確定ボタンがない {b1.followup_choices}")
+    if b1.booking_create_called or creates:
+        failures.append("L2: ボタン表示時点で予約作成している")
+    b2 = continue_chat(
+        CONFIRM_BOOKING_CHOICE,
+        b1,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=lookup_btn,
+        book_fn=book_fn,
+    )
+    print("  L2 create", b2.booking_completed, "n", len(creates), b2.followup_choices)
+    if not b2.booking_completed or len(creates) != 1:
+        failures.append(f"L2: 予約が1件になっていない completed={b2.booking_completed} n={len(creates)}")
+    if "その他・自由に相談" in (b1.followup_choices or []):
+        failures.append("L2: 最終確認に相談用その他がある")
 
     print("\n===== 空白姓名＋連絡先＋出張先 =====")
     reset_store_for_tests()

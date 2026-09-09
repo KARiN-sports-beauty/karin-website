@@ -81,6 +81,18 @@ PHASE_GUEST = "guest_info"
 PHASE_COMPLETED = "completed"
 PHASE_CONSULT = "consult"
 
+# 最終確認チップ。押下時は通常発話として is_confirming_affirmative へ渡す。
+CONFIRM_BOOKING_CHOICE = "はい、予約を確定する"
+
+NAME_NEWLINE_ASK = (
+    "ありがとうございます。\n"
+    "姓と名を改行してお送りください。\n"
+    "\n"
+    "例：\n"
+    "山田\n"
+    "太郎"
+)
+
 DURATION_ASK_REPLY = (
     "ありがとうございます。施術時間は60分・90分・120分のどれをご希望ですか？"
 )
@@ -1449,6 +1461,8 @@ def is_confirming_affirmative(text: str) -> bool:
         return False
     if is_booking_condition_change(raw) or is_booking_defer(raw):
         return False
+    if raw == CONFIRM_BOOKING_CHOICE:
+        return True
     if is_explicit_booking_confirm(raw):
         return True
     return bool(
@@ -2287,6 +2301,14 @@ def build_guest_info_ask(draft: BookingDraft) -> str:
         if label:
             other.append(label)
     bits = ([name_bit] if name_bit else []) + other
+    unrecognized_name = bool(
+        "name" in missing and not draft.guest_last_name and not draft.guest_first_name
+    )
+    if unrecognized_name:
+        if not other:
+            return NAME_NEWLINE_ASK
+        extra = "と".join(other)
+        return f"{NAME_NEWLINE_ASK}\nあわせて、{extra}も教えてください。"
     if len(bits) == 1:
         return f"ありがとうございます。あと、{bits[0]}だけ教えてください。"
     joined = "と".join(bits)
