@@ -1797,6 +1797,25 @@ def booking_place_type_label(place_type):
     return "出張" if place_type == "visit" else "院内"
 
 
+def booking_slot_shift_clock_minutes(slot_start_jst, duration_minutes, shift_start_min, shift_end_min):
+    """シフト窓との比較用に、開始・終了を営業日0:00起点の分へ直す。
+
+    datetime.hour は 24:00 を翌日 00:00 にする。12時間ルールや衝突判定の
+    datetime 自体は変えない。終了は「開始＋施術時間」であり、翌日 01:15 を
+    75分として 26:00 シフトと比較しない。
+    """
+    start_min = int(slot_start_jst.hour) * 60 + int(slot_start_jst.minute)
+    duration = int(duration_minutes or 0)
+    if (
+        shift_end_min is not None
+        and shift_end_min > 24 * 60
+        and start_min < 12 * 60
+        and (shift_start_min is None or start_min < shift_start_min)
+    ):
+        start_min += 24 * 60
+    return start_min, start_min + duration
+
+
 def is_booking_slot_available(
     staff_name,
     slot_start_jst,
@@ -1812,8 +1831,9 @@ def is_booking_slot_available(
     if slot_start_jst < now_jst + timedelta(minutes=BOOKING_MIN_LEAD_MINUTES):
         return False
     slot_end_jst = slot_start_jst + timedelta(minutes=duration_minutes)
-    slot_start_min = slot_start_jst.hour * 60 + slot_start_jst.minute
-    slot_end_min = slot_end_jst.hour * 60 + slot_end_jst.minute
+    slot_start_min, slot_end_min = booking_slot_shift_clock_minutes(
+        slot_start_jst, duration_minutes, shift_start_min, shift_end_min
+    )
     if slot_end_min > 26 * 60:
         return False
     if slot_start_min < shift_start_min or slot_end_min > shift_end_min:

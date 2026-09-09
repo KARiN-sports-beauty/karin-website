@@ -190,6 +190,27 @@ def test_availability_rules():
         "既存60分枠に重なる120分は予約不可",
     )
 
+    from app import booking_slot_shift_clock_minutes, build_booking_slot_list
+
+    day = (now + timedelta(days=2)).date()
+    day_start = datetime.combine(day, datetime.min.time()).replace(tzinfo=JST)
+    slot_2430 = day_start + timedelta(hours=24, minutes=30)
+    slot_2345 = day_start + timedelta(hours=23, minutes=45)
+    overnight_shift_s, overnight_shift_e = 12 * 60, 26 * 60
+    s2430, e2430 = booking_slot_shift_clock_minutes(slot_2430, 90, overnight_shift_s, overnight_shift_e)
+    s2345, e2345 = booking_slot_shift_clock_minutes(slot_2345, 90, overnight_shift_s, overnight_shift_e)
+    report(s2430 == 24 * 60 + 30 and e2430 == 26 * 60, "24:30開始90分は営業日 24:30〜26:00", f"{s2430} {e2430}")
+    report(s2345 == 23 * 60 + 45 and e2345 == 25 * 60 + 15, "23:45開始90分の終了は 25:15 であり 01:15 ではない", f"{s2345} {e2345}")
+    report(
+        is_booking_slot_available("A", slot_2430, 90, overnight_shift_s, overnight_shift_e, [], now, "visit", []),
+        "シフト26:00なら24:30開始90分は予約可",
+    )
+    working = [{"name": "A", "created_at": "2026-01-01", "shift_start": overnight_shift_s, "shift_end": overnight_shift_e}]
+    _rows, free_row = build_booking_slot_list(working, day.isoformat(), 90, [], now, "visit")
+    free_times = [s["time"] for s in free_row if s.get("available")]
+    report("24:00" in free_times and "24:30" in free_times, "90分の空き開始に 24:00 と 24:30 が含まれる", str(free_times[-6:]))
+    report("24:45" not in free_times, "90分で26:00を超える 24:45 は開始できない")
+
 
 def test_http_fail_closed_and_lead_time():
     from app import app, BOOKING_LEAD_TIME_MESSAGE, BOOKING_LOCK_UNAVAILABLE_USER_MESSAGE

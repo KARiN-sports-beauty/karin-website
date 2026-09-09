@@ -1689,6 +1689,7 @@ def _slot_step_minutes() -> int:
 
 
 def _consecutive_bands(times: list[str]) -> list[tuple[str, str]]:
+    """連続した予約開始可能時刻の区間。15分超の飛びは連結しない。"""
     step = _slot_step_minutes()
     ordered = sorted({t for t in times if _time_to_min(t) is not None}, key=_time_to_min)
     if not ordered:
@@ -1705,19 +1706,43 @@ def _consecutive_bands(times: list[str]) -> list[tuple[str, str]]:
     return bands
 
 
-def _format_bands(times: list[str], duration_minutes: int | None = None) -> str:
-    parts: list[str] = []
+def _availability_intervals(
+    times: list[str], duration_minutes: int | None = None
+) -> list[dict[str, str]]:
+    """開始可能時刻から連続区間を組む。1日に複数区間があり得る。
+
+    start / last_start は予約開始可能時刻。
+    end は空き区間の終了（last_start＋施術時間）。最終開始時刻とは別物。
+    """
+    intervals: list[dict[str, str]] = []
     for start, last_start in _consecutive_bands(times):
-        end = last_start
+        occupancy_end = last_start
         if duration_minutes in (60, 90, 120):
             computed = add_minutes_to_hm(last_start, duration_minutes)
             if computed:
-                end = computed
-        if start == end:
-            parts.append(start)
-        else:
-            parts.append(f"{start}〜{end}")
-    return "、".join(parts)
+                occupancy_end = computed
+        intervals.append(
+            {
+                "start": start,
+                "end": occupancy_end,
+                "last_start": last_start,
+            }
+        )
+    return intervals
+
+
+def _format_interval(interval: dict[str, str]) -> str:
+    start = interval["start"]
+    end = interval["end"]
+    if start == end:
+        return start
+    return f"{start}〜{end}"
+
+
+def _format_bands(times: list[str], duration_minutes: int | None = None) -> str:
+    return "、".join(
+        _format_interval(item) for item in _availability_intervals(times, duration_minutes)
+    )
 
 
 def _group_times_by_date(labels: list[tuple[str, str]]) -> dict[str, list[str]]:
@@ -1732,7 +1757,12 @@ def _group_times_by_date(labels: list[tuple[str, str]]) -> dict[str, list[str]]:
 def _band_rows(grouped: dict[str, list[str]], duration_minutes: int | None = None) -> str:
     lines = []
     for date, times in grouped.items():
-        lines.append(f"・{_format_jp_date_short(date)} {_format_bands(times, duration_minutes)}")
+        date_s = _format_jp_date_short(date)
+        intervals = _availability_intervals(times, duration_minutes)
+        if not intervals:
+            continue
+        for interval in intervals:
+            lines.append(f"・{date_s} {_format_interval(interval)}")
     return "\n".join(lines)
 
 
