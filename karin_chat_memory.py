@@ -108,3 +108,9 @@ def history_messages(state: ConversationState) -> list[dict]:
 def reset_store_for_tests() -> None:
     with _LOCK:
         _STORE.clear()
+    try:
+        from karin_chat_usage import reset_usage_state_for_tests
+
+        reset_usage_state_for_tests()
+    except Exception:
+        pass

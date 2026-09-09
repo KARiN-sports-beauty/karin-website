@@ -317,7 +317,19 @@
     }
   }
 
-  function sendMessage(raw) {
+    function normalizeChoices(raw) {
+      if (!Array.isArray(raw)) return [];
+      var out = [];
+      raw.forEach(function (item) {
+        if (typeof item !== "string") return;
+        var label = item.trim();
+        if (!label || out.indexOf(label) !== -1) return;
+        out.push(label);
+      });
+      return out;
+    }
+
+    function sendMessage(raw) {
     var message = String(raw || "").trim();
     if (!message || sending) return;
 
@@ -361,6 +373,8 @@
             showInquiryCta: result.body.show_inquiry_cta === true || result.body.show_contact_cta === true,
             contactUrl: result.body.contact_url,
           });
+          var apiChoices = normalizeChoices(result.body && result.body.followup_choices);
+          if (apiChoices.length) followupSamples = apiChoices;
           return;
         }
         followupSamples = null;

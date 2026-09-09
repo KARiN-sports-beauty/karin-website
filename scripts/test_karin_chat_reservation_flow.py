@@ -104,13 +104,15 @@ def main() -> int:
     if t_a.reply != INITIAL_RESERVATION_REPLY:
         failures.append("A: 初回予約案内になっていない")
     for needle in (
-        "ヘッダーの『ご予約』",
-        "Web予約へ進む",
-        "このまま私との会話でご予約をお取りしたい場合",
-        "エリア（東京or福岡）と施術時間",
+        "『ご予約』ボタン",
+        "このまま私との会話で予約を進める",
+        "東京または福岡",
+        "施術時間",
     ):
         if needle not in (t_a.reply or ""):
-            failures.append(f"B: 初回案内に「{needle}」がない")
+            failures.append(f"A: 案内不足 {needle}")
+    if "ヘッダー" in (t_a.reply or ""):
+        failures.append("A: ユーザー向けにヘッダーと書いている")
     if (t_a.reply or "").count("ご希望のエリアと施術時間を教えてください") > 1:
         failures.append("C: エリアと施術時間の質問が重複している")
     if "例：東京・90分" in (t_a.reply or ""):

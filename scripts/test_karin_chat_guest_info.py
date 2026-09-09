@@ -286,6 +286,130 @@ def main() -> int:
     if d_nl.guest_phone != "09012345678" or d_nl.guest_email != "test@example.com":
         failures.append("newline: phone/email 未保存")
 
+    print("\n===== unlabeled A ラベルなし5行 =====")
+    d_seq = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq,
+        "藤田\n幸士\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+    )
+    if (
+        d_seq.guest_last_name != "藤田"
+        or d_seq.guest_first_name != "幸士"
+        or d_seq.guest_phone != "09050886993"
+        or d_seq.guest_email != "koji.720@hotmail.co.jp"
+        or d_seq.guest_place_name != "代々木上原"
+    ):
+        failures.append(
+            "seqA: "
+            f"{d_seq.guest_last_name}/{d_seq.guest_first_name}/"
+            f"{d_seq.guest_phone}/{d_seq.guest_email}/{d_seq.guest_place_name}"
+        )
+    if not guest_info_complete(d_seq):
+        failures.append(f"seqA: completeでない {missing_guest_fields(d_seq)}")
+
+    print("\n===== unlabeled B 姓名スペース＋残り行 =====")
+    d_seq_b = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq_b,
+        "藤田 幸士\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+    )
+    if d_seq_b.guest_last_name != "藤田" or d_seq_b.guest_first_name != "幸士":
+        failures.append(f"seqB name={d_seq_b.guest_last_name}/{d_seq_b.guest_first_name}")
+    if d_seq_b.guest_place_name != "代々木上原":
+        failures.append(f"seqB place={d_seq_b.guest_place_name}")
+    if not guest_info_complete(d_seq_b):
+        failures.append(f"seqB: {missing_guest_fields(d_seq_b)}")
+
+    print("\n===== unlabeled C 全角スペース =====")
+    d_seq_c = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq_c,
+        "藤田　幸士\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+    )
+    if d_seq_c.guest_last_name != "藤田" or d_seq_c.guest_first_name != "幸士":
+        failures.append(f"seqC: {d_seq_c.guest_last_name}/{d_seq_c.guest_first_name}")
+    if not guest_info_complete(d_seq_c):
+        failures.append(f"seqC: {missing_guest_fields(d_seq_c)}")
+
+    print("\n===== unlabeled D ラベル付き5行 =====")
+    d_seq_d = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq_d,
+        "姓：藤田\n名：幸士\n電話番号：09050886993\nメールアドレス：koji.720@hotmail.co.jp\n出張先：代々木上原",
+    )
+    if not guest_info_complete(d_seq_d) or d_seq_d.guest_place_name != "代々木上原":
+        failures.append(
+            f"seqD: {d_seq_d.guest_last_name}/{d_seq_d.guest_first_name}/"
+            f"{d_seq_d.guest_place_name} {missing_guest_fields(d_seq_d)}"
+        )
+
+    print("\n===== unlabeled E 空白なしは分割しない =====")
+    d_seq_e = BookingDraft(place_type="visit")
+    parse_guest_info(d_seq_e, "藤田幸士")
+    if d_seq_e.guest_last_name or d_seq_e.guest_first_name:
+        failures.append("seqE: 空白なしを分割している")
+
+    print("\n===== unlabeled F 連絡先済みで姓名だけ曖昧 =====")
+    d_seq_f = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq_f,
+        "藤田幸士\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+    )
+    if d_seq_f.guest_last_name or d_seq_f.guest_first_name:
+        failures.append("seqF: 曖昧氏名を分割している")
+    if d_seq_f.guest_phone != "09050886993" or d_seq_f.guest_email != "koji.720@hotmail.co.jp":
+        failures.append("seqF: 連絡先未保存")
+    if d_seq_f.guest_place_name != "代々木上原":
+        failures.append(f"seqF place={d_seq_f.guest_place_name}")
+    ask_seq_f = build_guest_info_ask(d_seq_f)
+    if "姓" not in ask_seq_f or "名" not in ask_seq_f:
+        failures.append(f"seqF: 姓名確認がない {ask_seq_f}")
+    if "電話" in ask_seq_f or "メール" in ask_seq_f or "出張先" in ask_seq_f:
+        failures.append(f"seqF: 取得済みを再質問 {ask_seq_f}")
+
+    print("\n===== unlabeled G 出張先だけ不足 =====")
+    d_seq_g = BookingDraft(place_type="visit")
+    parse_guest_info(d_seq_g, "藤田\n幸士\n09050886993\nkoji.720@hotmail.co.jp")
+    ask_seq_g = build_guest_info_ask(d_seq_g)
+    if missing_guest_fields(d_seq_g) != ["dispatch_destination"]:
+        failures.append(f"seqG missing={missing_guest_fields(d_seq_g)}")
+    if "出張先だけ" not in ask_seq_g:
+        failures.append(f"seqG: {ask_seq_g}")
+    if "姓" in ask_seq_g or "名" in ask_seq_g:
+        failures.append(f"seqG: 姓名を再質問 {ask_seq_g}")
+
+    print("\n===== unlabeled H 自然文 =====")
+    d_seq_h = BookingDraft(place_type="visit")
+    parse_guest_info(
+        d_seq_h,
+        "藤田 幸士です。電話は09050886993です。メールはkoji.720@hotmail.co.jpです。出張先は代々木上原です。",
+    )
+    if (
+        d_seq_h.guest_last_name != "藤田"
+        or d_seq_h.guest_first_name != "幸士"
+        or d_seq_h.guest_phone != "09050886993"
+        or d_seq_h.guest_email != "koji.720@hotmail.co.jp"
+        or d_seq_h.guest_place_name != "代々木上原"
+    ):
+        failures.append(
+            "seqH: "
+            f"{d_seq_h.guest_last_name}/{d_seq_h.guest_first_name}/"
+            f"{d_seq_h.guest_phone}/{d_seq_h.guest_email}/{d_seq_h.guest_place_name}"
+        )
+
+    print("\n===== unlabeled I 複数ターン保持 =====")
+    d_seq_i = BookingDraft(place_type="visit")
+    parse_guest_info(d_seq_i, "藤田\n幸士")
+    parse_guest_info(d_seq_i, "09050886993")
+    parse_guest_info(d_seq_i, "koji.720@hotmail.co.jp")
+    if d_seq_i.guest_last_name != "藤田" or d_seq_i.guest_first_name != "幸士":
+        failures.append("seqI: 姓名が消えた")
+    if d_seq_i.guest_phone != "09050886993" or d_seq_i.guest_email != "koji.720@hotmail.co.jp":
+        failures.append("seqI: 連絡先が消えた")
+    parse_guest_info(d_seq_i, "代々木上原")
+    if not guest_info_complete(d_seq_i):
+        failures.append(f"seqI: {missing_guest_fields(d_seq_i)}")
+
     print("\n===== 院内は予約選択肢にしない =====")
     d_place = BookingDraft(place_type="in_house")
     ask_place = build_guest_info_ask(d_place)
@@ -295,8 +419,10 @@ def main() -> int:
         failures.append(f"place: guest_info で院内を案内している {ask_place}")
     if "dispatch_destination" not in required_guest_fields(d_place):
         failures.append("place: 院内未提供なのに出張先が required から外れている")
-    if "姓：" not in ask_place or "名：" not in ask_place:
+    if "姓" not in ask_place or "名" not in ask_place:
         failures.append(f"place: 姓・名の案内がない {ask_place}")
+    if "ラベルは不要" not in ask_place:
+        failures.append(f"place: ラベル不要の案内がない {ask_place}")
 
     creates: list[dict] = []
 
@@ -312,8 +438,10 @@ def main() -> int:
     print("  guest ask", (g_i.reply or "")[:80], "phase", g_i.booking_phase)
     if g_i.booking_phase != "guest_info":
         failures.append(f"J: phase={g_i.booking_phase}")
-    if "姓：" not in (g_i.reply or "") or "名：" not in (g_i.reply or "") or "出張先：" not in (g_i.reply or ""):
+    if "姓" not in (g_i.reply or "") or "名" not in (g_i.reply or "") or "出張先" not in (g_i.reply or ""):
         failures.append(f"J: 一括案内がない {g_i.reply}")
+    if "ラベルは不要" not in (g_i.reply or ""):
+        failures.append(f"J: ラベル不要の案内がない {g_i.reply}")
     if "院内" in (g_i.reply or "") or "出張か院内" in (g_i.reply or ""):
         failures.append("place-chat: 院内を予約選択肢として案内している")
     d_amb = continue_chat(
@@ -327,7 +455,7 @@ def main() -> int:
     amb_draft = draft_of(d_amb)
     if amb_draft.guest_last_name or amb_draft.guest_first_name:
         failures.append("D-chat: 藤田幸士を自動分割している")
-    if "姓と名" not in (d_amb.reply or "") and "姓：" not in (d_amb.reply or ""):
+    if "姓と名" not in (d_amb.reply or "") and "姓" not in (d_amb.reply or ""):
         failures.append(f"D-chat: 姓名確認がない {d_amb.reply}")
     if d_amb.booking_create_called or creates:
         failures.append("M: guest_info 中に予約作成している")
@@ -501,6 +629,57 @@ def main() -> int:
         failures.append(f"I-chat: 完了後 phase={h4.booking_phase}")
     if creates:
         failures.append("M: 複数ターン入力中に予約作成している")
+
+    print("\n===== unlabeled 会話: 5行入力 =====")
+    reset_store_for_tests()
+    creates.clear()
+    lookup_u = mock_slots("18:00")
+    g_u = reach_guest(book_fn, lookup_u, place_type="visit")
+    u1 = continue_chat(
+        "藤田\n幸士\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+        g_u,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=lookup_u,
+        book_fn=book_fn,
+    )
+    du = draft_of(u1)
+    print("  unlabeled5", guest_display_name(du), du.guest_place_name, u1.booking_phase)
+    if du.guest_last_name != "藤田" or du.guest_first_name != "幸士":
+        failures.append("unlabeled-chat: 姓名未保存")
+    if du.guest_phone != "09050886993" or du.guest_email != "koji.720@hotmail.co.jp":
+        failures.append("unlabeled-chat: 連絡先未保存")
+    if du.guest_place_name != "代々木上原":
+        failures.append(f"unlabeled-chat: place={du.guest_place_name}")
+    if u1.booking_phase != "confirming":
+        failures.append(f"unlabeled-chat: phase={u1.booking_phase} reply={(u1.reply or '')[:120]}")
+    if "姓と名を分けて" in (u1.reply or "") or "ラベル" in (u1.reply or ""):
+        failures.append(f"unlabeled-chat: 再質問 {u1.reply}")
+    if u1.booking_create_called or creates:
+        failures.append("unlabeled-chat: 入力時点で予約作成している")
+
+    print("\n===== unlabeled 会話: 名だけ不足 =====")
+    reset_store_for_tests()
+    creates.clear()
+    lookup_fn_only = mock_slots("18:00")
+    g_n = reach_guest(book_fn, lookup_fn_only, place_type="visit")
+    n1 = continue_chat(
+        "藤田\n09050886993\nkoji.720@hotmail.co.jp\n代々木上原",
+        g_n,
+        match_fn=empty_match,
+        complete_fn=complete,
+        lookup_fn=lookup_fn_only,
+        book_fn=book_fn,
+    )
+    dn = draft_of(n1)
+    if dn.guest_last_name != "藤田" or dn.guest_first_name:
+        failures.append(f"first-only: {dn.guest_last_name}/{dn.guest_first_name}")
+    if dn.guest_phone != "09050886993" or dn.guest_place_name != "代々木上原":
+        failures.append("first-only: 取得済み項目が消えた")
+    if "名だけ" not in (n1.reply or ""):
+        failures.append(f"first-only: {n1.reply}")
+    if "電話" in (n1.reply or "") or "メール" in (n1.reply or "") or "出張先" in (n1.reply or ""):
+        failures.append(f"first-only: 取得済みを再質問 {n1.reply}")
 
     print("\n===== G 会話: 院内と言っても出張で検索 =====")
     reset_store_for_tests()

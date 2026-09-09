@@ -16,6 +16,8 @@ from typing import Callable
 from openai import OpenAI
 
 from ai_knowledge import get_admin_client, match_ai_knowledge
+from karin_chat_choices import select_followup_choices
+from karin_chat_usage import record_chat_usage
 from karin_chat_booking import (
     BOOKING_LOOKUP_ERROR_REPLY,
     BookingLookupResult,
@@ -138,6 +140,7 @@ SYSTEM_PROMPT = """あなたは KARiN. ~Sports & Beauty~ の相談AI「KARiN.cha
 - すでにユーザーが話した内容は聞き直さない。
 - 質問だけを連続して投げない。質問する前に、いま分かっている範囲で必ず先に答える・整理する。
 - 問診地獄にしない。
+- 画面下の選択肢はシステムが出す。同じ内容を番号リストで繰り返さない。施術を選択肢から自動で決めない。
 
 # 医療・安全
 - 病名を付けない。診断しない。薬の具体的な服用指示をしない。
@@ -288,6 +291,7 @@ class ChatTurn:
     staff_note: str = ""
     booking_completed: bool = False
     booking_create_called: bool = False
+    followup_choices: list[str] = field(default_factory=list)
 
 
 def chat_model_name() -> str:
@@ -511,6 +515,17 @@ def _finish_turn(
             types_used.append(st)
     booking = booking or BookingLookupResult()
     draft = getattr(state, "booking_draft", None)
+    prior_for_choices = list(state.prior_user_texts())
+    if prior_for_choices and prior_for_choices[-1] == text:
+        prior_for_choices = prior_for_choices[:-1]
+    followup_choices = select_followup_choices(
+        user_text=text,
+        reply=reply,
+        emergency=emergency,
+        intent=intent,
+        draft=draft,
+        prior_user_texts=prior_for_choices,
+    )
     turn = ChatTurn(
         reply=reply,
         emergency=emergency,
@@ -571,8 +586,21 @@ def _finish_turn(
         staff_note="" if draft is None else build_staff_note(draft),
         booking_completed=booking_completed,
         booking_create_called=booking_create_called,
+        followup_choices=list(followup_choices),
     )
     _debug_log(turn)
+    try:
+        record_chat_usage(
+            conversation_id=state.conversation_id,
+            user_text=text,
+            primary_intent=None if intent is None else intent.primary_intent,
+            followup_choices=list(followup_choices),
+            reservation_intent=bool(draft and draft.reservation_intent),
+            booking_completed=booking_completed,
+            emergency=emergency,
+        )
+    except Exception:
+        logger.exception("chatbot usage log failed")
     return turn
 
 
@@ -718,6 +746,7 @@ def chat_public_payload(turn: ChatTurn) -> dict:
         "contact_url": INQUIRY_CONTACT_PATH if show_inquiry else None,
         "available_date": turn.requested_date if turn.available_slots else None,
         "booking_completed": bool(turn.booking_completed),
+        "followup_choices": list(turn.followup_choices or []),
     }
 
 

@@ -547,6 +547,17 @@ body.karin-chat-page .karin-chat[data-mode="page"] .karin-chat-panel {
   cursor: not-allowed;
 }
 
+@media (max-width: 767px) {
+  .karin-chat-samples {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .karin-chat-chip {
+    width: 100%;
+  }
+}
+
 .karin-chat-composer {
   display: flex;
   align-items: flex-end;

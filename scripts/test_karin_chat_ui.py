@@ -145,6 +145,10 @@ def main() -> int:
         failures.append("身体の相談後に既存選択肢を再利用していない")
     if "showSamples(BODY_CONSULT_SAMPLES)" not in js and "showSamples(nextSamples)" not in js:
         failures.append("身体の相談後の再表示経路がない")
+    if "followup_choices" not in js:
+        failures.append("APIの followup_choices を見ていない")
+    if "normalizeChoices" not in js:
+        failures.append("followup_choices の正規化がない")
 
     print("\n===== ヘッダー =====")
     if "身体の相談" in head:
