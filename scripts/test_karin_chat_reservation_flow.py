@@ -107,7 +107,7 @@ def main() -> int:
         "ヘッダーの『ご予約』",
         "Web予約へ進む",
         "このまま私との会話でご予約をお取りしたい場合",
-        "エリアと施術時間",
+        "エリア（東京or福岡）と施術時間",
     ):
         if needle not in (t_a.reply or ""):
             failures.append(f"B: 初回案内に「{needle}」がない")
