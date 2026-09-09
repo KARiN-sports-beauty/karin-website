@@ -118,13 +118,7 @@
 
   <header class="header">
     <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
-    <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
-      <span></span><span></span><span></span>
-    </button>
-    <div class="nav-overlay" id="nav-overlay" hidden></div>
     <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('treatment') }}">施術内容</a>
-      <a href="{{ url_for('price') }}">料金表</a>
       <a href="{{ url_for('lp') }}">初回相談</a>
       <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
     </nav>
@@ -132,13 +126,13 @@
 
   <main>
     <section class="ts-hero" aria-labelledby="ts-hero-heading">
-      <p class="ts-eyebrow" data-aos="fade-up">Tokyo Visiting Seitai</p>
-      <h1 id="ts-hero-heading" class="ts-hero-title" data-aos="fade-up">
-        東京の出張整体<span class="ts-hero-bar">｜</span><br class="ts-br-sp">身体全体を見て整えるKARiN.
-      </h1>
-      <div class="ts-hero-body" data-aos="fade-up" data-aos-delay="80">
-        <p class="ts-lead">身体の一部分だけではなく、全身からコンディションを整える。</p>
-        <p>東京を中心に、ご自宅・ホテル・スタジオなどへ伺う出張整体。<br class="ts-br-pc">鍼灸師 × アスレティックトレーナーの視点から、身体の状態や動きに合わせた施術を行います。</p>
+      <div class="ts-hero-copy" data-aos="fade-up">
+        <p class="ts-hero-kicker">東京の出張整体</p>
+        <h1 id="ts-hero-heading" class="ts-hero-title">
+          <span class="ts-hero-seo">東京の出張整体｜身体全体を見て整えるKARiN.</span>
+          <span class="ts-hero-visual" aria-hidden="true">身体の一部分だけではなく、<br>全身からコンディションを整える。</span>
+        </h1>
+        <p class="ts-hero-sub">東京を中心に、ご自宅・ホテル・スタジオなどへ伺う<br class="ts-hero-br">鍼灸師 × アスレティックトレーナーの出張整体。</p>
       </div>
     </section>
 

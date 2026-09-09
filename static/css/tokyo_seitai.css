@@ -14,7 +14,40 @@
   box-sizing: border-box;
 }
 
-.ts-hero,
+/* このページ専用：FVの上にヘッダーを重ね、白文字で読めるようにする */
+.tokyo-seitai-page .header {
+  background: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
+  box-shadow: none;
+}
+
+.tokyo-seitai-page .logo {
+  color: #ffffff;
+}
+
+.tokyo-seitai-page .nav a {
+  color: #ffffff;
+}
+
+.tokyo-seitai-page .nav a:hover:not(.nav-book) {
+  color: #c0a062;
+}
+
+.tokyo-seitai-page .nav-book {
+  background: transparent;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .tokyo-seitai-page .nav a.nav-book:hover {
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: #ffffff;
+    box-shadow: none;
+  }
+}
+
 .ts-section {
   padding: 88px 8% 96px;
   text-align: center;
@@ -22,8 +55,111 @@
 }
 
 .ts-hero {
-  padding-top: 128px;
-  padding-bottom: 72px;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100svh;
+  padding: 110px 8% 80px;
+  text-align: left;
+  color: #ffffff;
+  background-color: #1e3a5f;
+  background-image: url("../images/tokyoseitaifv.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 58% 50%;
+}
+
+.ts-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(18, 32, 48, 0.58) 0%,
+    rgba(18, 32, 48, 0.4) 36%,
+    rgba(18, 32, 48, 0.16) 64%,
+    rgba(18, 32, 48, 0.08) 100%
+  );
+}
+
+.ts-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 32em;
+  margin: 0;
+  padding-right: 4%;
+}
+
+@media (min-width: 1025px) {
+  .ts-hero-copy {
+    width: min(32em, 44vw);
+  }
+}
+
+.ts-hero-kicker {
+  display: inline-block;
+  margin: 0 0 22px;
+  padding: 0 0 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.6;
+  color: #c0a062;
+  position: relative;
+}
+
+.ts-hero-kicker::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 40px;
+  height: 1.5px;
+  background-color: #c0a062;
+}
+
+.ts-hero-title {
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.ts-hero-seo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ts-hero-visual {
+  display: block;
+  font-size: clamp(1.35rem, 3.4vw, 2.05rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #ffffff;
+}
+
+.ts-hero-sub {
+  margin: 28px 0 0;
+  font-size: 0.92rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ts-hero-br {
+  display: inline;
 }
 
 .ts-section--muted {
@@ -53,10 +189,10 @@
   margin-bottom: 10px;
 }
 
-.ts-hero-title,
 .ts-heading {
   display: inline-block;
   position: relative;
+  font-size: 1.42rem;
   font-weight: 600;
   color: #1E3A5F;
   margin: 0 0 12px;
@@ -65,7 +201,6 @@
   line-height: 1.55;
 }
 
-.ts-hero-title::after,
 .ts-heading::after {
   content: "";
   position: absolute;
@@ -76,14 +211,6 @@
   height: 2.5px;
   background-color: #c0a062;
   border-radius: 2px;
-}
-
-.ts-hero-title {
-  font-size: clamp(1.45rem, 4.2vw, 2rem);
-}
-
-.ts-heading {
-  font-size: 1.42rem;
 }
 
 .ts-heading--left {
@@ -104,7 +231,6 @@
   display: inline;
 }
 
-.ts-hero-body,
 .ts-body,
 .ts-section-lead {
   margin: 28px auto 0;
@@ -496,8 +622,48 @@
 }
 
 @media (max-width: 1024px) {
+  .tokyo-seitai-page .hamburger,
+  .tokyo-seitai-page .nav-overlay {
+    display: none;
+  }
+
+  .tokyo-seitai-page .nav {
+    position: static;
+    right: auto;
+    width: auto;
+    height: auto;
+    background: transparent;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
+    overflow: visible;
+  }
+
+  .tokyo-seitai-page .nav a {
+    width: auto;
+    min-height: 40px;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    color: #ffffff;
+  }
+
+  .tokyo-seitai-page .nav .nav-book {
+    width: auto;
+    max-width: none;
+    margin-top: 0;
+    min-height: 40px;
+    padding: 8px 16px;
+  }
+
   .tokyo-seitai-page .ts-hero {
-    padding: 112px 8% 56px;
+    min-height: 72svh;
+    padding: 100px 7% 56px;
+    background-position: 72% 46%;
   }
 
   .tokyo-seitai-page .ts-section {
@@ -524,7 +690,48 @@
 
 @media (max-width: 768px) {
   .tokyo-seitai-page .ts-hero {
-    padding: 104px 7% 48px;
+    min-height: 0;
+    min-height: 62svh;
+    align-items: flex-end;
+    padding: 88px 7% 36px;
+    background-position: 82% 40%;
+  }
+
+  .tokyo-seitai-page .ts-hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(18, 32, 48, 0.22) 0%,
+        rgba(18, 32, 48, 0.12) 38%,
+        rgba(18, 32, 48, 0.55) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(18, 32, 48, 0.42) 0%,
+        rgba(18, 32, 48, 0.12) 48%,
+        rgba(18, 32, 48, 0) 100%
+      );
+  }
+
+  .tokyo-seitai-page .ts-hero-copy {
+    max-width: 22em;
+    padding-right: 0;
+  }
+
+  .tokyo-seitai-page .ts-hero-visual {
+    font-size: 1.22rem;
+    letter-spacing: 0.04em;
+    line-height: 1.75;
+  }
+
+  .tokyo-seitai-page .ts-hero-sub {
+    margin-top: 18px;
+    font-size: 0.82rem;
+    line-height: 1.9;
+  }
+
+  .tokyo-seitai-page .ts-hero-br {
+    display: none;
   }
 
   .tokyo-seitai-page .ts-section {
@@ -535,7 +742,6 @@
     display: inline;
   }
 
-  .ts-hero-bar,
   .ts-br-pc {
     display: none;
   }
@@ -584,8 +790,28 @@
 }
 
 @media (max-width: 480px) {
-  .tokyo-seitai-page .ts-hero-title {
-    font-size: 1.32rem;
+  .tokyo-seitai-page .logo {
+    font-size: 1.55rem;
+  }
+
+  .tokyo-seitai-page .nav a {
+    font-size: 0.75rem;
+    padding: 8px 6px;
+  }
+
+  .tokyo-seitai-page .nav .nav-book {
+    padding: 7px 12px;
+    font-size: 0.75rem;
+  }
+
+  .tokyo-seitai-page .ts-hero {
+    min-height: 56svh;
+    padding: 84px 6% 32px;
+    background-position: 86% 38%;
+  }
+
+  .tokyo-seitai-page .ts-hero-visual {
+    font-size: 1.12rem;
   }
 
   .ts-approach-list li {
