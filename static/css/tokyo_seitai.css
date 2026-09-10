@@ -402,7 +402,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: 18px;
+  gap: 16px;
   margin: 40px 0 0;
   padding: 0;
   text-align: left;
@@ -410,30 +410,26 @@
 
 .ts-concern-list li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   margin: 0;
-  padding: 34px 22px 22px;
-  background: #ffffff;
-  border: 1px solid rgba(30, 58, 95, 0.08);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(30, 58, 95, 0.04);
-  font-size: 0.9rem;
+  padding: 26px 22px 26px 24px;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(#c0a062, #c0a062),
+    linear-gradient(#c0a062, #c0a062),
+    linear-gradient(#c0a062, #c0a062);
+  background-size: 28px 1px, 28px 1px, 1px 100%;
+  background-position: left top, left bottom, left top;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(30, 58, 95, 0.06);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.03);
+  font-size: 0.88rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.75;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
   color: #1E3A5F;
   position: relative;
-}
-
-.ts-concern-list li::before {
-  content: "";
-  position: absolute;
-  left: 22px;
-  top: 18px;
-  width: 22px;
-  height: 1.5px;
-  border-radius: 1px;
-  background-color: #c0a062;
 }
 
 .ts-approach-list {
@@ -879,7 +875,7 @@
   }
 
   .ts-concern-list li {
-    padding: 30px 18px 16px;
+    padding: 24px 18px 24px 22px;
     font-size: 0.88rem;
     line-height: 1.7;
   }
