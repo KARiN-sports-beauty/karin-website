@@ -32,8 +32,17 @@
   transition: color 0.4s ease;
 }
 
+.tokyo-seitai-page .nav {
+  gap: 16px;
+}
+
 .tokyo-seitai-page .nav a:not(.nav-book) {
   color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  padding: 0;
+  min-height: 0;
   transition: color 0.4s ease;
 }
 
@@ -42,17 +51,22 @@
 }
 
 .tokyo-seitai-page .nav-book {
-  background: #c0a062;
-  color: #ffffff;
+  min-height: 32px;
+  padding: 5px 14px;
+  background: transparent;
+  color: #c0a062;
   border-color: #c0a062;
   box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
 }
 
 @media (hover: hover) {
   .tokyo-seitai-page .nav a.nav-book:hover {
-    background: #b08e52;
-    color: #ffffff;
-    border-color: #b08e52;
+    background: transparent;
+    color: #d4b57a;
+    border-color: #d4b57a;
     box-shadow: none;
   }
 }
@@ -74,6 +88,21 @@
 
 .tokyo-seitai-page.is-past-hero .nav a:hover:not(.nav-book) {
   color: #8fa3c1;
+}
+
+.tokyo-seitai-page.is-past-hero .nav-book {
+  background: #1E3A5F;
+  color: #ffffff;
+  border-color: #1E3A5F;
+}
+
+@media (hover: hover) {
+  .tokyo-seitai-page.is-past-hero .nav a.nav-book:hover {
+    background: #16304a;
+    color: #ffffff;
+    border-color: #16304a;
+    box-shadow: none;
+  }
 }
 
 .ts-section {
@@ -674,9 +703,9 @@
 
   .tokyo-seitai-page .nav a:not(.nav-book) {
     width: auto;
-    min-height: 40px;
-    font-size: 0.82rem;
-    padding: 8px 10px;
+    min-height: 0;
+    font-size: 0.72rem;
+    padding: 0;
     color: #ffffff;
   }
 
@@ -688,8 +717,9 @@
     width: auto;
     max-width: none;
     margin-top: 0;
-    min-height: 40px;
-    padding: 8px 16px;
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
   }
 
   .tokyo-seitai-page .ts-hero {
@@ -826,14 +856,15 @@
     font-size: 1.55rem;
   }
 
-  .tokyo-seitai-page .nav a {
-    font-size: 0.75rem;
-    padding: 8px 6px;
+  .tokyo-seitai-page .nav a:not(.nav-book) {
+    font-size: 0.7rem;
+    padding: 0;
   }
 
   .tokyo-seitai-page .nav .nav-book {
-    padding: 7px 12px;
-    font-size: 0.75rem;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    min-height: 28px;
   }
 
   .tokyo-seitai-page .ts-hero {
