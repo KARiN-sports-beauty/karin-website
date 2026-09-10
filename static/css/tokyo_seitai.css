@@ -414,15 +414,9 @@
   margin: 0;
   padding: 26px 22px 26px 24px;
   background-color: #ffffff;
-  background-image:
-    linear-gradient(#c0a062, #c0a062),
-    linear-gradient(#c0a062, #c0a062),
-    linear-gradient(#c0a062, #c0a062);
-  background-size: 28px 1px, 28px 1px, 1px 100%;
-  background-position: left top, left bottom, left top;
-  background-repeat: no-repeat;
   border: 1px solid rgba(30, 58, 95, 0.06);
-  border-radius: 10px;
+  border-left: 6px solid #c0a062;
+  border-radius: 12px;
   box-shadow: 0 4px 14px rgba(30, 58, 95, 0.03);
   font-size: 0.88rem;
   font-weight: 500;
