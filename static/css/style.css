@@ -199,6 +199,94 @@ body.nav-open {
   top: 21px;
 }
 
+/* トップ：FV中は透明ヘッダー、最終スライド or about 以降は通常ヘッダー */
+body.index-page .header {
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
+  box-shadow: none;
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+body.index-page .logo {
+  color: #ffffff;
+  transition: color 0.4s ease;
+}
+
+body.index-page .nav a:not(.nav-book) {
+  color: #ffffff;
+}
+
+body.index-page .nav a:hover:not(.nav-book) {
+  color: #c0a062;
+}
+
+body.index-page .nav-book {
+  background: transparent;
+  color: #c0a062;
+  border-color: #c0a062;
+  box-shadow: none;
+}
+
+body.index-page .hamburger span {
+  background: #ffffff;
+}
+
+body.index-page .hero {
+  padding-top: 0;
+}
+
+body.index-page.is-header-solid .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
+body.index-page.is-header-solid .logo {
+  color: #1E3A5F;
+}
+
+body.index-page.is-header-solid .nav a:not(.nav-book) {
+  color: #1E3A5F;
+}
+
+body.index-page.is-header-solid .nav a:hover:not(.nav-book) {
+  color: #8fa3c1;
+}
+
+body.index-page.is-header-solid .nav-book {
+  background: #ffffff;
+  color: #1E3A5F;
+  border-color: rgba(30, 58, 95, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+body.index-page.is-header-solid .hamburger span,
+body.index-page .hamburger.active span {
+  background: #1E3A5F;
+}
+
+@media (hover: hover) {
+  body.index-page .nav a.nav-book:hover {
+    background: transparent;
+    color: #d4b57a;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
+
+  body.index-page.is-header-solid .nav a.nav-book:hover {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.16);
+  }
+}
+
 
 /* ---------- Heroセクション ---------- */
 .hero {
@@ -2649,6 +2737,28 @@ section[id],
     right: 0;
     opacity: 1;
     transform: translateX(0);
+  }
+
+  body.index-page .nav a:not(.nav-book) {
+    color: #1E3A5F;
+  }
+
+  body.index-page .nav .nav-book,
+  body.index-page.is-header-solid .nav .nav-book {
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: rgba(30, 58, 95, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  @media (hover: hover) {
+    body.index-page .nav a.nav-book:hover,
+    body.index-page.is-header-solid .nav a.nav-book:hover {
+      background: #1E3A5F;
+      color: #ffffff;
+      border-color: #1E3A5F;
+      box-shadow: 0 4px 12px rgba(30, 58, 95, 0.16);
+    }
   }
 
   /* ---------- Hero ---------- */

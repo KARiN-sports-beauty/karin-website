@@ -695,6 +695,41 @@
 
   <script>
   document.addEventListener("DOMContentLoaded", function () {
+    var page = document.querySelector("body.index-page");
+    var hero = document.querySelector(".hero");
+    var lastSlide = document.querySelector(".slide.last");
+    if (!page || !hero) return;
+
+    var pastHero = false;
+
+    function syncHeader() {
+      var lastOn = lastSlide && lastSlide.classList.contains("active");
+      page.classList.toggle("is-header-solid", Boolean(lastOn) || pastHero);
+    }
+
+    if ("IntersectionObserver" in window) {
+      var observer = new IntersectionObserver(function (entries) {
+        pastHero = !entries[0].isIntersecting;
+        syncHeader();
+      }, {
+        root: null,
+        threshold: 0,
+        rootMargin: "-70px 0px 0px 0px"
+      });
+      observer.observe(hero);
+    }
+
+    if (lastSlide && "MutationObserver" in window) {
+      var mo = new MutationObserver(syncHeader);
+      mo.observe(lastSlide, { attributes: true, attributeFilter: ["class"] });
+    }
+
+    syncHeader();
+  });
+  </script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
     const secretLink = document.querySelector(".footer-secret-link");
 
     if (!secretLink) return;
