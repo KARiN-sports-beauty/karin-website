@@ -425,6 +425,21 @@
       duration: 800,
       once: true
     });
+
+    (function () {
+      var page = document.querySelector(".tokyo-seitai-page");
+      var hero = document.querySelector(".ts-hero");
+      if (!page || !hero || !("IntersectionObserver" in window)) return;
+
+      var observer = new IntersectionObserver(function (entries) {
+        page.classList.toggle("is-past-hero", !entries[0].isIntersecting);
+      }, {
+        root: null,
+        threshold: 0,
+        rootMargin: "-70px 0px 0px 0px"
+      });
+      observer.observe(hero);
+    })();
   </script>
 
   {% include '_karin_chat.html' %}

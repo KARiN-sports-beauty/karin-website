@@ -14,18 +14,27 @@
   box-sizing: border-box;
 }
 
-/* このページ専用：FVの上にヘッダーを重ね、白文字で読めるようにする */
+/* このページ専用：FV上は透明＋白文字、抜けたら白背景＋ネイビー */
 .tokyo-seitai-page .header {
-  background: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
-  box-shadow: none;
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0);
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
 }
 
 .tokyo-seitai-page .logo {
   color: #ffffff;
+  transition: color 0.4s ease;
 }
 
-.tokyo-seitai-page .nav a {
+.tokyo-seitai-page .nav a:not(.nav-book) {
   color: #ffffff;
+  transition: color 0.4s ease;
 }
 
 .tokyo-seitai-page .nav a:hover:not(.nav-book) {
@@ -33,19 +42,38 @@
 }
 
 .tokyo-seitai-page .nav-book {
-  background: transparent;
+  background: #c0a062;
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: #c0a062;
   box-shadow: none;
 }
 
 @media (hover: hover) {
   .tokyo-seitai-page .nav a.nav-book:hover {
-    background: #ffffff;
-    color: #1E3A5F;
-    border-color: #ffffff;
+    background: #b08e52;
+    color: #ffffff;
+    border-color: #b08e52;
     box-shadow: none;
   }
+}
+
+.tokyo-seitai-page.is-past-hero .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
+.tokyo-seitai-page.is-past-hero .logo {
+  color: #1E3A5F;
+}
+
+.tokyo-seitai-page.is-past-hero .nav a:not(.nav-book) {
+  color: #1E3A5F;
+}
+
+.tokyo-seitai-page.is-past-hero .nav a:hover:not(.nav-book) {
+  color: #8fa3c1;
 }
 
 .ts-section {
@@ -644,12 +672,16 @@
     overflow: visible;
   }
 
-  .tokyo-seitai-page .nav a {
+  .tokyo-seitai-page .nav a:not(.nav-book) {
     width: auto;
     min-height: 40px;
     font-size: 0.82rem;
     padding: 8px 10px;
     color: #ffffff;
+  }
+
+  .tokyo-seitai-page.is-past-hero .nav a:not(.nav-book) {
+    color: #1E3A5F;
   }
 
   .tokyo-seitai-page .nav .nav-book {
