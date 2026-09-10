@@ -334,33 +334,22 @@
 }
 
 .ts-quote {
-  position: relative;
-  margin: 48px auto 12px;
-  padding: 28px 8px 8px 22px;
-  max-width: 28em;
+  margin: 40px auto 0;
+  padding: 44px 40px;
+  max-width: none;
   border: none;
-  border-left: 1px solid rgba(30, 58, 95, 0.22);
-  background: none;
+  background-color: #F3F5F7;
   box-shadow: none;
-  font-size: 1.06rem;
+  font-size: 1.14rem;
   font-weight: 400;
-  letter-spacing: 0.035em;
-  line-height: 2.2;
+  letter-spacing: 0.04em;
+  line-height: 2.15;
   color: #1E3A5F;
-  text-align: left;
+  text-align: center;
 }
 
-.ts-quote::before {
-  content: "“";
-  position: absolute;
-  top: -6px;
-  left: 14px;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 3.2rem;
-  font-weight: 600;
-  line-height: 1;
-  color: rgba(30, 58, 95, 0.14);
-  pointer-events: none;
+.ts-quote + .ts-body {
+  margin-top: 40px;
 }
 
 .ts-approach-heading {
@@ -908,17 +897,15 @@
   }
 
   .ts-quote {
-    margin: 32px auto 8px;
-    padding: 22px 4px 4px 16px;
-    font-size: 1rem;
+    margin: 28px auto 0;
+    padding: 28px 20px;
+    font-size: 1.02rem;
     line-height: 2.05;
     letter-spacing: 0.03em;
   }
 
-  .ts-quote::before {
-    top: -4px;
-    left: 10px;
-    font-size: 2.4rem;
+  .ts-quote + .ts-body {
+    margin-top: 28px;
   }
 
   .ts-place-grid {
