@@ -338,6 +338,7 @@
   padding: 44px 40px;
   max-width: none;
   border: none;
+  border-radius: 12px;
   background-color: #F3F5F7;
   box-shadow: none;
   font-size: 1.14rem;
