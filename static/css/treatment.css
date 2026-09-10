@@ -308,14 +308,15 @@
   align-items: center;
   justify-content: center;
   min-width: 200px;
-  min-height: 48px;
-  padding: 14px 32px;
+  padding: 12px 26px;
   background: #ffffff;
   color: #1E3A5F;
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
   border-radius: 40px;
   border: 1px solid rgba(30, 58, 95, 0.16);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -431,6 +432,12 @@
   .tx-beauty-image {
     height: 280px;
   }
+
+  .tx-cta-btn {
+    min-width: 130px;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+  }
 }
 
 /* ===============================
@@ -537,15 +544,18 @@
 
   .tx-cta-row {
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    align-items: center;
+    gap: 16px;
     margin-top: 32px;
   }
 
   .tx-cta-btn {
-    width: 100%;
-    min-width: 0;
-    min-height: 52px;
+    width: 80%;
+    min-width: 210px;
+    max-width: 260px;
+    padding: 11px 22px;
+    font-size: 0.88rem;
+    line-height: 1.35;
   }
 
   .treatment-page .home-btn {
@@ -578,5 +588,13 @@
   .tx-beauty-image {
     height: 180px;
     border-radius: 12px;
+  }
+
+  .tx-cta-btn {
+    width: 80%;
+    min-width: 0;
+    max-width: 240px;
+    padding: 10px 22px;
+    font-size: 0.88rem;
   }
 }
