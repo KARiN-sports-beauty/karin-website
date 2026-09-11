@@ -512,6 +512,10 @@
   color: #c0a062;
 }
 
+.ts-view-role-break {
+  display: inline;
+}
+
 .ts-view-intro > p:last-child {
   margin: 24px auto 0;
   max-width: 26em;
@@ -951,6 +955,10 @@
     font-size: 1.08rem;
     letter-spacing: 0.08em;
     padding: 0;
+  }
+
+  .ts-view-role-break {
+    display: block;
   }
 
   .ts-view-intro > p:last-child {
