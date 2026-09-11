@@ -368,13 +368,23 @@
     <section class="ts-section ts-section--muted" aria-labelledby="ts-price-heading">
       <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
         <h2 id="ts-price-heading" class="ts-heading">料金</h2>
-        <p class="ts-section-lead">東京の出張整体の料金目安です。場所に応じて、別途出張費を頂戴しています。</p>
+        <p class="ts-section-lead">施術時間に応じた料金です。</p>
         <ul class="ts-price-list">
-          <li><span>120分</span><span>22,000円</span></li>
-          <li><span>90分</span><span>16,500円</span></li>
-          <li><span>60分</span><span>11,000円</span></li>
+          <li>
+            <span class="ts-price-time">120分</span>
+            <span class="ts-price-amount">22,000円</span>
+          </li>
+          <li>
+            <span class="ts-price-time">90分</span>
+            <span class="ts-price-amount">16,500円</span>
+          </li>
+          <li>
+            <span class="ts-price-time">60分</span>
+            <span class="ts-price-amount">11,000円</span>
+          </li>
         </ul>
-        <a href="{{ url_for('price') }}" class="ts-text-link">東京・出張整体の料金について詳しく見る</a>
+        <p class="ts-price-note">※別途、距離に応じた出張費がかかります。</p>
+        <a href="{{ url_for('price') }}" class="ts-text-link">料金の詳細を見る</a>
       </div>
     </section>
 

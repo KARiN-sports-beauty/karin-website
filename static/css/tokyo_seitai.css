@@ -765,22 +765,68 @@
 }
 
 /* ---------- 料金 ---------- */
+#ts-price-heading + .ts-section-lead {
+  max-width: 28em;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
 .ts-price-list {
   list-style: none;
-  margin: 36px auto 0;
-  padding: 8px 4px 0;
-  max-width: 420px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  margin: 40px auto 0;
+  padding: 0;
+  max-width: 640px;
+  text-align: center;
 }
 
 .ts-price-list li {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 16px 4px;
-  border-bottom: 1px dotted rgba(30, 58, 95, 0.2);
-  font-size: 1.02rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 16px;
+  border-left: 1px solid rgba(30, 58, 95, 0.12);
+  background: none;
+  box-shadow: none;
+}
+
+.ts-price-list li:first-child {
+  border-left: none;
+}
+
+.ts-price-time {
+  display: block;
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  opacity: 0.7;
+}
+
+.ts-price-amount {
+  display: block;
+  font-size: 1.28rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  color: #1E3A5F;
+}
+
+.ts-price-note {
+  margin: 24px auto 0;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.8;
+  color: #1E3A5F;
+  opacity: 0.78;
+  text-align: center;
 }
 
 .ts-text-link {
@@ -1278,6 +1324,40 @@
   .ts-flow-list li > p:not(.ts-num) {
     font-size: 0.8rem;
     line-height: 1.75;
+  }
+
+  .ts-price-list {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+    gap: 0;
+  }
+
+  .ts-price-list li {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0;
+    border-left: none;
+    border-top: 1px solid rgba(30, 58, 95, 0.1);
+  }
+
+  .ts-price-list li:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .ts-price-time {
+    margin: 0;
+    font-size: 0.84rem;
+  }
+
+  .ts-price-amount {
+    font-size: 1.12rem;
+  }
+
+  .ts-price-note {
+    font-size: 0.8rem;
+    margin-top: 20px;
   }
 
   .ts-concern-list {
