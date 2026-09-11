@@ -713,25 +713,55 @@
 /* ---------- 流れ ---------- */
 .ts-flow-list {
   list-style: none;
-  margin: 40px 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin: 48px 0 0;
   padding: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .ts-flow-list li {
-  padding: 22px 0;
-  border-top: 1px solid #eee8dc;
+  position: relative;
+  padding: 0 14px;
+  border: none;
+  background: none;
+  box-shadow: none;
 }
 
-.ts-flow-list li:last-child {
-  border-bottom: 1px solid #eee8dc;
+.ts-flow-list li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0.85em;
+  left: calc(50% + 1.7em);
+  width: calc(100% - 3.4em);
+  height: 1px;
+  background-color: rgba(30, 58, 95, 0.16);
+}
+
+.ts-flow-list .ts-num {
+  font-size: 1.18rem;
+  letter-spacing: 0.16em;
+  margin: 0 0 12px;
 }
 
 .ts-flow-list h3 {
-  font-size: 1.05rem;
+  font-size: 0.96rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  line-height: 1.6;
   margin: 0 0 8px;
+  color: #1E3A5F;
+}
+
+.ts-flow-list li > p:not(.ts-num) {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.8;
+  color: #1E3A5F;
+  opacity: 0.78;
 }
 
 /* ---------- 料金 ---------- */
@@ -992,6 +1022,32 @@
   .ts-place-list li:nth-child(even) {
     border-left: 1px solid rgba(30, 58, 95, 0.1);
   }
+
+  .ts-flow-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 22em;
+    margin: 40px auto 0;
+  }
+
+  .ts-flow-list li {
+    width: 100%;
+    padding: 0 0 32px;
+  }
+
+  .ts-flow-list li:not(:last-child)::after {
+    top: auto;
+    left: 50%;
+    bottom: 8px;
+    width: 1px;
+    height: 16px;
+    transform: translateX(-50%);
+  }
+
+  .ts-flow-list li:last-child {
+    padding-bottom: 0;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1063,7 +1119,6 @@
   .ts-view-item p,
   .ts-view-intro > p:last-child,
   .ts-recommend-list li > p:not(.ts-num),
-  .ts-flow-list p,
   .ts-faq details p {
     font-size: 0.94rem;
     line-height: 2.05;
@@ -1200,6 +1255,29 @@
   .ts-place-other,
   .ts-place-note {
     font-size: 0.8rem;
+  }
+
+  .ts-flow-list {
+    margin-top: 32px;
+  }
+
+  .ts-flow-list li {
+    padding-bottom: 24px;
+  }
+
+  .ts-flow-list .ts-num {
+    font-size: 1.08rem;
+    margin-bottom: 8px;
+  }
+
+  .ts-flow-list h3 {
+    font-size: 0.94rem;
+    margin-bottom: 6px;
+  }
+
+  .ts-flow-list li > p:not(.ts-num) {
+    font-size: 0.8rem;
+    line-height: 1.75;
   }
 
   .ts-concern-list {
