@@ -934,6 +934,10 @@ body.index-page .hamburger.active span {
   display: none;
 }
 
+body.index-page .br-sp {
+  display: none;
+}
+
 .intro-role {
   font-size: 1.08rem;
   font-weight: 500;
@@ -1513,6 +1517,7 @@ body.index-page .hamburger.active span {
   line-height: 1.8;
   color: #1E3A5F;
   opacity: 0.95;
+  text-align: left;
 }
 
 .treatment-overview .treatment-note {
@@ -3165,6 +3170,10 @@ section[id],
     justify-self: auto;
   }
 
+  body.index-page .br-sp {
+    display: block;
+  }
+
   .intro-role {
     font-size: 1.15rem;
   }
@@ -3237,6 +3246,7 @@ section[id],
   }
 
   .initial-path > .initial-btn {
+    display: flex;
     margin-left: auto;
     margin-right: auto;
   }
