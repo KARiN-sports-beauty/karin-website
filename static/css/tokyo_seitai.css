@@ -654,23 +654,19 @@
   gap: 0;
   margin: 48px 0 0;
   padding: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .ts-place-list li {
-  padding: 4px 28px;
+  padding: 4px 16px;
   border-left: 1px solid rgba(30, 58, 95, 0.12);
   background: none;
   box-shadow: none;
+  text-align: center;
 }
 
 .ts-place-list li:first-child {
   border-left: none;
-  padding-left: 0;
-}
-
-.ts-place-list li:last-child {
-  padding-right: 0;
 }
 
 .ts-place-list h3 {
@@ -983,7 +979,7 @@
   }
 
   .ts-place-list li {
-    padding: 20px 24px;
+    padding: 20px 16px;
     border-left: none;
     border-top: 1px solid rgba(30, 58, 95, 0.1);
   }
@@ -993,14 +989,7 @@
     padding-top: 4px;
   }
 
-  .ts-place-list li:nth-child(odd) {
-    padding-left: 0;
-    padding-right: 20px;
-  }
-
   .ts-place-list li:nth-child(even) {
-    padding-right: 0;
-    padding-left: 20px;
     border-left: 1px solid rgba(30, 58, 95, 0.1);
   }
 }
