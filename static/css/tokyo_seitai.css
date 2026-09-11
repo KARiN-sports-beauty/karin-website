@@ -298,6 +298,7 @@
 .ts-body p,
 .ts-section-lead,
 .ts-view-item p,
+.ts-view-intro > p:last-child,
 .ts-flow-list p {
   font-size: 0.98rem;
   font-weight: 400;
@@ -489,29 +490,55 @@
   opacity: 0.82;
 }
 
-/* ---------- 5つの見方 ---------- */
+/* ---------- 身体の見方 ---------- */
+.ts-view-intro {
+  margin: 36px auto 0;
+  max-width: 36em;
+}
+
+.ts-view-role {
+  margin: 0;
+  font-size: 1.22rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  opacity: 1;
+}
+
+.ts-view-role::after {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 1px;
+  margin: 16px auto 0;
+  background-color: #c0a062;
+}
+
+.ts-view-intro p:last-child {
+  margin: 20px 0 0;
+}
+
 .ts-view-list {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  margin-top: 48px;
-  max-width: 720px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 48px;
+  margin-top: 56px;
+  max-width: 920px;
   margin-left: auto;
   margin-right: auto;
   text-align: left;
 }
 
 .ts-view-item {
-  padding: 28px 0;
-  border-top: 1px solid #eee8dc;
-}
-
-.ts-view-item:last-child {
-  border-bottom: 1px solid #eee8dc;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
 }
 
 .ts-view-title {
-  font-size: 1.08rem;
+  font-size: 1.02rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.7;
@@ -822,6 +849,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
+
+  .ts-view-list {
+    gap: 32px 28px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -891,6 +922,7 @@
   .ts-body p,
   .ts-section-lead,
   .ts-view-item p,
+  .ts-view-intro > p:last-child,
   .ts-flow-list p,
   .ts-faq details p {
     font-size: 0.94rem;
@@ -907,6 +939,33 @@
 
   .ts-quote + .ts-body {
     margin-top: 28px;
+  }
+
+  .ts-view-intro {
+    margin-top: 28px;
+  }
+
+  .ts-view-role {
+    font-size: 1.06rem;
+    letter-spacing: 0.05em;
+  }
+
+  .ts-view-role::after {
+    margin-top: 12px;
+  }
+
+  .ts-view-intro p:last-child {
+    margin-top: 16px;
+  }
+
+  .ts-view-list {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    margin-top: 36px;
+  }
+
+  .ts-view-title {
+    font-size: 0.98rem;
   }
 
   .ts-place-grid {
