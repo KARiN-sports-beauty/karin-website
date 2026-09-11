@@ -7,6 +7,7 @@
 .tokyo-seitai-page {
   background-color: #ffffff;
   color: #1E3A5F;
+  overflow-x: hidden;
 }
 
 .tokyo-seitai-page .ts-hero,
@@ -606,10 +607,20 @@
   gap: 64px;
 }
 
-.ts-feature--sport .ts-feature-image {
+.ts-feature--dance {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 64px;
+}
+
+.ts-feature--sport .ts-feature-image,
+.ts-feature--dance .ts-feature-image {
   height: auto;
   aspect-ratio: 16 / 9;
   box-shadow: none;
+}
+
+.ts-feature--dance .ts-feature-image {
+  order: 2;
 }
 
 .ts-feature-highlight {
@@ -621,40 +632,17 @@
   color: #1E3A5F;
 }
 
-.ts-dance-visual {
-  margin-top: 40px;
+.tokyo-seitai-page .ts-feature--sport[data-aos="fade-right"] {
+  transform: translate3d(-28px, 0, 0);
 }
 
-.ts-dance-image {
-  width: 82%;
-  overflow: hidden;
-  border-radius: 16px;
-  box-shadow: none;
+.tokyo-seitai-page .ts-feature--dance[data-aos="fade-left"] {
+  transform: translate3d(28px, 0, 0);
 }
 
-.ts-dance-image img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  display: block;
-}
-
-.ts-dance-copy {
-  width: min(540px, 56%);
-  margin: -40px 0 0 auto;
-  padding: 28px 4px 0 36px;
-  background-color: #ffffff;
-  box-sizing: border-box;
-  text-align: left;
-}
-
-.ts-dance-copy .ts-feature-highlight {
-  margin: 0 0 16px;
-}
-
-.ts-dance-copy .ts-body {
-  margin-top: 0;
+.tokyo-seitai-page .ts-feature--sport[data-aos="fade-right"].aos-animate,
+.tokyo-seitai-page .ts-feature--dance[data-aos="fade-left"].aos-animate {
+  transform: none;
 }
 
 /* ---------- 出張場所 ---------- */
@@ -910,7 +898,9 @@
   }
 
   .ts-feature,
-  .ts-feature--reverse {
+  .ts-feature--reverse,
+  .ts-feature--sport,
+  .ts-feature--dance {
     grid-template-columns: 1fr;
     gap: 32px;
     max-width: 560px;
@@ -918,7 +908,8 @@
     margin-right: auto;
   }
 
-  .ts-feature--reverse .ts-feature-image {
+  .ts-feature--reverse .ts-feature-image,
+  .ts-feature--dance .ts-feature-image {
     order: 0;
   }
 
@@ -926,24 +917,16 @@
     height: 240px;
   }
 
-  .ts-feature--sport {
+  .ts-feature--sport,
+  .ts-feature--dance {
     max-width: none;
     gap: 36px;
   }
 
-  .ts-feature--sport .ts-feature-image {
+  .ts-feature--sport .ts-feature-image,
+  .ts-feature--dance .ts-feature-image {
     height: auto;
     aspect-ratio: 16 / 9;
-  }
-
-  .ts-dance-image {
-    width: 88%;
-  }
-
-  .ts-dance-copy {
-    width: min(480px, 68%);
-    margin-top: -28px;
-    padding-left: 24px;
   }
 
   .ts-concern-list {
@@ -1076,60 +1059,57 @@
     font-size: 0.98rem;
   }
 
-  .ts-feature--sport {
+  .ts-feature--sport,
+  .ts-feature--dance {
     gap: 24px;
   }
 
-  .ts-feature--sport .ts-feature-body {
+  .ts-feature--sport .ts-feature-body,
+  .ts-feature--dance .ts-feature-body {
     display: contents;
   }
 
-  .ts-feature--sport .ts-eyebrow {
+  .ts-feature--sport .ts-eyebrow,
+  .ts-feature--dance .ts-eyebrow {
     display: none;
   }
 
-  .ts-feature--sport .ts-heading {
+  .ts-feature--sport .ts-heading,
+  .ts-feature--dance .ts-heading {
     order: 1;
     text-align: center;
   }
 
-  .ts-feature--sport .ts-heading::after {
+  .ts-feature--sport .ts-heading::after,
+  .ts-feature--dance .ts-heading::after {
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .ts-feature--sport .ts-feature-image {
+  .ts-feature--sport .ts-feature-image,
+  .ts-feature--dance .ts-feature-image {
     order: 2;
   }
 
-  .ts-feature--sport .ts-feature-highlight {
+  .ts-feature--sport .ts-feature-highlight,
+  .ts-feature--dance .ts-feature-highlight {
     order: 3;
     margin: 0;
     font-size: 1.04rem;
     text-align: left;
   }
 
-  .ts-feature--sport .ts-body {
+  .ts-feature--sport .ts-body,
+  .ts-feature--dance .ts-body {
     order: 4;
   }
 
-  .ts-dance-visual {
-    margin-top: 28px;
+  .tokyo-seitai-page .ts-feature--sport[data-aos="fade-right"] {
+    transform: translate3d(-16px, 0, 0);
   }
 
-  .ts-dance-image {
-    width: 100%;
-  }
-
-  .ts-dance-copy {
-    width: 100%;
-    margin-top: 24px;
-    padding: 0;
-  }
-
-  .ts-dance-copy .ts-feature-highlight {
-    font-size: 1.04rem;
-    margin-bottom: 12px;
+  .tokyo-seitai-page .ts-feature--dance[data-aos="fade-left"] {
+    transform: translate3d(16px, 0, 0);
   }
 
   .ts-recommend-list {
@@ -1222,5 +1202,14 @@
   .ts-approach-list li p {
     font-size: 0.86rem;
     line-height: 1.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tokyo-seitai-page .ts-feature--sport[data-aos],
+  .tokyo-seitai-page .ts-feature--dance[data-aos] {
+    opacity: 1;
+    transform: none;
+    transition-property: none;
   }
 }

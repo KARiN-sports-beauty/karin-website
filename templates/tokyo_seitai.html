@@ -269,7 +269,7 @@
     </section>
 
     <section class="ts-section ts-section--muted" aria-labelledby="ts-sport-heading">
-      <div class="ts-inner ts-feature ts-feature--sport" data-aos="fade-up">
+      <div class="ts-inner ts-feature ts-feature--sport" data-aos="fade-right" data-aos-duration="700" data-aos-easing="ease-out">
         <div class="ts-feature-image">
           <img src="{{ url_for('static', filename='images/tokyoseitaisports.jpg') }}" alt="スポーツ・アスリートのコンディショニング" width="1673" height="940">
         </div>
@@ -286,18 +286,17 @@
     </section>
 
     <section class="ts-section" aria-labelledby="ts-dance-heading">
-      <div class="ts-inner ts-dance" data-aos="fade-up">
-        <h2 id="ts-dance-heading" class="ts-heading">アーティスト・ダンサーなど身体を使って表現する方へ</h2>
-        <div class="ts-dance-visual">
-          <div class="ts-dance-image">
-            <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="身体の動きを整える整体・コンディショニング" width="720" height="480">
-          </div>
-          <div class="ts-dance-copy">
-            <p class="ts-feature-highlight">表現する身体の、その時のコンディションに寄り添う。</p>
-            <div class="ts-body ts-body--left">
-              <p>ダンス、舞台、ライブ。同じ動きを繰り返す現場では、痛みが出る前の違和感や、表現に必要な可動域の変化がコンディションを左右します。</p>
-              <p>エンターテイメントダンサーのトレーナー帯同や、アーティスト・プロダンサーへの施術・調整を実際の現場で行ってきました。「対応できます」という一般論ではなく、表現する身体と向き合ってきた経験を、出張整体の中でも活かしています。</p>
-            </div>
+      <div class="ts-inner ts-feature ts-feature--dance" data-aos="fade-left" data-aos-duration="700" data-aos-easing="ease-out">
+        <div class="ts-feature-image">
+          <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="身体の動きを整える整体・コンディショニング" width="720" height="480">
+        </div>
+        <div class="ts-feature-body">
+          <p class="ts-eyebrow ts-eyebrow--left">Artists</p>
+          <h2 id="ts-dance-heading" class="ts-heading ts-heading--left">アーティスト・ダンサーなど身体を使って表現する方へ</h2>
+          <p class="ts-feature-highlight">表現する身体の、その時のコンディションに寄り添う。</p>
+          <div class="ts-body ts-body--left">
+            <p>ダンス、舞台、ライブ。同じ動きを繰り返す現場では、痛みが出る前の違和感や、表現に必要な可動域の変化がコンディションを左右します。</p>
+            <p>エンターテイメントダンサーのトレーナー帯同や、アーティスト・プロダンサーへの施術・調整を実際の現場で行ってきました。「対応できます」という一般論ではなく、表現する身体と向き合ってきた経験を、出張整体の中でも活かしています。</p>
           </div>
         </div>
       </div>
@@ -467,7 +466,8 @@
   <script>
     AOS.init({
       duration: 800,
-      once: true
+      once: true,
+      disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
     });
 
     (function () {
