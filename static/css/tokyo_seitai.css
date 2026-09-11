@@ -494,26 +494,27 @@
 .ts-view-intro {
   margin: 40px auto 0;
   max-width: 720px;
-  padding: 40px 48px;
+  padding: 48px 56px;
   border: none;
   border-radius: 12px;
-  background-color: #1E3A5F;
+  background-color: #2B4668;
   box-shadow: none;
   text-align: center;
 }
 
 .ts-view-role {
   margin: 0;
+  padding: 0 8px;
   font-size: 1.2rem;
   font-weight: 400;
-  letter-spacing: 0.1em;
-  line-height: 1.75;
+  letter-spacing: 0.12em;
+  line-height: 1.85;
   color: #c0a062;
 }
 
 .ts-view-intro > p:last-child {
-  margin: 20px auto 0;
-  max-width: 28em;
+  margin: 24px auto 0;
+  max-width: 26em;
   color: #ffffff;
   opacity: 0.92;
   line-height: 2.1;
@@ -943,17 +944,17 @@
 
   .ts-view-intro {
     margin-top: 28px;
-    padding: 28px 22px;
-    max-width: none;
+    padding: 32px 24px;
   }
 
   .ts-view-role {
     font-size: 1.08rem;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
+    padding: 0;
   }
 
   .ts-view-intro > p:last-child {
-    margin-top: 16px;
+    margin-top: 18px;
   }
 
   .ts-view-list {
