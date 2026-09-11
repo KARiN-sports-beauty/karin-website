@@ -1034,9 +1034,37 @@
     gap: 24px;
   }
 
-  .ts-feature-highlight {
-    margin: 14px 0 10px;
+  .ts-feature--sport .ts-feature-body {
+    display: contents;
+  }
+
+  .ts-feature--sport .ts-eyebrow {
+    display: none;
+  }
+
+  .ts-feature--sport .ts-heading {
+    order: 1;
+    text-align: center;
+  }
+
+  .ts-feature--sport .ts-heading::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .ts-feature--sport .ts-feature-image {
+    order: 2;
+  }
+
+  .ts-feature--sport .ts-feature-highlight {
+    order: 3;
+    margin: 0;
     font-size: 1.04rem;
+    text-align: left;
+  }
+
+  .ts-feature--sport .ts-body {
+    order: 4;
   }
 
   .ts-recommend-list {
