@@ -492,31 +492,22 @@
 
 /* ---------- 身体の見方 ---------- */
 .ts-view-intro {
-  margin: 36px auto 0;
-  max-width: 36em;
+  margin: 40px auto 0;
+  max-width: 34em;
+  padding: 0 28px;
 }
 
 .ts-view-role {
   margin: 0;
-  font-size: 1.22rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  line-height: 1.7;
-  color: #1E3A5F;
-  opacity: 1;
-}
-
-.ts-view-role::after {
-  content: "";
-  display: block;
-  width: 32px;
-  height: 1px;
-  margin: 16px auto 0;
-  background-color: #c0a062;
+  font-size: 1.2rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  line-height: 1.75;
+  color: #c0a062;
 }
 
 .ts-view-intro p:last-child {
-  margin: 20px 0 0;
+  margin: 24px 0 0;
 }
 
 .ts-view-list {
@@ -943,19 +934,16 @@
 
   .ts-view-intro {
     margin-top: 28px;
+    padding: 0 12px;
   }
 
   .ts-view-role {
-    font-size: 1.06rem;
-    letter-spacing: 0.05em;
-  }
-
-  .ts-view-role::after {
-    margin-top: 12px;
+    font-size: 1.08rem;
+    letter-spacing: 0.06em;
   }
 
   .ts-view-intro p:last-child {
-    margin-top: 16px;
+    margin-top: 20px;
   }
 
   .ts-view-list {
