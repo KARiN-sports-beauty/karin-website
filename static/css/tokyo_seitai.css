@@ -299,6 +299,7 @@
 .ts-section-lead,
 .ts-view-item p,
 .ts-view-intro > p:last-child,
+.ts-recommend-list li > p:not(.ts-num),
 .ts-flow-list p {
   font-size: 0.98rem;
   font-weight: 400;
@@ -373,8 +374,7 @@
   margin: 0 0 8px;
 }
 
-/* ---------- 悩み / おすすめ ---------- */
-.ts-recommend-list,
+/* ---------- おすすめ / 出張場所 ---------- */
 .ts-place-grid {
   list-style: none;
   margin: 36px 0 0;
@@ -382,31 +382,46 @@
   text-align: left;
 }
 
+#ts-recommend-heading + .ts-section-lead {
+  max-width: 36em;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.ts-recommend-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px 24px;
+  margin: 40px auto 0;
+  padding: 0;
+  max-width: 920px;
+  text-align: left;
+}
+
 .ts-recommend-list li {
-  padding: 14px 0 14px 18px;
-  border-top: 1px solid #eee8dc;
-  font-size: 0.95rem;
-  font-weight: 500;
+  margin: 0;
+  padding: 22px 24px 20px;
+  background-color: #ffffff;
+  border: 1px solid #eee8dc;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.ts-recommend-list h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.7;
   color: #1E3A5F;
-  position: relative;
 }
 
-.ts-recommend-list li:last-child {
-  border-bottom: 1px solid #eee8dc;
-}
-
-.ts-recommend-list li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #c0a062;
+.ts-recommend-list li > p:not(.ts-num) {
+  margin: 0;
+  line-height: 1.8;
 }
 
 .ts-concern-list {
@@ -858,6 +873,10 @@
   .ts-view-list {
     gap: 32px 28px;
   }
+
+  .ts-recommend-list {
+    gap: 16px 18px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -928,6 +947,7 @@
   .ts-section-lead,
   .ts-view-item p,
   .ts-view-intro > p:last-child,
+  .ts-recommend-list li > p:not(.ts-num),
   .ts-flow-list p,
   .ts-faq details p {
     font-size: 0.94rem;
@@ -973,6 +993,21 @@
 
   .ts-view-title {
     font-size: 0.98rem;
+  }
+
+  .ts-recommend-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 32px;
+  }
+
+  .ts-recommend-list li {
+    padding: 16px 18px 14px;
+  }
+
+  .ts-recommend-list h3 {
+    font-size: 0.96rem;
+    margin-bottom: 6px;
   }
 
   .ts-place-grid {
