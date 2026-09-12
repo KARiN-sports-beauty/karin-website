@@ -896,38 +896,51 @@
 
 /* ---------- CTA ---------- */
 .ts-cta-section {
-  padding-bottom: 120px;
+  background-color: #E9EEF2;
+  padding-bottom: 104px;
+}
+
+.ts-cta-section .ts-heading {
+  font-size: 1.5rem;
+}
+
+.ts-cta-section .ts-body,
+.ts-cta-section .ts-body p {
+  text-align: center;
 }
 
 .ts-cta-row {
   display: flex;
   justify-content: center;
+  align-items: stretch;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 40px;
+  gap: 14px 16px;
+  margin-top: 36px;
 }
 
 .ts-cta-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 200px;
+  min-width: 188px;
   min-height: 48px;
-  padding: 14px 32px;
-  background: #ffffff;
-  color: #1E3A5F;
-  font-size: 0.95rem;
+  padding: 12px 28px;
+  background: #1E3A5F;
+  color: #ffffff;
+  font-size: 0.92rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-decoration: none;
   border-radius: 40px;
-  border: 1px solid rgba(30, 58, 95, 0.16);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid #1E3A5F;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
 .ts-cta-btn--outline {
-  background: #ffffff;
+  background: transparent;
+  color: #1E3A5F;
+  border-color: #1E3A5F;
 }
 
 .tokyo-seitai-page .footer-bottom {
@@ -935,7 +948,6 @@
 }
 
 @media (hover: hover) and (min-width: 1025px) {
-  .ts-cta-btn:hover,
   .ts-text-link:hover,
   .ts-body a:hover,
   .ts-faq a:hover {
@@ -943,10 +955,15 @@
   }
 
   .ts-cta-btn:hover {
-    background: #1E3A5F;
+    background: #4a5f7a;
     color: #ffffff;
+    border-color: #4a5f7a;
+  }
+
+  .ts-cta-btn--outline:hover {
+    background: #ffffff;
+    color: #1E3A5F;
     border-color: #1E3A5F;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -1372,8 +1389,19 @@
     line-height: 1.7;
   }
 
-  .ts-cta-section {
-    padding-bottom: 112px;
+  .tokyo-seitai-page .ts-cta-section {
+    padding-bottom: 88px;
+  }
+
+  .ts-cta-section .ts-heading {
+    font-size: 1.32rem;
+  }
+
+  .ts-cta-row {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 28px;
+    gap: 12px;
   }
 
   .ts-cta-btn {
