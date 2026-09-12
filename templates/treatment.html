@@ -61,51 +61,54 @@
 <body class="treatment-page">
 
   <section class="tx-hero" aria-labelledby="treatment-heading">
-    <h1 id="treatment-heading" class="tx-hero-title" data-aos="fade-up">施術内容</h1>
-    <p class="tx-hero-lead" data-aos="fade-up" data-aos-delay="80">
-      KARiN.では、決まった施術を当てはめるのではなく、<br class="tx-br-pc">
-      その日の身体の状態や目的を見ながら、必要なアプローチを組み合わせています。
-    </p>
+    <div class="tx-hero-media" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="" width="720" height="480">
+    </div>
+    <div class="tx-hero-copy" data-aos="fade-up">
+      <h1 id="treatment-heading" class="tx-hero-title">施術内容</h1>
+      <p class="tx-hero-lead">
+        <span class="karin-brand">KARiN.</span>では、決まった施術を当てはめるのではなく、<br class="tx-br-pc">
+        その日の身体の状態や目的を見ながら、<br class="tx-br-pc">
+        必要なアプローチを組み合わせています。
+      </p>
+    </div>
   </section>
 
-  <section class="tx-section tx-section--muted" aria-labelledby="tx-philosophy-heading">
+  <section class="tx-section tx-section--muted tx-philosophy" aria-labelledby="tx-philosophy-heading">
     <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
-      <h2 id="tx-philosophy-heading" class="tx-heading">整えるだけで終わらせない。</h2>
-      <div class="tx-body">
+      <h2 id="tx-philosophy-heading" class="tx-philosophy-title">整えるだけで終わらせない。</h2>
+      <div class="tx-body tx-philosophy-body">
         <p>痛みや不調があるときは、まず身体を整える。<br>そして、動ける状態をつくり、日々の生活やスポーツの中で良い状態を保てる身体へ。</p>
         <p>鍼灸・整体・コンディショニング・トレーニングなどを、その方の状態や目的に合わせて組み合わせながら、身体と向き合っていきます。</p>
       </div>
     </div>
   </section>
 
-  <section class="tx-section" aria-labelledby="tx-pillars-heading">
+  <section class="tx-section tx-pillars-section" aria-labelledby="tx-pillars-heading">
     <div class="tx-inner">
-      <h2 id="tx-pillars-heading" class="tx-heading" data-aos="fade-up">身体を整えるために。</h2>
+      <h2 id="tx-pillars-heading" class="tx-heading" data-aos="fade-up"><span class="karin-brand">KARiN.</span>の施術</h2>
       <div class="tx-pillars">
         <article class="tx-pillar" data-aos="fade-up">
           <div class="tx-pillar-image">
             <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸" width="720" height="480">
           </div>
-          <p class="tx-num">01</p>
-          <p class="tx-label">鍼灸</p>
+          <p class="tx-pillar-name"><span class="tx-num">01</span>｜鍼灸</p>
           <h3 class="tx-pillar-title">身体の状態を見ながら、内側から整える。</h3>
           <p class="tx-pillar-text">痛みや不調だけでなく、疲労や自律神経の乱れなど、その日の身体の状態を見ながら施術します。身体のバランスを整え、本来の状態へ戻っていくための土台をつくります。</p>
         </article>
         <article class="tx-pillar" data-aos="fade-up" data-aos-delay="80">
           <div class="tx-pillar-image">
-            <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体・コンディショニング" width="720" height="480">
+            <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体" width="720" height="480">
           </div>
-          <p class="tx-num">02</p>
-          <p class="tx-label">整体・コンディショニング</p>
+          <p class="tx-pillar-name"><span class="tx-num">02</span>｜整体</p>
           <h3 class="tx-pillar-title">動きやすい身体をつくる。</h3>
-          <p class="tx-pillar-text">姿勢や可動域、筋肉の状態などを見ながら、身体全体のバランスを整えます。痛いところだけを見るのではなく、身体全体を見ながら、動きやすく負担の少ない状態を目指します。</p>
+          <p class="tx-pillar-text">姿勢や可動域、筋肉の状態などを見ながら、身体全体のバランスを整えます。リコンディショニングの視点も取り入れ、痛いところだけを見るのではなく、動きやすく負担の少ない状態を目指します。</p>
         </article>
         <article class="tx-pillar" data-aos="fade-up" data-aos-delay="160">
           <div class="tx-pillar-image">
             <img src="{{ url_for('static', filename='images/treatment6.jpg') }}" alt="トレーニング" width="720" height="480">
           </div>
-          <p class="tx-num">03</p>
-          <p class="tx-label">トレーニング</p>
+          <p class="tx-pillar-name"><span class="tx-num">03</span>｜トレーニング</p>
           <h3 class="tx-pillar-title">整えた身体を、使える身体へ。</h3>
           <p class="tx-pillar-text">整えるだけで終わらず、身体をどう使うかまで考えます。姿勢や動き、筋力などを整えながら、良いコンディションを維持し、再び不調を繰り返さない身体づくりにつなげます。</p>
         </article>
