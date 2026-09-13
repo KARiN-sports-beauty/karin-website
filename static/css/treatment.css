@@ -78,12 +78,17 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   box-sizing: border-box;
   width: auto;
   max-width: none;
-  padding: 96px 5% 72px 8%;
+  padding: 96px 8% 72px;
   text-align: left;
+}
+
+.tx-hero-copy-inner {
+  width: max-content;
+  max-width: 100%;
 }
 
 .tx-hero-title {
@@ -109,8 +114,7 @@
 }
 
 .tx-hero-lead {
-  align-self: stretch;
-  width: 100%;
+  width: auto;
   max-width: none;
   margin: 24px 0 0;
   font-size: 0.96rem;
@@ -493,7 +497,7 @@
   .tx-hero-copy {
     width: auto;
     max-width: none;
-    padding: 88px 5% 64px 7%;
+    padding: 88px 7% 64px;
   }
 
   .tx-hero-media {
@@ -536,67 +540,51 @@
 =============================== */
 @media (max-width: 768px) {
   .tx-hero {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    background-color: #ffffff;
+    min-height: clamp(300px, 58vw, 420px);
+    background-color: #fafafa;
   }
 
   .tx-hero-media {
-    position: relative;
-    top: auto;
-    right: auto;
-    left: auto;
-    bottom: auto;
-    inset: auto;
-    order: 2;
     width: 100%;
-    height: 250px;
-    flex-shrink: 0;
+    min-height: 0;
   }
 
   .tx-hero-media img {
-    position: relative;
-    top: auto;
-    right: auto;
-    height: 100%;
-    width: 100%;
-    max-width: none;
-    transform: none;
-    object-fit: cover;
-    object-position: 42% 36%;
+    object-position: 82% 46%;
     -webkit-mask-image: linear-gradient(
-      180deg,
+      90deg,
       transparent 0%,
-      rgba(0, 0, 0, 0.28) 16%,
-      #000 38%,
-      #000 100%
+      rgba(0, 0, 0, 0.4) 12%,
+      #000 28%
     );
     mask-image: linear-gradient(
-      180deg,
+      90deg,
       transparent 0%,
-      rgba(0, 0, 0, 0.28) 16%,
-      #000 38%,
-      #000 100%
+      rgba(0, 0, 0, 0.4) 12%,
+      #000 28%
     );
   }
 
   .tx-hero-media::after {
     background: linear-gradient(
-      180deg,
-      #ffffff 0%,
-      rgba(255, 255, 255, 0.78) 16%,
-      rgba(255, 255, 255, 0.22) 38%,
-      transparent 62%
+      90deg,
+      #fafafa 0%,
+      rgba(250, 250, 250, 0.55) 14%,
+      rgba(250, 250, 250, 0.12) 28%,
+      transparent 42%
     );
   }
 
   .tx-hero-copy {
-    order: 1;
+    align-items: flex-start;
     box-sizing: border-box;
     width: 100%;
     max-width: none;
-    padding: 64px 8% 20px;
+    padding: 56px 10% 56px 8%;
+  }
+
+  .tx-hero-copy-inner {
+    width: 100%;
   }
 
   .tx-hero-title {
@@ -727,21 +715,11 @@
 
 @media (max-width: 480px) {
   .tx-hero {
-    min-height: 0;
+    min-height: clamp(280px, 62vw, 380px);
   }
 
   .tx-hero-copy {
-    padding: 56px 6% 16px;
-  }
-
-  .tx-hero-media {
-    width: 100%;
-    height: 220px;
-  }
-
-  .tx-hero-media img {
-    left: 0;
-    width: 100%;
+    padding: 48px 8% 48px 6%;
   }
 
   .tx-section {
