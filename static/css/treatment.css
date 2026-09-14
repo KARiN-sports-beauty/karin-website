@@ -22,7 +22,7 @@
   grid-template-areas: "copy media";
   align-items: stretch;
   min-height: clamp(420px, 56vh, 540px);
-  overflow: hidden;
+  overflow: clip;
   background-color: #ffffff;
 }
 
@@ -424,6 +424,10 @@
   display: inline;
 }
 
+.tx-br-sp {
+  display: none;
+}
+
 /* PC：テキスト幅を広げて指定文を1行に。ホバーはポインタデバイスのみ */
 @media (min-width: 1025px) {
   .tx-inner--narrow {
@@ -609,6 +613,10 @@
 
   .tx-br-pc {
     display: none;
+  }
+
+  .tx-br-sp {
+    display: block;
   }
 
   .tx-section {
