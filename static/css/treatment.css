@@ -545,11 +545,19 @@
   }
 
   .tx-hero-media {
-    width: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    grid-area: auto;
+    width: 40%;
+    height: auto;
     min-height: 0;
   }
 
   .tx-hero-media img {
+    max-width: none;
     object-position: 82% 46%;
     -webkit-mask-image: linear-gradient(
       90deg,
