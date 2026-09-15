@@ -3086,6 +3086,12 @@ def tokyo_seitai():
     return render_template("tokyo_seitai.html")
 
 
+@app.route("/tokyo/shinkyu")
+def tokyo_shinkyu():
+    """東京の出張鍼灸 SEOページ。既存の /tokyo/seitai とは独立。"""
+    return render_template("tokyo_shinkyu.html")
+
+
 @app.route("/price")
 def price():
     return render_template("price.html")
@@ -6092,6 +6098,7 @@ def sitemap():
             ("/news", "daily"),
             ("/lp", "monthly"),
             ("/tokyo/seitai", "weekly"),
+            ("/tokyo/shinkyu", "weekly"),
             ("/chat", "weekly"),
         ]
         if public_booking_enabled():
