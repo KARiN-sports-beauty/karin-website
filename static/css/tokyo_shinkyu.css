@@ -128,11 +128,13 @@
 .ts-hero {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
+  min-height: 100vh;
   min-height: 100svh;
-  padding: 110px 8% 96px;
+  padding: clamp(132px, 22vh, 240px) 8% 120px;
   text-align: left;
   color: #ffffff;
   background-color: #1e3a5f;
@@ -148,26 +150,38 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(18, 32, 48, 0.38) 0%,
-      rgba(18, 32, 48, 0.16) 22%,
-      rgba(18, 32, 48, 0.04) 42%,
-      transparent 62%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(18, 32, 48, 0.1) 0%,
-      transparent 24%,
-      transparent 68%,
-      rgba(18, 32, 48, 0.32) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(30, 58, 95, 0.42) 0%,
+    rgba(30, 58, 95, 0.18) 24%,
+    rgba(30, 58, 95, 0.05) 46%,
+    transparent 64%
+  );
+}
+
+.ts-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  top: auto;
+  right: auto;
+  width: 38%;
+  height: 56%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    152deg,
+    rgba(30, 58, 95, 0.12) 0%,
+    rgba(30, 58, 95, 0.58) 34%,
+    rgba(30, 58, 95, 0.94) 100%
+  );
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
 }
 
 .ts-hero-copy {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 36em;
   margin: 0;
   padding-right: 4%;
@@ -192,10 +206,9 @@
   color: #c0a062;
 }
 
-.ts-hero-kicker::before,
-.ts-hero-kicker::after {
+.ts-hero-kicker::before {
   content: "";
-  width: 28px;
+  width: 36px;
   height: 1px;
   background-color: #c0a062;
   flex-shrink: 0;
@@ -221,10 +234,10 @@
 
 .ts-hero-visual {
   display: block;
-  font-size: clamp(1.7rem, 4.4vw, 3.05rem);
+  font-size: clamp(1.85rem, 4.6vw, 3.2rem);
   font-weight: 400;
   letter-spacing: 0.08em;
-  line-height: 1.52;
+  line-height: 1.5;
   color: #ffffff;
 }
 
@@ -249,49 +262,23 @@
 .ts-hero-en {
   position: absolute;
   left: 8%;
-  bottom: 36px;
-  z-index: 1;
+  bottom: 40px;
+  z-index: 2;
   margin: 0;
   font-family: "Playfair Display", serif;
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.28em;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(232, 217, 181, 0.88);
   pointer-events: none;
 }
 
 .ts-hero-scroll {
-  position: absolute;
-  left: 50%;
-  bottom: 28px;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 46px;
-  transform: translateX(-50%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 50%;
-  background: rgba(18, 32, 48, 0.38);
-  text-decoration: none;
+  display: none;
 }
 
-.ts-hero-scroll svg {
-  width: 18px;
-  height: 18px;
-}
-
-@media (hover: hover) {
-  .ts-hero-scroll:hover {
-    background: rgba(18, 32, 48, 0.55);
-    border-color: rgba(255, 255, 255, 0.8);
-  }
-}
-
-#ts-for {
+#ts-after-hero {
   scroll-margin-top: 70px;
 }
 
@@ -1119,8 +1106,9 @@
   }
 
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 72svh;
-    padding: 100px 7% 56px;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 100px 7% 80px;
     background-position: 72% 40%;
   }
 
@@ -1222,27 +1210,32 @@
 
 @media (max-width: 768px) {
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 0;
-    min-height: 72svh;
-    align-items: flex-end;
-    padding: 88px 7% 56px;
+    min-height: 100vh;
+    min-height: 100svh;
+    align-items: flex-start;
+    padding: 112px 7% 96px;
     background-position: 74% 38%;
   }
 
   .tokyo-shinkyu-page .ts-hero::before {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(18, 32, 48, 0.12) 0%,
-        rgba(18, 32, 48, 0.04) 32%,
-        rgba(18, 32, 48, 0.42) 100%
-      ),
-      linear-gradient(
-        90deg,
-        rgba(18, 32, 48, 0.32) 0%,
-        rgba(18, 32, 48, 0.1) 40%,
-        rgba(18, 32, 48, 0) 68%
-      );
+    background: linear-gradient(
+      90deg,
+      rgba(30, 58, 95, 0.36) 0%,
+      rgba(30, 58, 95, 0.12) 42%,
+      rgba(30, 58, 95, 0) 68%
+    );
+  }
+
+  .tokyo-shinkyu-page .ts-hero::after {
+    width: 58%;
+    height: 32%;
+    clip-path: polygon(0 0, 0 100%, 100% 100%);
+    background: linear-gradient(
+      152deg,
+      rgba(30, 58, 95, 0.16) 0%,
+      rgba(30, 58, 95, 0.62) 40%,
+      rgba(30, 58, 95, 0.92) 100%
+    );
   }
 
   .tokyo-shinkyu-page .ts-hero-copy {
@@ -1256,9 +1249,8 @@
     letter-spacing: 0.16em;
   }
 
-  .tokyo-shinkyu-page .ts-hero-kicker::before,
-  .tokyo-shinkyu-page .ts-hero-kicker::after {
-    width: 18px;
+  .tokyo-shinkyu-page .ts-hero-kicker::before {
+    width: 22px;
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
@@ -1279,13 +1271,33 @@
   }
 
   .tokyo-shinkyu-page .ts-hero-en {
-    display: none;
+    left: 7%;
+    bottom: 28px;
+    font-size: 0.52rem;
+    letter-spacing: 0.22em;
   }
 
   .tokyo-shinkyu-page .ts-hero-scroll {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    z-index: 2;
     width: 40px;
     height: 40px;
-    bottom: 16px;
+    transform: translateX(-50%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
+    background: rgba(30, 58, 95, 0.42);
+    text-decoration: none;
+  }
+
+  .tokyo-shinkyu-page .ts-hero-scroll svg {
+    width: 16px;
+    height: 16px;
   }
 
   .tokyo-shinkyu-page .ts-hero-br {
@@ -1577,9 +1589,15 @@
   }
 
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 68svh;
-    padding: 84px 6% 52px;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 108px 6% 88px;
     background-position: 78% 36%;
+  }
+
+  .tokyo-shinkyu-page .ts-hero::after {
+    width: 64%;
+    height: 26%;
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
