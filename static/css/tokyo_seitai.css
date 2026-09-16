@@ -34,21 +34,29 @@
 }
 
 .tokyo-seitai-page .nav {
-  gap: 16px;
+  gap: 10px;
 }
 
 .tokyo-seitai-page .nav a:not(.nav-book) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.06em;
-  padding: 0;
-  min-height: 0;
-  transition: color 0.4s ease;
+  min-height: 32px;
+  padding: 5px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 40px;
+  box-sizing: border-box;
+  transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
 }
 
 .tokyo-seitai-page .nav a:hover:not(.nav-book) {
-  color: #c0a062;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
 }
 
 .tokyo-seitai-page .nav-book {
@@ -85,10 +93,14 @@
 
 .tokyo-seitai-page.is-past-hero .nav a:not(.nav-book) {
   color: #1E3A5F;
+  border-color: #1E3A5F;
+  background: transparent;
 }
 
 .tokyo-seitai-page.is-past-hero .nav a:hover:not(.nav-book) {
-  color: #8fa3c1;
+  color: #1E3A5F;
+  background: rgba(30, 58, 95, 0.06);
+  border-color: #1E3A5F;
 }
 
 .tokyo-seitai-page.is-past-hero .nav-book {
@@ -992,14 +1004,15 @@
 
   .tokyo-seitai-page .nav a:not(.nav-book) {
     width: auto;
-    min-height: 0;
+    min-height: 30px;
     font-size: 0.72rem;
-    padding: 0;
+    padding: 4px 12px;
     color: #ffffff;
   }
 
   .tokyo-seitai-page.is-past-hero .nav a:not(.nav-book) {
     color: #1E3A5F;
+    border-color: #1E3A5F;
   }
 
   .tokyo-seitai-page .nav .nav-book {
@@ -1422,7 +1435,8 @@
 
   .tokyo-seitai-page .nav a:not(.nav-book) {
     font-size: 0.7rem;
-    padding: 0;
+    padding: 4px 10px;
+    min-height: 28px;
   }
 
   .tokyo-seitai-page .nav .nav-book {

@@ -129,18 +129,17 @@
   isolation: isolate;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
-  min-height: 100vh;
   min-height: 100svh;
-  padding: clamp(132px, 22vh, 240px) 8% 120px;
+  padding: 110px 8% 80px;
   text-align: left;
   color: #ffffff;
   background-color: #1e3a5f;
   background-image: url("../images/tokyoshinkyufv.jpg");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: 68% 42%;
+  background-position: 58% 50%;
 }
 
 .ts-hero::before {
@@ -1107,10 +1106,9 @@
   }
 
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 100vh;
-    min-height: 100svh;
-    padding: 100px 7% 80px;
-    background-position: 72% 40%;
+    min-height: 72svh;
+    padding: 100px 7% 56px;
+    background-position: 58% 48%;
   }
 
   .tokyo-shinkyu-page .ts-section {
@@ -1211,11 +1209,11 @@
 
 @media (max-width: 768px) {
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 100vh;
-    min-height: 100svh;
+    min-height: 0;
+    min-height: 62svh;
     align-items: flex-start;
-    padding: 112px 7% 96px;
-    background-position: 74% 38%;
+    padding: 88px 7% 56px;
+    background-position: 58% 42%;
   }
 
   .tokyo-shinkyu-page .ts-hero::before {
@@ -1589,10 +1587,9 @@
   }
 
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 100vh;
-    min-height: 100svh;
-    padding: 108px 6% 88px;
-    background-position: 78% 36%;
+    min-height: 56svh;
+    padding: 84px 6% 52px;
+    background-position: 58% 40%;
   }
 
   .tokyo-shinkyu-page .ts-hero::after {
