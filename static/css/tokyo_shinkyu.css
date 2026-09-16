@@ -150,33 +150,40 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(30, 58, 95, 0.42) 0%,
-    rgba(30, 58, 95, 0.18) 24%,
-    rgba(30, 58, 95, 0.05) 46%,
-    transparent 64%
-  );
+  background:
+    linear-gradient(
+      90deg,
+      rgba(30, 58, 95, 0.5) 0%,
+      rgba(30, 58, 95, 0.32) 34%,
+      rgba(30, 58, 95, 0.4) 62%,
+      rgba(30, 58, 95, 0.58) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(30, 58, 95, 0.18) 0%,
+      rgba(30, 58, 95, 0.08) 40%,
+      rgba(30, 58, 95, 0.22) 100%
+    );
 }
 
 .ts-hero::after {
   content: "";
   position: absolute;
-  left: 0;
-  bottom: 0;
+  left: -6%;
+  bottom: -12%;
   top: auto;
   right: auto;
-  width: 38%;
-  height: 56%;
+  width: 62%;
+  height: 52%;
   z-index: 0;
   pointer-events: none;
   background: linear-gradient(
-    152deg,
-    rgba(30, 58, 95, 0.12) 0%,
-    rgba(30, 58, 95, 0.58) 34%,
-    rgba(30, 58, 95, 0.94) 100%
+    148deg,
+    rgba(30, 58, 95, 0.08) 0%,
+    rgba(30, 58, 95, 0.42) 38%,
+    rgba(30, 58, 95, 0.82) 100%
   );
-  clip-path: polygon(0 0, 0 100%, 100% 100%);
+  border-radius: 0 100% 0 0;
 }
 
 .ts-hero-copy {
@@ -234,29 +241,32 @@
 
 .ts-hero-visual {
   display: block;
-  font-size: clamp(1.85rem, 4.6vw, 3.2rem);
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  line-height: 1.5;
+  font-family: "Noto Serif JP", "Playfair Display", serif;
+  font-size: clamp(1.9rem, 4.8vw, 3.35rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.58;
   color: #ffffff;
 }
 
 .ts-hero-role {
   margin: 28px 0 0;
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
   font-size: 0.92rem;
   font-weight: 400;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .ts-hero-sub {
   margin: 6px 0 0;
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
   font-size: 0.9rem;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   line-height: 2;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .ts-hero-en {
@@ -1218,23 +1228,34 @@
   }
 
   .tokyo-shinkyu-page .ts-hero::before {
-    background: linear-gradient(
-      90deg,
-      rgba(30, 58, 95, 0.36) 0%,
-      rgba(30, 58, 95, 0.12) 42%,
-      rgba(30, 58, 95, 0) 68%
-    );
+    background:
+      linear-gradient(
+        90deg,
+        rgba(30, 58, 95, 0.48) 0%,
+        rgba(30, 58, 95, 0.3) 40%,
+        rgba(30, 58, 95, 0.42) 70%,
+        rgba(30, 58, 95, 0.55) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(30, 58, 95, 0.12) 0%,
+        rgba(30, 58, 95, 0.08) 40%,
+        rgba(30, 58, 95, 0.28) 100%
+      );
   }
 
   .tokyo-shinkyu-page .ts-hero::after {
-    width: 58%;
-    height: 32%;
-    clip-path: polygon(0 0, 0 100%, 100% 100%);
+    left: -10%;
+    bottom: -14%;
+    width: 88%;
+    height: 38%;
+    border-radius: 0 100% 0 0;
+    clip-path: none;
     background: linear-gradient(
-      152deg,
-      rgba(30, 58, 95, 0.16) 0%,
-      rgba(30, 58, 95, 0.62) 40%,
-      rgba(30, 58, 95, 0.92) 100%
+      148deg,
+      rgba(30, 58, 95, 0.1) 0%,
+      rgba(30, 58, 95, 0.46) 42%,
+      rgba(30, 58, 95, 0.8) 100%
     );
   }
 
@@ -1596,8 +1617,8 @@
   }
 
   .tokyo-shinkyu-page .ts-hero::after {
-    width: 64%;
-    height: 26%;
+    width: 96%;
+    height: 32%;
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
