@@ -18,7 +18,7 @@
 /* このページ専用：FV上は透明＋白文字、抜けたら白背景＋ネイビー */
 .tokyo-shinkyu-page .header {
   background-color: transparent;
-  background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
+  background-image: none;
   box-shadow: none;
   border-bottom: none;
   transition:
@@ -34,28 +34,36 @@
 }
 
 .tokyo-shinkyu-page .nav {
-  gap: 16px;
+  gap: 10px;
 }
 
 .tokyo-shinkyu-page .nav a:not(.nav-book) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.06em;
-  padding: 0;
-  min-height: 0;
-  transition: color 0.4s ease;
+  min-height: 32px;
+  padding: 5px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 40px;
+  box-sizing: border-box;
+  transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
 }
 
 .tokyo-shinkyu-page .nav a:hover:not(.nav-book) {
-  color: #c0a062;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
 }
 
 .tokyo-shinkyu-page .nav-book {
   min-height: 32px;
-  padding: 5px 14px;
-  background: transparent;
-  color: #c0a062;
+  padding: 5px 16px;
+  background: #c0a062;
+  color: #ffffff;
   border-color: #c0a062;
   box-shadow: none;
   font-size: 0.78rem;
@@ -65,8 +73,8 @@
 
 @media (hover: hover) {
   .tokyo-shinkyu-page .nav a.nav-book:hover {
-    background: transparent;
-    color: #d4b57a;
+    background: #d4b57a;
+    color: #ffffff;
     border-color: #d4b57a;
     box-shadow: none;
   }
@@ -85,10 +93,15 @@
 
 .tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
   color: #1E3A5F;
+  border-color: transparent;
+  padding: 0;
+  min-height: 0;
 }
 
 .tokyo-shinkyu-page.is-past-hero .nav a:hover:not(.nav-book) {
   color: #8fa3c1;
+  background: transparent;
+  border-color: transparent;
 }
 
 .tokyo-shinkyu-page.is-past-hero .nav-book {
@@ -119,7 +132,7 @@
   align-items: center;
   justify-content: flex-start;
   min-height: 100svh;
-  padding: 110px 8% 80px;
+  padding: 110px 8% 96px;
   text-align: left;
   color: #ffffff;
   background-color: #1e3a5f;
@@ -135,50 +148,57 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(18, 32, 48, 0.72) 0%,
-    rgba(18, 32, 48, 0.42) 26%,
-    rgba(18, 32, 48, 0.14) 48%,
-    rgba(18, 32, 48, 0.04) 64%,
-    transparent 78%
-  );
+  background:
+    linear-gradient(
+      90deg,
+      rgba(18, 32, 48, 0.38) 0%,
+      rgba(18, 32, 48, 0.16) 22%,
+      rgba(18, 32, 48, 0.04) 42%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(18, 32, 48, 0.1) 0%,
+      transparent 24%,
+      transparent 68%,
+      rgba(18, 32, 48, 0.32) 100%
+    );
 }
 
 .ts-hero-copy {
   position: relative;
   z-index: 1;
-  max-width: 32em;
+  max-width: 36em;
   margin: 0;
   padding-right: 4%;
 }
 
 @media (min-width: 1025px) {
   .ts-hero-copy {
-    width: min(32em, 44vw);
+    width: min(36em, 52vw);
   }
 }
 
 .ts-hero-kicker {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
   margin: 0 0 22px;
-  padding: 0 0 12px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
   line-height: 1.6;
   color: #c0a062;
-  position: relative;
 }
 
+.ts-hero-kicker::before,
 .ts-hero-kicker::after {
   content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 40px;
-  height: 1.5px;
+  width: 28px;
+  height: 1px;
   background-color: #c0a062;
+  flex-shrink: 0;
 }
 
 .ts-hero-title {
@@ -201,29 +221,78 @@
 
 .ts-hero-visual {
   display: block;
-  font-size: clamp(1.5rem, 4vw, 2.35rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.65;
+  font-size: clamp(1.7rem, 4.4vw, 3.05rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1.52;
   color: #ffffff;
 }
 
 .ts-hero-role {
-  margin: 24px 0 0;
+  margin: 28px 0 0;
   font-size: 0.92rem;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.94);
 }
 
 .ts-hero-sub {
-  margin: 8px 0 0;
-  font-size: 0.92rem;
+  margin: 6px 0 0;
+  font-size: 0.9rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   line-height: 2;
   color: rgba(255, 255, 255, 0.88);
+}
+
+.ts-hero-en {
+  position: absolute;
+  left: 8%;
+  bottom: 36px;
+  z-index: 1;
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  pointer-events: none;
+}
+
+.ts-hero-scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  transform: translateX(-50%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  background: rgba(18, 32, 48, 0.38);
+  text-decoration: none;
+}
+
+.ts-hero-scroll svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (hover: hover) {
+  .ts-hero-scroll:hover {
+    background: rgba(18, 32, 48, 0.55);
+    border-color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+#ts-for {
+  scroll-margin-top: 70px;
 }
 
 .ts-hero-br {
@@ -1027,14 +1096,17 @@
 
   .tokyo-shinkyu-page .nav a:not(.nav-book) {
     width: auto;
-    min-height: 0;
+    min-height: 30px;
     font-size: 0.72rem;
-    padding: 0;
+    padding: 4px 12px;
     color: #ffffff;
   }
 
   .tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
     color: #1E3A5F;
+    border-color: transparent;
+    padding: 0;
+    min-height: 0;
   }
 
   .tokyo-shinkyu-page .nav .nav-book {
@@ -1151,9 +1223,9 @@
 @media (max-width: 768px) {
   .tokyo-shinkyu-page .ts-hero {
     min-height: 0;
-    min-height: 62svh;
+    min-height: 72svh;
     align-items: flex-end;
-    padding: 88px 7% 36px;
+    padding: 88px 7% 56px;
     background-position: 74% 38%;
   }
 
@@ -1161,14 +1233,14 @@
     background:
       linear-gradient(
         180deg,
-        rgba(18, 32, 48, 0.18) 0%,
-        rgba(18, 32, 48, 0.08) 36%,
-        rgba(18, 32, 48, 0.52) 100%
+        rgba(18, 32, 48, 0.12) 0%,
+        rgba(18, 32, 48, 0.04) 32%,
+        rgba(18, 32, 48, 0.42) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(18, 32, 48, 0.48) 0%,
-        rgba(18, 32, 48, 0.14) 42%,
+        rgba(18, 32, 48, 0.32) 0%,
+        rgba(18, 32, 48, 0.1) 40%,
         rgba(18, 32, 48, 0) 68%
       );
   }
@@ -1178,10 +1250,21 @@
     padding-right: 0;
   }
 
+  .tokyo-shinkyu-page .ts-hero-kicker {
+    gap: 10px;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+  }
+
+  .tokyo-shinkyu-page .ts-hero-kicker::before,
+  .tokyo-shinkyu-page .ts-hero-kicker::after {
+    width: 18px;
+  }
+
   .tokyo-shinkyu-page .ts-hero-visual {
-    font-size: 1.28rem;
-    letter-spacing: 0.04em;
-    line-height: 1.7;
+    font-size: 1.48rem;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
   }
 
   .tokyo-shinkyu-page .ts-hero-role {
@@ -1193,6 +1276,16 @@
     margin-top: 6px;
     font-size: 0.82rem;
     line-height: 1.9;
+  }
+
+  .tokyo-shinkyu-page .ts-hero-en {
+    display: none;
+  }
+
+  .tokyo-shinkyu-page .ts-hero-scroll {
+    width: 40px;
+    height: 40px;
+    bottom: 16px;
   }
 
   .tokyo-shinkyu-page .ts-hero-br {
@@ -1468,7 +1561,13 @@
 
   .tokyo-shinkyu-page .nav a:not(.nav-book) {
     font-size: 0.7rem;
+    padding: 4px 10px;
+    min-height: 28px;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
     padding: 0;
+    min-height: 0;
   }
 
   .tokyo-shinkyu-page .nav .nav-book {
@@ -1478,13 +1577,13 @@
   }
 
   .tokyo-shinkyu-page .ts-hero {
-    min-height: 56svh;
-    padding: 84px 6% 32px;
+    min-height: 68svh;
+    padding: 84px 6% 52px;
     background-position: 78% 36%;
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
-    font-size: 1.18rem;
+    font-size: 1.32rem;
   }
 
   .ts-approach-list li {
