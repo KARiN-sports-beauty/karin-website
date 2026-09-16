@@ -126,7 +126,7 @@
   background-image: url("../images/tokyoshinkyufv.jpg");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: 50% 48%;
+  background-position: 68% 42%;
 }
 
 .ts-hero::before {
@@ -137,10 +137,11 @@
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(18, 32, 48, 0.58) 0%,
-    rgba(18, 32, 48, 0.4) 36%,
-    rgba(18, 32, 48, 0.16) 64%,
-    rgba(18, 32, 48, 0.08) 100%
+    rgba(18, 32, 48, 0.72) 0%,
+    rgba(18, 32, 48, 0.42) 26%,
+    rgba(18, 32, 48, 0.14) 48%,
+    rgba(18, 32, 48, 0.04) 64%,
+    transparent 78%
   );
 }
 
@@ -200,15 +201,24 @@
 
 .ts-hero-visual {
   display: block;
-  font-size: clamp(1.35rem, 3.4vw, 2.05rem);
+  font-size: clamp(1.5rem, 4vw, 2.35rem);
   font-weight: 600;
   letter-spacing: 0.06em;
-  line-height: 1.7;
+  line-height: 1.65;
   color: #ffffff;
 }
 
+.ts-hero-role {
+  margin: 24px 0 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.94);
+}
+
 .ts-hero-sub {
-  margin: 28px 0 0;
+  margin: 8px 0 0;
   font-size: 0.92rem;
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -1039,7 +1049,7 @@
   .tokyo-shinkyu-page .ts-hero {
     min-height: 72svh;
     padding: 100px 7% 56px;
-    background-position: 50% 46%;
+    background-position: 72% 40%;
   }
 
   .tokyo-shinkyu-page .ts-section {
@@ -1144,22 +1154,22 @@
     min-height: 62svh;
     align-items: flex-end;
     padding: 88px 7% 36px;
-    background-position: 50% 42%;
+    background-position: 74% 38%;
   }
 
   .tokyo-shinkyu-page .ts-hero::before {
     background:
       linear-gradient(
         180deg,
-        rgba(18, 32, 48, 0.22) 0%,
-        rgba(18, 32, 48, 0.12) 38%,
-        rgba(18, 32, 48, 0.55) 100%
+        rgba(18, 32, 48, 0.18) 0%,
+        rgba(18, 32, 48, 0.08) 36%,
+        rgba(18, 32, 48, 0.52) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(18, 32, 48, 0.42) 0%,
-        rgba(18, 32, 48, 0.12) 48%,
-        rgba(18, 32, 48, 0) 100%
+        rgba(18, 32, 48, 0.48) 0%,
+        rgba(18, 32, 48, 0.14) 42%,
+        rgba(18, 32, 48, 0) 68%
       );
   }
 
@@ -1169,13 +1179,18 @@
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
-    font-size: 1.22rem;
+    font-size: 1.28rem;
     letter-spacing: 0.04em;
-    line-height: 1.75;
+    line-height: 1.7;
+  }
+
+  .tokyo-shinkyu-page .ts-hero-role {
+    margin-top: 16px;
+    font-size: 0.82rem;
   }
 
   .tokyo-shinkyu-page .ts-hero-sub {
-    margin-top: 18px;
+    margin-top: 6px;
     font-size: 0.82rem;
     line-height: 1.9;
   }
@@ -1465,11 +1480,11 @@
   .tokyo-shinkyu-page .ts-hero {
     min-height: 56svh;
     padding: 84px 6% 32px;
-    background-position: 50% 40%;
+    background-position: 78% 36%;
   }
 
   .tokyo-shinkyu-page .ts-hero-visual {
-    font-size: 1.12rem;
+    font-size: 1.18rem;
   }
 
   .ts-approach-list li {
