@@ -154,7 +154,7 @@
       <p class="ts-hero-en" aria-hidden="true">ACUPUNCTURE<br>×<br>ATHLETIC TRAINER</p>
     </section>
 
-    <section id="ts-after-hero" class="ts-section ts-section--muted" aria-labelledby="ts-for-heading">
+    <section class="ts-section ts-section--muted" aria-labelledby="ts-for-heading">
       <div class="ts-inner">
         <div data-aos="fade-up">
           <h2 id="ts-for-heading" class="ts-heading">東京で鍼灸を探している方へ</h2>
@@ -474,6 +474,21 @@
     });
 
     (function () {
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+
+      function goTop() {
+        if (window.location.hash === "#ts-after-hero") {
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+        window.scrollTo(0, 0);
+      }
+
+      goTop();
+      window.addEventListener("load", goTop);
+      window.addEventListener("pageshow", goTop);
+
       var page = document.querySelector(".tokyo-shinkyu-page");
       var hero = document.querySelector(".ts-hero");
       if (!page || !hero || !("IntersectionObserver" in window)) return;

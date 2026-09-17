@@ -151,11 +151,12 @@
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(30, 58, 95, 0.72) 0%,
-    rgba(30, 58, 95, 0.42) 24%,
-    rgba(30, 58, 95, 0.16) 46%,
-    rgba(30, 58, 95, 0.04) 64%,
-    transparent 80%
+    rgba(30, 58, 95, 0.84) 0%,
+    rgba(30, 58, 95, 0.7) 18%,
+    rgba(30, 58, 95, 0.48) 36%,
+    rgba(30, 58, 95, 0.22) 54%,
+    rgba(30, 58, 95, 0.06) 72%,
+    transparent 88%
   );
 }
 
@@ -247,17 +248,33 @@
   position: relative;
   z-index: 2;
   display: inline-block;
-  margin: 8px 0 8px;
-  padding: 20px 34px 18px;
+  margin: 8px 0 12px;
+  padding: 18px 28px 16px 10px;
   font-family: "Playfair Display", serif;
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.28em;
   line-height: 1.7;
-  text-align: center;
+  text-align: left;
   color: rgba(232, 217, 181, 0.88);
-  background: rgba(30, 58, 95, 0.78);
-  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ts-hero-en::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -22%;
+  bottom: -38%;
+  width: 150%;
+  height: 180%;
+  border-radius: 0 100% 0 0;
+  background: linear-gradient(
+    148deg,
+    rgba(30, 58, 95, 0.12) 0%,
+    rgba(30, 58, 95, 0.52) 38%,
+    rgba(30, 58, 95, 0.88) 100%
+  );
   pointer-events: none;
 }
 
@@ -1196,10 +1213,11 @@
   .tokyo-shinkyu-page .ts-hero::before {
     background: linear-gradient(
       90deg,
-      rgba(30, 58, 95, 0.72) 0%,
-      rgba(30, 58, 95, 0.38) 32%,
-      rgba(30, 58, 95, 0.1) 54%,
-      transparent 76%
+      rgba(30, 58, 95, 0.84) 0%,
+      rgba(30, 58, 95, 0.62) 28%,
+      rgba(30, 58, 95, 0.28) 50%,
+      rgba(30, 58, 95, 0.08) 70%,
+      transparent 86%
     );
   }
 
@@ -1236,8 +1254,8 @@
   }
 
   .tokyo-shinkyu-page .ts-hero-en {
-    margin: 8px 0 4px;
-    padding: 14px 24px 12px;
+    margin: 8px 0 8px;
+    padding: 14px 20px 12px 6px;
     font-size: 0.52rem;
     letter-spacing: 0.22em;
   }
@@ -1584,7 +1602,7 @@
 
   .tokyo-shinkyu-page .ts-hero-en {
     margin-top: 4px;
-    padding: 12px 22px 10px;
+    padding: 10px 16px 8px 4px;
     font-size: 0.48rem;
   }
 }
