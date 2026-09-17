@@ -171,25 +171,24 @@
 }
 
 .ts-hero-kicker {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
   margin: 0 0 22px;
-  padding: 0 0 12px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
   line-height: 1.6;
   color: #c0a062;
-  position: relative;
 }
 
-.ts-hero-kicker::after {
+.ts-hero-kicker::before {
   content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 40px;
-  height: 1.5px;
+  width: 36px;
+  height: 1px;
   background-color: #c0a062;
+  flex-shrink: 0;
 }
 
 .ts-hero-title {
@@ -212,20 +211,22 @@
 
 .ts-hero-visual {
   display: block;
-  font-size: clamp(1.35rem, 3.4vw, 2.05rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.7;
+  font-family: "Noto Serif JP", "Playfair Display", serif;
+  font-size: clamp(1.55rem, 3.8vw, 2.45rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.58;
   color: #ffffff;
 }
 
 .ts-hero-sub {
   margin: 28px 0 0;
-  font-size: 0.92rem;
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
+  font-size: 0.9rem;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   line-height: 2;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .ts-hero-br {
@@ -1156,10 +1157,20 @@
     padding-right: 0;
   }
 
+  .tokyo-seitai-page .ts-hero-kicker {
+    gap: 10px;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+  }
+
+  .tokyo-seitai-page .ts-hero-kicker::before {
+    width: 22px;
+  }
+
   .tokyo-seitai-page .ts-hero-visual {
-    font-size: 1.22rem;
-    letter-spacing: 0.04em;
-    line-height: 1.75;
+    font-size: 1.28rem;
+    letter-spacing: 0.06em;
+    line-height: 1.65;
   }
 
   .tokyo-seitai-page .ts-hero-sub {
@@ -1452,7 +1463,7 @@
   }
 
   .tokyo-seitai-page .ts-hero-visual {
-    font-size: 1.12rem;
+    font-size: 1.18rem;
   }
 
   .ts-approach-list li {
