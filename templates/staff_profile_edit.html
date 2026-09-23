@@ -204,28 +204,27 @@
     <p class="success-msg">{{ message }}</p>
   {% endif %}
 
-  <form action="/staff/profile/edit" method="POST" enctype="multipart/form-data" class="h-adr">
+  <form action="/staff/profile/edit" method="POST" class="h-adr">
     <span class="p-country-name" style="display:none;">Japan</span>
     
-    <!-- 写真アップロード -->
+    <!-- 写真（static/images のファイル名キー） -->
     <div class="form-group">
       <label class="required">写真</label>
       <div class="photo-upload">
         {% if staff.profile_image_url %}
         <img src="{{ staff.profile_image_url }}" alt="プロフィール写真" class="photo-preview" id="photo-preview">
         {% else %}
-        <img src="{{ url_for('static', filename='images/default_staff.png') }}" alt="プロフィール写真" class="photo-preview" id="photo-preview" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'%3E%3Crect width=\'120\' height=\'120\' fill=\'%23f5f5f5\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-size=\'14\'%3E写真なし%3C/text%3E%3C/svg%3E'">
+        <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="プロフィール写真" class="photo-preview" id="photo-preview">
         {% endif %}
         <div class="photo-upload-info">
-          <input type="file" name="profile_image" id="profile_image" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
-          <button type="button" id="profile-image-btn" class="admin-karte-detail-btn-primary" style="border: none; cursor: pointer; padding: 8px 14px; font-size: 0.9rem;">ファイルを選択</button>
-          <p id="file-selected-message" style="font-size: 0.85rem; color: #4CAF50; margin: 4px 0; font-weight: 500; display: none;">✓ 画像が選択されました</p>
-          <p id="file-name-message" style="font-size: 0.85rem; color: #1E3A5F; margin: 4px 0; font-weight: 500; display: none;"></p>
-          {% if staff.profile_image_url %}
-          <p id="current-photo-message" style="font-size: 0.85rem; color: #1E3A5F; margin: 4px 0; font-weight: 500;">現在の写真が登録済みです</p>
-          {% endif %}
-          <p style="font-size: 0.85rem; color: #666; margin: 0;">推奨サイズ: 正方形（400×400px以上）</p>
-          <p style="font-size: 0.85rem; color: #666; margin: 0;">対応形式: JPG, PNG</p>
+          <select name="profile_image_key" id="profile_image_key" class="select">
+            <option value="">images から選択</option>
+            {% for image_key in profile_image_keys %}
+            <option value="{{ image_key }}" {% if staff.profile_image_key == image_key %}selected{% endif %}>{{ image_key }}</option>
+            {% endfor %}
+          </select>
+          <p style="font-size: 0.85rem; color: #666; margin: 8px 0 0;">サイトの images フォルダにある画像から選びます。</p>
+          <p style="font-size: 0.85rem; color: #666; margin: 4px 0 0;">選んだ写真が、このスタッフの NOTES 記事「この記事を書いた人」に表示されます。</p>
         </div>
       </div>
     </div>
@@ -325,46 +324,15 @@
 </div>
 
 <script>
-function previewPhoto(input) {
-  const fileSelectedMessage = document.getElementById('file-selected-message');
-  const currentPhotoMessage = document.getElementById('current-photo-message');
-  const fileNameMessage = document.getElementById('file-name-message');
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('photo-preview').src = e.target.result;
-      if (fileSelectedMessage) {
-        fileSelectedMessage.style.display = 'block';
-      }
-      if (fileNameMessage) {
-        fileNameMessage.textContent = input.files[0].name;
-        fileNameMessage.style.display = 'block';
-      }
-      if (currentPhotoMessage) {
-        currentPhotoMessage.style.display = 'none';
-      }
-    };
-    reader.readAsDataURL(input.files[0]);
-  } else {
-    if (fileSelectedMessage) {
-      fileSelectedMessage.style.display = 'none';
-    }
-    if (fileNameMessage) {
-      fileNameMessage.style.display = 'none';
-      fileNameMessage.textContent = '';
-    }
-    if (currentPhotoMessage) {
-      currentPhotoMessage.style.display = 'block';
-    }
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('profile-image-btn');
-  const input = document.getElementById('profile_image');
-  if (btn && input) {
-    btn.addEventListener('click', () => input.click());
-  }
+  const select = document.getElementById('profile_image_key');
+  const preview = document.getElementById('photo-preview');
+  const imagesBase = {{ url_for('static', filename='images') | tojson }} + '/';
+  const emptySrc = {{ url_for('static', filename='images/relogo.png') | tojson }};
+  if (!select || !preview) return;
+  select.addEventListener('change', () => {
+    preview.src = select.value ? (imagesBase + select.value) : emptySrc;
+  });
 });
 </script>
 

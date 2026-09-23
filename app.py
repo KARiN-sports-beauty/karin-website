@@ -3636,6 +3636,95 @@ def admin_staff_delete(user_id):
 
 
 
+_STAFF_PROFILE_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _staff_images_dir():
+    static_folder = app.static_folder or os.path.join(os.path.dirname(__file__), "static")
+    return os.path.join(static_folder, "images")
+
+
+def _sanitize_profile_image_key(raw_key):
+    if not raw_key:
+        return ""
+    key = os.path.basename(str(raw_key).strip())
+    if not key or key in {".", ".."}:
+        return ""
+    ext = os.path.splitext(key)[1].lower()
+    if ext not in _STAFF_PROFILE_IMAGE_EXTS:
+        return ""
+    return key
+
+
+def _profile_image_key_exists(key):
+    key = _sanitize_profile_image_key(key)
+    if not key:
+        return False
+    return os.path.isfile(os.path.join(_staff_images_dir(), key))
+
+
+def list_staff_profile_image_keys():
+    images_dir = _staff_images_dir()
+    if not os.path.isdir(images_dir):
+        return []
+    keys = []
+    for name in os.listdir(images_dir):
+        sanitized = _sanitize_profile_image_key(name)
+        if sanitized and _profile_image_key_exists(sanitized):
+            keys.append(sanitized)
+    keys = sorted(set(keys), key=str.lower)
+    preferred = "koji_profile.png"
+    if preferred in keys:
+        keys.remove(preferred)
+        keys.insert(0, preferred)
+    return keys
+
+
+def resolve_staff_profile_image_key(meta):
+    """記事著者写真の正本。static/images 内のファイル名（キー）でスタッフと一致させる。"""
+    meta = meta or {}
+    key = _sanitize_profile_image_key(meta.get("profile_image_key"))
+    if _profile_image_key_exists(key):
+        return key
+    url = str(meta.get("profile_image_url") or "").split("?", 1)[0]
+    if "/static/images/" in url or url.startswith("images/"):
+        inherited = _sanitize_profile_image_key(url)
+        if _profile_image_key_exists(inherited):
+            return inherited
+    return ""
+
+
+def resolve_staff_profile_image_url(meta):
+    key = resolve_staff_profile_image_key(meta)
+    if not key:
+        return ""
+    return url_for("static", filename=f"images/{key}")
+
+
+def _author_info_from_auth_user(author_user):
+    if not author_user:
+        return None
+    meta = author_user.user_metadata or {}
+    last_name = meta.get("last_name", "")
+    first_name = meta.get("first_name", "")
+    last_kana = meta.get("last_kana", "")
+    first_kana = meta.get("first_kana", "")
+    if last_name and first_name:
+        author_name = f"{last_name} {first_name}"
+    else:
+        author_name = meta.get("name", "スタッフ")
+    if last_kana and first_kana:
+        author_kana = f"{last_kana} {first_kana}"
+    else:
+        author_kana = meta.get("kana", "")
+    return {
+        "name": author_name,
+        "kana": author_kana,
+        "blog_comment": meta.get("blog_comment", ""),
+        "profile_image_url": resolve_staff_profile_image_url(meta),
+    }
+
+
 @app.route("/staff/profile", methods=["GET"])
 @staff_required
 def staff_profile():
@@ -3686,24 +3775,12 @@ def staff_profile_edit():
                 staff["available_techniques"] = meta.get("available_techniques", [])  # リスト
                 staff["one_word"] = meta.get("one_word", "")
                 staff["blog_comment"] = meta.get("blog_comment", "")
-                profile_image_url = meta.get("profile_image_url", "")
-                # プロフィール画像URLが相対パスの場合はurl_forで解決
-                if profile_image_url:
-                    if not profile_image_url.startswith("http"):
-                        if profile_image_url.startswith("/static/"):
-                            filename = profile_image_url.replace("/static/", "")
-                            profile_image_url = url_for("static", filename=filename)
-                        elif profile_image_url.startswith("static/"):
-                            filename = profile_image_url.replace("static/", "")
-                            profile_image_url = url_for("static", filename=filename)
-                    # staffオブジェクトとセッションの両方に設定
-                    staff["profile_image_url"] = profile_image_url
-                    session["staff"]["profile_image_url"] = profile_image_url
-                else:
-                    # profile_image_urlが空の場合は、staffオブジェクトからも削除
-                    staff["profile_image_url"] = None
-                    if "profile_image_url" in session.get("staff", {}):
-                        session["staff"]["profile_image_url"] = None
+                profile_image_key = resolve_staff_profile_image_key(meta)
+                profile_image_url = resolve_staff_profile_image_url(meta) or None
+                staff["profile_image_key"] = profile_image_key
+                staff["profile_image_url"] = profile_image_url
+                session["staff"]["profile_image_key"] = profile_image_key or None
+                session["staff"]["profile_image_url"] = profile_image_url
         except:
             pass
 
@@ -3711,6 +3788,7 @@ def staff_profile_edit():
             "staff_profile_edit.html",
             staff=staff,
             treatment_options=treatment_options,
+            profile_image_keys=list_staff_profile_image_keys(),
             message=request.args.get("message")
         )
     
@@ -3738,30 +3816,11 @@ def staff_profile_edit():
         # 姓と名を結合してnameを作成（半角スペース区切り）
         new_name = f"{last_name} {first_name}".strip()
 
-        # 写真アップロード処理
-        profile_image_url = None
-        if "profile_image" in request.files:
-            file = request.files["profile_image"]
-            if file and file.filename:
-                # ファイル名を安全に生成
-                import uuid
-                import os
-                from werkzeug.utils import secure_filename
-                
-                filename = secure_filename(file.filename)
-                ext = os.path.splitext(filename)[1]
-                unique_filename = f"{user_id}_{uuid.uuid4().hex[:8]}{ext}"
-                
-                # static/staff_profiles/ ディレクトリに保存
-                static_folder = app.static_folder or os.path.join(os.path.dirname(__file__), "static")
-                upload_dir = os.path.join(static_folder, "staff_profiles")
-                os.makedirs(upload_dir, exist_ok=True)
-                
-                file_path = os.path.join(upload_dir, unique_filename)
-                file.save(file_path)
-                
-                # URLを生成
-                profile_image_url = f"/static/staff_profiles/{unique_filename}"
+        profile_image_key = _sanitize_profile_image_key(
+            request.form.get("profile_image_key", "")
+        )
+        if profile_image_key and not _profile_image_key_exists(profile_image_key):
+            profile_image_key = ""
 
         # 既存のメタデータを取得してマージ
         try:
@@ -3786,12 +3845,12 @@ def staff_profile_edit():
             "hobbies_skills": hobbies_skills,
             "available_techniques": available_techniques,
             "one_word": one_word,
-            "blog_comment": blog_comment
+            "blog_comment": blog_comment,
+            "profile_image_key": profile_image_key,
+            "profile_image_url": (
+                f"/static/images/{profile_image_key}" if profile_image_key else ""
+            ),
         })
-        
-        # 写真がアップロードされた場合のみ更新
-        if profile_image_url:
-            updated_metadata["profile_image_url"] = profile_image_url
 
         # Supabase Auth メタデータ更新
         result = supabase_admin.auth.admin.update_user_by_id(
@@ -3806,10 +3865,11 @@ def staff_profile_edit():
         session["staff"]["last_name"] = last_name
         session["staff"]["first_name"] = first_name
         session["staff"]["phone"] = new_phone
-        
-        # 写真がアップロードされた場合、セッションにも反映
-        if profile_image_url:
-            session["staff"]["profile_image_url"] = profile_image_url
+        session["staff"]["profile_image_key"] = profile_image_key or None
+        session["staff"]["profile_image_url"] = (
+            url_for("static", filename=f"images/{profile_image_key}")
+            if profile_image_key else None
+        )
 
         return redirect(url_for(
             "staff_profile_edit",
@@ -4084,49 +4144,12 @@ def show_blog(slug):
             try:
                 users = supabase_admin.auth.admin.list_users()
                 author_user = next((u for u in users if u.id == author_staff_id), None)
-                if author_user:
-                    meta = author_user.user_metadata or {}
-                    last_name = meta.get("last_name", "")
-                    first_name = meta.get("first_name", "")
-                    last_kana = meta.get("last_kana", "")
-                    first_kana = meta.get("first_kana", "")
-                    
-                    # 姓名を生成
-                    if last_name and first_name:
-                        author_name = f"{last_name} {first_name}"
-                    else:
-                        author_name = meta.get("name", "スタッフ")
-                    
-                    # セイメイを生成
-                    if last_kana and first_kana:
-                        author_kana = f"{last_kana} {first_kana}"
-                    else:
-                        author_kana = meta.get("kana", "")
-                    
-                    profile_image_url = meta.get("profile_image_url", "")
-                    print(f"🔍 著者プロフィール画像URL（取得時）: {profile_image_url}")
-                    
-                    # profile_image_urlが相対パスの場合、url_forで解決
-                    if profile_image_url and not profile_image_url.startswith("http"):
-                        # /static/staff_profiles/... の形式の場合
-                        if profile_image_url.startswith("/static/"):
-                            filename = profile_image_url.replace("/static/", "")
-                            profile_image_url = url_for("static", filename=filename)
-                        elif profile_image_url.startswith("static/"):
-                            filename = profile_image_url.replace("static/", "")
-                            profile_image_url = url_for("static", filename=filename)
-                        else:
-                            # パスが指定されていない場合はそのまま使用（相対パスの場合）
-                            pass
-                    print(f"🔍 著者プロフィール画像URL（処理後）: {profile_image_url}")
-                    
-                    author_info = {
-                        "name": author_name,
-                        "kana": author_kana,
-                        "blog_comment": meta.get("blog_comment", ""),
-                        "profile_image_url": profile_image_url
-                    }
-                    print(f"🔍 著者情報取得成功 - name: {author_name}, profile_image_url: {profile_image_url}")
+                author_info = _author_info_from_auth_user(author_user)
+                if author_info:
+                    print(
+                        f"🔍 著者情報取得成功 - name: {author_info['name']}, "
+                        f"profile_image_key: {resolve_staff_profile_image_key(author_user.user_metadata or {})}"
+                    )
                 else:
                     print(f"⚠️ 著者ユーザーが見つかりません - author_staff_id: {author_staff_id}")
             except Exception as e:
@@ -4143,44 +4166,9 @@ def show_blog(slug):
                 if res_latest.data and res_latest.data[0].get("author_staff_id"):
                     author_staff_id = res_latest.data[0]["author_staff_id"]
                     print(f"🔍 フォールバック: 最新の記事から author_staff_idを取得 - {author_staff_id}")
-                    
-                    # 再度著者情報を取得
                     users = supabase_admin.auth.admin.list_users()
                     author_user = next((u for u in users if u.id == author_staff_id), None)
-                    if author_user:
-                        meta = author_user.user_metadata or {}
-                        last_name = meta.get("last_name", "")
-                        first_name = meta.get("first_name", "")
-                        last_kana = meta.get("last_kana", "")
-                        first_kana = meta.get("first_kana", "")
-                        
-                        if last_name and first_name:
-                            author_name = f"{last_name} {first_name}"
-                        else:
-                            author_name = meta.get("name", "スタッフ")
-                        
-                        if last_kana and first_kana:
-                            author_kana = f"{last_kana} {first_kana}"
-                        else:
-                            author_kana = meta.get("kana", "")
-                        
-                        profile_image_url = meta.get("profile_image_url", "")
-                        print(f"🔍 フォールバック: 著者プロフィール画像URL（取得時）: {profile_image_url}")
-                        if profile_image_url and not profile_image_url.startswith("http"):
-                            if profile_image_url.startswith("/static/"):
-                                filename = profile_image_url.replace("/static/", "")
-                                profile_image_url = url_for("static", filename=filename)
-                            elif profile_image_url.startswith("static/"):
-                                filename = profile_image_url.replace("static/", "")
-                                profile_image_url = url_for("static", filename=filename)
-                        print(f"🔍 フォールバック: 著者プロフィール画像URL（処理後）: {profile_image_url}")
-                        
-                        author_info = {
-                            "name": author_name,
-                            "kana": author_kana,
-                            "blog_comment": meta.get("blog_comment", ""),
-                            "profile_image_url": profile_image_url
-                        }
+                    author_info = _author_info_from_auth_user(author_user)
             except Exception as e:
                 print(f"⚠️ フォールバック著者情報取得エラー: {e}")
 
@@ -11735,16 +11723,8 @@ def admin_staff_report_profile(staff_id):
         else:
             staff_name = meta.get("name", "未設定")
         
-        # プロフィール画像URLを取得し、相対パスの場合は解決
-        profile_image_url = meta.get("profile_image_url", "")
-        if profile_image_url and not profile_image_url.startswith("http"):
-            # 相対パスの場合はurl_forで解決
-            if profile_image_url.startswith("/static/"):
-                filename = profile_image_url.replace("/static/", "")
-                profile_image_url = url_for("static", filename=filename)
-            elif profile_image_url.startswith("static/"):
-                filename = profile_image_url.replace("static/", "")
-                profile_image_url = url_for("static", filename=filename)
+        # プロフィール画像は images 内のキーから解決
+        profile_image_url = resolve_staff_profile_image_url(meta)
         
         # すべてのプロフィール情報を取得
         staff_data = {
