@@ -1,4 +1,4 @@
-"""C8 UI/バックエンド境界。空き枠と予約導線は構造化。PNGアイコン。
+"""C8 UI/バックエンド境界。空き枠と予約導線は構造化。JPGアイコン。
 
   python scripts/test_karin_chat_c8.py
 """
@@ -228,24 +228,24 @@ def main() -> int:
     if any(x in (t_err.reply or "") for x in ("SELECT", "traceback", "https://internal", "sk-")):
         failures.append("ERR: 内部情報漏洩")
 
-    print("\n===== Test 8 PNGアイコン =====")
+    print("\n===== Test 8 JPGアイコン =====")
     from app import app
 
     with app.test_client() as client:
-        icon = client.get("/static/images/chatbotfaceicon.png")
+        icon = client.get("/static/images/chatbotfaceicon.jpg")
         chat_html = client.get("/chat")
         book_html = client.get("/book")
         empty = client.post("/api/chat", json={})
         print("  /chat", chat_html.status_code, "/book", book_html.status_code, "icon", icon.status_code)
-        if icon.status_code != 200 or "png" not in (icon.content_type or "").lower():
-            failures.append("Test8: PNGが読めない")
+        if icon.status_code != 200 or ("jpeg" not in (icon.content_type or "").lower() and "jpg" not in (icon.content_type or "").lower()):
+            failures.append("Test8: JPGが読めない")
         chat_text = chat_html.get_data(as_text=True)
-        if "chatbotfaceicon.png" not in widget or "chatbotfaceicon.png" not in chat_text:
-            failures.append("Test8: PNG参照がない")
-        if "chatbotfaceicon.jpg" in widget or "chatbotfaceicon.jpg" in js or "chatbotfaceicon.jpg" in css:
-            failures.append("Test8: C5 UIにJPG参照が残っている")
-        if "chatbotfaceicon.jpg" in chat_page or "chatbotfaceicon.jpg" in chat_text:
-            failures.append("Test8: /chat にJPG参照がある")
+        if "chatbotfaceicon.jpg" not in widget or "chatbotfaceicon.jpg" not in chat_text:
+            failures.append("Test8: JPG参照がない")
+        if "chatbotfaceicon.png" in widget or "chatbotfaceicon.png" in js or "chatbotfaceicon.png" in css:
+            failures.append("Test8: PNG参照が残っている")
+        if "chatbotfaceicon.png" in chat_page or "chatbotfaceicon.png" in chat_text:
+            failures.append("Test8: /chat にPNG参照がある")
         if 'img.alt = "KARiN.chatbot"' not in js:
             failures.append("Test8: AIアイコン alt がない")
         if re.search(r"row--user[\s\S]{0,400}chatbotfaceicon", js):

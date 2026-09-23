@@ -165,10 +165,10 @@ def main() -> int:
         failures.append("ヘッダーの折り返し抑制がない")
 
     print("\n===== アイコン =====")
-    if "chatbotfaceicon.png" not in widget:
-        failures.append("PNG参照がない")
-    if "chatbotfaceicon.jpg" in widget or "chatbotfaceicon.jpg" in js:
-        failures.append("JPG参照が残っている")
+    if "chatbotfaceicon.jpg" not in widget:
+        failures.append("JPG参照がない")
+    if "chatbotfaceicon.png" in widget or "chatbotfaceicon.png" in js:
+        failures.append("PNG参照が残っている")
     if 'img.alt = "KARiN.chatbot"' not in js:
         failures.append("AIメッセージのアイコン alt がない")
     if re.search(r"row--user[\s\S]{0,400}chatbotfaceicon", js):

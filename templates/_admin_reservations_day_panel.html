@@ -1,0 +1,390 @@
+    <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">
+      {{ selected_day.strftime('%Y年%m月%d日') }}の予定
+    </h3>
+    <div id="schedule-filter-panel" class="schedule-filter-panel">
+      <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
+      <div id="work-mode-toggle" class="work-area-toggle" title="この日の勤務モード">
+        <button type="button" data-mode="clinic" data-area="fukuoka" id="work-mode-fukuoka">福岡</button>
+        <button type="button" data-mode="clinic" data-area="tokyo" id="work-mode-tokyo">東京</button>
+        <button type="button" data-mode="field" id="work-mode-field">帯同</button>
+        <button type="button" data-mode="off" id="work-mode-off">休み</button>
+      </div>
+      <span style="color:#64748b; font-size:0.9rem;">時間</span>
+      <input id="work-start-input" type="text" value="" placeholder="10:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <span style="color:#64748b;">〜</span>
+      <input id="work-end-input" type="text" value="" placeholder="19:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
+      <button id="work-time-save-btn" type="button" style="padding:6px 10px; border:none; border-radius:6px; background:#1E3A5F; color:#fff; cursor:pointer;">保存</button>
+      <button id="schedule-filter-clear-btn" type="button" style="padding:6px 10px; border:1px solid #cfd8e3; border-radius:6px; background:#fff; color:#1E3A5F; cursor:pointer;">全員表示に戻す</button>
+      <small id="work-time-message" style="color:#64748b;"></small>
+    </div>
+    {% if timeline_staff_names %}
+    <div class="schedule-timeline-wrap">
+      <div class="schedule-timeline-scroll">
+        <div class="schedule-timeline-header">
+          <div class="schedule-staff-col">スタッフ</div>
+          <div class="schedule-time-head" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
+            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
+            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
+            <div class="schedule-time-label" style="left: {{ x }}px;">{{ "%02d:00"|format(hour) }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        {% for row in timeline_staff_rows %}
+        {% set staff_name = row.name %}
+        <div class="schedule-timeline-row {% if row.role == 'irregular' %}irregular{% else %}regular{% endif %}">
+          <div class="schedule-staff-col"><button type="button" class="schedule-staff-col-button" data-staff-name="{{ staff_name }}">{{ staff_name }}</button></div>
+          <div class="schedule-row-canvas"
+               data-day="{{ selected_day.strftime('%Y-%m-%d') }}"
+               data-staff-name="{{ staff_name }}"
+               data-start-hour="{{ timeline_start_hour }}"
+               data-px-per-min="{{ timeline_px_per_min }}"
+               style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
+            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
+            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
+            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
+            {% endfor %}
+            {% for buf in timeline_buffers_by_staff.get(staff_name, []) %}
+            {% set buf_left = (buf.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
+            {% set buf_width = buf.duration * timeline_px_per_min %}
+            <div class="schedule-buffer-zone {% if buf.place_type == 'in_house' %}place-inhouse{% elif buf.place_type == 'visit' %}place-visit{% endif %}"
+                 style="left: {{ buf_left }}px; width: {{ buf_width if buf_width > 2 else 2 }}px;"
+                 title="{% if buf.place_type == 'in_house' %}院内後{{ buf.buffer_minutes }}分{% elif buf.place_type == 'visit' %}出張後{{ buf.buffer_minutes }}分{% endif %}"></div>
+            {% endfor %}
+            {% for card in timeline_cards_by_staff.get(staff_name, []) %}
+            {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
+            {% set card_width = card.duration * timeline_px_per_min %}
+            {% if card.is_break %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card place-break"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
+              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-main">休憩{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
+            </a>
+            {% elif card.is_personal %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card place-personal"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
+              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
+              <span class="schedule-card-main">予定{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
+            </a>
+            {% elif card.is_field %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card schedule-card-field-timeline"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.timeline_time_short }} {{ card.place_name }}">
+              <span class="schedule-card-time">{{ card.timeline_time_short }} {{ card.place_name or '現場名なし' }}</span>
+            </a>
+            {% else %}
+            <a href="#resv-detail-{{ card.id }}"
+               class="schedule-card status-{{ card.status|default('') }} {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
+               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
+               title="{{ card.reserved_at_display }} {{ card.patient_name }}">
+              <span class="schedule-card-time">{{ card.reserved_at_display }} / {{ card.place_label }}</span>
+              <span class="schedule-card-main">{{ card.patient_name }}{% if 'star' in (card.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (card.vip_level or '') %}🍀{% endif %}</span>
+            </a>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if reservations_of_day %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for reservation in reservations_of_day %}
+      {% if reservation.place_type == 'break' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-break" style="border-left: 4px solid #94a3b8;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">休憩</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #94a3b8; color: #fff;">休憩</span>
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>休憩時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          理由：{{ reservation.memo }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit"
+             class="admin-resv-btn"
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この休憩を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% elif reservation.place_type == 'personal' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-personal" style="border-left: 4px solid #64748b;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">予定</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #64748b; color: #fff;">予定</span>
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>予定時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          理由：{{ reservation.memo }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit"
+             class="admin-resv-btn"
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% elif reservation.place_type == 'field' %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-field" style="border-left: 4px solid #1E3A5F;">
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">{{ reservation.place_name or '現場名未入力' }}</span>
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
+            {% set nom_type = reservation.nomination_type %}
+            {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+            {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+            {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+            {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+            {% if nom_type == '本指名' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
+            {% elif nom_type == '枠指名' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
+            {% elif nom_type == '希望' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FF9800; color: #fff;">希望</span>
+            {% elif nom_type == 'フリー' %}
+            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #9E9E9E; color: #fff;">フリー</span>
+            {% endif %}
+          </div>
+          <div style="font-size: 0.95rem; color: #444;">
+            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
+            <span> ｜ </span>
+            <span>帯同時間：{{ reservation.reserved_at_display or '—' }}</span>
+          </div>
+        </div>
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          {{ reservation.memo }}
+        </div>
+        {% endif %}
+        {% if viewer_is_admin|default(false) %}
+        {% set base_price = reservation.base_price or 0 %}
+        {% set transportation_fee = reservation.transportation_fee or 0 %}
+        {% set nomination_fee = reservation.nomination_fee or 0 %}
+        {% set discount = reservation.discount or 0 %}
+        {% set tax = reservation.tax or 0 %}
+        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit" 
+             class="admin-resv-btn" 
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+          <div style="flex: 1;">
+            <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+              {% if reservation.patient_id %}
+              <a href="/admin/karte/{{ reservation.patient_id }}" style="font-size: 1rem; font-weight: 500; color: #1E3A5F; text-decoration: none;">
+                {{ reservation.patient_name or '患者不明' }}{% if reservation.patient and 'star' in (reservation.patient.vip_level or '') %}⭐️{% endif %}{% if reservation.patient and 'clover' in (reservation.patient.vip_level or '') %}🍀{% endif %}
+              </a>
+              {% else %}
+              <span style="font-size: 1rem; font-weight: 500; color: #666;">{{ reservation.patient_name or '患者なし' }}</span>
+              {% endif %}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <!-- 現場区分バッジ -->
+              {% if reservation.place_type == 'in_house' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
+              {% elif reservation.place_type == 'visit' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
+              {% elif reservation.place_type == 'field' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
+              {% endif %}
+              <!-- 指名タイプバッジ（表記ルール統一：本指名（院内）、枠指名（帯同）） -->
+              {% set nom_type = reservation.nomination_type %}
+              {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
+              {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
+              {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
+              {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
+              {% if nom_type == '本指名' %}
+                {% if reservation.place_type == 'in_house' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（院内）</span>
+                {% elif reservation.place_type == 'visit' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（出張）</span>
+                {% elif reservation.place_type == 'field' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
+                {% else %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名</span>
+                {% endif %}
+              {% elif nom_type == '枠指名' %}
+                {% if reservation.place_type == 'in_house' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（院内）</span>
+                {% elif reservation.place_type == 'visit' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（出張）</span>
+                {% elif reservation.place_type == 'field' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
+            {% else %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名</span>
+                {% endif %}
+              {% elif nom_type == '希望' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FF9800; color: #fff;">希望</span>
+              {% elif nom_type == 'フリー' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #9E9E9E; color: #fff;">フリー</span>
+              {% endif %}
+              <!-- エリアバッジ -->
+              {% if reservation.area == 'tokyo' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #C8E6C9; color: #2E7D32; border: 1px solid #81C784;">東京</span>
+              {% elif reservation.area == 'fukuoka' %}
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #BBDEFB; color: #1565C0; border: 1px solid #5C9BD1;">福岡</span>
+            {% endif %}
+            </div>
+          </div>
+          <span class="admin-resv-status admin-resv-status-{{ reservation.status }}">
+            {% if reservation.status == 'reserved' %}予約中
+            {% elif reservation.status == 'visited' %}来院済
+            {% elif reservation.status == 'completed' %}完了
+            {% elif reservation.status == 'canceled' %}キャンセル
+            {% else %}{{ reservation.status }}{% endif %}
+          </span>
+        </div>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
+          {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同','personal':'予定','break':'休憩'} %}
+          <span>区分：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
+          {% if reservation.place_name %}
+          <span>（{{ reservation.place_name }}）</span>
+          {% endif %}
+          {% if reservation.staff_name %}
+          <span>｜スタッフ：{{ reservation.staff_name }}</span>
+          {% endif %}
+          <span>｜{{ reservation.duration_minutes or 60 }}分</span>
+        </div>
+        
+        {% if reservation.memo %}
+        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
+          {{ reservation.memo }}
+        </div>
+        {% endif %}
+
+        {% set base_price = reservation.base_price or 0 %}
+        {% set transportation_fee = reservation.transportation_fee or 0 %}
+        {% set nomination_fee = reservation.nomination_fee or 0 %}
+        {% set discount = reservation.discount or 0 %}
+        {% set tax = reservation.tax or 0 %}
+        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
+        {% if reservation.status == 'visited' or reservation.status == 'completed' %}
+        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
+          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
+        </div>
+        {% endif %}
+        {% if reservation.status == 'completed' %}
+        {% include 'admin_reservation_payment_row.html' %}
+        {% endif %}
+        
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          {% if reservation.viewer_may_edit %}
+          <a href="/admin/reservations/{{ reservation.id }}/edit" 
+             class="admin-resv-btn" 
+             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            ✏ 編集
+          </a>
+          {% endif %}
+          
+          {% if reservation.patient_id %}
+          <a href="/admin/karte/{{ reservation.patient_id }}/log/new?date={{ selected_day.strftime('%Y-%m-%d') }}" 
+             class="admin-resv-btn" 
+             style="padding: 6px 12px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
+            📝 ログ作成
+          </a>
+          {% endif %}
+          
+          {% if reservation.viewer_may_edit and reservation.status == 'reserved' %}
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="visited">
+            <button type="submit" style="padding: 6px 12px; background: #2196F3; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 来院済</button>
+          </form>
+          {% endif %}
+          
+          {% if reservation.viewer_may_edit and reservation.status == 'visited' %}
+          <div data-reservation-id="{{ reservation.id }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button type="button" class="payment-method-btn" data-method="cash">現金</button>
+            <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
+            <button type="button" class="payment-method-btn" data-method="paypay">paypay</button>
+            <button type="button" class="payment-method-btn" data-method="month_end">月末請求</button>
+            <button type="button" class="payment-method-btn" data-receipt="with_receipt">領収書あり</button>
+            <button type="button" class="payment-method-btn" data-receipt="no_receipt">領収書なし</button>
+            <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+              <input type="hidden" name="status" value="completed">
+              <input type="hidden" name="payment_method" value="">
+              <input type="hidden" name="receipt_status" value="">
+              <button type="submit" class="payment-complete-btn" disabled style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">✓ 完了</button>
+            </form>
+          </div>
+          {% endif %}
+          
+          {% if reservation.viewer_may_edit and reservation.status != 'canceled' %}
+          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
+            <input type="hidden" name="status" value="canceled">
+            <button type="submit" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;" onclick="return confirm('この予約をキャンセルしますか？');">✕ キャンセル</button>
+          </form>
+          {% endif %}
+          
+          {% if reservation.viewer_may_edit %}
+          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予約を削除しますか？">
+            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 40px 0;">この日の予定はありません</p>
+    {% endif %}
+
+<textarea id="admin-resv-day-state" hidden readonly>{"shift_map": {{ shift_map|tojson }}, "staff_area_map": {{ staff_area_map|tojson }}, "selected_day": {{ selected_day.strftime("%Y-%m-%d")|tojson }}}</textarea>

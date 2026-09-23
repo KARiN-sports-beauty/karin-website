@@ -6160,6 +6160,343 @@ def robots_txt():
 # 予約管理
 # ==========================================
 
+_RESV_CALENDAR_STAFF_CACHE = {"ts": 0.0, "raw": None}
+_RESV_CALENDAR_STAFF_TTL_SEC = 90.0
+
+
+def _load_raw_calendar_staff_entries():
+    """承認済み非管理者スタッフ。日付タップ用に短時間キャッシュする。"""
+    now_ts = datetime.now(timezone.utc).timestamp()
+    cached = _RESV_CALENDAR_STAFF_CACHE.get("raw")
+    cached_ts = float(_RESV_CALENDAR_STAFF_CACHE.get("ts") or 0)
+    if cached is not None and (now_ts - cached_ts) < _RESV_CALENDAR_STAFF_TTL_SEC:
+        return [dict(x) for x in cached]
+
+    staff_entries = []
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        for u in users:
+            meta = u.user_metadata or {}
+            if not meta.get("approved", False):
+                continue
+            if meta.get("is_admin", False):
+                continue
+            last_name = meta.get("last_name", "")
+            first_name = meta.get("first_name", "")
+            display_name = f"{last_name} {first_name}".strip() if (last_name and first_name) else (meta.get("name", "未設定"))
+            role = (meta.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+            if role not in STAFF_ROLES_NONADMIN:
+                role = STAFF_ROLE_REGULAR
+            created = str(u.created_at) if getattr(u, "created_at", None) else ""
+            staff_entries.append({
+                "id": u.id,
+                "name": display_name,
+                "role": role,
+                "area": normalize_staff_area(meta.get("area")),
+                "created_at": created,
+            })
+    except Exception as e:
+        print("❌ スタッフリスト取得エラー:", e)
+        if cached is not None:
+            return [dict(x) for x in cached]
+        return []
+
+    _RESV_CALENDAR_STAFF_CACHE["ts"] = now_ts
+    _RESV_CALENDAR_STAFF_CACHE["raw"] = [dict(x) for x in staff_entries]
+    return [dict(x) for x in staff_entries]
+
+
+def _calendar_staff_entries_for_viewer(viewer):
+    viewer = viewer or {}
+    viewer_name = (viewer.get("name") or "スタッフ").strip()
+    viewer_role = (viewer.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
+    viewer_is_admin = bool(viewer.get("is_admin"))
+    viewer_is_irregular = (not viewer_is_admin) and viewer_role == STAFF_ROLE_IRREGULAR
+    staff_entries = _load_raw_calendar_staff_entries()
+    if not any((s.get("name") or "").strip() == viewer_name for s in staff_entries):
+        staff_entries.append({
+            "id": viewer.get("id"),
+            "name": viewer_name,
+            "role": viewer_role if viewer_role in STAFF_ROLES_NONADMIN else STAFF_ROLE_REGULAR,
+            "area": normalize_staff_area(viewer.get("area")),
+            "created_at": "",
+        })
+    staff_entries.sort(key=staff_display_sort_key)
+    if viewer_is_irregular:
+        staff_entries = [s for s in staff_entries if (s.get("name") or "").strip() == viewer_name]
+    return staff_entries
+
+
+def _annotate_reservations_with_patients(reservations):
+    reservations = reservations or []
+    patient_ids = list({r.get("patient_id") for r in reservations if r.get("patient_id")})
+    patient_map = {}
+    if patient_ids:
+        res_patients = supabase_admin.table("patients").select("id, last_name, first_name, name, category, gender, vip_level").in_("id", patient_ids).execute()
+        if res_patients.data:
+            patient_map = {p["id"]: p for p in res_patients.data}
+
+    for reservation in reservations:
+        if "nomination_type" not in reservation or not reservation.get("nomination_type"):
+            reservation["nomination_type"] = "本指名"
+        try:
+            nominated_staff_ids_str = reservation.get("nominated_staff_ids")
+            if nominated_staff_ids_str:
+                if isinstance(nominated_staff_ids_str, str):
+                    reservation["nominated_staff_ids"] = json.loads(nominated_staff_ids_str)
+                else:
+                    reservation["nominated_staff_ids"] = nominated_staff_ids_str
+            else:
+                reservation["nominated_staff_ids"] = []
+        except Exception:
+            reservation["nominated_staff_ids"] = []
+
+        patient_id = reservation.get("patient_id")
+        if not patient_id:
+            reservation["patient_name"] = "患者なし"
+            reservation["patient"] = None
+            continue
+        patient = patient_map.get(patient_id)
+        if patient:
+            name = f"{patient.get('last_name', '')} {patient.get('first_name', '')}".strip()
+            if not name:
+                name = patient.get("name", "不明")
+            reservation["patient_name"] = name
+            reservation["patient"] = patient
+        else:
+            reservation["patient_name"] = "不明"
+            reservation["patient"] = None
+    return reservations
+
+
+def _filter_reservations_of_jst_day(reservations, selected_day):
+    selected_day_start = datetime.combine(selected_day, datetime.min.time()).replace(tzinfo=JST)
+    selected_day_end = selected_day_start + timedelta(days=1)
+    reservations_of_day = []
+    for r in reservations:
+        ra = r.get("reserved_at", "")
+        if not ra:
+            continue
+        try:
+            dt = datetime.fromisoformat(str(ra).replace("Z", "+00:00"))
+            dt_jst = dt.astimezone(JST)
+            if selected_day_start <= dt_jst < selected_day_end:
+                reservations_of_day.append(r)
+        except Exception:
+            continue
+
+    def _sort_key_reserved_at(row):
+        try:
+            return datetime.fromisoformat(str(row.get("reserved_at", "")).replace("Z", "+00:00")).astimezone(JST)
+        except Exception:
+            return datetime.min.replace(tzinfo=JST)
+
+    reservations_of_day.sort(key=_sort_key_reserved_at)
+    return reservations_of_day
+
+
+def _decorate_day_reservations(reservations_of_day):
+    for r in reservations_of_day:
+        r["viewer_may_edit"] = session_may_edit_reservation_row(r.get("staff_name"))
+        try:
+            dt_str = r.get("reserved_at", "")
+            if not dt_str:
+                r["reserved_at_display"] = "時刻不明"
+                continue
+            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+            dt_jst = dt.astimezone(JST)
+            if r.get("place_type") in RESERVATION_TIME_BLOCK_PLACE_TYPES:
+                dur = int(r.get("duration_minutes") or 540)
+                r["reserved_at_display"] = (
+                    f"{dt_jst.strftime('%H:%M')}〜{reservation_end_time_display_hhmm(dt_jst, dur)}"
+                )
+            else:
+                r["reserved_at_display"] = dt_jst.strftime("%H:%M")
+        except Exception:
+            r["reserved_at_display"] = "時刻不明"
+    return reservations_of_day
+
+
+def _fetch_reservations_for_jst_day(selected_day, place_type_filter, staff_filter, viewer_is_irregular, viewer_name):
+    selected_day_start = datetime.combine(selected_day, datetime.min.time()).replace(tzinfo=JST)
+    selected_day_end = selected_day_start + timedelta(days=1)
+    query_start = selected_day_start - timedelta(hours=12)
+    query_end = selected_day_end + timedelta(hours=12)
+    query = (
+        supabase_admin.table("reservations")
+        .select("*")
+        .gte("reserved_at", query_start.isoformat())
+        .lt("reserved_at", query_end.isoformat())
+    )
+    if place_type_filter != "all":
+        query = query.eq("place_type", place_type_filter)
+    if viewer_is_irregular:
+        staff_filter = viewer_name
+        query = query.eq("staff_name", viewer_name)
+    if staff_filter != "all":
+        query = query.eq("staff_name", staff_filter)
+    res_reservations = query.order("reserved_at", desc=False).execute()
+    reservations = _annotate_reservations_with_patients(res_reservations.data or [])
+    return _filter_reservations_of_jst_day(reservations, selected_day)
+
+
+def _build_reservation_timeline_context(reservations_of_day, staff_entries, staff_filter, selected_day):
+    timeline_start_hour = 7
+    timeline_end_hour = 26
+    timeline_px_per_min = 2
+    timeline_start_minute = timeline_start_hour * 60
+    timeline_end_minute = timeline_end_hour * 60
+    timeline_total_minutes = timeline_end_minute - timeline_start_minute
+
+    timeline_staff_role_map = {s.get("name"): (s.get("role") or STAFF_ROLE_REGULAR) for s in staff_entries if (s.get("name") or "").strip()}
+    if staff_filter != "all":
+        timeline_staff_names = [staff_filter]
+    else:
+        timeline_staff_names = [s.get("name") for s in staff_entries if (s.get("name") or "").strip()]
+
+    timeline_staff_rows = []
+    if staff_filter == "all":
+        for s in staff_entries:
+            n = (s.get("name") or "").strip()
+            if not n:
+                continue
+            timeline_staff_rows.append({
+                "type": "staff",
+                "name": n,
+                "role": s.get("role") or STAFF_ROLE_REGULAR,
+                "area": s.get("area") or "tokyo",
+            })
+    else:
+        for n in timeline_staff_names:
+            timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
+
+    timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
+    timeline_buffers_by_staff = {nm: [] for nm in timeline_staff_names}
+    for r in reservations_of_day:
+        staff_name_raw = (r.get("staff_name") or "").strip()
+        staff_name_for_timeline = staff_name_raw or "未割当"
+        if staff_name_for_timeline not in timeline_cards_by_staff:
+            timeline_cards_by_staff[staff_name_for_timeline] = []
+            timeline_buffers_by_staff[staff_name_for_timeline] = []
+            timeline_staff_names.append(staff_name_for_timeline)
+            timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline, "role": timeline_staff_role_map.get(staff_name_for_timeline, STAFF_ROLE_REGULAR)})
+
+        start_minute = timeline_start_minute
+        try:
+            dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
+            dt_jst = dt.astimezone(JST)
+            start_minute = dt_jst.hour * 60 + dt_jst.minute
+        except Exception:
+            start_minute = timeline_start_minute
+
+        duration = int(r.get("duration_minutes") or 60)
+        if duration <= 0:
+            duration = 60
+
+        if start_minute < timeline_start_minute:
+            duration -= (timeline_start_minute - start_minute)
+            start_minute = timeline_start_minute
+        if start_minute >= timeline_end_minute:
+            continue
+        if start_minute + duration > timeline_end_minute:
+            duration = timeline_end_minute - start_minute
+        if duration <= 0:
+            continue
+
+        _pt = r.get("place_type") or ""
+        try:
+            _rd = r.get("reserved_at", "")
+            _dtline = (
+                datetime.fromisoformat(_rd.replace("Z", "+00:00")).astimezone(JST).strftime("%H:%M")
+                if _rd
+                else ""
+            )
+        except Exception:
+            _dtline = ""
+        _pn = (r.get("place_name") or "").strip()
+        _memo = (r.get("memo") or "").strip()
+        timeline_cards_by_staff[staff_name_for_timeline].append({
+            "id": r.get("id"),
+            "start_minute": start_minute,
+            "duration": duration,
+            "reserved_at_display": r.get("reserved_at_display") or "",
+            "timeline_time_short": _dtline,
+            "place_name": _pn,
+            "memo_display": _memo,
+            "patient_name": r.get("patient_name") or "患者なし",
+            "vip_level": (r.get("patient", {}) or {}).get("vip_level") if isinstance(r.get("patient"), dict) else "",
+            "status": r.get("status") or "",
+            "place_type": _pt,
+            "is_field": _pt == "field",
+            "is_break": _pt == "break",
+            "is_personal": _pt == "personal",
+            "place_label": reservation_place_type_label(_pt),
+        })
+        post_buf = reservation_display_post_buffer_minutes(_pt)
+        if post_buf > 0:
+            buf_start = start_minute + duration
+            buf_end = buf_start + post_buf
+            if buf_start < timeline_end_minute and buf_end > timeline_start_minute:
+                if buf_start < timeline_start_minute:
+                    buf_start = timeline_start_minute
+                if buf_end > timeline_end_minute:
+                    buf_end = timeline_end_minute
+                buf_dur = buf_end - buf_start
+                if buf_dur > 0:
+                    timeline_buffers_by_staff[staff_name_for_timeline].append({
+                        "start_minute": buf_start,
+                        "duration": buf_dur,
+                        "place_type": _pt,
+                        "buffer_minutes": post_buf,
+                    })
+
+    selected_day_str = selected_day.strftime("%Y-%m-%d")
+    shift_map = {}
+    shift_staff_names = [row.get("name") for row in timeline_staff_rows if row.get("name")]
+    if shift_staff_names:
+        try:
+            res_shifts = (
+                supabase_admin
+                .table("staff_work_shifts")
+                .select("staff_name, start_time, end_time, is_off, area, work_mode")
+                .eq("shift_date", selected_day_str)
+                .in_("staff_name", shift_staff_names)
+                .execute()
+            )
+            for sh in (res_shifts.data or []):
+                nm = (sh.get("staff_name") or "").strip()
+                if nm:
+                    shift_area = sh.get("area")
+                    mode = resolve_shift_work_mode(sh)
+                    shift_map[nm] = {
+                        "start": sh.get("start_time") or "",
+                        "end": sh.get("end_time") or "",
+                        "is_off": mode == "off",
+                        "work_mode": mode,
+                        "area": normalize_staff_area(shift_area) if shift_area else None,
+                    }
+        except Exception as e:
+            print(f"⚠️ 勤務時間取得エラー: {e}")
+
+    staff_area_map = {
+        (s.get("name") or "").strip(): s.get("area") or "tokyo"
+        for s in staff_entries
+        if (s.get("name") or "").strip()
+    }
+    return {
+        "timeline_start_hour": timeline_start_hour,
+        "timeline_end_hour": timeline_end_hour,
+        "timeline_px_per_min": timeline_px_per_min,
+        "timeline_total_minutes": timeline_total_minutes,
+        "timeline_staff_names": timeline_staff_names,
+        "timeline_staff_rows": timeline_staff_rows,
+        "timeline_cards_by_staff": timeline_cards_by_staff,
+        "timeline_buffers_by_staff": timeline_buffers_by_staff,
+        "shift_map": shift_map,
+        "staff_area_map": staff_area_map,
+    }
+
+
 @app.route("/admin/reservations", methods=["GET"])
 @staff_section_required("reservations")
 def admin_reservations():
@@ -6206,6 +6543,30 @@ def admin_reservations():
                 selected_day = now_jst.date()
         else:
             selected_day = now_jst.date()
+
+        if request.args.get("partial") == "day":
+            if viewer_is_irregular:
+                staff_filter = viewer_name
+            staff_entries = _calendar_staff_entries_for_viewer(viewer)
+            reservations_of_day = _decorate_day_reservations(
+                _fetch_reservations_for_jst_day(
+                    selected_day,
+                    place_type_filter,
+                    staff_filter,
+                    viewer_is_irregular,
+                    viewer_name,
+                )
+            )
+            tl = _build_reservation_timeline_context(
+                reservations_of_day, staff_entries, staff_filter, selected_day
+            )
+            return render_template(
+                "_admin_reservations_day_panel.html",
+                selected_day=selected_day,
+                reservations_of_day=reservations_of_day,
+                viewer_is_admin=viewer_is_admin,
+                **tl,
+            )
         
         # 予約取得（月初〜月末）
         start_iso = start_date.isoformat()
@@ -6334,46 +6695,7 @@ def admin_reservations():
             except Exception:
                 r["reserved_at_display"] = "時刻不明"
         
-        # スタッフリスト取得（表示・フィルタ用）
-        staff_entries = []
-        try:
-            users = supabase_admin.auth.admin.list_users()
-            for u in users:
-                meta = u.user_metadata or {}
-                if not meta.get("approved", False):
-                    continue
-                if meta.get("is_admin", False):
-                    continue
-                last_name = meta.get("last_name", "")
-                first_name = meta.get("first_name", "")
-                display_name = f"{last_name} {first_name}".strip() if (last_name and first_name) else (meta.get("name", "未設定"))
-                role = (meta.get("staff_role") or STAFF_ROLE_REGULAR).strip() or STAFF_ROLE_REGULAR
-                if role not in STAFF_ROLES_NONADMIN:
-                    role = STAFF_ROLE_REGULAR
-                created = str(u.created_at) if getattr(u, "created_at", None) else ""
-                staff_entries.append({
-                    "id": u.id,
-                    "name": display_name,
-                    "role": role,
-                    "area": normalize_staff_area(meta.get("area")),
-                    "created_at": created,
-                })
-        except Exception as e:
-            print("❌ スタッフリスト取得エラー:", e)
-
-        if not any((s.get("name") or "").strip() == viewer_name for s in staff_entries):
-            staff_entries.append({
-                "id": viewer.get("id"),
-                "name": viewer_name,
-                "role": viewer_role if viewer_role in STAFF_ROLES_NONADMIN else STAFF_ROLE_REGULAR,
-                "area": normalize_staff_area(viewer.get("area")),
-                "created_at": "",
-            })
-
-        staff_entries.sort(key=staff_display_sort_key)
-        if viewer_is_irregular:
-            staff_entries = [s for s in staff_entries if (s.get("name") or "").strip() == viewer_name]
-
+        staff_entries = _calendar_staff_entries_for_viewer(viewer)
         staff_list = [{"id": s.get("id"), "name": s.get("name")} for s in staff_entries]
         
         # 前月・次月の計算
@@ -6402,151 +6724,9 @@ def admin_reservations():
         # カレンダー表示用ステータス（オーナーの work_mode）
         shift_status_map = build_calendar_shift_status_map(current_date.year, current_date.month)
 
-        # 予定タイムライン（縦軸: スタッフ / 横軸: 時間）
-        timeline_start_hour = 7
-        timeline_end_hour = 26
-        timeline_px_per_min = 2
-        timeline_start_minute = timeline_start_hour * 60
-        timeline_end_minute = timeline_end_hour * 60
-        timeline_total_minutes = timeline_end_minute - timeline_start_minute
-
-        timeline_staff_role_map = {s.get("name"): (s.get("role") or STAFF_ROLE_REGULAR) for s in staff_entries if (s.get("name") or "").strip()}
-        if staff_filter != "all":
-            timeline_staff_names = [staff_filter]
-        else:
-            timeline_staff_names = [s.get("name") for s in staff_entries if (s.get("name") or "").strip()]
-
-        timeline_staff_rows = []
-        if staff_filter == "all":
-            for s in staff_entries:
-                n = (s.get("name") or "").strip()
-                if not n:
-                    continue
-                timeline_staff_rows.append({
-                    "type": "staff",
-                    "name": n,
-                    "role": s.get("role") or STAFF_ROLE_REGULAR,
-                    "area": s.get("area") or "tokyo",
-                })
-        else:
-            for n in timeline_staff_names:
-                timeline_staff_rows.append({"type": "staff", "name": n, "role": timeline_staff_role_map.get(n, STAFF_ROLE_REGULAR)})
-
-        timeline_cards_by_staff = {nm: [] for nm in timeline_staff_names}
-        timeline_buffers_by_staff = {nm: [] for nm in timeline_staff_names}
-        for r in reservations_of_day:
-            staff_name_raw = (r.get("staff_name") or "").strip()
-            staff_name_for_timeline = staff_name_raw or "未割当"
-            if staff_name_for_timeline not in timeline_cards_by_staff:
-                timeline_cards_by_staff[staff_name_for_timeline] = []
-                timeline_buffers_by_staff[staff_name_for_timeline] = []
-                timeline_staff_names.append(staff_name_for_timeline)
-                timeline_staff_rows.append({"type": "staff", "name": staff_name_for_timeline, "role": timeline_staff_role_map.get(staff_name_for_timeline, STAFF_ROLE_REGULAR)})
-
-            start_minute = timeline_start_minute
-            try:
-                dt = datetime.fromisoformat((r.get("reserved_at") or "").replace("Z", "+00:00"))
-                dt_jst = dt.astimezone(JST)
-                start_minute = dt_jst.hour * 60 + dt_jst.minute
-            except Exception:
-                start_minute = timeline_start_minute
-
-            duration = int(r.get("duration_minutes") or 60)
-            if duration <= 0:
-                duration = 60
-
-            # 描画範囲に収まるように調整
-            if start_minute < timeline_start_minute:
-                duration -= (timeline_start_minute - start_minute)
-                start_minute = timeline_start_minute
-            if start_minute >= timeline_end_minute:
-                continue
-            if start_minute + duration > timeline_end_minute:
-                duration = timeline_end_minute - start_minute
-            if duration <= 0:
-                continue
-
-            _pt = r.get("place_type") or ""
-            try:
-                _rd = r.get("reserved_at", "")
-                _dtline = (
-                    datetime.fromisoformat(_rd.replace("Z", "+00:00")).astimezone(JST).strftime("%H:%M")
-                    if _rd
-                    else ""
-                )
-            except Exception:
-                _dtline = ""
-            _pn = (r.get("place_name") or "").strip()
-            _memo = (r.get("memo") or "").strip()
-            timeline_cards_by_staff[staff_name_for_timeline].append({
-                "id": r.get("id"),
-                "start_minute": start_minute,
-                "duration": duration,
-                "reserved_at_display": r.get("reserved_at_display") or "",
-                "timeline_time_short": _dtline,
-                "place_name": _pn,
-                "memo_display": _memo,
-                "patient_name": r.get("patient_name") or "患者なし",
-                "vip_level": (r.get("patient", {}) or {}).get("vip_level") if isinstance(r.get("patient"), dict) else "",
-                "status": r.get("status") or "",
-                "place_type": _pt,
-                "is_field": _pt == "field",
-                "is_break": _pt == "break",
-                "is_personal": _pt == "personal",
-                "place_label": reservation_place_type_label(_pt),
-            })
-            post_buf = reservation_display_post_buffer_minutes(_pt)
-            if post_buf > 0:
-                buf_start = start_minute + duration
-                buf_end = buf_start + post_buf
-                if buf_start < timeline_end_minute and buf_end > timeline_start_minute:
-                    if buf_start < timeline_start_minute:
-                        buf_start = timeline_start_minute
-                    if buf_end > timeline_end_minute:
-                        buf_end = timeline_end_minute
-                    buf_dur = buf_end - buf_start
-                    if buf_dur > 0:
-                        timeline_buffers_by_staff[staff_name_for_timeline].append({
-                            "start_minute": buf_start,
-                            "duration": buf_dur,
-                            "place_type": _pt,
-                            "buffer_minutes": post_buf,
-                        })
-
-        # 勤務時間（DB保存）を取得
-        selected_day_str = selected_day.strftime("%Y-%m-%d")
-        shift_map = {}
-        shift_staff_names = [row.get("name") for row in timeline_staff_rows if row.get("name")]
-        if shift_staff_names:
-            try:
-                res_shifts = (
-                    supabase_admin
-                    .table("staff_work_shifts")
-                    .select("staff_name, start_time, end_time, is_off, area, work_mode")
-                    .eq("shift_date", selected_day_str)
-                    .in_("staff_name", shift_staff_names)
-                    .execute()
-                )
-                for sh in (res_shifts.data or []):
-                    nm = (sh.get("staff_name") or "").strip()
-                    if nm:
-                        shift_area = sh.get("area")
-                        mode = resolve_shift_work_mode(sh)
-                        shift_map[nm] = {
-                            "start": sh.get("start_time") or "",
-                            "end": sh.get("end_time") or "",
-                            "is_off": mode == "off",
-                            "work_mode": mode,
-                            "area": normalize_staff_area(shift_area) if shift_area else None,
-                        }
-            except Exception as e:
-                print(f"⚠️ 勤務時間取得エラー: {e}")
-
-        staff_area_map = {
-            (s.get("name") or "").strip(): s.get("area") or "tokyo"
-            for s in staff_entries
-            if (s.get("name") or "").strip()
-        }
+        tl = _build_reservation_timeline_context(
+            reservations_of_day, staff_entries, staff_filter, selected_day
+        )
         
         return render_template(
             "admin_reservations.html",
@@ -6566,19 +6746,10 @@ def admin_reservations():
             now_jst=now_jst,
             schedule_map=shift_status_map,
             shift_status_map=shift_status_map,
-            timeline_start_hour=timeline_start_hour,
-            timeline_end_hour=timeline_end_hour,
-            timeline_px_per_min=timeline_px_per_min,
-            timeline_total_minutes=timeline_total_minutes,
-            timeline_staff_names=timeline_staff_names,
-            timeline_staff_rows=timeline_staff_rows,
-            timeline_cards_by_staff=timeline_cards_by_staff,
-            timeline_buffers_by_staff=timeline_buffers_by_staff,
-            shift_map=shift_map,
-            staff_area_map=staff_area_map,
             shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
             viewer_staff_name=viewer_name,
             viewer_is_admin=viewer_is_admin,
+            **tl,
         )
     except Exception as e:
         print("❌ 予約一覧取得エラー:", e)

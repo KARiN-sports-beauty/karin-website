@@ -284,6 +284,10 @@
   .admin-resv-list .admin-resv-card.hidden-by-staff-filter {
     display: none;
   }
+  .admin-resv-list.is-loading {
+    opacity: 0.55;
+    pointer-events: none;
+  }
   @keyframes resv-target-pulse {
     0% { transform: scale(1); }
     30% { transform: scale(1.01); }
@@ -392,6 +396,7 @@
         }.get(day_status, '') %}
         
         <a href="/admin/reservations?ym={{ current_ym }}&day={{ day_key }}&place_type={{ place_type_filter }}&staff={{ staff_filter }}" 
+           data-day="{{ day_key }}"
            class="admin-resv-day {% if is_selected %}selected{% endif %} {% if is_today %}today{% endif %} {{ day_class }}">
           <span style="font-size: 1rem; font-weight: 600;">{{ day_num }}</span>
           {% if day_badge %}
@@ -407,719 +412,469 @@
   {% endif %}
   
   <!-- 選択日の予定一覧 -->
-  <div class="admin-resv-list">
-    <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; font-weight: 600; color: #1E3A5F;">
-      {{ selected_day.strftime('%Y年%m月%d日') }}の予定
-    </h3>
-    <div id="schedule-filter-panel" class="schedule-filter-panel">
-      <strong id="schedule-filter-staff-name" style="color:#1E3A5F;">スタッフ: -</strong>
-      <div id="work-mode-toggle" class="work-area-toggle" title="この日の勤務モード">
-        <button type="button" data-mode="clinic" data-area="fukuoka" id="work-mode-fukuoka">福岡</button>
-        <button type="button" data-mode="clinic" data-area="tokyo" id="work-mode-tokyo">東京</button>
-        <button type="button" data-mode="field" id="work-mode-field">帯同</button>
-        <button type="button" data-mode="off" id="work-mode-off">休み</button>
-      </div>
-      <span style="color:#64748b; font-size:0.9rem;">時間</span>
-      <input id="work-start-input" type="text" value="" placeholder="10:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
-      <span style="color:#64748b;">〜</span>
-      <input id="work-end-input" type="text" value="" placeholder="19:00" style="width:80px; padding:6px 8px; border:1px solid #cfd8e3; border-radius:6px;">
-      <button id="work-time-save-btn" type="button" style="padding:6px 10px; border:none; border-radius:6px; background:#1E3A5F; color:#fff; cursor:pointer;">保存</button>
-      <button id="schedule-filter-clear-btn" type="button" style="padding:6px 10px; border:1px solid #cfd8e3; border-radius:6px; background:#fff; color:#1E3A5F; cursor:pointer;">全員表示に戻す</button>
-      <small id="work-time-message" style="color:#64748b;"></small>
-    </div>
-    {% if timeline_staff_names %}
-    <div class="schedule-timeline-wrap">
-      <div class="schedule-timeline-scroll">
-        <div class="schedule-timeline-header">
-          <div class="schedule-staff-col">スタッフ</div>
-          <div class="schedule-time-head" style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
-            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
-            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
-            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
-            <div class="schedule-time-label" style="left: {{ x }}px;">{{ "%02d:00"|format(hour) }}</div>
-            {% endfor %}
-          </div>
-        </div>
-        {% for row in timeline_staff_rows %}
-        {% set staff_name = row.name %}
-        <div class="schedule-timeline-row {% if row.role == 'irregular' %}irregular{% else %}regular{% endif %}">
-          <div class="schedule-staff-col"><button type="button" class="schedule-staff-col-button" data-staff-name="{{ staff_name }}">{{ staff_name }}</button></div>
-          <div class="schedule-row-canvas"
-               data-day="{{ selected_day.strftime('%Y-%m-%d') }}"
-               data-staff-name="{{ staff_name }}"
-               data-start-hour="{{ timeline_start_hour }}"
-               data-px-per-min="{{ timeline_px_per_min }}"
-               style="width: {{ timeline_total_minutes * timeline_px_per_min }}px;">
-            {% for hour in range(timeline_start_hour, timeline_end_hour + 1) %}
-            {% set x = (hour - timeline_start_hour) * 60 * timeline_px_per_min %}
-            <div class="schedule-time-line" style="left: {{ x }}px;"></div>
-            {% endfor %}
-            {% for buf in timeline_buffers_by_staff.get(staff_name, []) %}
-            {% set buf_left = (buf.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
-            {% set buf_width = buf.duration * timeline_px_per_min %}
-            <div class="schedule-buffer-zone {% if buf.place_type == 'in_house' %}place-inhouse{% elif buf.place_type == 'visit' %}place-visit{% endif %}"
-                 style="left: {{ buf_left }}px; width: {{ buf_width if buf_width > 2 else 2 }}px;"
-                 title="{% if buf.place_type == 'in_house' %}院内後{{ buf.buffer_minutes }}分{% elif buf.place_type == 'visit' %}出張後{{ buf.buffer_minutes }}分{% endif %}"></div>
-            {% endfor %}
-            {% for card in timeline_cards_by_staff.get(staff_name, []) %}
-            {% set card_left = (card.start_minute - (timeline_start_hour * 60)) * timeline_px_per_min %}
-            {% set card_width = card.duration * timeline_px_per_min %}
-            {% if card.is_break %}
-            <a href="#resv-detail-{{ card.id }}"
-               class="schedule-card place-break"
-               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
-               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
-              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
-              <span class="schedule-card-main">休憩{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
-            </a>
-            {% elif card.is_personal %}
-            <a href="#resv-detail-{{ card.id }}"
-               class="schedule-card place-personal"
-               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
-               title="{{ card.reserved_at_display }}{% if card.memo_display %} {{ card.memo_display }}{% endif %}">
-              <span class="schedule-card-time">{{ card.reserved_at_display }}</span>
-              <span class="schedule-card-main">予定{% if card.memo_display %}（{{ card.memo_display }}）{% endif %}</span>
-            </a>
-            {% elif card.is_field %}
-            <a href="#resv-detail-{{ card.id }}"
-               class="schedule-card schedule-card-field-timeline"
-               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
-               title="{{ card.timeline_time_short }} {{ card.place_name }}">
-              <span class="schedule-card-time">{{ card.timeline_time_short }} {{ card.place_name or '現場名なし' }}</span>
-            </a>
-            {% else %}
-            <a href="#resv-detail-{{ card.id }}"
-               class="schedule-card status-{{ card.status|default('') }} {% if card.place_type == 'in_house' %}place-inhouse{% elif card.place_type == 'visit' %}place-visit{% elif card.place_type == 'field' %}place-field{% else %}place-default{% endif %}"
-               style="left: {{ card_left }}px; width: {{ card_width if card_width > 40 else 40 }}px;"
-               title="{{ card.reserved_at_display }} {{ card.patient_name }}">
-              <span class="schedule-card-time">{{ card.reserved_at_display }} / {{ card.place_label }}</span>
-              <span class="schedule-card-main">{{ card.patient_name }}{% if 'star' in (card.vip_level or '') %}⭐️{% endif %}{% if 'clover' in (card.vip_level or '') %}🍀{% endif %}</span>
-            </a>
-            {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-    
-    {% if reservations_of_day %}
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-      {% for reservation in reservations_of_day %}
-      {% if reservation.place_type == 'break' %}
-      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-break" style="border-left: 4px solid #94a3b8;">
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">休憩</span>
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #94a3b8; color: #fff;">休憩</span>
-          </div>
-          <div style="font-size: 0.95rem; color: #444;">
-            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
-            <span> ｜ </span>
-            <span>休憩時間：{{ reservation.reserved_at_display or '—' }}</span>
-          </div>
-        </div>
-        {% if reservation.memo %}
-        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
-          理由：{{ reservation.memo }}
-        </div>
-        {% endif %}
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          {% if reservation.viewer_may_edit %}
-          <a href="/admin/reservations/{{ reservation.id }}/edit"
-             class="admin-resv-btn"
-             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
-            ✏ 編集
-          </a>
-          {% endif %}
-          {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この休憩を削除しますか？">
-            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-      {% elif reservation.place_type == 'personal' %}
-      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-personal" style="border-left: 4px solid #64748b;">
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">予定</span>
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #64748b; color: #fff;">予定</span>
-          </div>
-          <div style="font-size: 0.95rem; color: #444;">
-            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
-            <span> ｜ </span>
-            <span>予定時間：{{ reservation.reserved_at_display or '—' }}</span>
-          </div>
-        </div>
-        {% if reservation.memo %}
-        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
-          理由：{{ reservation.memo }}
-        </div>
-        {% endif %}
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          {% if reservation.viewer_may_edit %}
-          <a href="/admin/reservations/{{ reservation.id }}/edit"
-             class="admin-resv-btn"
-             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
-            ✏ 編集
-          </a>
-          {% endif %}
-          {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
-            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-      {% elif reservation.place_type == 'field' %}
-      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card place-field" style="border-left: 4px solid #1E3A5F;">
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-            <span style="font-size: 1.05rem; font-weight: 600; color: #1E3A5F;">{{ reservation.place_name or '現場名未入力' }}</span>
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
-            {% set nom_type = reservation.nomination_type %}
-            {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
-            {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
-            {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
-            {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
-            {% if nom_type == '本指名' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
-            {% elif nom_type == '枠指名' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
-            {% elif nom_type == '希望' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FF9800; color: #fff;">希望</span>
-            {% elif nom_type == 'フリー' %}
-            <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #9E9E9E; color: #fff;">フリー</span>
-            {% endif %}
-          </div>
-          <div style="font-size: 0.95rem; color: #444;">
-            <span>スタッフ：{{ reservation.staff_name or '—' }}</span>
-            <span> ｜ </span>
-            <span>帯同時間：{{ reservation.reserved_at_display or '—' }}</span>
-          </div>
-        </div>
-        {% if reservation.memo %}
-        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
-          {{ reservation.memo }}
-        </div>
-        {% endif %}
-        {% if viewer_is_admin|default(false) %}
-        {% set base_price = reservation.base_price or 0 %}
-        {% set transportation_fee = reservation.transportation_fee or 0 %}
-        {% set nomination_fee = reservation.nomination_fee or 0 %}
-        {% set discount = reservation.discount or 0 %}
-        {% set tax = reservation.tax or 0 %}
-        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
-        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
-          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
-        </div>
-        {% endif %}
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          {% if reservation.viewer_may_edit %}
-          <a href="/admin/reservations/{{ reservation.id }}/edit" 
-             class="admin-resv-btn" 
-             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
-            ✏ 編集
-          </a>
-          {% endif %}
-          {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予定を削除しますか？">
-            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-      {% else %}
-      <div id="resv-detail-{{ reservation.id }}" data-staff-name="{{ reservation.staff_name or '未割当' }}" class="admin-resv-card {% if reservation.patient and (reservation.patient.category == 'アーティスト・タレント' or reservation.patient.category == 'アーティスト') %}category-artist{% elif reservation.patient and reservation.patient.category == 'スポーツ選手' %}category-sports{% elif reservation.patient and (reservation.patient.gender == '男性' or reservation.patient.gender == 'male' or reservation.patient.gender == '男') %}gender-male{% elif reservation.patient and (reservation.patient.gender == '女性' or reservation.patient.gender == 'female' or reservation.patient.gender == '女') %}gender-female{% elif reservation.patient %}gender-other{% endif %} {% if reservation.place_type == 'in_house' %}place-inhouse{% elif reservation.place_type == 'visit' %}place-visit{% elif reservation.place_type == 'field' %}place-field{% endif %}">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-          <div style="flex: 1;">
-            <div style="font-size: 1.1rem; font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">{{ reservation.reserved_at_display or '時刻不明' }}</div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-              {% if reservation.patient_id %}
-              <a href="/admin/karte/{{ reservation.patient_id }}" style="font-size: 1rem; font-weight: 500; color: #1E3A5F; text-decoration: none;">
-                {{ reservation.patient_name or '患者不明' }}{% if reservation.patient and 'star' in (reservation.patient.vip_level or '') %}⭐️{% endif %}{% if reservation.patient and 'clover' in (reservation.patient.vip_level or '') %}🍀{% endif %}
-              </a>
-              {% else %}
-              <span style="font-size: 1rem; font-weight: 500; color: #666;">{{ reservation.patient_name or '患者なし' }}</span>
-              {% endif %}
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              <!-- 現場区分バッジ -->
-              {% if reservation.place_type == 'in_house' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">院内</span>
-              {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">出張</span>
-              {% elif reservation.place_type == 'field' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FFB6C1; color: #fff;">帯同</span>
-              {% endif %}
-              <!-- 指名タイプバッジ（表記ルール統一：本指名（院内）、枠指名（帯同）） -->
-              {% set nom_type = reservation.nomination_type %}
-              {% if nom_type == 'main' %}{% set nom_type = '本指名' %}{% endif %}
-              {% if nom_type == 'frame' %}{% set nom_type = '枠指名' %}{% endif %}
-              {% if nom_type == 'hope' %}{% set nom_type = '希望' %}{% endif %}
-              {% if nom_type == 'free' %}{% set nom_type = 'フリー' %}{% endif %}
-              {% if nom_type == '本指名' %}
-                {% if reservation.place_type == 'in_house' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（院内）</span>
-                {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（出張）</span>
-                {% elif reservation.place_type == 'field' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名（帯同）</span>
-                {% else %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #1E3A5F; color: #fff;">本指名</span>
-                {% endif %}
-              {% elif nom_type == '枠指名' %}
-                {% if reservation.place_type == 'in_house' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（院内）</span>
-                {% elif reservation.place_type == 'visit' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（出張）</span>
-                {% elif reservation.place_type == 'field' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名（帯同）</span>
-            {% else %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #4CAF50; color: #fff;">枠指名</span>
-                {% endif %}
-              {% elif nom_type == '希望' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #FF9800; color: #fff;">希望</span>
-              {% elif nom_type == 'フリー' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #9E9E9E; color: #fff;">フリー</span>
-              {% endif %}
-              <!-- エリアバッジ -->
-              {% if reservation.area == 'tokyo' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #C8E6C9; color: #2E7D32; border: 1px solid #81C784;">東京</span>
-              {% elif reservation.area == 'fukuoka' %}
-              <span style="padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #BBDEFB; color: #1565C0; border: 1px solid #5C9BD1;">福岡</span>
-            {% endif %}
-            </div>
-          </div>
-          <span class="admin-resv-status admin-resv-status-{{ reservation.status }}">
-            {% if reservation.status == 'reserved' %}予約中
-            {% elif reservation.status == 'visited' %}来院済
-            {% elif reservation.status == 'completed' %}完了
-            {% elif reservation.status == 'canceled' %}キャンセル
-            {% else %}{{ reservation.status }}{% endif %}
-          </span>
-        </div>
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #666;">
-          {% set place_map = {'in_house':'院内','visit':'出張','field':'帯同','personal':'予定','break':'休憩'} %}
-          <span>区分：{{ place_map.get(reservation.place_type, reservation.place_type) }}</span>
-          {% if reservation.place_name %}
-          <span>（{{ reservation.place_name }}）</span>
-          {% endif %}
-          {% if reservation.staff_name %}
-          <span>｜スタッフ：{{ reservation.staff_name }}</span>
-          {% endif %}
-          <span>｜{{ reservation.duration_minutes or 60 }}分</span>
-        </div>
-        
-        {% if reservation.memo %}
-        <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; font-size: 0.9rem; color: #666;">
-          {{ reservation.memo }}
-        </div>
-        {% endif %}
-
-        {% set base_price = reservation.base_price or 0 %}
-        {% set transportation_fee = reservation.transportation_fee or 0 %}
-        {% set nomination_fee = reservation.nomination_fee or 0 %}
-        {% set discount = reservation.discount or 0 %}
-        {% set tax = reservation.tax or 0 %}
-        {% set total_amount = base_price + transportation_fee + nomination_fee - discount + tax %}
-        {% if reservation.status == 'visited' or reservation.status == 'completed' %}
-        <div style="margin-bottom: 12px; padding: 10px 12px; background: #f5f7fb; border-radius: 8px; font-size: 0.95rem; color: #1E3A5F; font-weight: 600;">
-          合計金額（税込）: ¥{{ "{:,}".format(total_amount) }}
-        </div>
-        {% endif %}
-        {% if reservation.status == 'completed' %}
-        {% include 'admin_reservation_payment_row.html' %}
-        {% endif %}
-        
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          {% if reservation.viewer_may_edit %}
-          <a href="/admin/reservations/{{ reservation.id }}/edit" 
-             class="admin-resv-btn" 
-             style="padding: 6px 12px; background: #1E3A5F; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
-            ✏ 編集
-          </a>
-          {% endif %}
-          
-          {% if reservation.patient_id %}
-          <a href="/admin/karte/{{ reservation.patient_id }}/log/new?date={{ selected_day.strftime('%Y-%m-%d') }}" 
-             class="admin-resv-btn" 
-             style="padding: 6px 12px; background: #4CAF50; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
-            📝 ログ作成
-          </a>
-          {% endif %}
-          
-          {% if reservation.viewer_may_edit and reservation.status == 'reserved' %}
-          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
-            <input type="hidden" name="status" value="visited">
-            <button type="submit" style="padding: 6px 12px; background: #2196F3; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">✓ 来院済</button>
-          </form>
-          {% endif %}
-          
-          {% if reservation.viewer_may_edit and reservation.status == 'visited' %}
-          <div data-reservation-id="{{ reservation.id }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="payment-method-btn" data-method="cash">現金</button>
-            <button type="button" class="payment-method-btn" data-method="credit">クレジット</button>
-            <button type="button" class="payment-method-btn" data-method="paypay">paypay</button>
-            <button type="button" class="payment-method-btn" data-method="month_end">月末請求</button>
-            <button type="button" class="payment-method-btn" data-receipt="with_receipt">領収書あり</button>
-            <button type="button" class="payment-method-btn" data-receipt="no_receipt">領収書なし</button>
-            <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
-              <input type="hidden" name="status" value="completed">
-              <input type="hidden" name="payment_method" value="">
-              <input type="hidden" name="receipt_status" value="">
-              <button type="submit" class="payment-complete-btn" disabled style="padding: 6px 12px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">✓ 完了</button>
-            </form>
-          </div>
-          {% endif %}
-          
-          {% if reservation.viewer_may_edit and reservation.status != 'canceled' %}
-          <form action="/admin/reservations/{{ reservation.id }}/status" method="POST" style="display: inline;">
-            <input type="hidden" name="status" value="canceled">
-            <button type="submit" style="padding: 6px 12px; background: #f44336; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;" onclick="return confirm('この予約をキャンセルしますか？');">✕ キャンセル</button>
-          </form>
-          {% endif %}
-          
-          {% if reservation.viewer_may_edit %}
-          <form action="/admin/reservations/{{ reservation.id }}/delete" method="POST" style="display: inline;" data-delete-confirm="true" data-delete-message="この予約を削除しますか？">
-            <button type="submit" style="padding: 6px 12px; background: #999; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">🗑 削除</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-    {% else %}
-    <p style="color: #999; text-align: center; padding: 40px 0;">この日の予定はありません</p>
-    {% endif %}
+  <div class="admin-resv-list" id="admin-resv-day-panel">
+    {% include '_admin_reservations_day_panel.html' %}
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const SHIFT_DATA = {{ shift_map|tojson }};
-  const STAFF_DEFAULT_AREA = {{ staff_area_map|tojson }};
+  let SHIFT_DATA = {{ shift_map|tojson }};
+  let STAFF_DEFAULT_AREA = {{ staff_area_map|tojson }};
   const SHIFT_CAN_EDIT_ALL = {{ shift_can_edit_all|tojson }};
   const VIEWER_STAFF_NAME = {{ viewer_staff_name|tojson }};
-  const paymentBlocks = document.querySelectorAll('[data-reservation-id]');
-  paymentBlocks.forEach(function(block) {
-    const buttons = block.querySelectorAll('.payment-method-btn');
-    const completeBtn = block.querySelector('.payment-complete-btn');
-    const paymentInput = block.querySelector('input[name="payment_method"]');
-    const receiptInput = block.querySelector('input[name="receipt_status"]');
-    buttons.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        if (btn.dataset.method) {
-          buttons.forEach(b => {
-            if (b.dataset.method) b.classList.remove('active');
-          });
-          btn.classList.add('active');
-          if (paymentInput) {
-            paymentInput.value = btn.dataset.method || '';
-          }
+  let dayLoadSeq = 0;
+
+  function readDayStateFromPanel() {
+    const el = document.getElementById('admin-resv-day-state');
+    if (!el) return;
+    try {
+      const raw = (el.value != null && el.value !== '') ? el.value : (el.textContent || '');
+      const state = JSON.parse(raw || '{}');
+      if (state.shift_map) SHIFT_DATA = state.shift_map;
+      if (state.staff_area_map) STAFF_DEFAULT_AREA = state.staff_area_map;
+    } catch (e) {}
+  }
+
+  function bindDeleteConfirms(root) {
+    (root || document).querySelectorAll('form[data-delete-confirm="true"]').forEach(function(form) {
+      if (form.dataset.deleteBound === '1') return;
+      form.dataset.deleteBound = '1';
+      form.addEventListener('submit', function(e) {
+        if (form.dataset.deleteConfirmed === '1') {
+          form.dataset.deleteConfirmed = '';
+          return;
         }
-        if (btn.dataset.receipt) {
-          buttons.forEach(b => {
-            if (b.dataset.receipt) b.classList.remove('active');
-          });
-          btn.classList.add('active');
-          if (receiptInput) {
-            receiptInput.value = btn.dataset.receipt || '';
-          }
-        }
-        if (completeBtn) {
-          const pm = paymentInput && paymentInput.value;
-          const rc = receiptInput && receiptInput.value;
-          completeBtn.disabled = !(pm && (pm === 'month_end' || rc));
+        e.preventDefault();
+        if (typeof window.openDeleteConfirmModal === 'function') {
+          window.openDeleteConfirmModal(form);
         }
       });
     });
-  });
+  }
 
-  const timelineCanvases = document.querySelectorAll('.schedule-row-canvas');
-  const staffButtons = document.querySelectorAll('.schedule-staff-col-button');
-  const details = document.querySelectorAll('.admin-resv-card[data-staff-name]');
-  const filterPanel = document.getElementById('schedule-filter-panel');
-  const filterStaffName = document.getElementById('schedule-filter-staff-name');
-  const workStartInput = document.getElementById('work-start-input');
-  const workEndInput = document.getElementById('work-end-input');
-  const workTimeSaveBtn = document.getElementById('work-time-save-btn');
-  const filterClearBtn = document.getElementById('schedule-filter-clear-btn');
-  const workTimeMessage = document.getElementById('work-time-message');
-  const workModeButtons = document.querySelectorAll('#work-mode-toggle button');
-  let selectedWorkMode = 'clinic';
-  let selectedShiftArea = 'fukuoka';
-
-  function getStaffDefaultArea(staffName) {
-    const key = String(staffName || '').trim();
-    return STAFF_DEFAULT_AREA[key] || 'tokyo';
-  }
-  function getShiftArea(staffName) {
-    const key = String(staffName || '').trim();
-    const row = SHIFT_DATA[key];
-    if (row && row.area) return row.area;
-    return getStaffDefaultArea(key);
-  }
-  function getShiftWorkMode(staffName) {
-    const key = String(staffName || '').trim();
-    const row = SHIFT_DATA[key];
-    if (!row) return 'unset';
-    if (row.work_mode) return row.work_mode;
-    if (row.is_off) return 'off';
-    return 'clinic';
-  }
-  function syncWorkModeToggleUI(mode, area, canEdit) {
-    selectedWorkMode = mode || 'unset';
-    if (selectedWorkMode === 'clinic') {
-      selectedShiftArea = (area === 'tokyo') ? 'tokyo' : 'fukuoka';
-    }
-    workModeButtons.forEach(function(btn) {
-      const btnMode = btn.dataset.mode || '';
-      const btnArea = btn.dataset.area || '';
-      let active = false;
-      if (btnMode === 'clinic' && selectedWorkMode === 'clinic') {
-        active = btnArea === selectedShiftArea;
-      } else {
-        active = btnMode === selectedWorkMode;
-      }
-      btn.classList.toggle('active', active);
-      btn.disabled = !canEdit;
+  function updateChromeForDay(dayKey) {
+    document.querySelectorAll('.admin-resv-day').forEach(function(el) {
+      el.classList.toggle('selected', el.getAttribute('data-day') === dayKey);
     });
-  }
-
-  function parseHmToMinute(s) {
-    const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return null;
-    const hh = parseInt(m[1], 10);
-    const mm = parseInt(m[2], 10);
-    if (hh < 0 || hh > 26 || mm < 0 || mm > 59) return null;
-    return hh * 60 + mm;
-  }
-  function minuteToHm(min) {
-    const v = Math.max(0, Math.min(26 * 60, Number(min) || 0));
-    const hh = String(Math.floor(v / 60)).padStart(2, '0');
-    const mm = String(v % 60).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
-  function getShift(day, staffName, startHour) {
-    const key = String(staffName || '').trim();
-    const row = SHIFT_DATA[key];
-    if (!row) {
-      return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
-    }
-    const st = parseHmToMinute(row.start);
-    const ed = parseHmToMinute(row.end);
-    let mode = row.work_mode || (row.is_off ? 'off' : 'clinic');
-    if (mode === 'unset' || (!row.work_mode && !row.is_off && (st === null || ed === null || ed <= st))) {
-      return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
-    }
-    if (mode === 'off') {
-      return { start: st, end: ed, is_off: true, unset: false, work_mode: 'off' };
-    }
-    if (st !== null && ed !== null && ed > st) {
-      return { start: st, end: ed, is_off: false, unset: false, work_mode: mode };
-    }
-    return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
-  }
-  function applyCanvasShiftBackground(canvas) {
-    const day = canvas.dataset.day || '';
-    const staffName = canvas.dataset.staffName || '';
-    const startHour = parseInt(canvas.dataset.startHour || '7', 10);
-    const pxPerMin = parseFloat(canvas.dataset.pxPerMin || '2');
-    if (!day || !staffName || !pxPerMin) return;
-    const shift = getShift(day, staffName, startHour);
-    const timelineStart = startHour * 60;
-    if (shift.unset || shift.work_mode === 'off' || shift.start === null || shift.end === null || shift.end <= shift.start) {
-      canvas.style.background = '#f1f5f9';
-      return;
-    }
-    const shiftStartPx = Math.max(0, (shift.start - timelineStart) * pxPerMin);
-    const shiftEndPx = Math.max(0, (shift.end - timelineStart) * pxPerMin);
-    const openColor = shift.work_mode === 'field' ? '#fff5f8' : '#ffffff';
-    canvas.style.background = `linear-gradient(to right, #f1f5f9 0px, #f1f5f9 ${shiftStartPx}px, ${openColor} ${shiftStartPx}px, ${openColor} ${shiftEndPx}px, #f1f5f9 ${shiftEndPx}px, #f1f5f9 100%)`;
-  }
-  function applyAllCanvasShiftBackgrounds() {
-    timelineCanvases.forEach(applyCanvasShiftBackground);
-  }
-
-  function filterDetailsByStaff(staffName) {
-    details.forEach(function(el) {
-      const n = (el.dataset.staffName || '').trim();
-      if (!staffName || n === staffName) {
-        el.classList.remove('hidden-by-staff-filter');
-      } else {
-        el.classList.add('hidden-by-staff-filter');
-      }
-    });
-  }
-
-  let selectedStaffName = '';
-  function syncTimeInputsForMode() {
-    const needsTime = selectedWorkMode === 'clinic' || selectedWorkMode === 'field';
-    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
-    if (workStartInput) workStartInput.disabled = !canEdit || !needsTime;
-    if (workEndInput) workEndInput.disabled = !canEdit || !needsTime;
-    if (!needsTime && workTimeMessage) {
-      if (selectedWorkMode === 'off') {
-        workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
-        workTimeMessage.style.color = '#64748b';
-      }
-    }
-  }
-  function showPanelForStaff(staffName) {
-    if (!filterPanel || !workStartInput || !workEndInput) return;
-    const anyCanvas = document.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(staffName)}"]`);
-    if (!anyCanvas) return;
-    const day = anyCanvas.dataset.day || '';
-    const startHour = parseInt(anyCanvas.dataset.startHour || '7', 10);
-    const shift = getShift(day, staffName, startHour);
-    selectedStaffName = staffName;
-    filterPanel.classList.add('show');
-    filterStaffName.textContent = `スタッフ: ${staffName}`;
-    const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
-    const mode = shift.unset ? 'clinic' : (shift.work_mode || 'clinic');
-    const area = getShiftArea(staffName);
-    syncWorkModeToggleUI(mode === 'unset' ? 'clinic' : mode, area, canEdit);
-    workStartInput.value = (shift.start !== null) ? minuteToHm(shift.start) : '';
-    workEndInput.value = (shift.end !== null) ? minuteToHm(shift.end) : '';
-    workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。東京/福岡/帯同と時間を入力して保存するとオープンになります。' : '';
-    workTimeSaveBtn.disabled = !canEdit;
-    workTimeSaveBtn.style.opacity = canEdit ? '1' : '0.5';
-    workTimeSaveBtn.style.cursor = canEdit ? 'pointer' : 'not-allowed';
-    if (!canEdit) {
-      workTimeMessage.textContent = 'このスタッフの勤務時間は編集できません。';
-      workTimeMessage.style.color = '#64748b';
-    }
-    syncTimeInputsForMode();
-  }
-
-  staffButtons.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      const staffName = btn.dataset.staffName || '';
-      if (!staffName) return;
-      filterDetailsByStaff(staffName);
-      showPanelForStaff(staffName);
-    });
-  });
-
-  workModeButtons.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (btn.disabled || !selectedStaffName) return;
-      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
-      if (!canEdit) return;
-      const mode = btn.dataset.mode || 'clinic';
-      const area = btn.dataset.area || selectedShiftArea;
-      syncWorkModeToggleUI(mode, area, true);
-      syncTimeInputsForMode();
-      if (mode === 'field') {
-        workTimeMessage.textContent = '帯同日: 時間を設定し、タイムラインに帯同カードを置けます。公開スケジュールは「休」、Web予約は受付不可です。';
-        workTimeMessage.style.color = '#64748b';
-      } else if (mode === 'off') {
-        workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
-        workTimeMessage.style.color = '#64748b';
-      } else {
-        workTimeMessage.textContent = '';
-      }
-    });
-  });
-
-  if (workTimeSaveBtn) {
-    workTimeSaveBtn.addEventListener('click', async function() {
-      if (!selectedStaffName) return;
-      const targetCanvas = document.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(selectedStaffName)}"]`);
-      if (!targetCanvas) return;
-      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
-      if (!canEdit) return;
-      const day = targetCanvas.dataset.day || '';
-      const mode = selectedWorkMode;
-      const st = parseHmToMinute(workStartInput.value);
-      const ed = parseHmToMinute(workEndInput.value);
-      if ((mode === 'clinic' || mode === 'field') && (st === null || ed === null || ed <= st)) {
-        workTimeMessage.textContent = (mode === 'field' ? '帯同' : '勤務') + '時間は HH:MM 形式で、終了は開始より後にしてください。';
-        workTimeMessage.style.color = '#b91c1c';
-        return;
-      }
+    const dayInput = document.querySelector('form[action="/admin/reservations"] input[name="day"]');
+    if (dayInput) dayInput.value = dayKey;
+    document.querySelectorAll('a[href*="/admin/reservations/new"]').forEach(function(a) {
       try {
-        const payload = {
-          date: day,
-          staff_name: selectedStaffName,
-          start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
-          end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
-          work_mode: mode,
-          area: mode === 'clinic' ? selectedShiftArea : null,
-          is_off: mode === 'off',
-        };
-        const res = await fetch('/admin/reservations/shifts/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.success) {
-          throw new Error(json.message || '保存に失敗しました');
+        const u = new URL(a.getAttribute('href'), window.location.origin);
+        if (u.pathname.indexOf('/admin/reservations/new') === 0) {
+          u.searchParams.set('date', dayKey);
+          a.setAttribute('href', u.pathname + u.search);
         }
-        SHIFT_DATA[selectedStaffName] = {
-          start: payload.start_time,
-          end: payload.end_time,
-          is_off: mode === 'off',
-          work_mode: mode,
-          area: mode === 'clinic' ? selectedShiftArea : null,
-        };
-        applyAllCanvasShiftBackgrounds();
-        const msg = mode === 'off' ? '休みを保存しました。'
-          : (mode === 'field' ? '帯同を保存しました。' : '勤務時間を保存しました。');
-        workTimeMessage.textContent = msg + '（カレンダー表示はページ再読込で更新されます）';
-        workTimeMessage.style.color = '#166534';
-      } catch (e) {
-        workTimeMessage.textContent = e.message || '保存に失敗しました。';
-        workTimeMessage.style.color = '#b91c1c';
-      }
+      } catch (e) {}
+    });
+    document.querySelectorAll('.admin-resv-nav-btn').forEach(function(a) {
+      try {
+        const u = new URL(a.getAttribute('href'), window.location.origin);
+        u.searchParams.set('day', dayKey);
+        a.setAttribute('href', u.pathname + u.search);
+      } catch (e) {}
     });
   }
 
-  if (filterClearBtn) {
-    filterClearBtn.addEventListener('click', function() {
-      selectedStaffName = '';
-      filterDetailsByStaff('');
-      if (filterPanel) filterPanel.classList.remove('show');
+  function initDayPanel() {
+    const panel = document.getElementById('admin-resv-day-panel');
+    const scope = panel || document;
+    readDayStateFromPanel();
+    bindDeleteConfirms(scope);
+
+    const paymentBlocks = scope.querySelectorAll('[data-reservation-id]');
+    paymentBlocks.forEach(function(block) {
+      const buttons = block.querySelectorAll('.payment-method-btn');
+      const completeBtn = block.querySelector('.payment-complete-btn');
+      const paymentInput = block.querySelector('input[name="payment_method"]');
+      const receiptInput = block.querySelector('input[name="receipt_status"]');
+      buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          if (btn.dataset.method) {
+            buttons.forEach(b => {
+              if (b.dataset.method) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            if (paymentInput) {
+              paymentInput.value = btn.dataset.method || '';
+            }
+          }
+          if (btn.dataset.receipt) {
+            buttons.forEach(b => {
+              if (b.dataset.receipt) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            if (receiptInput) {
+              receiptInput.value = btn.dataset.receipt || '';
+            }
+          }
+          if (completeBtn) {
+            const pm = paymentInput && paymentInput.value;
+            const rc = receiptInput && receiptInput.value;
+            completeBtn.disabled = !(pm && (pm === 'month_end' || rc));
+          }
+        });
+      });
     });
-  }
 
-  applyAllCanvasShiftBackgrounds();
+    const timelineCanvases = scope.querySelectorAll('.schedule-row-canvas');
+    const staffButtons = scope.querySelectorAll('.schedule-staff-col-button');
+    const details = scope.querySelectorAll('.admin-resv-card[data-staff-name]');
+    const filterPanel = scope.querySelector('#schedule-filter-panel');
+    const filterStaffName = scope.querySelector('#schedule-filter-staff-name');
+    const workStartInput = scope.querySelector('#work-start-input');
+    const workEndInput = scope.querySelector('#work-end-input');
+    const workTimeSaveBtn = scope.querySelector('#work-time-save-btn');
+    const filterClearBtn = scope.querySelector('#schedule-filter-clear-btn');
+    const workTimeMessage = scope.querySelector('#work-time-message');
+    const workModeButtons = scope.querySelectorAll('#work-mode-toggle button');
+    let selectedWorkMode = 'clinic';
+    let selectedShiftArea = 'fukuoka';
 
-  timelineCanvases.forEach(function(canvas) {
-    canvas.addEventListener('click', function(ev) {
-      if (ev.target.closest('.schedule-card')) {
-        return;
+    function getStaffDefaultArea(staffName) {
+      const key = String(staffName || '').trim();
+      return STAFF_DEFAULT_AREA[key] || 'tokyo';
+    }
+    function getShiftArea(staffName) {
+      const key = String(staffName || '').trim();
+      const row = SHIFT_DATA[key];
+      if (row && row.area) return row.area;
+      return getStaffDefaultArea(key);
+    }
+    function getShiftWorkMode(staffName) {
+      const key = String(staffName || '').trim();
+      const row = SHIFT_DATA[key];
+      if (!row) return 'unset';
+      if (row.work_mode) return row.work_mode;
+      if (row.is_off) return 'off';
+      return 'clinic';
+    }
+    function syncWorkModeToggleUI(mode, area, canEdit) {
+      selectedWorkMode = mode || 'unset';
+      if (selectedWorkMode === 'clinic') {
+        selectedShiftArea = (area === 'tokyo') ? 'tokyo' : 'fukuoka';
       }
+      workModeButtons.forEach(function(btn) {
+        const btnMode = btn.dataset.mode || '';
+        const btnArea = btn.dataset.area || '';
+        let active = false;
+        if (btnMode === 'clinic' && selectedWorkMode === 'clinic') {
+          active = btnArea === selectedShiftArea;
+        } else {
+          active = btnMode === selectedWorkMode;
+        }
+        btn.classList.toggle('active', active);
+        btn.disabled = !canEdit;
+      });
+    }
+
+    function parseHmToMinute(s) {
+      const m = String(s || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+      if (!m) return null;
+      const hh = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      if (hh < 0 || hh > 26 || mm < 0 || mm > 59) return null;
+      return hh * 60 + mm;
+    }
+    function minuteToHm(min) {
+      const v = Math.max(0, Math.min(26 * 60, Number(min) || 0));
+      const hh = String(Math.floor(v / 60)).padStart(2, '0');
+      const mm = String(v % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+    function getShift(day, staffName, startHour) {
+      const key = String(staffName || '').trim();
+      const row = SHIFT_DATA[key];
+      if (!row) {
+        return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
+      }
+      const st = parseHmToMinute(row.start);
+      const ed = parseHmToMinute(row.end);
+      let mode = row.work_mode || (row.is_off ? 'off' : 'clinic');
+      if (mode === 'unset' || (!row.work_mode && !row.is_off && (st === null || ed === null || ed <= st))) {
+        return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
+      }
+      if (mode === 'off') {
+        return { start: st, end: ed, is_off: true, unset: false, work_mode: 'off' };
+      }
+      if (st !== null && ed !== null && ed > st) {
+        return { start: st, end: ed, is_off: false, unset: false, work_mode: mode };
+      }
+      return { start: null, end: null, is_off: true, unset: true, work_mode: 'unset' };
+    }
+    function applyCanvasShiftBackground(canvas) {
       const day = canvas.dataset.day || '';
       const staffName = canvas.dataset.staffName || '';
       const startHour = parseInt(canvas.dataset.startHour || '7', 10);
       const pxPerMin = parseFloat(canvas.dataset.pxPerMin || '2');
-      if (!day || !pxPerMin) {
+      if (!day || !staffName || !pxPerMin) return;
+      const shift = getShift(day, staffName, startHour);
+      const timelineStart = startHour * 60;
+      if (shift.unset || shift.work_mode === 'off' || shift.start === null || shift.end === null || shift.end <= shift.start) {
+        canvas.style.background = '#f1f5f9';
         return;
       }
+      const shiftStartPx = Math.max(0, (shift.start - timelineStart) * pxPerMin);
+      const shiftEndPx = Math.max(0, (shift.end - timelineStart) * pxPerMin);
+      const openColor = shift.work_mode === 'field' ? '#fff5f8' : '#ffffff';
+      canvas.style.background = `linear-gradient(to right, #f1f5f9 0px, #f1f5f9 ${shiftStartPx}px, ${openColor} ${shiftStartPx}px, ${openColor} ${shiftEndPx}px, #f1f5f9 ${shiftEndPx}px, #f1f5f9 100%)`;
+    }
+    function applyAllCanvasShiftBackgrounds() {
+      timelineCanvases.forEach(applyCanvasShiftBackground);
+    }
 
-      const rect = canvas.getBoundingClientRect();
-      const clickX = ev.clientX - rect.left;
-      const totalMinutes = Math.max(0, Math.round(clickX / pxPerMin));
-      const minuteOfDay = (startHour * 60) + totalMinutes;
-      const hour = Math.max(0, Math.min(26, Math.floor(minuteOfDay / 60)));
-      const minute = Math.max(0, Math.min(59, minuteOfDay % 60));
-      const minuteRounded = Math.floor(minute / 15) * 15;
-      const hh = String(hour).padStart(2, '0');
-      const mm = String(minuteRounded).padStart(2, '0');
+    function filterDetailsByStaff(staffName) {
+      details.forEach(function(el) {
+        const n = (el.dataset.staffName || '').trim();
+        if (!staffName || n === staffName) {
+          el.classList.remove('hidden-by-staff-filter');
+        } else {
+          el.classList.add('hidden-by-staff-filter');
+        }
+      });
+    }
 
-      const url = `/admin/reservations/new?date=${encodeURIComponent(day)}&time=${encodeURIComponent(`${hh}:${mm}`)}&staff_name=${encodeURIComponent(staffName)}`;
-      window.location.href = url;
+    let selectedStaffName = '';
+    function syncTimeInputsForMode() {
+      const needsTime = selectedWorkMode === 'clinic' || selectedWorkMode === 'field';
+      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+      if (workStartInput) workStartInput.disabled = !canEdit || !needsTime;
+      if (workEndInput) workEndInput.disabled = !canEdit || !needsTime;
+      if (!needsTime && workTimeMessage) {
+        if (selectedWorkMode === 'off') {
+          workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
+          workTimeMessage.style.color = '#64748b';
+        }
+      }
+    }
+    function showPanelForStaff(staffName) {
+      if (!filterPanel || !workStartInput || !workEndInput) return;
+      const anyCanvas = scope.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(staffName)}"]`);
+      if (!anyCanvas) return;
+      const day = anyCanvas.dataset.day || '';
+      const startHour = parseInt(anyCanvas.dataset.startHour || '7', 10);
+      const shift = getShift(day, staffName, startHour);
+      selectedStaffName = staffName;
+      filterPanel.classList.add('show');
+      filterStaffName.textContent = `スタッフ: ${staffName}`;
+      const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === staffName);
+      const mode = shift.unset ? 'clinic' : (shift.work_mode || 'clinic');
+      const area = getShiftArea(staffName);
+      syncWorkModeToggleUI(mode === 'unset' ? 'clinic' : mode, area, canEdit);
+      workStartInput.value = (shift.start !== null) ? minuteToHm(shift.start) : '';
+      workEndInput.value = (shift.end !== null) ? minuteToHm(shift.end) : '';
+      workTimeMessage.textContent = shift.unset ? '勤務時間が未設定です。東京/福岡/帯同と時間を入力して保存するとオープンになります。' : '';
+      workTimeSaveBtn.disabled = !canEdit;
+      workTimeSaveBtn.style.opacity = canEdit ? '1' : '0.5';
+      workTimeSaveBtn.style.cursor = canEdit ? 'pointer' : 'not-allowed';
+      if (!canEdit) {
+        workTimeMessage.textContent = 'このスタッフの勤務時間は編集できません。';
+        workTimeMessage.style.color = '#64748b';
+      }
+      syncTimeInputsForMode();
+    }
+
+    staffButtons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const staffName = btn.dataset.staffName || '';
+        if (!staffName) return;
+        filterDetailsByStaff(staffName);
+        showPanelForStaff(staffName);
+      });
     });
+
+    workModeButtons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (btn.disabled || !selectedStaffName) return;
+        const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+        if (!canEdit) return;
+        const mode = btn.dataset.mode || 'clinic';
+        const area = btn.dataset.area || selectedShiftArea;
+        syncWorkModeToggleUI(mode, area, true);
+        syncTimeInputsForMode();
+        if (mode === 'field') {
+          workTimeMessage.textContent = '帯同日: 時間を設定し、タイムラインに帯同カードを置けます。公開スケジュールは「休」、Web予約は受付不可です。';
+          workTimeMessage.style.color = '#64748b';
+        } else if (mode === 'off') {
+          workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';
+          workTimeMessage.style.color = '#64748b';
+        } else {
+          workTimeMessage.textContent = '';
+        }
+      });
+    });
+
+    if (workTimeSaveBtn) {
+      workTimeSaveBtn.addEventListener('click', async function() {
+        if (!selectedStaffName) return;
+        const targetCanvas = scope.querySelector(`.schedule-row-canvas[data-staff-name="${CSS.escape(selectedStaffName)}"]`);
+        if (!targetCanvas) return;
+        const canEdit = SHIFT_CAN_EDIT_ALL || (VIEWER_STAFF_NAME === selectedStaffName);
+        if (!canEdit) return;
+        const day = targetCanvas.dataset.day || '';
+        const mode = selectedWorkMode;
+        const st = parseHmToMinute(workStartInput.value);
+        const ed = parseHmToMinute(workEndInput.value);
+        if ((mode === 'clinic' || mode === 'field') && (st === null || ed === null || ed <= st)) {
+          workTimeMessage.textContent = (mode === 'field' ? '帯同' : '勤務') + '時間は HH:MM 形式で、終了は開始より後にしてください。';
+          workTimeMessage.style.color = '#b91c1c';
+          return;
+        }
+        try {
+          const payload = {
+            date: day,
+            staff_name: selectedStaffName,
+            start_time: st === null ? (workStartInput.value || '10:00') : minuteToHm(st),
+            end_time: ed === null ? (workEndInput.value || '19:00') : minuteToHm(ed),
+            work_mode: mode,
+            area: mode === 'clinic' ? selectedShiftArea : null,
+            is_off: mode === 'off',
+          };
+          const res = await fetch('/admin/reservations/shifts/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            throw new Error(json.message || '保存に失敗しました');
+          }
+          SHIFT_DATA[selectedStaffName] = {
+            start: payload.start_time,
+            end: payload.end_time,
+            is_off: mode === 'off',
+            work_mode: mode,
+            area: mode === 'clinic' ? selectedShiftArea : null,
+          };
+          applyAllCanvasShiftBackgrounds();
+          const msg = mode === 'off' ? '休みを保存しました。'
+            : (mode === 'field' ? '帯同を保存しました。' : '勤務時間を保存しました。');
+          workTimeMessage.textContent = msg + '（カレンダー表示はページ再読込で更新されます）';
+          workTimeMessage.style.color = '#166534';
+        } catch (e) {
+          workTimeMessage.textContent = e.message || '保存に失敗しました。';
+          workTimeMessage.style.color = '#b91c1c';
+        }
+      });
+    }
+
+    if (filterClearBtn) {
+      filterClearBtn.addEventListener('click', function() {
+        selectedStaffName = '';
+        filterDetailsByStaff('');
+        if (filterPanel) filterPanel.classList.remove('show');
+      });
+    }
+
+    applyAllCanvasShiftBackgrounds();
+
+    timelineCanvases.forEach(function(canvas) {
+      canvas.addEventListener('click', function(ev) {
+        if (ev.target.closest('.schedule-card')) {
+          return;
+        }
+        const day = canvas.dataset.day || '';
+        const staffName = canvas.dataset.staffName || '';
+        const startHour = parseInt(canvas.dataset.startHour || '7', 10);
+        const pxPerMin = parseFloat(canvas.dataset.pxPerMin || '2');
+        if (!day || !pxPerMin) {
+          return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const clickX = ev.clientX - rect.left;
+        const totalMinutes = Math.max(0, Math.round(clickX / pxPerMin));
+        const minuteOfDay = (startHour * 60) + totalMinutes;
+        const hour = Math.max(0, Math.min(26, Math.floor(minuteOfDay / 60)));
+        const minute = Math.max(0, Math.min(59, minuteOfDay % 60));
+        const minuteRounded = Math.floor(minute / 15) * 15;
+        const hh = String(hour).padStart(2, '0');
+        const mm = String(minuteRounded).padStart(2, '0');
+
+        const url = `/admin/reservations/new?date=${encodeURIComponent(day)}&time=${encodeURIComponent(`${hh}:${mm}`)}&staff_name=${encodeURIComponent(staffName)}`;
+        window.location.href = url;
+      });
+    });
+  }
+
+  async function loadDayFromHref(href, push) {
+    const panel = document.getElementById('admin-resv-day-panel');
+    if (!panel) {
+      window.location.href = href;
+      return;
+    }
+    let u;
+    try {
+      u = new URL(href, window.location.origin);
+    } catch (e) {
+      window.location.href = href;
+      return;
+    }
+    const dayKey = u.searchParams.get('day');
+    if (!dayKey) {
+      window.location.href = href;
+      return;
+    }
+    u.searchParams.set('partial', 'day');
+    const seq = ++dayLoadSeq;
+    panel.classList.add('is-loading');
+    try {
+      const res = await fetch(u.pathname + u.search, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+      });
+      const ctype = (res.headers.get('Content-Type') || '').toLowerCase();
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = '/staff/login';
+        return;
+      }
+      if (!res.ok || ctype.indexOf('json') !== -1) {
+        window.location.href = href;
+        return;
+      }
+      const html = await res.text();
+      if (seq !== dayLoadSeq) return;
+      if (html.indexOf('admin-resv-day-state') === -1) {
+        window.location.href = href;
+        return;
+      }
+      panel.innerHTML = html;
+      panel.classList.remove('is-loading');
+      const next = new URL(href, window.location.origin);
+      next.searchParams.delete('partial');
+      if (push) {
+        history.pushState({ day: dayKey }, '', next.pathname + next.search);
+      }
+      updateChromeForDay(dayKey);
+      initDayPanel();
+    } catch (e) {
+      window.location.href = href;
+    }
+  }
+
+  const calendarDays = document.querySelector('.admin-resv-calendar-days');
+  if (calendarDays) {
+    calendarDays.addEventListener('click', function(ev) {
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      const a = ev.target.closest('a.admin-resv-day');
+      if (!a) return;
+      ev.preventDefault();
+      loadDayFromHref(a.getAttribute('href'), true);
+    });
+  }
+
+  window.addEventListener('popstate', function() {
+    const params = new URLSearchParams(window.location.search);
+    const day = params.get('day');
+    if (!day) return;
+    const href = window.location.pathname + window.location.search;
+    loadDayFromHref(href, false);
   });
+
+  initDayPanel();
 });
 </script>
+
 
 
 {% endblock %}

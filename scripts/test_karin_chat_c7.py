@@ -588,7 +588,7 @@ def main() -> int:
         chat_page = client.get("/chat")
         index_page = client.get("/")
         book_page = client.get("/book")
-        icon = client.get("/static/images/chatbotfaceicon.png")
+        icon = client.get("/static/images/chatbotfaceicon.jpg")
         empty = client.post("/api/chat", json={})
         empty_body = empty.get_json(silent=True) or {}
         print("  /chat", chat_page.status_code, "/book", book_page.status_code, "icon", icon.status_code)
@@ -600,10 +600,12 @@ def main() -> int:
             failures.append("UI: トップの相談する導線がない")
         if "karin-chat-fab" not in index_page.get_data(as_text=True):
             failures.append("UI: 右下アイコン起動がない")
-        if icon.status_code != 200 or "png" not in (icon.content_type or "").lower():
-            failures.append("UI: 顔アイコンPNGが読めない")
-        if "chatbotfaceicon.png" not in widget:
+        if icon.status_code != 200 or ("jpeg" not in (icon.content_type or "").lower() and "jpg" not in (icon.content_type or "").lower()):
+            failures.append("UI: 顔アイコンJPGが読めない")
+        if "chatbotfaceicon.jpg" not in widget:
             failures.append("UI: AIアイコン参照がない")
+        if "chatbotfaceicon.png" in widget:
+            failures.append("UI: PNG参照が残っている")
         if "img.alt = \"KARiN.chatbot\"" not in js:
             failures.append("UI: AIアイコン alt がない")
         if re.search(r"row--user[\s\S]{0,400}chatbotfaceicon", js):

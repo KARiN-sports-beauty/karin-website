@@ -19,11 +19,13 @@
   {% endif %}
   <meta name="twitter:card" content="summary_large_image">
   {% include "notes/_article_jsonld.html" %}
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/blog_style.css') }}?v=20260611">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260801">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_article.css') }}?v=20260923">
 </head>
 <body class="notes-page notes-page--feature">
+  {% include "notes/_article_header.html" %}
   <section class="notes-feature">
     <header class="notes-feature-hero{% if not blog.image %} notes-feature-hero--no-image{% endif %}">
       {% if blog.image %}
