@@ -6,7 +6,7 @@
 </div>
 <input type="file" id="body-image-input" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" style="display: none;">
 <div id="static-image-picker" style="display: none; margin-bottom: 12px; padding: 12px; border: 1px solid #e2e6ed; border-radius: 10px; background: #f8f9fc; max-height: 220px; overflow-y: auto;">
-  <p style="margin: 0 0 8px; font-size: 0.85rem; color: #666;">static/images 内の画像（クリックで本文に挿入）</p>
+  <p style="margin: 0 0 8px; font-size: 0.85rem; color: #666;">NOTES用 images/notes（未移動の記事画像も表示されます。クリックで本文に挿入）</p>
   <div id="static-image-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
 </div>
 <p style="margin: 0 0 8px; font-size: 0.8rem; color: #888;">※ HEIC（iPhoneのそのまま）は不可。jpg / png / webp にしてください。カーソル位置に &lt;img&gt; タグが入ります。</p>
@@ -107,7 +107,8 @@ document.addEventListener("DOMContentLoaded", function () {
       (data.images || []).forEach((img) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = img.name;
+        const label = img.location === "root" ? img.name + "（未移動）" : img.name;
+        btn.textContent = label;
         btn.style.cssText = "text-align:left;padding:6px 10px;border:1px solid #dde3ec;border-radius:8px;background:#fff;cursor:pointer;font-size:0.85rem;color:#1E3A5F;";
         btn.addEventListener("click", () => {
           insertAtCursor('<img src="' + img.url + '" alt="' + img.name.replace(/"/g, "") + '">');
@@ -117,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
         staticList.appendChild(btn);
       });
       if (!(data.images || []).length) {
-        staticList.innerHTML = '<p style="margin:0;color:#888;font-size:0.85rem;">static/images に画像がありません</p>';
+        staticList.innerHTML = '<p style="margin:0;color:#888;font-size:0.85rem;">images/notes に画像がありません。新しい記事写真は notes フォルダへ入れてください。</p>';
       }
       staticLoaded = true;
       setStatus("");

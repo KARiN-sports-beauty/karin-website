@@ -218,12 +218,12 @@
         {% endif %}
         <div class="photo-upload-info">
           <select name="profile_image_key" id="profile_image_key" class="select">
-            <option value="">images から選択</option>
+            <option value="">staff から選択</option>
             {% for image_key in profile_image_keys %}
             <option value="{{ image_key }}" {% if staff.profile_image_key == image_key %}selected{% endif %}>{{ image_key }}</option>
             {% endfor %}
           </select>
-          <p style="font-size: 0.85rem; color: #666; margin: 8px 0 0;">サイトの images フォルダにある画像から選びます。</p>
+          <p style="font-size: 0.85rem; color: #666; margin: 8px 0 0;">images/staff フォルダにある写真から選びます。</p>
           <p style="font-size: 0.85rem; color: #666; margin: 4px 0 0;">選んだ写真が、このスタッフの NOTES 記事「この記事を書いた人」に表示されます。</p>
         </div>
       </div>
@@ -327,7 +327,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const select = document.getElementById('profile_image_key');
   const preview = document.getElementById('photo-preview');
-  const imagesBase = {{ url_for('static', filename='images') | tojson }} + '/';
+  const imagesBase = {{ url_for('static', filename='images/staff') | tojson }} + '/';
   const emptySrc = {{ url_for('static', filename='images/relogo.png') | tojson }};
   if (!select || !preview) return;
   select.addEventListener('change', () => {

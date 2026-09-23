@@ -2519,25 +2519,53 @@ def admin_blog_body_image_upload():
 @app.route("/admin/blogs/static-images", methods=["GET"])
 @staff_section_required("blogs")
 def admin_blog_static_images():
-    """本文挿入用: static/images 内の画像一覧"""
+    """本文挿入用: notes フォルダと、未移動の NOTES 画像"""
     try:
-        images_dir = os.path.join(app.static_folder or "static", "images")
-        allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+        from urllib.parse import quote
+
+        allowed_exts = _NOTES_STATIC_IMAGE_EXTS
         items = []
-        if os.path.isdir(images_dir):
-            for name in sorted(os.listdir(images_dir), reverse=True):
+        root = _static_images_root()
+        notes_dir = _notes_images_dir()
+
+        def append_from_dir(directory, url_prefix, location):
+            if not os.path.isdir(directory):
+                return
+            for name in sorted(os.listdir(directory), reverse=True):
+                if len(items) >= 200:
+                    return
+                if name.startswith("."):
+                    continue
                 ext = os.path.splitext(name)[1].lower()
                 if ext not in allowed_exts:
                     continue
-                if name.startswith("."):
+                path = os.path.join(directory, name)
+                if not os.path.isfile(path):
                     continue
-                from urllib.parse import quote
+                items.append({
+                    "name": name,
+                    "url": url_prefix + quote(name),
+                    "location": location,
+                })
+
+        append_from_dir(notes_dir, "/static/images/notes/", "notes")
+        if os.path.isdir(root):
+            for name in sorted(os.listdir(root), reverse=True):
+                if len(items) >= 200:
+                    break
+                if name.startswith(".") or _is_site_image_name(name):
+                    continue
+                ext = os.path.splitext(name)[1].lower()
+                if ext not in allowed_exts:
+                    continue
+                path = os.path.join(root, name)
+                if not os.path.isfile(path):
+                    continue
                 items.append({
                     "name": name,
                     "url": "/static/images/" + quote(name),
+                    "location": "root",
                 })
-                if len(items) >= 200:
-                    break
         return jsonify({"success": True, "images": items})
     except Exception as e:
         print("❌ static画像一覧エラー:", e)
@@ -3637,11 +3665,40 @@ def admin_staff_delete(user_id):
 
 
 _STAFF_PROFILE_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+_NOTES_STATIC_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+_SITE_IMAGE_NAME_PREFIXES = (
+    "treatment",
+    "slide",
+    "tokyoseitai",
+    "tokyoshinkyu",
+    "faq-bg",
+    "koji_profile",
+    "chatbotfaceicon",
+    "relogo",
+    "logoname",
+    "hands-treatment",
+    "lp-philosophy",
+    "favicon",
+    "default_staff",
+)
+
+
+def _static_images_root():
+    static_folder = app.static_folder or os.path.join(os.path.dirname(__file__), "static")
+    return os.path.join(static_folder, "images")
 
 
 def _staff_images_dir():
-    static_folder = app.static_folder or os.path.join(os.path.dirname(__file__), "static")
-    return os.path.join(static_folder, "images")
+    return os.path.join(_static_images_root(), "staff")
+
+
+def _notes_images_dir():
+    return os.path.join(_static_images_root(), "notes")
+
+
+def _is_site_image_name(name):
+    lower = (name or "").lower()
+    return any(lower.startswith(prefix) for prefix in _SITE_IMAGE_NAME_PREFIXES)
 
 
 def _sanitize_profile_image_key(raw_key):
@@ -3681,7 +3738,7 @@ def list_staff_profile_image_keys():
 
 
 def resolve_staff_profile_image_key(meta):
-    """記事著者写真の正本。static/images 内のファイル名（キー）でスタッフと一致させる。"""
+    """記事著者写真の正本。static/images/staff 内のファイル名（キー）でスタッフと一致させる。"""
     meta = meta or {}
     key = _sanitize_profile_image_key(meta.get("profile_image_key"))
     if _profile_image_key_exists(key):
@@ -3698,7 +3755,7 @@ def resolve_staff_profile_image_url(meta):
     key = resolve_staff_profile_image_key(meta)
     if not key:
         return ""
-    return url_for("static", filename=f"images/{key}")
+    return url_for("static", filename=f"images/staff/{key}")
 
 
 def _author_info_from_auth_user(author_user):
@@ -3848,7 +3905,7 @@ def staff_profile_edit():
             "blog_comment": blog_comment,
             "profile_image_key": profile_image_key,
             "profile_image_url": (
-                f"/static/images/{profile_image_key}" if profile_image_key else ""
+                f"/static/images/staff/{profile_image_key}" if profile_image_key else ""
             ),
         })
 
@@ -3867,7 +3924,7 @@ def staff_profile_edit():
         session["staff"]["phone"] = new_phone
         session["staff"]["profile_image_key"] = profile_image_key or None
         session["staff"]["profile_image_url"] = (
-            url_for("static", filename=f"images/{profile_image_key}")
+            url_for("static", filename=f"images/staff/{profile_image_key}")
             if profile_image_key else None
         )
 
