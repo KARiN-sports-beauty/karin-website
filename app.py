@@ -64,7 +64,7 @@ def format_blog_date_display(value):
 
 import json, os
 import mimetypes
-from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
@@ -2294,16 +2294,16 @@ def get_staff_choices():
 def normalize_blog_image_url(image_url):
     if not image_url:
         return ""
-    image_url = image_url.strip()
+    image_url = unquote(str(image_url).strip())
     if not image_url:
         return ""
     if image_url.startswith("http"):
         return image_url
     if image_url.startswith("/static/"):
-        filename = image_url.replace("/static/", "")
+        filename = image_url.replace("/static/", "", 1)
         return url_for("static", filename=filename)
     if image_url.startswith("static/"):
-        filename = image_url.replace("static/", "")
+        filename = image_url.replace("static/", "", 1)
         return url_for("static", filename=filename)
     if re.search(r"\.(jpg|jpeg|png|webp)$", image_url, re.IGNORECASE):
         return url_for("static", filename=f"images/blogs/{image_url}")
@@ -2521,8 +2521,6 @@ def admin_blog_body_image_upload():
 def admin_blog_static_images():
     """本文挿入用: notes フォルダと、未移動の NOTES 画像"""
     try:
-        from urllib.parse import quote
-
         allowed_exts = _NOTES_STATIC_IMAGE_EXTS
         items = []
         root = _static_images_root()
@@ -2544,7 +2542,7 @@ def admin_blog_static_images():
                     continue
                 items.append({
                     "name": name,
-                    "url": url_prefix + quote(name),
+                    "url": url_prefix + name,
                     "location": location,
                 })
 
@@ -2563,7 +2561,7 @@ def admin_blog_static_images():
                     continue
                 items.append({
                     "name": name,
-                    "url": "/static/images/" + quote(name),
+                    "url": "/static/images/" + name,
                     "location": "root",
                 })
         return jsonify({"success": True, "images": items})
@@ -4317,7 +4315,7 @@ def admin_blog_new():
         slug = generate_unique_slug("blogs", title)
 
     excerpt = request.form.get("excerpt", "").strip()
-    image = request.form.get("image", "").strip()
+    image = unquote(request.form.get("image", "").strip())
     image_file = request.files.get("image_file")
     if image_file and image_file.filename:
         try:
@@ -4439,7 +4437,7 @@ def admin_blog_edit(blog_id):
         slug = generate_unique_slug("blogs", title, current_id=blog_id)
     
     excerpt = request.form.get("excerpt", "").strip()
-    image = request.form.get("image", "").strip()
+    image = unquote(request.form.get("image", "").strip())
     image_file = request.files.get("image_file")
     if image_file and image_file.filename:
         try:
