@@ -3787,7 +3787,11 @@ def _author_info_from_auth_user(author_user):
 def staff_profile():
     """スタッフページ（メインページ：カード選択画面）"""
     staff = session.get("staff")
-    return render_template("staff_profile_menu.html", staff=staff)
+    return render_template(
+        "staff_profile_menu.html",
+        staff=staff,
+        message=request.args.get("message"),
+    )
 
 
 @app.route("/staff/profile/edit", methods=["GET", "POST"])
@@ -3929,7 +3933,7 @@ def staff_profile_edit():
         )
 
         return redirect(url_for(
-            "staff_profile_edit",
+            "staff_profile",
             message="プロフィールを更新しました"
         ))
 

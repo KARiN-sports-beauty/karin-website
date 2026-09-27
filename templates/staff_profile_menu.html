@@ -4,6 +4,10 @@
 {% block content %}
 <h2 class="admin-title">👤 スタッフページ</h2>
 
+{% if message %}
+  <p style="margin-top: 12px; margin-bottom: 8px; color: #4CAF50; text-align: center; padding: 12px; background: #d4edda; border-radius: 8px;">{{ message }}</p>
+{% endif %}
+
 <div class="dashboard-grid" style="margin-top: 20px;">
   <!-- スタッフ日報 -->
   <a href="/staff/daily-report/new" class="dash-card">

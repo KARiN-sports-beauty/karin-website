@@ -1,0 +1,81 @@
+<div style="margin-top: 8px;">
+  <button type="button" id="thumb-static-image-btn" class="admin-blog-btn-white" style="border: 1px solid #ccc; cursor: pointer; padding: 8px 12px; font-size: 0.9rem; background: #fff;">📁 サーバー内の画像から選択</button>
+  <span id="thumb-image-status" style="font-size: 0.85rem; color: #666; margin-left: 8px;"></span>
+</div>
+<div id="thumb-static-image-picker" style="display: none; margin-top: 10px; padding: 12px; border: 1px solid #e2e6ed; border-radius: 10px; background: #f8f9fc; max-height: 220px; overflow-y: auto;">
+  <p style="margin: 0 0 8px; font-size: 0.85rem; color: #666;">NOTES用 images/notes（未移動の記事画像も表示されます。クリックでサムネイルに設定）</p>
+  <div id="thumb-static-image-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+</div>
+<p style="margin: 6px 0 0; font-size: 0.8rem; color: #666;">images/notes の画像を選びます。先に軽くした jpg を notes に入れてから選んでください。</p>
+<div id="thumb-image-preview-wrap" style="margin-top: 10px;{% if not (preview_src or '') %} display: none;{% endif %}">
+  <img id="thumb-image-preview" src="{{ preview_src or '' }}" alt="サムネイルプレビュー" style="max-width: 240px; max-height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e6ed; background: #fff;">
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const thumbBtn = document.getElementById("thumb-static-image-btn");
+  const thumbPicker = document.getElementById("thumb-static-image-picker");
+  const thumbList = document.getElementById("thumb-static-image-list");
+  const thumbStatus = document.getElementById("thumb-image-status");
+  const thumbInput = document.getElementById("blog-thumb-image-input");
+  const previewWrap = document.getElementById("thumb-image-preview-wrap");
+  const preview = document.getElementById("thumb-image-preview");
+  if (!thumbBtn || !thumbInput) return;
+
+  function setThumbStatus(msg, isError) {
+    if (!thumbStatus) return;
+    thumbStatus.textContent = msg || "";
+    thumbStatus.style.color = isError ? "#c62828" : "#666";
+  }
+
+  function setPreview(url) {
+    if (!preview || !previewWrap) return;
+    if (url) {
+      preview.src = url;
+      previewWrap.style.display = "block";
+    } else {
+      preview.removeAttribute("src");
+      previewWrap.style.display = "none";
+    }
+  }
+
+  let thumbLoaded = false;
+  thumbBtn.addEventListener("click", async () => {
+    const show = thumbPicker.style.display === "none";
+    thumbPicker.style.display = show ? "block" : "none";
+    if (!show || thumbLoaded) return;
+
+    setThumbStatus("画像一覧を読み込み中...");
+    try {
+      const res = await fetch("/admin/blogs/static-images", {
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "一覧の取得に失敗しました");
+      thumbList.innerHTML = "";
+      (data.images || []).forEach((img) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const label = img.location === "root" ? img.name + "（未移動）" : img.name;
+        btn.textContent = label;
+        btn.style.cssText = "text-align:left;padding:6px 10px;border:1px solid #dde3ec;border-radius:8px;background:#fff;cursor:pointer;font-size:0.85rem;color:#1E3A5F;";
+        btn.addEventListener("click", () => {
+          thumbInput.value = img.url;
+          setPreview(img.url);
+          setThumbStatus("サムネイルに設定しました: " + img.name);
+          thumbPicker.style.display = "none";
+        });
+        thumbList.appendChild(btn);
+      });
+      if (!(data.images || []).length) {
+        thumbList.innerHTML = '<p style="margin:0;color:#888;font-size:0.85rem;">images/notes に画像がありません。新しい記事写真は notes フォルダへ入れてください。</p>';
+      }
+      thumbLoaded = true;
+      setThumbStatus("");
+    } catch (e) {
+      setThumbStatus(e.message || String(e), true);
+    }
+  });
+});
+</script>

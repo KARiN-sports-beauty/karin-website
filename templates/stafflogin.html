@@ -89,15 +89,15 @@
     <p class="error-msg">{{ error }}</p>
   {% endif %}
 
-  <form action="/staff/login" method="POST">
+  <form action="/staff/login" method="POST" id="staff-login-form">
     <div class="form-group">
       <label>メールアドレス</label>
-      <input type="email" name="email" class="input" required>
+      <input type="email" name="email" class="input" required autocomplete="username">
     </div>
 
     <div class="form-group">
       <label>パスワード</label>
-      <input type="password" name="password" class="input" required>
+      <input type="password" name="password" class="input" required autocomplete="current-password" enterkeyhint="go">
     </div>
 
     <button type="submit" class="login-btn">ログイン</button>
@@ -114,6 +114,24 @@
 
   </form>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("staff-login-form");
+  if (!form) return;
+  form.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    if (e.isComposing || e.keyCode === 229) return;
+    if (!e.target || e.target.tagName !== "INPUT") return;
+    e.preventDefault();
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.submit();
+    }
+  });
+});
+</script>
 
 </body>
 </html>
