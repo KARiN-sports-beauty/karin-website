@@ -155,7 +155,7 @@
 .trainer-intro-copy {
   box-sizing: border-box;
   z-index: 1;
-  padding: 72px 6% 72px 10%;
+  padding: 72px 6% 72px 8vw;
 }
 
 .trainer-page .trainer-intro-key {
@@ -252,6 +252,22 @@
   text-align: left;
 }
 
+@media (min-width: 1025px) {
+  .trainer-page .tx-philosophy + .tx-section {
+    text-align: left;
+  }
+
+  .trainer-page .tx-philosophy + .tx-section .tx-inner--narrow {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .trainer-page .tx-philosophy + .tx-section .tx-heading::after {
+    left: 0;
+    transform: none;
+  }
+}
+
 @media (max-width: 1024px) {
   .trainer-page .hamburger,
   .trainer-page .nav-overlay {
@@ -293,7 +309,7 @@
   }
 
   .trainer-intro-copy {
-    padding: 56px 5% 56px 8%;
+    padding: 56px 5% 56px 7vw;
   }
 
   .trainer-intro-media {
@@ -338,7 +354,7 @@
   }
 
   .trainer-intro-copy {
-    padding: 56px 8% 64px;
+    padding: 32px 8% 24px;
   }
 
   .trainer-page .trainer-intro-key {
@@ -348,6 +364,10 @@
 
   .trainer-intro-media {
     display: none;
+  }
+
+  .trainer-page .tx-philosophy + .tx-section {
+    padding-top: 36px;
   }
 }
 
