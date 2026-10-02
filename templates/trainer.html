@@ -60,6 +60,13 @@
 
 <body class="treatment-page trainer-page">
 
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('contact') }}" class="nav-book">相談する</a>
+    </nav>
+  </header>
+
   <section class="tx-hero" aria-labelledby="trainer-heading">
     <div class="tx-hero-media" aria-hidden="true">
       <img src="{{ url_for('static', filename='images/trainerfv.jpg') }}" alt="" width="720" height="480" decoding="async">
@@ -208,12 +215,22 @@
       duration: 800,
       once: true
     });
-  </script>
 
-  <a href="{{ url_for('index') }}" class="home-btn">
-    <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
-    <span>ホームに戻る</span>
-  </a>
+    (function () {
+      var page = document.querySelector(".trainer-page");
+      var hero = document.querySelector(".tx-hero");
+      if (!page || !hero || !("IntersectionObserver" in window)) return;
+
+      var observer = new IntersectionObserver(function (entries) {
+        page.classList.toggle("is-past-hero", !entries[0].isIntersecting);
+      }, {
+        root: null,
+        threshold: 0,
+        rootMargin: "-70px 0px 0px 0px"
+      });
+      observer.observe(hero);
+    })();
+  </script>
 
 </body>
 </html>

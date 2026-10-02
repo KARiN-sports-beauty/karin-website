@@ -1,8 +1,76 @@
 /* =========================================================
    /trainer 専用
-   tx-* / home-btn は treatment.css を流用。
-   長い見出しと h3 だけここで調整する。
+   tx-* は treatment.css を流用。
+   ヘッダーは /tokyo/seitai と同じ透明→白の切り替え。
 ========================================================= */
+
+.trainer-page .header {
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
+  box-shadow: none;
+  border-bottom: none;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.trainer-page .logo {
+  color: #ffffff;
+  transition: color 0.4s ease;
+}
+
+.trainer-page .nav {
+  gap: 10px;
+}
+
+.trainer-page .nav-book {
+  min-height: 32px;
+  padding: 5px 14px;
+  background: transparent;
+  color: #c0a062;
+  border-color: #c0a062;
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+@media (hover: hover) {
+  .trainer-page .nav a.nav-book:hover {
+    background: transparent;
+    color: #d4b57a;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
+}
+
+.trainer-page.is-past-hero .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
+.trainer-page.is-past-hero .logo {
+  color: #1E3A5F;
+}
+
+.trainer-page.is-past-hero .nav-book {
+  background: #1E3A5F;
+  color: #ffffff;
+  border-color: #1E3A5F;
+}
+
+@media (hover: hover) {
+  .trainer-page.is-past-hero .nav a.nav-book:hover {
+    background: #4a5f7a;
+    color: #ffffff;
+    border-color: #4a5f7a;
+    box-shadow: none;
+  }
+}
 
 .trainer-page .tx-hero {
   grid-template-columns: 1fr;
@@ -45,7 +113,7 @@
   align-items: flex-start;
   width: 100%;
   max-width: none;
-  padding: 80px 46% 72px 8%;
+  padding: 110px 46% 72px 8%;
 }
 
 .trainer-page .tx-hero-copy-inner {
@@ -185,8 +253,39 @@
 }
 
 @media (max-width: 1024px) {
+  .trainer-page .hamburger,
+  .trainer-page .nav-overlay {
+    display: none;
+  }
+
+  .trainer-page .nav {
+    position: static;
+    right: auto;
+    width: auto;
+    height: auto;
+    background: transparent;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
+    overflow: visible;
+  }
+
+  .trainer-page .nav .nav-book {
+    width: auto;
+    max-width: none;
+    margin-top: 0;
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+  }
+
   .trainer-page .tx-hero-copy {
-    padding: 64px 42% 56px 7%;
+    padding: 96px 42% 56px 7%;
   }
 
   .trainer-intro {
@@ -209,7 +308,7 @@
 
   .trainer-page .tx-hero-copy {
     justify-content: flex-start;
-    padding: 32px 42% 28px 8%;
+    padding: 88px 42% 28px 8%;
   }
 
   .trainer-page .tx-hero-copy-inner {
@@ -249,5 +348,17 @@
 
   .trainer-intro-media {
     display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .trainer-page .logo {
+    font-size: 1.55rem;
+  }
+
+  .trainer-page .nav .nav-book {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    min-height: 28px;
   }
 }
