@@ -6,7 +6,11 @@
   "headline": {{ blog.title | tojson }},
   "url": "https://karin-sb.jp/blog/{{ blog.slug }}",
   {% if blog.image %}
-  "image": {{ blog.image | tojson }},
+  {% set jsonld_image = blog.image %}
+  {% if jsonld_image.startswith('/') %}
+  {% set jsonld_image = 'https://karin-sb.jp' ~ jsonld_image %}
+  {% endif %}
+  "image": {{ jsonld_image | tojson }},
   {% endif %}
   "author": {% if author_info and author_info.name and '藤田' not in author_info.name %}{
     "@type": "Person",
