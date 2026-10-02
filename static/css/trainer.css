@@ -1,0 +1,82 @@
+/* =========================================================
+   /trainer 専用
+   tx-* / home-btn は treatment.css を流用。
+   長い見出しと h3 だけここで調整する。
+========================================================= */
+
+.trainer-page .tx-hero-copy-inner {
+  width: max-content;
+  max-width: 100%;
+}
+
+.trainer-page .tx-hero-title {
+  font-size: clamp(1.5rem, 3.2vw, 2.15rem);
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  word-break: keep-all;
+  line-break: strict;
+}
+
+.trainer-page .tx-philosophy .tx-body {
+  margin-top: 0;
+}
+
+.trainer-page .tx-subheading {
+  margin: 2em 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  text-align: left;
+}
+
+.trainer-page .tx-subheading + .tx-body {
+  margin-top: 16px;
+}
+
+.trainer-page .tx-body + .tx-extra-list {
+  margin-top: 28px;
+}
+
+.trainer-page .tx-body + .tx-text-link {
+  margin-top: 20px;
+}
+
+.trainer-page .tx-text-link + .tx-body {
+  margin-top: 36px;
+}
+
+.trainer-page .tx-catch {
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .trainer-page .tx-hero {
+    grid-template-columns: 1fr;
+    grid-template-areas: "copy";
+  }
+
+  .trainer-page .tx-hero-copy {
+    width: 100%;
+    max-width: none;
+    padding: 28px 40% 24px 8%;
+  }
+
+  .trainer-page .tx-hero-copy-inner {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .trainer-page .tx-hero-title {
+    display: block;
+    width: 100%;
+    font-size: 1.28rem;
+    letter-spacing: 0.03em;
+  }
+
+  .trainer-page .tx-hero-lead {
+    word-break: keep-all;
+    line-break: strict;
+  }
+}

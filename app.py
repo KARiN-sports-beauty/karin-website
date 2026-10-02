@@ -3076,6 +3076,11 @@ def sort_key(p):
 def treatment():
     return render_template("treatment.html")
 
+
+@app.route("/trainer")
+def trainer():
+    return render_template("trainer.html")
+
 @app.route("/lp")
 def lp():
     """東京・福岡共通の初回向けLP"""
@@ -6139,6 +6144,7 @@ def sitemap():
         static_urls = [
             ("/", "weekly"),
             ("/treatment", "weekly"),
+            ("/trainer", "weekly"),
             ("/price", "weekly"),
             ("/contact", "weekly"),
             ("/form", "weekly"),
