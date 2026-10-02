@@ -8,6 +8,8 @@
   grid-template-columns: 1fr;
   grid-template-areas: "copy";
   background-color: #1e3a5f;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 
 .trainer-page .tx-hero-media {
@@ -69,7 +71,7 @@
 
 .trainer-page .tx-philosophy {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
   text-align: left;
   background-color: #ffffff;
@@ -228,7 +230,7 @@
   }
 
   .trainer-page .tx-hero-media img {
-    object-position: 82% 48%;
+    object-position: 92% 48%;
   }
 
   .trainer-intro {
