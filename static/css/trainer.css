@@ -4,6 +4,48 @@
    長い見出しと h3 だけここで調整する。
 ========================================================= */
 
+.trainer-page .tx-hero {
+  grid-template-columns: 1fr;
+  grid-template-areas: "copy";
+  background-color: #1e3a5f;
+}
+
+.trainer-page .tx-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  grid-area: auto;
+  z-index: 0;
+}
+
+.trainer-page .tx-hero-media img {
+  object-position: 78% 40%;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.trainer-page .tx-hero-media::after {
+  background: linear-gradient(
+    90deg,
+    #1e3a5f 0%,
+    rgba(30, 58, 95, 0.96) 22%,
+    rgba(30, 58, 95, 0.62) 38%,
+    rgba(30, 58, 95, 0.22) 52%,
+    rgba(30, 58, 95, 0.06) 68%,
+    transparent 84%
+  );
+}
+
+.trainer-page .tx-hero-copy {
+  z-index: 1;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: none;
+  padding: 80px 46% 72px 8%;
+}
+
 .trainer-page .tx-hero-copy-inner {
   width: max-content;
   max-width: 100%;
@@ -15,26 +57,50 @@
   letter-spacing: 0.06em;
   word-break: keep-all;
   line-break: strict;
+  color: #fff;
+}
+
+.trainer-page .tx-hero-lead {
+  color: #fff;
+  opacity: 0.92;
 }
 
 .trainer-page .tx-philosophy {
-  padding-top: 80px;
-  padding-bottom: 88px;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  background-color: #ffffff;
+}
+
+.trainer-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  align-items: stretch;
+  min-height: 420px;
+}
+
+.trainer-intro-copy {
+  box-sizing: border-box;
+  z-index: 1;
+  padding: 72px 6% 72px 10%;
 }
 
 .trainer-page .trainer-intro-key {
   position: relative;
+  max-width: 18em;
   padding-bottom: 22px;
-  font-size: 1.35rem;
-  line-height: 1.8;
+  font-size: 1.55rem;
+  line-height: 1.7;
+  text-align: left;
 }
 
 .trainer-page .trainer-intro-key::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 0;
-  transform: translateX(-50%);
+  transform: none;
   width: 70px;
   height: 2.5px;
   background-color: #c0a062;
@@ -42,7 +108,43 @@
 }
 
 .trainer-page .trainer-intro-key + .tx-body {
-  margin-top: 32px;
+  margin-top: 28px;
+}
+
+.trainer-page .tx-philosophy .tx-philosophy-body {
+  max-width: 36em;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.trainer-intro-media {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.trainer-intro-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 72% 42%;
+  display: block;
+}
+
+.trainer-intro-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.72) 14%,
+    rgba(255, 255, 255, 0.22) 32%,
+    transparent 52%
+  );
 }
 
 .trainer-page .tx-subheading {
@@ -75,67 +177,31 @@
   text-align: left;
 }
 
-@media (min-width: 1025px) {
-  .trainer-page .tx-philosophy .tx-philosophy-body {
-    max-width: 44em;
+@media (max-width: 1024px) {
+  .trainer-page .tx-hero-copy {
+    padding: 64px 42% 56px 7%;
+  }
+
+  .trainer-intro {
+    min-height: 360px;
+  }
+
+  .trainer-intro-copy {
+    padding: 56px 5% 56px 8%;
+  }
+
+  .trainer-intro-media {
+    min-height: 360px;
   }
 }
 
 @media (max-width: 768px) {
   .trainer-page .tx-hero {
-    grid-template-columns: 1fr;
-    grid-template-areas: "copy";
     min-height: 0;
-    background-color: #1e3a5f;
-  }
-
-  .trainer-page .tx-hero-media {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: auto;
-    grid-area: auto;
-    width: 46%;
-    height: auto;
-    z-index: 0;
-  }
-
-  .trainer-page .tx-hero-media img {
-    object-position: 72% 42%;
-    opacity: 0.78;
-    -webkit-mask-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(0, 0, 0, 0.35) 18%,
-      #000 46%
-    );
-    mask-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(0, 0, 0, 0.35) 18%,
-      #000 46%
-    );
-  }
-
-  .trainer-page .tx-hero-media::after {
-    background: linear-gradient(
-      90deg,
-      #1e3a5f 0%,
-      rgba(30, 58, 95, 0.88) 14%,
-      rgba(30, 58, 95, 0.42) 38%,
-      rgba(30, 58, 95, 0.12) 62%,
-      transparent 100%
-    );
   }
 
   .trainer-page .tx-hero-copy {
-    z-index: 1;
-    grid-column: 1 / -1;
     justify-content: flex-start;
-    align-items: flex-start;
-    width: 100%;
-    max-width: none;
     padding: 32px 42% 28px 8%;
   }
 
@@ -149,22 +215,32 @@
     width: 100%;
     font-size: 1.28rem;
     letter-spacing: 0.03em;
-    color: #fff;
   }
 
   .trainer-page .tx-hero-lead {
-    color: #fff;
-    opacity: 0.92;
     word-break: keep-all;
     line-break: strict;
   }
 
-  .trainer-page .tx-philosophy {
-    padding-top: 56px;
-    padding-bottom: 64px;
+  .trainer-page .tx-hero-media img {
+    object-position: 86% 40%;
+  }
+
+  .trainer-intro {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .trainer-intro-copy {
+    padding: 56px 8% 64px;
   }
 
   .trainer-page .trainer-intro-key {
+    max-width: none;
     font-size: 1.18rem;
+  }
+
+  .trainer-intro-media {
+    display: none;
   }
 }
