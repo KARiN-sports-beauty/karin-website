@@ -133,14 +133,19 @@
   border-bottom: 1px solid #c0a062;
 }
 
-/* PC: カードの2行は共通スタイルのまま。幅だけ少し広げる。 */
+/* PC: 1〜7日目を左、8〜14日目を右。カード内は日付・場所の2行のまま。 */
 @media (min-width: 769px) {
   .schedule-page .public-schedule {
     box-sizing: border-box;
-    max-width: 660px;
+    max-width: 700px;
   }
 
   .public-schedule-list {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(7, auto);
+    grid-auto-flow: column;
+    column-gap: 20px;
+    row-gap: 8px;
   }
 }
