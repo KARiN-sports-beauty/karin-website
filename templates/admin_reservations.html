@@ -442,7 +442,6 @@ document.addEventListener('DOMContentLoaded', function() {
       form.dataset.deleteBound = '1';
       form.addEventListener('submit', function(e) {
         if (form.dataset.deleteConfirmed === '1') {
-          form.dataset.deleteConfirmed = '';
           return;
         }
         e.preventDefault();

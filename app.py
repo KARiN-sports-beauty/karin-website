@@ -3045,6 +3045,85 @@ def build_public_schedule_entries(start_date, end_date, today=None):
     return entries
 
 
+GBP_PROFILES = frozenset({"tokyo", "fukuoka"})
+GBP_PERIOD_HALVES = frozenset({"H1", "H2"})
+
+
+def gbp_explicit_area(raw):
+    """GBPでは tokyo / fukuoka だけをエリアとして扱う。空は推測しない。"""
+    area = raw.strip().lower() if isinstance(raw, str) else ""
+    return area if area in GBP_PROFILES else None
+
+
+def gbp_schedule_label(mode, area):
+    """GBP投稿用ラベル。帯同と休業は公開ページの「休」にまとめない。"""
+    if mode == "clinic" and area == "tokyo":
+        return PUBLIC_PLACE_TOKYO
+    if mode == "clinic" and area == "fukuoka":
+        return PUBLIC_PLACE_FUKUOKA
+    if mode == "field":
+        return PUBLIC_PLACE_FIELD
+    if mode == "off":
+        return PUBLIC_PLACE_CLOSED
+    return None
+
+
+def gbp_profile_includes_shift(mode, area, profile):
+    """その日を指定プロフィールの投稿に載せるか。帯同と休業は両方。"""
+    if mode == "clinic":
+        return area == profile
+    return mode in ("field", "off")
+
+
+def gbp_period_key(year, month, half):
+    """半月の識別子。例: 2026-10-H1。"""
+    half_key = (half or "").strip().upper()
+    if half_key not in GBP_PERIOD_HALVES:
+        raise ValueError("half は H1 または H2 です")
+    return f"{int(year):04d}-{int(month):02d}-{half_key}"
+
+
+def get_gbp_period_range(year, month, half):
+    """半月の開始日と終了日。H1 は1〜15日、H2 は16日〜月末。"""
+    half_key = (half or "").strip().upper()
+    if half_key not in GBP_PERIOD_HALVES:
+        raise ValueError("half は H1 または H2 です")
+    year = int(year)
+    month = int(month)
+    if half_key == "H1":
+        return datetime(year, month, 1).date(), datetime(year, month, 15).date()
+    last_day = calendar.monthrange(year, month)[1]
+    return datetime(year, month, 16).date(), datetime(year, month, last_day).date()
+
+
+def build_gbp_schedule_entries(start_date, end_date, profile):
+    """GBP投稿用の予定。任意期間をそのまま使い、対象日だけを日付順で返す。"""
+    profile_key = (profile or "").strip().lower()
+    if profile_key not in GBP_PROFILES:
+        raise ValueError("profile は tokyo または fukuoka です")
+    if end_date < start_date:
+        return []
+    shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start_date, end_date)
+    entries = []
+    day = start_date
+    while day <= end_date:
+        day_str = day.strftime("%Y-%m-%d")
+        row = shifts.get(day_str)
+        if row:
+            mode = resolve_shift_work_mode(row)
+            area = gbp_explicit_area(row.get("area"))
+            if gbp_profile_includes_shift(mode, area, profile_key):
+                entries.append({
+                    "date": day_str,
+                    "weekday": PUBLIC_SCHEDULE_WEEKDAYS[day.weekday()],
+                    "work_mode": mode,
+                    "area": area if mode == "clinic" else None,
+                    "label": gbp_schedule_label(mode, area),
+                })
+        day += timedelta(days=1)
+    return entries
+
+
 def build_calendar_shift_status_map(year, month, staff_name=None):
     """管理カレンダー用 {YYYY-MM-DD: status}。既定は公開オーナー。"""
     name = (staff_name or PUBLIC_SCHEDULE_STAFF_NAME).strip()

@@ -79,14 +79,18 @@
       const form = pendingDeleteForm;
       window.closeDeleteConfirmModal();
       form.dataset.deleteConfirmed = '1';
-      form.requestSubmit();
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+      } else {
+        HTMLFormElement.prototype.submit.call(form);
+      }
+      form.dataset.deleteConfirmed = '';
     };
 
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('form[data-delete-confirm="true"]').forEach((form) => {
         form.addEventListener('submit', (e) => {
           if (form.dataset.deleteConfirmed === '1') {
-            form.dataset.deleteConfirmed = '';
             return;
           }
           e.preventDefault();
