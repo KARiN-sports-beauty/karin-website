@@ -139,6 +139,7 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 58% 50%;
+  touch-action: pan-y;
 }
 
 .ts-hero::before {

@@ -16,6 +16,12 @@ html, body {
   scroll-behavior: smooth;
 }
 
+@media (hover: none) {
+  html, body {
+    scroll-behavior: auto;
+  }
+}
+
 /* テキスト共通 */
 h1, h2, h3, h4, h5, h6, p {
   margin: 0;
@@ -36,10 +42,11 @@ img {
   display: block;
 }
 
-/* ボックス共通（Safariはみ出し対策） */
+/* ボックス共通。overflow-x: clip は AOS の transform と重なると
+   iPhone で縦スクロールがセクション内に掴まれるため付けない。
+   横はみ出しは html, body の overflow-x: hidden で抑える。 */
 section, header, footer {
   box-sizing: border-box;
-  overflow-x: clip;
 }
 
 /* =========================================================
@@ -297,6 +304,7 @@ body.index-page .hamburger.active span {
   overflow: hidden;
   background: #fff;
   margin: 0;
+  touch-action: pan-y;
 }
 
 

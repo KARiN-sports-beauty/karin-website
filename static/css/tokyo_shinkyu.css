@@ -127,7 +127,7 @@
 .ts-hero {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -141,6 +141,7 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 58% 50%;
+  touch-action: pan-y;
 }
 
 .ts-hero::before {
