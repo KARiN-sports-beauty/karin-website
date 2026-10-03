@@ -261,13 +261,8 @@
   text-align: left;
 }
 
-.trainer-page .tx-philosophy + .tx-section {
-  text-align: left;
-}
-
-.trainer-page .tx-philosophy + .tx-section .tx-heading::after {
-  left: 0;
-  transform: none;
+.trainer-page .tx-philosophy + .tx-section .tx-body {
+  text-align: center;
 }
 
 @media (min-width: 1025px) {
