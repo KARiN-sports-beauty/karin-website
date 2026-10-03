@@ -266,6 +266,17 @@
     left: 0;
     transform: none;
   }
+
+  .trainer-page .tx-philosophy + .tx-section .tx-extra-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 40px;
+    row-gap: 0;
+  }
+
+  .trainer-page .tx-philosophy + .tx-section .tx-extra-list li:nth-last-child(2) {
+    border-bottom: 1px solid #eee8dc;
+  }
 }
 
 @media (max-width: 1024px) {
