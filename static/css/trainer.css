@@ -279,7 +279,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 32% 50%;
+  object-position: 46% 50%;
   display: block;
 }
 
@@ -353,14 +353,20 @@
 
   .trainer-fields-inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 40px 52px;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 4fr);
+    grid-template-areas:
+      "media heading"
+      "media copy";
+    column-gap: 52px;
+    row-gap: 0;
+    align-items: center;
   }
 
   .trainer-fields-media {
+    grid-area: media;
+    align-self: center;
     position: relative;
-    min-height: 420px;
+    aspect-ratio: 3 / 2;
   }
 
   .trainer-fields-media img {
@@ -368,10 +374,17 @@
     inset: 0;
   }
 
+  .trainer-fields-inner > .tx-heading {
+    grid-area: heading;
+    align-self: end;
+  }
+
   .trainer-fields-copy {
+    grid-area: copy;
+    align-self: start;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
   }
 }
 
@@ -423,9 +436,17 @@
     min-height: 360px;
   }
 
+  .trainer-fields-inner > .tx-heading {
+    margin-bottom: 20px;
+  }
+
   .trainer-fields-media {
     aspect-ratio: 16 / 10;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+  }
+
+  .trainer-fields-copy .tx-body {
+    margin-top: 0;
   }
 }
 
@@ -483,7 +504,7 @@
   }
 
   .trainer-fields-media {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 10;
     border-radius: 12px;
     margin-bottom: 24px;
   }
