@@ -132,3 +132,44 @@
   color: #1E3A5F;
   border-bottom: 1px solid #c0a062;
 }
+
+/* PC: 1日1行。768px以下は上の縦並びのまま。 */
+@media (min-width: 769px) {
+  .schedule-page .public-schedule {
+    max-width: 760px;
+    padding-bottom: 48px;
+  }
+
+  .public-schedule-list {
+    gap: 0;
+  }
+
+  .public-schedule-day {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 11px 4px 11px 14px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    border-left-width: 3px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.1);
+  }
+
+  .public-schedule-day.status-field,
+  .public-schedule-day.status-off,
+  .public-schedule-day.status-unset {
+    background: transparent;
+  }
+
+  .public-schedule-date,
+  .public-schedule-place {
+    flex-shrink: 0;
+  }
+
+  .public-schedule-place {
+    text-align: right;
+    line-height: 1.4;
+  }
+}
