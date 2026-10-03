@@ -1,0 +1,134 @@
+/* /schedule 専用。トップの .schedule-table とはクラスを分ける。 */
+
+.schedule-page .public-schedule {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 94px 20px 56px;
+}
+
+.public-schedule-kicker {
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+  margin-bottom: 6px;
+}
+
+.schedule-page h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+  margin-bottom: 10px;
+}
+
+.public-schedule-lead {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: #5b6b80;
+  margin-bottom: 22px;
+}
+
+.public-schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.public-schedule-day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f9fafc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #1E3A5F;
+}
+
+.public-schedule-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #5b6b80;
+}
+
+.public-schedule-place {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1E3A5F;
+}
+
+.public-schedule-today {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #c0a062;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.public-schedule-day.status-tokyo {
+  border-left-color: #1E3A5F;
+}
+
+.public-schedule-day.status-fukuoka {
+  border-left-color: #c0a062;
+}
+
+.public-schedule-day.status-field {
+  border-left-color: #c48aa0;
+  background: #fff8fa;
+}
+
+.public-schedule-day.status-field .public-schedule-place {
+  color: #8d4d66;
+}
+
+.public-schedule-day.status-off {
+  border-left-color: #d0d5dc;
+  background: #f3f3f3;
+}
+
+.public-schedule-day.status-off .public-schedule-place {
+  color: #8a93a0;
+  font-weight: 500;
+}
+
+.public-schedule-day.status-unset {
+  border-left-color: #e2e8f0;
+  background: #eef1f5;
+}
+
+.public-schedule-day.status-unset .public-schedule-place {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.public-schedule-note {
+  margin-top: 18px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: #8a93a0;
+}
+
+.public-schedule-links {
+  display: flex;
+  gap: 18px;
+  margin-top: 22px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.public-schedule-links a {
+  color: #1E3A5F;
+  border-bottom: 1px solid #c0a062;
+}

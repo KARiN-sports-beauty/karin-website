@@ -554,9 +554,13 @@ RESERVATION_NON_PATIENT_PLACE_TYPES = frozenset({"field", "break", "personal"})
 RESERVATION_TIME_BLOCK_PLACE_TYPES = frozenset({"field", "break", "personal"})
 RESERVATION_TIMELINE_END_HOUR = 26
 PUBLIC_SCHEDULE_STAFF_NAME = (os.getenv("PUBLIC_SCHEDULE_STAFF_NAME") or "藤田 幸士").strip()
+PUBLIC_SCHEDULE_DAYS = 14
+PUBLIC_SCHEDULE_WEEKDAYS = "月火水木金土日"
 PUBLIC_PLACE_TOKYO = "東京（代々木上原）"
 PUBLIC_PLACE_FUKUOKA = "福岡（薬院）"
 PUBLIC_PLACE_OFF = "休"
+PUBLIC_PLACE_FIELD = "トレーナー帯同"
+PUBLIC_PLACE_CLOSED = "休業"
 PUBLIC_PLACE_UNSET = "—"
 
 
@@ -588,6 +592,15 @@ def public_place_label_for_mode(mode, area=None):
     if mode in ("off", "field"):
         return PUBLIC_PLACE_OFF
     return PUBLIC_PLACE_UNSET
+
+
+def public_schedule_detail_label(mode, area=None):
+    """営業スケジュールページ用。帯同と休業を分ける。通常出勤・未設定は既存ラベルと同じ。"""
+    if mode == "field":
+        return PUBLIC_PLACE_FIELD
+    if mode == "off":
+        return PUBLIC_PLACE_CLOSED
+    return public_place_label_for_mode(mode, area)
 
 
 def calendar_status_for_mode(mode, area=None):
@@ -2983,27 +2996,52 @@ def fetch_staff_shifts_in_range(staff_name, start_date, end_date):
         return {}
 
 
-def build_public_schedule_entries(days=10):
-    """公開用直近スケジュール（オーナーの work_mode 由来）。帯同は表記上「休」。"""
-    today = datetime.now(JST).date()
-    end = today + timedelta(days=max(0, int(days) - 1))
-    shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, today, end)
+def public_schedule_span(days=None, today=None):
+    """今日を含む days 日間の開始日と終了日。"""
+    today = today or datetime.now(JST).date()
+    n = PUBLIC_SCHEDULE_DAYS if days is None else max(1, int(days))
+    return today, today + timedelta(days=n - 1)
+
+
+def clamp_public_schedule_range(start_date, end_date, today=None):
+    """公開取得の日付範囲。今日より前は含めない。範囲が今日より前だけなら None。"""
+    today = today or datetime.now(JST).date()
+    start = start_date if start_date >= today else today
+    if end_date < start:
+        return None
+    return start, end_date
+
+
+def make_public_schedule_entry(day, row):
+    """1日分の公開スケジュール。place はトップ用、detail_place は /schedule 用。"""
+    day_str = day.strftime("%Y-%m-%d")
+    mode = resolve_shift_work_mode(row)
+    area = (row or {}).get("area")
+    return {
+        "date": day_str,
+        "place": public_place_label_for_mode(mode, area),
+        "detail_place": public_schedule_detail_label(mode, area),
+        "status": calendar_status_for_mode(mode, area),
+        "work_mode": mode,
+        "area": normalize_staff_area(area) if mode == "clinic" else None,
+        "month": day_str[5:7],
+        "day": day_str[8:10],
+        "weekday": PUBLIC_SCHEDULE_WEEKDAYS[day.weekday()],
+    }
+
+
+def build_public_schedule_entries(start_date, end_date, today=None):
+    """開始日〜終了日の公開スケジュール。オーナーの work_mode 由来。今日より前は返さない。"""
+    span = clamp_public_schedule_range(start_date, end_date, today=today)
+    if span is None:
+        return []
+    start, end = span
+    shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start, end)
     entries = []
-    for i in range(max(1, int(days))):
-        d = today + timedelta(days=i)
-        day_str = d.strftime("%Y-%m-%d")
-        row = shifts.get(day_str)
-        mode = resolve_shift_work_mode(row)
-        area = (row or {}).get("area")
-        place = public_place_label_for_mode(mode, area)
-        status = calendar_status_for_mode(mode, area)
-        entries.append({
-            "date": day_str,
-            "place": place,
-            "status": status,
-            "month": day_str[5:7],
-            "day": day_str[8:10],
-        })
+    day = start
+    while day <= end:
+        entries.append(make_public_schedule_entry(day, shifts.get(day.strftime("%Y-%m-%d"))))
+        day += timedelta(days=1)
     return entries
 
 
@@ -3029,9 +3067,11 @@ def build_calendar_shift_status_map(year, month, staff_name=None):
 
 
 def load_schedule():
-    """公開スケジュール（トップ）。staff_work_shifts 由来。"""
+    """公開スケジュール（今日を含む14日）。staff_work_shifts 由来。"""
     try:
-        return build_public_schedule_entries(days=10)
+        today = datetime.now(JST).date()
+        start, end = public_schedule_span(today=today)
+        return build_public_schedule_entries(start, end, today=today)
     except Exception as e:
         print("❌ 公開スケジュール読み込みエラー:", e)
         return []
@@ -5816,10 +5856,11 @@ def index():
     latest_news = fetch_published_news(limit=3)
 
     # ----------------------------------------
-    # スケジュール読み込み（予定管理のオーナーシフト由来）
+    # スケジュール読み込み（予定管理のオーナーシフト由来。今日を含む14日）
     # ----------------------------------------
     today = datetime.now(JST).date()
-    upcoming = build_public_schedule_entries(days=10)
+    schedule_start, schedule_end = public_schedule_span(today=today)
+    upcoming = build_public_schedule_entries(schedule_start, schedule_end, today=today)
 
     # ----------------------------------------
     # レンダリング
@@ -5837,6 +5878,25 @@ def index():
 
 
 
+
+
+@app.route("/schedule")
+def public_schedule():
+    """今日を含む14日間の営業スケジュール。"""
+    today = datetime.now(JST).date()
+    start, end = public_schedule_span(today=today)
+    try:
+        entries = build_public_schedule_entries(start, end, today=today)
+    except Exception as e:
+        print("❌ /schedule 読み込みエラー:", e)
+        entries = []
+    return render_template(
+        "schedule.html",
+        schedule=entries,
+        today=today.strftime("%Y-%m-%d"),
+        range_start=start,
+        range_end=end,
+    )
 
 
 @app.route("/chat")
@@ -6154,6 +6214,7 @@ def sitemap():
             ("/tokyo/seitai", "weekly"),
             ("/tokyo/shinkyu", "weekly"),
             ("/chat", "weekly"),
+            ("/schedule", "daily"),
         ]
         if public_booking_enabled():
             static_urls.append(("/book", "weekly"))
