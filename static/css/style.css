@@ -627,7 +627,11 @@ body.index-page .hamburger.active span {
   }
 
   .about-heading {
+    display: block;
+    width: max-content;
+    max-width: none;
     text-align: left;
+    white-space: nowrap;
   }
 
   .about-heading::after {
