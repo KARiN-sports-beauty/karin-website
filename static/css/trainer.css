@@ -483,6 +483,32 @@
   margin-right: 0;
 }
 
+.trainer-role-inner {
+  text-align: center;
+}
+
+.trainer-role .tx-body {
+  margin-top: 44px;
+  text-align: left;
+}
+
+.trainer-role .tx-body p + p {
+  margin-top: 1.4em;
+}
+
+.trainer-role-x {
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+  color: #c0a062;
+}
+
+.trainer-role-years {
+  font-weight: 600;
+  color: #c0a062;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
 @media (min-width: 1025px) {
   .trainer-page .tx-philosophy + .tx-section .tx-inner--narrow {
     max-width: 1100px;
@@ -638,6 +664,23 @@
   .trainer-span-block {
     padding: 36px 32px 32px;
   }
+
+  .trainer-role {
+    padding-top: 108px;
+    padding-bottom: 120px;
+  }
+
+  .trainer-role .tx-inner--narrow {
+    max-width: 750px;
+  }
+
+  .trainer-role .tx-body {
+    max-width: 42em;
+    margin-top: 56px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -705,6 +748,16 @@
 
   .trainer-fields-copy .tx-body {
     margin-top: 0;
+  }
+
+  .trainer-role .tx-inner--narrow {
+    max-width: 720px;
+  }
+
+  .trainer-role-x {
+    display: block;
+    margin: 0.06em 0 0.1em;
+    letter-spacing: 0.12em;
   }
 }
 
