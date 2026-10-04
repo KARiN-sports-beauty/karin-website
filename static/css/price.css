@@ -181,12 +181,12 @@
 }
 
 /* フッター・CTA */
-.trainer-foot { margin-bottom: 32px; }
+.trainer-foot { margin-bottom: 0; }
 
 .trainer-cta-wrap {
   display: flex;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
   flex-wrap: wrap;
   gap: 16px;
   margin-top: 40px;
