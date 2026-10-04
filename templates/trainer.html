@@ -251,18 +251,16 @@
     </div>
   </section>
 
-  <section class="tx-section tx-section--muted tx-cta-section" aria-labelledby="trainer-fee-heading">
+  <section class="tx-section tx-cta-section" aria-labelledby="trainer-fee-heading">
     <div class="tx-inner tx-inner--narrow" data-aos="fade-up">
       <h2 id="trainer-fee-heading" class="tx-heading">料金・ご相談について</h2>
       <div class="tx-body">
         <p>トレーナー帯同・コンディショニングサポートの料金は、内容や時間、帯同する現場などによって異なります。</p>
         <p>現在の料金については、料金ページをご確認ください。</p>
-      </div>
-      <a href="{{ url_for('price') }}" class="tx-text-link">料金を見る →</a>
-      <div class="tx-body">
         <p>大会やイベントへの帯同、継続的なサポートなど、まずは内容をお聞かせいただければ、必要なサポートについてご案内します。</p>
       </div>
       <div class="tx-cta-row">
+        <a href="{{ url_for('price') }}" class="tx-cta-btn tx-cta-btn--outline">料金を見る →</a>
         <a href="{{ url_for('contact') }}" class="tx-cta-btn">お問い合わせはこちら ↓</a>
       </div>
     </div>
