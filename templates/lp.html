@@ -397,6 +397,28 @@
       margin-top: 18px;
     }
 
+    .lp-home-link {
+      display: block;
+      width: max-content;
+      max-width: calc(100% - 48px);
+      margin: 28px auto 8px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      line-height: 1.7;
+      color: var(--stone-600);
+      border-bottom: 1px solid var(--stone-200);
+      padding-bottom: 2px;
+    }
+
+    .lp-home-link:hover {
+      color: var(--stone-800);
+    }
+
+    footer .lp-home-link {
+      margin: 16px auto 0;
+    }
+
     .hero__meta {
       position: absolute;
       bottom: 32px;
@@ -1512,6 +1534,8 @@
     </div>
   </section>
 
+  <a href="{{ url_for('index') }}" class="lp-home-link">KARiN.について詳しく見る →</a>
+
   <!-- ─── WORRIES ─── -->
   <section class="worries">
     <div class="inner">
@@ -1773,6 +1797,7 @@
   <footer>
     <p>出張対応 鍼灸・ボディケア</p>
     <p>東京・福岡</p>
+    <a href="{{ url_for('index') }}" class="lp-home-link">KARiN.公式サイトへ →</a>
     <a href="{{ url_for('index') }}" class="footer-logos">
       <img src="{{ url_for('static', filename='images/logoname.jpg') }}" alt="KARiN. ロゴネーム">
       <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="KARiN. ロゴ">
