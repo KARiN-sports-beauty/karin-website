@@ -485,6 +485,10 @@
     max-width: 900px;
   }
 
+  .tx-philosophy-body {
+    max-width: 44em;
+  }
+
   .tx-cta-section .tx-inner--narrow {
     max-width: 920px;
   }
