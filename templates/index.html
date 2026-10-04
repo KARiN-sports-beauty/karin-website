@@ -693,7 +693,10 @@
       duration: 800,       // ← ふわっと感の時間（ms）
       easing: 'ease-out',  // ← 動きの滑らかさ
       once: true,          // ← スクロールバック時は発火しない（品が良い）
-      offset: 120          // ← 手前で始まる距離
+      offset: 120,         // ← 手前で始まる距離
+      disable: function () {
+        return window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse), (prefers-reduced-motion: reduce)").matches;
+      }
     });
   </script>
 

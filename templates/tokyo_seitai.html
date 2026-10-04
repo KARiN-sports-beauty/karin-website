@@ -502,7 +502,9 @@
     AOS.init({
       duration: 800,
       once: true,
-      disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      disable: function () {
+        return window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse), (prefers-reduced-motion: reduce)").matches;
+      }
     });
 
     (function () {

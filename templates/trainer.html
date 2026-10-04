@@ -323,7 +323,10 @@
   <script>
     AOS.init({
       duration: 800,
-      once: true
+      once: true,
+      disable: function () {
+        return window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse), (prefers-reduced-motion: reduce)").matches;
+      }
     });
 
     (function () {

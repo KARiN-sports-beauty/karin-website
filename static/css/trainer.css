@@ -4,10 +4,6 @@
    ヘッダーは /tokyo/seitai と同じ透明→白の切り替え。
 ========================================================= */
 
-.trainer-page {
-  touch-action: pan-y;
-}
-
 .trainer-page .header {
   background-color: transparent;
   background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
@@ -81,7 +77,6 @@
   grid-template-areas: "copy";
   background-color: #1e3a5f;
   overflow: hidden;
-  touch-action: pan-y;
 }
 
 .trainer-page .tx-hero-media {
@@ -147,11 +142,6 @@
   padding: 0;
   text-align: left;
   background-color: #ffffff;
-  touch-action: pan-y;
-}
-
-.trainer-page .tx-section {
-  touch-action: pan-y;
 }
 
 .trainer-intro {
@@ -874,16 +864,38 @@
     padding: 96px 42% 56px 7%;
   }
 
+  .trainer-page .tx-philosophy {
+    isolation: isolate;
+    background-color: #ffffff;
+  }
+
   .trainer-intro {
-    min-height: 360px;
+    position: relative;
+    grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .trainer-intro-copy {
-    padding: 56px 5% 56px 7vw;
+    position: relative;
+    z-index: 1;
+    padding: 64px 8% 72px;
   }
 
   .trainer-intro-media {
-    min-height: 360px;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    min-height: 0;
+    width: 100%;
+    height: auto;
+  }
+
+  .trainer-intro-media img {
+    object-position: 60% 48%;
+  }
+
+  .trainer-intro-media::after {
+    background: rgba(255, 255, 255, 0.86);
   }
 
   .trainer-fields-inner > .tx-heading {
@@ -953,16 +965,12 @@
   }
 
   .trainer-intro-copy {
-    padding: 32px 8% 24px;
+    padding: 52px 8% 56px;
   }
 
   .trainer-page .trainer-intro-key {
     max-width: none;
     font-size: 1.18rem;
-  }
-
-  .trainer-intro-media {
-    display: none;
   }
 
   .trainer-page .tx-philosophy + .tx-section {

@@ -220,6 +220,9 @@
       duration: 800,
       easing: 'ease-out',
       once: true,
+      disable: function () {
+        return window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse), (prefers-reduced-motion: reduce)").matches;
+      }
     });
   </script>
 

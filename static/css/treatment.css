@@ -23,7 +23,6 @@
   align-items: stretch;
   min-height: clamp(420px, 56vh, 540px);
   overflow: visible;
-  touch-action: pan-y;
   background-color: #ffffff;
 }
 
