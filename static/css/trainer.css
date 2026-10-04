@@ -593,32 +593,29 @@
 
 .trainer-page .tx-cta-section .tx-cta-btn {
   min-width: 220px;
-  background: #1E3A5F;
-  color: #ffffff;
-  border-color: #1E3A5F;
-  box-shadow: 0 4px 16px rgba(30, 58, 95, 0.16);
-}
-
-.trainer-page .tx-cta-section .tx-cta-btn--outline {
   background: #ffffff;
   color: #1E3A5F;
   border-color: rgba(30, 58, 95, 0.22);
-  box-shadow: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.trainer-page .tx-cta-section .tx-body .tx-text-link {
+  display: inline-block;
+  margin-top: 0;
+  margin-left: 0.7em;
+  padding-bottom: 2px;
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  vertical-align: baseline;
+  white-space: nowrap;
 }
 
 @media (hover: hover) and (min-width: 1025px) {
   .trainer-page .tx-cta-section .tx-cta-btn:hover {
-    background: #4a5f7a;
+    background: #1E3A5F;
     color: #ffffff;
-    border-color: #4a5f7a;
-    box-shadow: 0 6px 24px rgba(30, 58, 95, 0.18);
-  }
-
-  .trainer-page .tx-cta-section .tx-cta-btn--outline:hover {
-    background: #ffffff;
-    color: #8fa3c1;
-    border-color: #c0a062;
-    box-shadow: none;
+    border-color: #1E3A5F;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -1002,6 +999,12 @@
   .trainer-page .tx-cta-section {
     padding-top: 88px;
     padding-bottom: 88px;
+  }
+
+  .trainer-page .tx-cta-section .tx-body .tx-text-link {
+    display: block;
+    margin: 8px 0 0;
+    width: fit-content;
   }
 
   .trainer-page .tx-cta-section .tx-cta-btn {
