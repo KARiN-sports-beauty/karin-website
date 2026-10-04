@@ -484,16 +484,43 @@
 }
 
 .trainer-role-inner {
-  text-align: center;
-}
-
-.trainer-role .tx-body {
-  margin-top: 44px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "media"
+    "years"
+    "heading"
+    "body";
   text-align: left;
 }
 
-.trainer-role .tx-body p + p {
-  margin-top: 1.4em;
+.trainer-role-media {
+  grid-area: media;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.trainer-role-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 52% 48%;
+  display: block;
+}
+
+.trainer-role-years {
+  grid-area: years;
+  margin: 28px 0 10px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-align: center;
+}
+
+.trainer-role-inner > .tx-heading {
+  grid-area: heading;
+  display: block;
+  text-align: center;
 }
 
 .trainer-role-x {
@@ -502,11 +529,16 @@
   color: #c0a062;
 }
 
-.trainer-role-years {
-  font-weight: 600;
-  color: #c0a062;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
+.trainer-role .tx-body {
+  grid-area: body;
+  margin-top: 28px;
+  margin-left: 0;
+  margin-right: 0;
+  text-align: left;
+}
+
+.trainer-role .tx-body p + p {
+  margin-top: 1.35em;
 }
 
 @media (min-width: 1025px) {
@@ -670,16 +702,49 @@
     padding-bottom: 120px;
   }
 
-  .trainer-role .tx-inner--narrow {
-    max-width: 750px;
+  .trainer-role-inner {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    grid-template-areas:
+      "media heading"
+      "media years"
+      "media body";
+    column-gap: 44px;
+    row-gap: 0;
+    align-items: start;
+  }
+
+  .trainer-role-media {
+    align-self: start;
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+
+  .trainer-role-media img {
+    position: absolute;
+    inset: 0;
+  }
+
+  .trainer-role-inner > .tx-heading {
+    align-self: start;
+    margin-bottom: 0;
+    font-size: 1.32rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+  }
+
+  .trainer-role-inner > .tx-heading::after {
+    left: 0;
+    transform: none;
+  }
+
+  .trainer-role-years {
+    margin: 18px 0 0;
+    text-align: left;
   }
 
   .trainer-role .tx-body {
-    max-width: 42em;
-    margin-top: 56px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
+    align-self: start;
+    margin-top: 22px;
   }
 }
 
@@ -750,8 +815,8 @@
     margin-top: 0;
   }
 
-  .trainer-role .tx-inner--narrow {
-    max-width: 720px;
+  .trainer-role-media {
+    aspect-ratio: 16 / 9;
   }
 
   .trainer-role-x {
