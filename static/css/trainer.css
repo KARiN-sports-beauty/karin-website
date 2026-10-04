@@ -483,38 +483,65 @@
   margin-right: 0;
 }
 
+.trainer-role {
+  position: relative;
+  isolation: isolate;
+  background-color: #ffffff;
+}
+
+.trainer-role::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("../images/trainerhistory.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 52% 46%;
+  pointer-events: none;
+}
+
+.trainer-role::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: rgba(255, 255, 255, 0.86);
+  pointer-events: none;
+}
+
 .trainer-role-inner {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-areas:
-    "media"
     "years"
     "heading"
     "body";
-  text-align: left;
-}
-
-.trainer-role-media {
-  grid-area: media;
-  overflow: hidden;
-  border-radius: 12px;
-}
-
-.trainer-role-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 52% 48%;
-  display: block;
+  text-align: center;
 }
 
 .trainer-role-years {
   grid-area: years;
-  margin: 28px 0 10px;
-  font-size: 0.74rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.22em;
-  text-align: center;
+  color: #c0a062;
+}
+
+.trainer-role-years::before,
+.trainer-role-years::after {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background-color: #c0a062;
+  opacity: 0.72;
 }
 
 .trainer-role-inner > .tx-heading {
@@ -532,9 +559,10 @@
 .trainer-role .tx-body {
   grid-area: body;
   margin-top: 28px;
-  margin-left: 0;
-  margin-right: 0;
-  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 36em;
+  text-align: center;
 }
 
 .trainer-role .tx-body p + p {
@@ -700,32 +728,42 @@
   .trainer-role {
     padding-top: 108px;
     padding-bottom: 120px;
+    padding-left: 0;
+    padding-right: 0;
+    min-height: 560px;
+  }
+
+  .trainer-role::before {
+    background-position: 68% 48%;
+  }
+
+  .trainer-role::after {
+    background-color: transparent;
+    background-image: linear-gradient(
+      90deg,
+      #ffffff 0%,
+      #ffffff 30%,
+      rgba(255, 255, 255, 0.9) 38%,
+      rgba(255, 255, 255, 0.46) 52%,
+      rgba(255, 255, 255, 0.12) 68%,
+      rgba(255, 255, 255, 0) 82%
+    );
   }
 
   .trainer-role-inner {
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
     grid-template-areas:
-      "media heading"
-      "media years"
-      "media body";
-    column-gap: 44px;
-    row-gap: 0;
-    align-items: start;
-  }
-
-  .trainer-role-media {
-    align-self: start;
-    position: relative;
-    aspect-ratio: 16 / 9;
-  }
-
-  .trainer-role-media img {
-    position: absolute;
-    inset: 0;
+      "heading"
+      "years"
+      "body";
+    box-sizing: border-box;
+    width: min(28.5rem, 38%);
+    max-width: 460px;
+    margin-left: 8%;
+    margin-right: auto;
+    text-align: left;
   }
 
   .trainer-role-inner > .tx-heading {
-    align-self: start;
     margin-bottom: 0;
     font-size: 1.32rem;
     letter-spacing: 0.04em;
@@ -738,13 +776,16 @@
   }
 
   .trainer-role-years {
+    justify-content: flex-start;
     margin: 18px 0 0;
-    text-align: left;
   }
 
   .trainer-role .tx-body {
-    align-self: start;
-    margin-top: 22px;
+    margin-top: 28px;
+    margin-left: 0;
+    margin-right: 0;
+    max-width: none;
+    text-align: left;
   }
 }
 
@@ -815,8 +856,8 @@
     margin-top: 0;
   }
 
-  .trainer-role-media {
-    aspect-ratio: 16 / 9;
+  .trainer-role::before {
+    background-position: 60% 52%;
   }
 
   .trainer-role-x {
