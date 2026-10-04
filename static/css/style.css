@@ -489,7 +489,7 @@ body.index-page .hamburger.active span {
 .about-section {
   background-color: #ffffff;
   padding: 110px 8% 120px;
-  text-align: center;
+  text-align: left;
   position: relative;
   isolation: isolate;
 }
@@ -543,9 +543,8 @@ body.index-page .hamburger.active span {
 .about-heading::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 0;
-  transform: translateX(-50%);
   width: 48px;
   height: 1.5px;
   background-color: #c0a062;
@@ -3116,13 +3115,14 @@ section[id],
   .about-heading {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.12em;
     font-size: 1.8rem;
     letter-spacing: 0.04em;
     line-height: 1.45;
     padding-bottom: 22px;
     animation-delay: 0.5s;
+    text-align: left;
   }
 
   .about-heading-mark {
@@ -3438,6 +3438,10 @@ section[id],
     padding: 70px 5%;
   }
 
+  body.index-page .access-section .section-title {
+    font-size: 1.6rem;
+  }
+
   .access-container {
     flex-direction: column;
     gap: 40px;
@@ -3540,6 +3544,30 @@ section[id],
   .access-map iframe {
     width: 100% !important;
     height: 300px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  body.index-page .initial-lead,
+  body.index-page .initial-close-text,
+  body.index-page .blog-lead-text,
+  body.index-page .news-section .section-subtitle,
+  body.index-page .access-section .area-hours-lead,
+  body.index-page .access-section .access-schedule-lead,
+  body.index-page .access-section .access-schedule-note {
+    text-align: left;
+  }
+
+  body.index-page .access-section .section-title {
+    white-space: nowrap;
+  }
+
+  body.index-page .access-section .section-title .br-sp {
+    display: none;
+  }
+
+  body.index-page .contact-cta-note {
+    text-align: left;
   }
 }
 
@@ -3882,6 +3910,10 @@ section[id],
   ========================== */
   .access-section {
     padding: 60px 5%;
+  }
+
+  body.index-page .access-section .section-title {
+    font-size: 1.45rem;
   }
 
   .access-container {
