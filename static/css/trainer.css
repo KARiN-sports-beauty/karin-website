@@ -384,7 +384,28 @@
   margin-top: 28px;
 }
 
+.trainer-when {
+  position: relative;
+  isolation: isolate;
+  background-color: #ffffff;
+  background-image: url("../images/trainersometimes.jpg");
+  background-size: cover;
+  background-position: 78% 44%;
+  background-repeat: no-repeat;
+}
+
+.trainer-when::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: rgba(255, 255, 255, 0.92);
+  pointer-events: none;
+}
+
 .trainer-when-inner {
+  position: relative;
+  z-index: 1;
   text-align: center;
 }
 
@@ -401,9 +422,10 @@
 .trainer-when-list li {
   box-sizing: border-box;
   padding: 18px 18px 16px;
-  background-color: #fafafa;
+  background-color: #ffffff;
   border: 1px solid rgba(30, 58, 95, 0.08);
   border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(30, 58, 95, 0.04);
 }
 
 .trainer-when-num {
@@ -532,6 +554,14 @@
 
   .trainer-steps + .tx-body {
     margin-top: 40px;
+  }
+
+  .trainer-when {
+    background-position: 58% 46%;
+  }
+
+  .trainer-when::before {
+    background-color: rgba(255, 255, 255, 0.84);
   }
 
   .trainer-when-list {
