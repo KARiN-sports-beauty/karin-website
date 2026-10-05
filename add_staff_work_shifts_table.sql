@@ -19,5 +19,4 @@ ALTER TABLE staff_work_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff_work_shifts ADD COLUMN IF NOT EXISTS is_off BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 勤務時間は各スタッフが予定管理画面で入力するまで未設定（CLOSE）とする。
--- 過去に system-init で投入した 10:00-19:00 データがある場合は
--- update_staff_work_shifts_remove_system_init.sql を実行してください。
+-- system-init で入っていた 10:00-19:00 の行は、現行DBでは削除済み。

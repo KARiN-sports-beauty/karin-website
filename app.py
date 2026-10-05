@@ -3201,6 +3201,12 @@ def treatment():
 def trainer():
     return render_template("trainer.html")
 
+
+@app.route("/training")
+def training():
+    """トレーニング・リコンディショニング。料金表は /price に置く。"""
+    return render_template("training.html")
+
 @app.route("/lp")
 def lp():
     """東京・福岡共通の初回向けLP"""
@@ -6413,6 +6419,7 @@ def sitemap():
             ("/", "weekly"),
             ("/treatment", "weekly"),
             ("/trainer", "weekly"),
+            ("/training", "weekly"),
             ("/price", "weekly"),
             ("/contact", "weekly"),
             ("/form", "weekly"),

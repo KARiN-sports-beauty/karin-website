@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>トレーニング・リコンディショニング | KARiN.</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <link rel="canonical" href="https://karin-sb.jp/training">
+  <meta name="description" content="身体を整え、動きを整え、動ける身体をつくる。KARiN.のトレーニング・リコンディショニング。可動域や安定性、身体の使い方を見直し、必要な力を高めていきます。">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="トレーニング・リコンディショニング | KARiN.">
+  <meta property="og:description" content="身体を整え、動きを整え、動ける身体をつくる。可動域や安定性、身体の使い方を見直し、必要な力を高めていきます。">
+  <meta property="og:url" content="https://karin-sb.jp/training">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://karin-sb.jp/training#webpage",
+        "url": "https://karin-sb.jp/training",
+        "name": "トレーニング・リコンディショニング",
+        "description": "身体を整え、動きを整え、動ける身体をつくる。可動域や安定性、身体の使い方を見直し、必要な力を高めていきます。",
+        "isPartOf": {
+          "@id": "https://karin-sb.jp/#website"
+        },
+        "about": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
+      },
+      {
+        "@type": "Service",
+        "name": "トレーニング・リコンディショニング",
+        "serviceType": "トレーニング・リコンディショニング",
+        "provider": {
+          "@id": "https://karin-sb.jp/#organization"
+        },
+        "description": "身体の状態を確認し、整える、動きを整える、動かす、高めるを、その人に必要なところから組み合わせます。"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/treatment.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/training.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="treatment-page training-page">
+
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
+    </nav>
+  </header>
+
+  <section class="tx-hero" aria-labelledby="training-heading">
+    <div class="tx-hero-media">
+      <p class="tr-photo-slot">写真</p>
+    </div>
+    <div class="tx-hero-copy">
+      <div class="tx-hero-copy-inner">
+        <h1 id="training-heading" class="tx-hero-title">トレーニング・<br>リコンディショニング</h1>
+        <p class="tx-hero-lead">身体を整え、動きを整え、<br class="tx-br-pc">動ける身体をつくる。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-for-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-for-heading" class="tx-heading">こんな方へ</h2>
+      <ul class="tx-extra-list">
+        <li>体力・身体機能を高めたい</li>
+        <li>自分に合ったトレーニングを知りたい</li>
+        <li>身体の使い方や動きのクセを見直したい</li>
+        <li>可動域や安定性を高めたい</li>
+        <li>ケガや不調から少しずつ運動へ戻りたい</li>
+        <li>スポーツや身体を使う仕事のパフォーマンスを高めたい</li>
+        <li>運動したいが、今の身体に何が必要かわからない</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="tx-section tx-philosophy" aria-labelledby="tr-not-only-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-not-only-heading" class="tx-philosophy-title">鍛えるだけが、トレーニングではない</h2>
+      <div class="tx-body tx-philosophy-body">
+        <p>トレーニングは、筋肉を鍛えることだけが目的ではありません。</p>
+        <p>可動域、安定性、バランス、身体の使い方など、動作に必要な要素は人によって異なります。</p>
+        <p>今の身体の状態を確認し、その人に必要なことから整えていく。<br>それもKARiN.の考えるトレーニングです。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-flow-heading">
+    <div class="tx-inner">
+      <h2 id="tr-flow-heading" class="tx-heading">整えて、動ける状態へ。</h2>
+      <ol class="tr-flow">
+        <li>
+          <p class="tx-pillar-name"><span class="tx-num">01</span></p>
+          <h3>整える</h3>
+          <p class="tr-en">CONDITIONING</p>
+          <p>鍼灸・整体・コンディショニングなどを取り入れ、まず身体の状態を整える。</p>
+          <p class="tr-links">
+            <a href="{{ url_for('tokyo_shinkyu') }}">鍼灸</a>
+            <a href="{{ url_for('tokyo_seitai') }}">整体</a>
+          </p>
+        </li>
+        <li>
+          <p class="tx-pillar-name"><span class="tx-num">02</span></p>
+          <h3>動きを整える</h3>
+          <p class="tr-en">RECONDITIONING</p>
+          <p>可動域・安定性・身体の使い方などを見直し、必要な機能を整える。</p>
+        </li>
+        <li>
+          <p class="tx-pillar-name"><span class="tx-num">03</span></p>
+          <h3>動かす</h3>
+          <p class="tr-en">TRAINING</p>
+          <p>必要な筋力・体力・動作能力などを高める。</p>
+        </li>
+        <li>
+          <p class="tx-pillar-name"><span class="tx-num">04</span></p>
+          <h3>高める</h3>
+          <p class="tr-en">PERFORMANCE</p>
+          <p>日常・仕事・スポーツなど、その先の動きにつなげる。</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="tx-section" aria-labelledby="tr-reconditioning-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <p class="tx-eyebrow">RECONDITIONING</p>
+      <h2 id="tr-reconditioning-heading" class="tx-heading">身体を、もう一度整える。</h2>
+      <div class="tx-body">
+        <p>リコンディショニングは、ケガをした後の身体を元に戻すことだけではありません。</p>
+        <p>可動域、安定性、筋力、身体の使い方などを確認し、今の身体に必要な機能を整えていきます。</p>
+        <p>「動かしにくい」「うまく力が入らない」「ある動きをすると別の場所に負担がかかる」。</p>
+        <p>そうした身体の状態を見ながら、必要な運動やトレーニングを組み合わせて、より自然に動ける状態を目指します。</p>
+      </div>
+      <div class="tr-points">
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">01</span>｜可動域</p>
+          <p class="tx-pillar-text">必要な関節の動きが十分でないと、別の場所で動きを補うことがあります。必要な可動域を確保し、身体全体を使いやすくしていきます。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">02</span>｜安定性</p>
+          <p class="tx-pillar-text">体幹が安定しない、腹圧をうまく使えないなど、身体を支える機能を整えます。動作の中で安定して力を発揮できる状態を目指します。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">03</span>｜身体の使い方</p>
+          <p class="tx-pillar-text">左右差や動きのクセ、無意識の代償動作などを確認し、身体に余計な負担がかかりにくい動きを身につけていきます。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-rehab-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-rehab-heading" class="tx-heading">リハビリテーションから、<br class="tx-br-sp">その先へ。</h2>
+      <div class="tx-body">
+        <p>ケガや不調によって低下した身体の機能を取り戻すことは、リハビリテーションの大切な役割です。</p>
+        <p>ただ、日常生活ができるようになったことと、以前のように動けることは同じではありません。</p>
+        <p>スポーツや身体を使う仕事に戻る場合には、そこからさらに筋力や安定性、動作の質を高めていく必要があります。</p>
+        <p>KARiN.では、身体の状態に合わせながら、リハビリテーションからリコンディショニング、そしてトレーニングへとつなげていきます。</p>
+      </div>
+      <div class="tr-path">
+        <div>
+          <p class="tr-en">REHABILITATION</p>
+          <p>機能を取り戻す</p>
+        </div>
+        <p class="tr-arrow" aria-hidden="true">↓</p>
+        <div>
+          <p class="tr-en">RECONDITIONING</p>
+          <p>身体と動きを整える</p>
+        </div>
+        <p class="tr-arrow" aria-hidden="true">↓</p>
+        <div>
+          <p class="tr-en">TRAINING</p>
+          <p>必要な能力を高める</p>
+        </div>
+      </div>
+      <p class="tx-section-lead">身体の状態や目的に合わせて、必要なところから始めます。</p>
+    </div>
+  </section>
+
+  <section class="tx-section" aria-labelledby="tr-training-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <p class="tx-eyebrow">TRAINING</p>
+      <h2 id="tr-training-heading" class="tx-heading">必要な身体の力を、高める。</h2>
+      <div class="tx-body">
+        <p>トレーニングは、筋肉を大きくすることだけが目的ではありません。</p>
+        <p>動作に必要な筋力や体力、身体を支える安定性、力を伝えるためのコントロールなど、その人に必要な能力を高めていきます。</p>
+        <p>必要な方には、パーソナルトレーニングとして、その人の動きに合わせて進めていきます。</p>
+        <p>今の身体の状態を見ながら、無理なくできることから始め、日常や仕事、スポーツなどで使える身体につなげていきます。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-performance-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <p class="tx-eyebrow">PERFORMANCE</p>
+      <h2 id="tr-performance-heading" class="tx-heading">その先の動きへ。</h2>
+      <div class="tx-body">
+        <p>整えた身体を、実際の動きの中で使えるように。</p>
+        <p>スポーツだけでなく、ダンスや舞台、ライブ・イベントなど、身体を使う仕事や活動にも、必要な身体の機能はそれぞれ異なります。</p>
+        <p>競技や表現のための動きはもちろん、仕事や日常生活の中で「もっと動きやすくなりたい」という目的にも対応します。</p>
+        <p>身体の状態と目的に合わせて、必要なトレーニングやコンディショニングを組み合わせていきます。</p>
+      </div>
+      <a href="{{ url_for('trainer') }}" class="tx-text-link">現場でのトレーナーサポートについてはこちら →</a>
+    </div>
+  </section>
+
+  <section class="tx-section" aria-labelledby="tr-daily-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-daily-heading" class="tx-heading">スポーツをしていない方にも。</h2>
+      <p class="tx-section-lead">日常の動きも、身体の使い方から。</p>
+      <div class="tx-body">
+        <p>トレーニングやリコンディショニングは、スポーツをしている人だけのものではありません。</p>
+        <p>歩く、立つ、しゃがむ、階段を上るなど、日常の動きにも身体の使い方は関係しています。</p>
+        <p>「長く歩くと疲れやすい」「しゃがみにくい」「身体を動かすと一部に負担がかかる」など、日常の中で感じる身体の使いにくさも、動き方を見直すきっかけになります。</p>
+        <p>今の身体に必要な動きを確認し、無理なく動かせる状態をつくっていきます。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-both-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <p class="tx-eyebrow">鍼灸師 × アスレティックトレーナー</p>
+      <h2 id="tr-both-heading" class="tx-heading">身体を整える視点と、動かす視点。</h2>
+      <div class="tx-body">
+        <p>身体の状態を整えることと、身体を動かすこと。</p>
+        <p>どちらか一方だけではなく、その両方から身体を見ていくことが、KARiN.の特徴です。</p>
+        <p>鍼灸や整体、コンディショニングで身体の状態を整えながら、可動域や安定性、身体の使い方を確認し、必要に応じてトレーニングへつなげていきます。</p>
+        <p>「まず身体を整えた方がいいのか」「動かしながら整えていくのか」も、その時の状態によって変わります。</p>
+        <p>一つの方法に決めつけず、今の身体に必要なことを考えながら進めていきます。</p>
+        <p>施術全体の考え方は、<a href="{{ url_for('treatment') }}">施術内容</a>でもご案内しています。</p>
+      </div>
+      <p class="tr-links">
+        <a href="{{ url_for('tokyo_shinkyu') }}">鍼灸</a>
+        <a href="{{ url_for('tokyo_seitai') }}">整体</a>
+        <a href="{{ url_for('trainer') }}">トレーナー帯同・現場サポート</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="tx-section" aria-labelledby="tr-session-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-session-heading" class="tx-heading">身体の状態に合わせて、<br class="tx-br-sp">一緒につくっていく。</h2>
+      <div class="tr-points">
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">01</span>｜目的を確認する</p>
+          <p class="tx-pillar-text">何を改善したいのか、どんな動きをしたいのか、現在の状態や目的を確認します。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">02</span>｜身体をチェックする</p>
+          <p class="tx-pillar-text">可動域や安定性、筋力、身体の使い方などを確認します。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">03</span>｜必要に応じて整える</p>
+          <p class="tx-pillar-text">鍼灸・整体・コンディショニングなどを取り入れ、動きやすい状態をつくります。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">04</span>｜動いて確認する</p>
+          <p class="tx-pillar-text">実際に身体を動かしながら、必要なトレーニングやリコンディショニングを行います。</p>
+        </article>
+        <article>
+          <p class="tx-pillar-name"><span class="tx-num">05</span>｜日常・仕事・スポーツへつなげる</p>
+          <p class="tx-pillar-text">その場だけで終わらず、実際の動きの中で使える身体を目指します。</p>
+        </article>
+      </div>
+      <p class="tx-section-lead">身体の状態や目的に合わせて、必要なところから組み合わせます。</p>
+    </div>
+  </section>
+
+  <section class="tx-section tx-section--muted" aria-labelledby="tr-price-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-price-heading" class="tx-heading">料金について</h2>
+      <div class="tx-body">
+        <p>トレーニング・リコンディショニングは、身体の状態や目的に合わせて内容を組み合わせて行います。</p>
+        <p>鍼灸・整体・コンディショニング・トレーニングなどを含めた施術・サポートの料金については、料金ページをご覧ください。</p>
+      </div>
+      <a href="{{ url_for('price') }}" class="tx-text-link">料金を見る →</a>
+    </div>
+  </section>
+
+  <section class="tx-section tx-cta-section" aria-labelledby="tr-cta-heading">
+    <div class="tx-inner tx-inner--narrow">
+      <h2 id="tr-cta-heading" class="tx-heading">何から始めればいいか<br class="tx-br-sp">分からない方も。</h2>
+      <div class="tx-body">
+        <p>トレーニングをした方がいいのか、まず身体を整えた方がいいのか。</p>
+        <p>今の身体の状態や目的によって、必要なことは変わります。</p>
+        <p>「身体を動かしたいけれど、何をすればいいか分からない」<br>「動きや身体の使い方を見直したい」<br>「ケガや不調から、もう一度しっかり動けるようになりたい」</p>
+        <p>そんな方も、まずはお気軽にご相談ください。</p>
+      </div>
+      <div class="tx-cta-row">
+        <a href="{{ url_for('contact') }}" class="tx-cta-btn">お問い合わせ・ご相談</a>
+        <a href="{{ url_for('book_page') }}" class="tx-cta-btn tx-cta-btn--outline">ご予約はこちら</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="{{ url_for('index') }}" class="footer-logo">KARiN. <span>~Sports & Beauty~</span></a>
+          <p class="footer-role">鍼灸師 × アスレティックトレーナー</p>
+          <p class="footer-lead">出張施術。完全予約制。</p>
+        </div>
+        <nav class="footer-nav" aria-label="サイトナビゲーション">
+          <p class="footer-heading">ナビ</p>
+          <ul>
+            <li><a href="{{ url_for('index') }}">ホーム</a></li>
+            <li><a href="{{ url_for('treatment') }}">施術内容</a></li>
+            <li><a href="{{ url_for('tokyo_seitai') }}">整体</a></li>
+            <li><a href="{{ url_for('tokyo_shinkyu') }}">鍼灸</a></li>
+            <li><a href="{{ url_for('training') }}" aria-current="page">トレーニング</a></li>
+            <li><a href="{{ url_for('trainer') }}">トレーナー</a></li>
+            <li><a href="{{ url_for('price') }}">料金</a></li>
+            <li><a href="{{ url_for('contact') }}">お問い合わせ</a></li>
+          </ul>
+        </nav>
+        <div class="footer-info">
+          <p class="footer-heading">ご案内</p>
+          <dl class="footer-facts">
+            <div>
+              <dt>対応エリア</dt>
+              <dd>東京（代々木上原中心）／福岡（薬院中心）<br>出張施術・完全予約制</dd>
+            </div>
+            <div>
+              <dt>営業時間</dt>
+              <dd>東京 12:00〜26:00<br>福岡 10:00〜19:00<br>定休日：不定休</dd>
+            </div>
+          </dl>
+          <a href="{{ url_for('book_page') }}" class="footer-book">ご予約はこちら</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-sns">
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">
+            <svg class="is-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c-4.7 0-8.5 3.1-8.5 6.9 0 3.1 2.8 5.8 6.6 6.6.3.1.6.4.5.8l-.2 1.2c0 .3.3.5.6.4 2.5-1.1 4.3-1.9 5.4-2.4 2.8-.7 5.6-3.2 5.6-6.6 0-3.8-3.8-6.9-8.5-6.9z"/></svg>
+            <span>LINE</span>
+          </a>
+          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.6" cy="7.4" r="0.8" fill="currentColor" stroke="none"/></svg>
+            <span>Instagram</span>
+          </a>
+        </div>
+        <p class="footer-copy">© 2025 <span class="karin-brand">KARiN.</span> All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,5 +1,8 @@
--- VIPフラグに「⭐️と☘️の両方」を許可（star,clover）
--- 既存の patients_vip_level_check を更新
+-- patients.vip_level
+-- none / star / clover / 両方（star,clover と clover,star）
+
+ALTER TABLE public.patients
+ADD COLUMN IF NOT EXISTS vip_level text NOT NULL DEFAULT 'none';
 
 ALTER TABLE public.patients
 DROP CONSTRAINT IF EXISTS patients_vip_level_check;

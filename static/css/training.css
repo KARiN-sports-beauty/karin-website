@@ -1,0 +1,200 @@
+/* =========================================================
+   /training 専用
+   見出し・本文・ボタンは treatment.css の tx-* を使う。
+   ここにあるのは、4つの流れ・縦の段階・写真の空きだけ。
+========================================================= */
+
+.training-page {
+  padding-top: 70px;
+}
+
+.training-page .tx-eyebrow {
+  text-align: center;
+}
+
+.training-page .tx-hero-copy-inner {
+  width: auto;
+}
+
+.training-page .tx-hero-title {
+  display: block;
+  max-width: 100%;
+}
+
+.training-page .tx-hero-media {
+  background-color: #f6f3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.training-page .tr-photo-slot {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #1E3A5F;
+  opacity: 0.45;
+}
+
+.training-page .tr-en {
+  margin: 0 0 12px;
+  font-family: "Playfair Display", "Noto Sans JP", serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #c0a062;
+}
+
+.training-page .tr-flow {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 22px;
+  margin: 48px 0 0;
+  padding: 0;
+  text-align: left;
+}
+
+.training-page .tr-flow li {
+  margin: 0;
+  padding-top: 18px;
+  border-top: 2px solid #c0a062;
+}
+
+.training-page .tr-flow h3 {
+  margin: 0 0 8px;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  color: #1E3A5F;
+}
+
+.training-page .tr-flow li > p:not(.tx-pillar-name):not(.tr-en):not(.tr-links) {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2;
+  color: #1E3A5F;
+  opacity: 0.82;
+}
+
+.training-page .tr-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 18px 0 0;
+}
+
+.training-page .tr-links a {
+  color: #1E3A5F;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-bottom: 1px solid #c0a062;
+  padding-bottom: 2px;
+}
+
+.training-page .tr-links a:hover {
+  color: #8fa3c1;
+}
+
+.training-page .tr-points {
+  margin: 40px auto 0;
+  max-width: 720px;
+  text-align: left;
+}
+
+.training-page .tr-points article + article {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid #eee8dc;
+}
+
+.training-page .tr-path {
+  max-width: 280px;
+  margin: 40px auto 0;
+}
+
+.training-page .tr-path p {
+  margin: 0;
+  font-size: 0.98rem;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+}
+
+.training-page .tr-path .tr-en {
+  margin-bottom: 4px;
+}
+
+.training-page .tr-arrow {
+  margin: 12px 0;
+  color: #c0a062;
+  letter-spacing: 0;
+}
+
+.training-page .tx-body a {
+  color: #1E3A5F;
+  border-bottom: 1px solid #c0a062;
+  text-decoration: none;
+}
+
+.training-page .tx-body a:hover {
+  color: #8fa3c1;
+}
+
+@media (max-width: 1024px) {
+  .training-page .hamburger,
+  .training-page .nav-overlay {
+    display: none;
+  }
+
+  .training-page .nav {
+    position: static;
+    right: auto;
+    width: auto;
+    height: auto;
+    background: transparent;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
+    overflow: visible;
+  }
+
+  .training-page .nav a:not(.nav-book) {
+    width: auto;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .training-page .nav .nav-book {
+    width: auto;
+    margin-top: 0;
+  }
+
+  .training-page .tr-flow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .training-page .tx-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .training-page .tr-flow {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
