@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
+import external_posts
 from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
@@ -4398,6 +4399,7 @@ def admin_blogs():
     try:
         res = supabase_admin.table("blogs").select("*").order("created_at", desc=True).execute()
         blogs = [prepare_blog_item(dict(item)) for item in (res.data or [])]
+        external_posts.attach_article_buttons(blogs, supabase_admin)
         return render_template(
             "admin_blogs.html",
             blogs=blogs,
@@ -4638,6 +4640,133 @@ def admin_blog_delete(blog_id):
         print(f"❌ トレースバック: {traceback.format_exc()}")
         flash(f"記事の削除に失敗しました: {e}", "error")
     return redirect("/admin/blogs")
+
+
+def _external_post_form_values(blog, target, existing):
+    """保存済みがあればそれを、無ければ媒体別の下書きを表示する。保存はしない。"""
+    public_url = ""
+    if blog.get("slug"):
+        public_url = url_for("show_blog", slug=blog["slug"], _external=True)
+    if existing:
+        return {
+            "body": existing.get("body") or "",
+            "link_url": existing.get("link_url") or public_url,
+            "image_url": existing.get("image_url") or blog.get("image") or "",
+            "status_label": external_posts.status_caption(existing.get("status")),
+        }
+    return {
+        "body": external_posts.starter_body(target["key"], blog.get("title"), blog.get("excerpt"), public_url),
+        "link_url": public_url,
+        "image_url": blog.get("image") or "",
+        "status_label": external_posts.status_caption(None),
+    }
+
+
+@app.route("/admin/blogs/<blog_id>/posts/<target_key>", methods=["GET", "POST"])
+@staff_section_required("blogs")
+def admin_blog_external_post(blog_id, target_key):
+    """媒体別の投稿確認。API未接続のため保存まで。外部サービスへは送らない。"""
+    target = external_posts.get_target(target_key)
+    if target is None:
+        flash("投稿先が見つかりません", "error")
+        return redirect("/admin/blogs")
+    try:
+        res = supabase_admin.table("blogs").select("*").eq("id", blog_id).limit(1).execute()
+    except Exception as exc:
+        print("❌ 外部投稿の記事取得エラー:", exc)
+        flash("記事の取得に失敗しました", "error")
+        return redirect("/admin/blogs")
+    if not res.data:
+        flash("記事が見つかりません", "error")
+        return redirect("/admin/blogs")
+    blog = prepare_blog_item(dict(res.data[0]))
+    if blog.get("draft"):
+        flash("下書きの記事は、公開してページを確認してから外部投稿できます", "error")
+        return redirect("/admin/blogs")
+
+    existing = None
+    events = []
+    try:
+        existing = external_posts.find_notes_post(supabase_admin, blog["id"], target)
+        events = external_posts.list_post_events(supabase_admin, (existing or {}).get("id"))
+    except Exception as exc:
+        print("❌ 外部投稿の読み込みエラー:", exc)
+        flash("保存済みの投稿文を読み込めませんでした", "error")
+
+    if request.method == "POST":
+        try:
+            body = external_posts.clean_body(request.form.get("body"))
+            link_url = external_posts.clean_http_url(request.form.get("link_url"))
+            image_url = external_posts.clean_image_ref(request.form.get("image_url"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template(
+                "admin_blog_external_post.html",
+                blog=blog,
+                target=target,
+                form={
+                    "body": request.form.get("body") or "",
+                    "link_url": request.form.get("link_url") or "",
+                    "image_url": request.form.get("image_url") or "",
+                    "status_label": external_posts.status_caption((existing or {}).get("status")),
+                },
+                events=events,
+            )
+        staff = session.get("staff") or {}
+        prepared, reason = external_posts.prepare_notes_save(
+            existing,
+            target,
+            blog["id"],
+            body,
+            link_url,
+            image_url,
+            staff.get("id"),
+            now_iso(),
+        )
+        if reason:
+            flash(reason, "error")
+            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+        if prepared["fields"]["status"] != "draft":
+            flash("投稿文の保存に失敗しました", "error")
+            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+        try:
+            external_posts.save_notes_post(supabase_admin, existing, prepared)
+        except Exception as exc:
+            print("❌ 外部投稿の保存エラー:", exc)
+            flash(f"投稿文の保存に失敗しました: {exc}", "error")
+            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+        flash(f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。", "success")
+        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+
+    return render_template(
+        "admin_blog_external_post.html",
+        blog=blog,
+        target=target,
+        form=_external_post_form_values(blog, target, existing),
+        events=events,
+    )
+
+
+@app.route("/admin/gbp/services")
+@staff_section_required("blogs")
+def admin_gbp_services():
+    """GBPサービス投稿の土台。東京と福岡を切り替え、投稿はしない。"""
+    area = external_posts.service_area(request.args.get("area"))
+    statuses = external_posts.service_status_map(supabase_admin, area)
+    services = []
+    for item in external_posts.GBP_SERVICE_CATALOG:
+        services.append({
+            "key": item["key"],
+            "label": item["label"],
+            "note": item["note"],
+            "status_label": external_posts.status_caption(statuses.get(item["key"])),
+        })
+    return render_template(
+        "admin_gbp_services.html",
+        area=area,
+        area_label=external_posts.GBP_SERVICE_AREAS[area],
+        services=services,
+    )
 
 
 # ===================================================

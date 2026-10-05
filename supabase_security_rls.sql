@@ -136,7 +136,9 @@ BEGIN
     'invoice_items',
     'invoice_places',
     'self_care_videos',
-    'staff'
+    'staff',
+    'external_posts',
+    'external_post_events'
   ]
   LOOP
     IF to_regclass(format('public.%I', t)) IS NOT NULL THEN

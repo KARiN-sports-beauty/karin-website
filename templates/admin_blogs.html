@@ -55,6 +55,16 @@
       <a href="/blog/{{ blog.slug }}" target="_blank" class="admin-blog-view-link">🔗 表示</a>
       {% endif %}
     </div>
+
+    <div class="admin-blog-post-actions">
+      {% for button in blog.external_post_buttons %}
+        {% if blog.draft %}
+        <span class="admin-blog-post-link is-disabled">{{ button.label }}</span>
+        {% else %}
+        <a href="/admin/blogs/{{ blog.id }}/posts/{{ button.key }}" class="admin-blog-post-link {{ button.css_class }}">{{ button.label }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
     
     <div class="admin-blog-buttons">
       <a href="/admin/blogs/edit/{{ blog.id }}" class="reply-btn">✏ 編集</a>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ target.button_label }} | KARiN.NOTES{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">{{ target.button_label }}</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<p class="admin-blog-category" style="margin-bottom: 8px;">
+  <a href="/admin/blogs" class="admin-blog-view-link">KARiN.NOTES 一覧へ戻る</a>
+</p>
+<p style="margin: 0 0 8px; color: #1E3A5F; font-weight: 600;">{{ blog.title }}</p>
+{% if blog.slug %}
+<p style="margin: 0 0 12px;">
+  <a href="/blog/{{ blog.slug }}" target="_blank" class="admin-blog-view-link">公開ページを表示</a>
+</p>
+{% endif %}
+<p class="admin-blog-body">{{ target.guide }}</p>
+<p class="admin-blog-category">状態: {{ form.status_label }}</p>
+<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信は、API承認後に接続します。</p>
+
+<form method="POST" action="/admin/blogs/{{ blog.id }}/posts/{{ target.key }}" style="max-width: 800px;">
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">投稿文</label>
+    <textarea name="body" rows="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ form.body }}</textarea>
+  </div>
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">リンク先</label>
+    <input type="text" name="link_url" value="{{ form.link_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
+    <input type="text" name="image_url" value="{{ form.image_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+  </div>
+  <button type="submit" class="admin-blog-btn">この内容を保存</button>
+</form>
+
+{% if events %}
+<h3 class="admin-subtitle">保存履歴</h3>
+<div class="admin-blog-grid">
+  {% for event in events %}
+  <div class="admin-blog-card">
+    <div class="admin-blog-head">
+      <strong>{{ event.label }}</strong>
+      <span class="admin-blog-date">{{ event.created_at | to_jst }}</span>
+    </div>
+    {% if event.detail %}
+    <p class="admin-blog-body">{{ event.detail }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

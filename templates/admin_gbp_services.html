@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}GBPサービス投稿管理 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">GBPサービス投稿管理</h2>
+<p class="admin-blog-body">選んだ地域のサービス一覧と、その地域での投稿状態を確認します。投稿文の作成と送信は、GBP APIの承認後に接続します。</p>
+
+<div class="admin-blog-buttons">
+  <a href="/admin/gbp/services?area=tokyo" class="{% if area == 'tokyo' %}reply-btn{% else %}admin-blog-btn-white{% endif %}">東京</a>
+  <a href="/admin/gbp/services?area=fukuoka" class="{% if area == 'fukuoka' %}reply-btn{% else %}admin-blog-btn-white{% endif %}">福岡</a>
+</div>
+
+<h3 class="admin-subtitle">{{ area_label }}</h3>
+<div class="admin-blog-grid">
+  {% for service in services %}
+  <div class="admin-blog-card">
+    <div class="admin-blog-head">
+      <strong>{{ service.label }}</strong>
+    </div>
+    <p class="admin-blog-category">{{ area_label }}：{{ service.status_label }}</p>
+    {% if service.note %}
+    <p class="admin-blog-body">{{ service.note }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
