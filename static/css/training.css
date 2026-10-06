@@ -384,7 +384,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 24% 46%;
+  object-position: 36% 46%;
 }
 
 .training-page .tr-performance::before {
@@ -397,7 +397,7 @@
 }
 
 .training-page .tr-performance > .tx-inner {
-  max-width: min(22em, 36%);
+  max-width: min(24em, 54%);
   margin-left: auto;
   margin-right: 0;
   text-align: left;
