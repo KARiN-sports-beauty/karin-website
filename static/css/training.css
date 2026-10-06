@@ -315,7 +315,7 @@
 
 .training-page .tr-rehab .tx-body,
 .training-page .tr-rehab .tx-section-lead {
-  max-width: 40em;
+  max-width: 46em;
 }
 
 .training-page .tr-path {
@@ -555,6 +555,10 @@
     padding-top: 20px;
     border-top: 1px solid rgba(192, 160, 98, 0.55);
     border-left: none;
+  }
+
+  .training-page .tr-rehab .tx-section-lead {
+    text-align: left;
   }
 
   .training-page .tr-path {
