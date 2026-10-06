@@ -1,11 +1,148 @@
 /* =========================================================
    /training 専用
    見出し・本文・ボタンは treatment.css の tx-* を使う。
-   ここにあるのは、4つの流れと縦の段階だけ。
+   FVは写真を全面に敷き、ヘッダーは写真とつなぐ。
 ========================================================= */
 
 .training-page {
-  padding-top: 70px;
+  padding-top: 0;
+}
+
+.training-page .header {
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 100%);
+  box-shadow: none;
+  border-bottom: none;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.training-page .nav {
+  gap: 10px;
+}
+
+.training-page .nav a:not(.nav-book) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E3A5F;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  min-height: 32px;
+  padding: 5px 16px;
+  border: 1px solid rgba(30, 58, 95, 0.72);
+  border-radius: 40px;
+  box-sizing: border-box;
+  transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
+}
+
+.training-page .nav a:hover:not(.nav-book) {
+  color: #1E3A5F;
+  background: rgba(30, 58, 95, 0.06);
+  border-color: #1E3A5F;
+}
+
+.training-page .nav-book {
+  min-height: 32px;
+  padding: 5px 14px;
+  background: transparent;
+  color: #c0a062;
+  border-color: #c0a062;
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+@media (hover: hover) {
+  .training-page .nav a.nav-book:hover {
+    background: transparent;
+    color: #d4b57a;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
+}
+
+.training-page.is-past-hero .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
+.training-page.is-past-hero .nav-book {
+  background: #1E3A5F;
+  color: #ffffff;
+  border-color: #1E3A5F;
+}
+
+@media (hover: hover) {
+  .training-page.is-past-hero .nav a.nav-book:hover {
+    background: #4a5f7a;
+    color: #ffffff;
+    border-color: #4a5f7a;
+    box-shadow: none;
+  }
+}
+
+.training-page .tx-hero {
+  grid-template-columns: 1fr;
+  grid-template-areas: "copy";
+  min-height: 100svh;
+  overflow: hidden;
+  background-color: #f6f4f1;
+}
+
+.training-page .tx-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  grid-area: auto;
+  z-index: 0;
+}
+
+.training-page .tx-hero-media img {
+  object-position: 64% 46%;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.training-page .tx-hero-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+}
+
+.training-page .tx-hero-media::after {
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.58) 18%,
+    rgba(255, 255, 255, 0.22) 36%,
+    rgba(255, 255, 255, 0.04) 52%,
+    transparent 68%
+  );
+}
+
+.training-page .tx-hero-copy {
+  z-index: 1;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: none;
+  padding: 120px 40% 88px 8%;
 }
 
 .training-page .tx-eyebrow {
@@ -156,13 +293,31 @@
 
   .training-page .nav a:not(.nav-book) {
     width: auto;
-    padding: 0;
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
     border-bottom: none;
   }
 
   .training-page .nav .nav-book {
     width: auto;
+    max-width: none;
     margin-top: 0;
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+  }
+
+  .training-page .tx-hero {
+    min-height: 72svh;
+  }
+
+  .training-page .tx-hero-copy {
+    padding: 108px 28% 64px 7%;
+  }
+
+  .training-page .tx-hero-media img {
+    object-position: 70% 44%;
   }
 
   .training-page .tr-flow {
@@ -173,10 +328,61 @@
 @media (max-width: 768px) {
   .training-page .tx-hero {
     grid-template-columns: 1fr;
+    min-height: 62svh;
+  }
+
+  .training-page .tx-hero-copy {
+    justify-content: flex-end;
+    padding: 96px 7% 36px;
+  }
+
+  .training-page .tx-hero-media img {
+    object-position: 72% 42%;
+  }
+
+  .training-page .tx-hero-media::before {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
+  }
+
+  .training-page .tx-hero-media::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.05) 36%,
+        rgba(255, 255, 255, 0.78) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.42) 0%,
+        rgba(255, 255, 255, 0.08) 46%,
+        transparent 100%
+      );
   }
 
   .training-page .tr-flow {
     grid-template-columns: 1fr;
     gap: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .training-page .logo {
+    font-size: 1.55rem;
+  }
+
+  .training-page .nav a:not(.nav-book) {
+    min-height: 28px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+  }
+
+  .training-page .nav .nav-book {
+    min-height: 28px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
   }
 }

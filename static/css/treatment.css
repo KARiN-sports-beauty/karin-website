@@ -493,6 +493,15 @@
     max-width: 920px;
   }
 
+  .tx-trainer-note {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .tx-trainer-note .tx-inner--narrow {
+    max-width: 1100px;
+  }
+
   .tx-pillar-title {
     font-size: 1.02rem;
     font-weight: 500;
