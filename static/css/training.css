@@ -156,6 +156,8 @@
 .training-page .tx-hero-title {
   display: block;
   max-width: 100%;
+  font-family: "Noto Serif JP", "Playfair Display", serif;
+  font-weight: 500;
 }
 
 .training-page .tr-en {
@@ -296,7 +298,6 @@
     min-height: 30px;
     padding: 4px 12px;
     font-size: 0.72rem;
-    border-bottom: none;
   }
 
   .training-page .nav .nav-book {
