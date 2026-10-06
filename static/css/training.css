@@ -388,6 +388,36 @@
   }
 }
 
+.training-page [aria-labelledby="tr-for-heading"] {
+  position: relative;
+  isolation: isolate;
+  background-color: #fafafa;
+  background-image: url("../images/traininghowabout.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 46%;
+}
+
+@media (max-width: 768px) {
+  .training-page [aria-labelledby="tr-for-heading"] {
+    background-position: 34% 42%;
+  }
+}
+
+.training-page [aria-labelledby="tr-for-heading"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: rgba(250, 250, 250, 0.86);
+}
+
+.training-page [aria-labelledby="tr-for-heading"] > .tx-inner {
+  position: relative;
+  z-index: 1;
+}
+
 .training-page [aria-labelledby="tr-for-heading"] .tx-inner--narrow + .tx-inner--narrow {
   margin-top: 32px;
 }
