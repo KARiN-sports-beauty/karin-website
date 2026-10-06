@@ -189,7 +189,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  margin-top: 40px;
+  margin-top: 48px;
   text-align: center;
 }
 
@@ -197,8 +197,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 220px;
-  max-width: 280px;
+  flex: 0 0 260px;
+  max-width: 100%;
   min-height: 48px;
   background: #ffffff;
   color: #1E3A5F;
@@ -253,18 +253,6 @@
   height: 28px;
   border-radius: 50%;
 }
-
-/* ========== ロゴ配置 ========== */
-.inline-logo {
-  display: block;
-  width: 120px;
-  height: auto;
-  margin-left: auto;
-  opacity: 0.9;
-  transition: opacity 0.3s ease;
-}
-
-.inline-logo:hover { opacity: 1; }
 
 /* =========================================================
    💻 1024px（タブレット横）
@@ -439,11 +427,6 @@
   .trainer-price {
     font-size: 0.95rem;
     margin-bottom: 18px;
-  }
-
-  .inline-logo {
-    width: 90px;            /* ✅ スマホでは少し小さく */
-    margin-top: 42px;       /* ✅ ボタンとの距離を広げる */
   }
 
   .home-btn img {

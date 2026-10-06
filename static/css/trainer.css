@@ -873,10 +873,11 @@
     background-color: #ffffff;
   }
 
-  .trainer-intro {
-    position: relative;
+  .trainer-page .tx-philosophy .trainer-intro {
+    position: static;
     grid-template-columns: 1fr;
     min-height: 0;
+    transform: none;
   }
 
   .trainer-intro-copy {
@@ -890,7 +891,7 @@
     inset: 0;
     z-index: 0;
     min-height: 0;
-    width: 100%;
+    width: auto;
     height: auto;
   }
 

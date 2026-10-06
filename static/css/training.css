@@ -1,7 +1,7 @@
 /* =========================================================
    /training 専用
    見出し・本文・ボタンは treatment.css の tx-* を使う。
-   ここにあるのは、4つの流れ・縦の段階・写真の空きだけ。
+   ここにあるのは、4つの流れと縦の段階だけ。
 ========================================================= */
 
 .training-page {
@@ -19,24 +19,6 @@
 .training-page .tx-hero-title {
   display: block;
   max-width: 100%;
-}
-
-.training-page .tx-hero-media {
-  background-color: #f6f3ee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.training-page .tr-photo-slot {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  color: #1E3A5F;
-  opacity: 0.45;
 }
 
 .training-page .tr-en {
