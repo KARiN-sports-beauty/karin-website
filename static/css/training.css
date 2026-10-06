@@ -320,8 +320,8 @@
 
 .training-page .tr-path {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr) 40px minmax(0, 1fr);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) 32px minmax(0, 1fr);
+  align-items: center;
   max-width: none;
   margin: 36px 0 0;
   text-align: center;
@@ -352,31 +352,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   margin: 0;
   color: #c0a062;
   letter-spacing: 0;
   line-height: 1;
 }
 
-.training-page .tr-arrow::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  left: 50%;
-  width: 1px;
-  background: rgba(192, 160, 98, 0.5);
-  transform: translateX(-50%);
-}
-
 .training-page .tr-arrow::after {
   content: "→";
-  position: relative;
-  z-index: 1;
-  padding: 6px 0;
-  background: #fafafa;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .training-page .tx-body a {
@@ -575,14 +559,9 @@
     margin: 16px 0;
   }
 
-  .training-page .tr-arrow::before {
-    content: none;
-  }
-
   .training-page .tr-arrow::after {
     content: "↓";
-    padding: 0;
-    background: transparent;
+    font-size: 0.9rem;
   }
 }
 
