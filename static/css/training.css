@@ -267,6 +267,10 @@
   margin: 0;
 }
 
+.training-page .tr-recondition-photo img {
+  border-radius: 6px;
+}
+
 .training-page .tr-recondition-copy {
   grid-area: copy;
   text-align: left;
@@ -498,13 +502,14 @@
   .training-page .tr-recondition > .tr-points article,
   .training-page .tr-recondition > .tr-points article:first-child,
   .training-page .tr-recondition > .tr-points article:last-child {
-    padding: 0;
+    padding-left: 0;
+    padding-right: 0;
     border-left: none;
   }
 
   .training-page .tr-recondition > .tr-points article + article {
     margin-top: 20px;
-    padding: 20px 0 0;
+    padding-top: 20px;
     border-top: 1px solid rgba(192, 160, 98, 0.55);
     border-left: none;
   }
