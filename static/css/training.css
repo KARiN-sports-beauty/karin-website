@@ -387,3 +387,28 @@
     font-size: 0.72rem;
   }
 }
+
+@media (min-width: 769px) {
+  .training-page [aria-labelledby="tr-for-heading"] {
+    padding-top: 56px;
+    padding-bottom: 60px;
+  }
+
+  .training-page [aria-labelledby="tr-for-heading"] .tx-inner--narrow {
+    max-width: 1100px;
+  }
+
+  .training-page [aria-labelledby="tr-for-heading"] .tx-extra-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 20px;
+  }
+
+  .training-page [aria-labelledby="tr-for-heading"] .tx-extra-list li {
+    padding: 10px 18px 10px 16px;
+  }
+
+  .training-page [aria-labelledby="tr-for-heading"] .tx-extra-list li:nth-child(n + 4) {
+    border-bottom: 1px solid #eee8dc;
+  }
+}
