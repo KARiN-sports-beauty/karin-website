@@ -317,7 +317,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background-color: #1E3A5F;
+  background-color: #ffffff;
 }
 
 .training-page .tr-training-photo {
@@ -340,18 +340,10 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(30, 58, 95, 0.92) 0%,
-    rgba(30, 58, 95, 0.78) 34%,
-    rgba(30, 58, 95, 0.34) 62%,
-    rgba(30, 58, 95, 0.2) 100%
-  );
+  background-color: rgba(255, 255, 255, 0.62);
 }
 
 .training-page .tr-training > .tx-inner {
-  position: relative;
-  z-index: 2;
   max-width: min(24em, 54%);
   margin-left: 0;
   margin-right: auto;
@@ -359,17 +351,19 @@
 }
 
 .training-page .tr-training .tx-eyebrow,
+.training-page .tr-training .tx-heading,
+.training-page .tr-training .tx-body {
+  position: relative;
+  z-index: 2;
+}
+
+.training-page .tr-training .tx-eyebrow,
 .training-page .tr-training .tx-heading {
   text-align: left;
 }
 
-.training-page .tr-training .tx-heading,
 .training-page .tr-training .tx-body p {
-  color: #fff;
-}
-
-.training-page .tr-training .tx-body p {
-  opacity: 0.94;
+  opacity: 1;
 }
 
 .training-page .tr-rehab .tx-body,
@@ -605,13 +599,14 @@
     background-color: #ffffff;
   }
 
-  .training-page .tr-training::before {
-    content: none;
-  }
-
   .training-page .tr-training-photo {
     position: static;
-    margin: 0 0 28px;
+    z-index: auto;
+    margin: 28px 0 0;
+  }
+
+  .training-page .tr-training .tx-body {
+    margin-top: 28px;
   }
 
   .training-page .tr-training-photo img {
