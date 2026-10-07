@@ -118,6 +118,7 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_seitai.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_feature.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 </head>
@@ -277,11 +278,11 @@
     </section>
 
     <section class="ts-section ts-section--muted" aria-labelledby="ts-sport-heading">
-      <div class="ts-inner ts-feature ts-feature--sport" data-aos="fade-right" data-aos-duration="700" data-aos-easing="ease-out">
+      <div class="ts-inner ts-feature ts-feature--sport">
         <div class="ts-feature-image">
-          <img src="{{ url_for('static', filename='images/tokyoseitaisports.jpg') }}" alt="スポーツ・アスリートのコンディショニング" width="1673" height="940">
+          <img src="{{ url_for('static', filename='images/tokyoshinkyusports.jpg') }}" alt="スポーツ・アスリートのコンディショニング" width="1536" height="1024">
         </div>
-        <div class="ts-feature-body">
+        <div class="ts-feature-body" data-aos="fade-right" data-aos-duration="700" data-aos-easing="ease-out">
           <p class="ts-eyebrow ts-eyebrow--left">Athletes</p>
           <h2 id="ts-sport-heading" class="ts-heading ts-heading--left">スポーツ・アスリートの<br class="ts-br-sp">コンディショニングにも</h2>
           <p class="ts-feature-highlight">スポーツ・アスリートの現場で約20年。</p>
@@ -294,11 +295,11 @@
     </section>
 
     <section class="ts-section" aria-labelledby="ts-dance-heading">
-      <div class="ts-inner ts-feature ts-feature--dance" data-aos="fade-left" data-aos-duration="700" data-aos-easing="ease-out">
+      <div class="ts-inner ts-feature ts-feature--dance">
         <div class="ts-feature-image">
-          <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="身体の動きを整える整体・コンディショニング" width="720" height="480">
+          <img src="{{ url_for('static', filename='images/tokyoshinkyudancer.jpg') }}" alt="身体の動きを整える整体・コンディショニング" width="1536" height="1024">
         </div>
-        <div class="ts-feature-body">
+        <div class="ts-feature-body" data-aos="fade-left" data-aos-duration="700" data-aos-easing="ease-out">
           <p class="ts-eyebrow ts-eyebrow--left">Artists</p>
           <h2 id="ts-dance-heading" class="ts-heading ts-heading--left">アーティスト・ダンサーなど身体を使って表現する方へ</h2>
           <p class="ts-feature-highlight">表現する身体の、その時のコンディションに寄り添う。</p>

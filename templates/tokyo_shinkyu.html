@@ -134,6 +134,7 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_shinkyu.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_feature.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 </head>
@@ -264,11 +265,11 @@
     </section>
 
     <section class="ts-section ts-section--muted" aria-labelledby="ts-sport-heading">
-      <div class="ts-inner ts-feature ts-feature--sport" data-aos="fade-right" data-aos-duration="700" data-aos-easing="ease-out">
+      <div class="ts-inner ts-feature ts-feature--sport">
         <div class="ts-feature-image">
-          <img src="{{ url_for('static', filename='images/tokyoseitaisports.jpg') }}" alt="スポーツ・アスリートのコンディショニング" width="1673" height="940">
+          <img src="{{ url_for('static', filename='images/tokyoshinkyusports.jpg') }}" alt="スポーツ・アスリートのコンディショニング" width="1536" height="1024">
         </div>
-        <div class="ts-feature-body">
+        <div class="ts-feature-body" data-aos="fade-right" data-aos-duration="700" data-aos-easing="ease-out">
           <p class="ts-eyebrow ts-eyebrow--left">Athletes</p>
           <h2 id="ts-sport-heading" class="ts-heading ts-heading--left">スポーツ・アスリートの<br class="ts-br-sp">コンディショニングにも</h2>
           <p class="ts-feature-highlight">競技やトレーニングの状況に合わせて、身体を整える。</p>
@@ -281,11 +282,11 @@
     </section>
 
     <section class="ts-section" aria-labelledby="ts-dance-heading">
-      <div class="ts-inner ts-feature ts-feature--dance" data-aos="fade-left" data-aos-duration="700" data-aos-easing="ease-out">
+      <div class="ts-inner ts-feature ts-feature--dance">
         <div class="ts-feature-image">
-          <img src="{{ url_for('static', filename='images/treatment2.jpg') }}" alt="身体を使う方への出張鍼灸" width="1680" height="944">
+          <img src="{{ url_for('static', filename='images/tokyoshinkyudancer.jpg') }}" alt="身体を使う方への出張鍼灸" width="1536" height="1024">
         </div>
-        <div class="ts-feature-body">
+        <div class="ts-feature-body" data-aos="fade-left" data-aos-duration="700" data-aos-easing="ease-out">
           <p class="ts-eyebrow ts-eyebrow--left">Artists</p>
           <h2 id="ts-dance-heading" class="ts-heading ts-heading--left">アーティスト・ダンサーなど、<br class="ts-br-sp">身体を使う方にも</h2>
           <p class="ts-feature-highlight">本番がある仕事の、その時のコンディションに寄り添う。</p>

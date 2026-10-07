@@ -25,7 +25,7 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.28;
+  opacity: 0.09;
   mix-blend-mode: multiply;
   pointer-events: none;
 }
@@ -221,10 +221,6 @@
 
 .training-page .tr-flow li:last-child {
   padding-right: 0;
-}
-
-.training-page [aria-labelledby="tr-flow-heading"] {
-  background-color: rgba(250, 250, 250, 0.8);
 }
 
 .training-page [aria-labelledby="tr-flow-heading"] .tx-section-lead {
@@ -506,10 +502,6 @@
   opacity: 1;
 }
 
-.training-page [aria-labelledby="tr-price-heading"] {
-  background-color: rgba(250, 250, 250, 0.8);
-}
-
 .training-page [aria-labelledby="tr-price-heading"] .tx-body {
   text-align: center;
 }
@@ -551,14 +543,6 @@
     color: #1E3A5F;
     border-color: #1E3A5F;
   }
-}
-
-.training-page [aria-labelledby="tr-rehab-heading"] {
-  background-color: rgba(250, 250, 250, 0.8);
-}
-
-.training-page [aria-labelledby="tr-reconditioning-heading"] {
-  background-color: rgba(255, 255, 255, 0.8);
 }
 
 .training-page .tr-rehab .tx-body,
@@ -698,7 +682,8 @@
 
 @media (max-width: 768px) {
   .training-page::before {
-    width: min(78vw, 340px);
+    width: min(72vw, 300px);
+    opacity: 0.07;
   }
 
   .training-page .tx-hero {
