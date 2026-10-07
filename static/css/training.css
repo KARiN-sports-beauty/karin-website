@@ -251,6 +251,60 @@
   border-top: 1px solid #eee8dc;
 }
 
+.training-page [aria-labelledby="tr-session-heading"] {
+  background-color: #ffffff;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] > .tx-inner {
+  max-width: 1100px;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tr-points {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: 24px;
+  max-width: none;
+  margin-top: 48px;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tr-points article {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tr-points article + article {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tr-points article:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  top: 0.15em;
+  right: -24px;
+  width: 24px;
+  text-align: center;
+  color: #c0a062;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tx-num {
+  font-size: 1em;
+}
+
+.training-page [aria-labelledby="tr-session-heading"] .tx-section-lead {
+  max-width: 40em;
+  margin-top: 52px;
+  font-weight: 500;
+  opacity: 1;
+}
+
 .training-page .tr-recondition {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -773,6 +827,28 @@
   .training-page [aria-labelledby="tr-both-heading"] .tx-eyebrow,
   .training-page [aria-labelledby="tr-both-heading"] .tx-heading {
     text-align: center;
+  }
+
+  .training-page [aria-labelledby="tr-session-heading"] .tr-points {
+    display: block;
+    max-width: 640px;
+    margin-top: 32px;
+  }
+
+  .training-page [aria-labelledby="tr-session-heading"] .tr-points article:not(:last-child)::after {
+    content: "↓";
+    position: static;
+    display: block;
+    width: auto;
+    margin: 22px 0 6px;
+    right: auto;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .training-page [aria-labelledby="tr-session-heading"] .tx-section-lead {
+    margin-top: 36px;
+    text-align: left;
   }
 
   .training-page .tr-rehab .tx-section-lead {
