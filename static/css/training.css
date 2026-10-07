@@ -478,6 +478,45 @@
   text-align: center;
 }
 
+.training-page [aria-labelledby="tr-cta-heading"] {
+  background-color: #ffffff;
+  padding-top: 108px;
+  padding-bottom: 120px;
+}
+
+.training-page [aria-labelledby="tr-cta-heading"] .tx-body {
+  max-width: 36em;
+  text-align: center;
+}
+
+.training-page [aria-labelledby="tr-cta-heading"] .tx-cta-btn {
+  background: #1E3A5F;
+  color: #ffffff;
+  border-color: #1E3A5F;
+  box-shadow: none;
+}
+
+.training-page [aria-labelledby="tr-cta-heading"] .tx-cta-btn--outline {
+  background: #ffffff;
+  color: #1E3A5F;
+  border-color: rgba(30, 58, 95, 0.28);
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .training-page [aria-labelledby="tr-cta-heading"] .tx-cta-btn:hover {
+    background: #4a5f7a;
+    color: #ffffff;
+    border-color: #4a5f7a;
+  }
+
+  .training-page [aria-labelledby="tr-cta-heading"] .tx-cta-btn--outline:hover {
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: #1E3A5F;
+  }
+}
+
 .training-page .tr-rehab .tx-body,
 .training-page .tr-rehab .tx-section-lead {
   max-width: 46em;
@@ -777,6 +816,10 @@
   .training-page [aria-labelledby="tr-both-heading"] .tx-eyebrow,
   .training-page [aria-labelledby="tr-both-heading"] .tx-heading {
     text-align: center;
+  }
+
+  .training-page [aria-labelledby="tr-price-heading"] .tx-body {
+    text-align: left;
   }
 
   .training-page .tr-rehab .tx-section-lead {
