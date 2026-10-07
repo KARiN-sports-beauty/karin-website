@@ -711,7 +711,7 @@
   position: relative;
   z-index: 1;
   box-sizing: border-box;
-  width: min(30rem, 40%);
+  width: min(36rem, 46%);
   padding: 88px 0 96px;
 }
 
