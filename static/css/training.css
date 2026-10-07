@@ -822,6 +822,10 @@
     text-align: left;
   }
 
+  .training-page [aria-labelledby="tr-cta-heading"] .tx-body {
+    text-align: left;
+  }
+
   .training-page .tr-rehab .tx-section-lead {
     text-align: left;
   }
