@@ -430,6 +430,50 @@
   max-width: 43em;
 }
 
+.training-page [aria-labelledby="tr-both-heading"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #ffffff;
+  background-image: url("../images/trainingacuath.jpg");
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  background-position: center top;
+}
+
+.training-page [aria-labelledby="tr-both-heading"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.72) 20%,
+    rgba(255, 255, 255, 0.2) 34%,
+    rgba(255, 255, 255, 0) 46%
+  );
+}
+
+.training-page [aria-labelledby="tr-both-heading"] > .tx-inner {
+  position: relative;
+  z-index: 2;
+  max-width: min(28em, 34vw);
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
+}
+
+.training-page [aria-labelledby="tr-both-heading"] .tx-eyebrow,
+.training-page [aria-labelledby="tr-both-heading"] .tx-heading {
+  text-align: left;
+}
+
+.training-page [aria-labelledby="tr-both-heading"] .tx-body p {
+  opacity: 1;
+}
+
 .training-page .tr-rehab .tx-body,
 .training-page .tr-rehab .tx-section-lead {
   max-width: 46em;
@@ -708,6 +752,27 @@
   .training-page [aria-labelledby="tr-daily-heading"] {
     padding-top: 64px;
     padding-bottom: 68px;
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"] {
+    background-size: cover;
+    background-position: 68% 40%;
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"]::before {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"] > .tx-inner {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"] .tx-eyebrow,
+  .training-page [aria-labelledby="tr-both-heading"] .tx-heading {
+    text-align: center;
   }
 
   .training-page .tr-rehab .tx-section-lead {
