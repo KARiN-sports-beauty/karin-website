@@ -25,7 +25,7 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.09;
+  opacity: 0.12;
   mix-blend-mode: multiply;
   pointer-events: none;
 }
@@ -678,12 +678,33 @@
   .training-page .tr-recondition > .tr-points article {
     padding: 0 16px;
   }
+
+  .training-page [aria-labelledby="tr-both-heading"] {
+    background-size: cover;
+    background-position: 68% 40%;
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"]::before {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"] > .tx-inner {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .training-page [aria-labelledby="tr-both-heading"] .tx-eyebrow,
+  .training-page [aria-labelledby="tr-both-heading"] .tx-heading {
+    text-align: center;
+  }
 }
 
 @media (max-width: 768px) {
   .training-page::before {
     width: min(72vw, 300px);
-    opacity: 0.07;
+    opacity: 0.12;
   }
 
   .training-page .tx-hero {
