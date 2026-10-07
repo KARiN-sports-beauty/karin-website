@@ -577,7 +577,17 @@
   }
 
   .tx-pillars {
-    gap: 40px 24px;
+    grid-template-columns: 1fr;
+    margin-top: 40px;
+    gap: 40px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .tx-pillar + .tx-pillar {
+    padding-top: 40px;
+    border-top: 1px solid #eee8dc;
   }
 
   .tx-pillar-image {
