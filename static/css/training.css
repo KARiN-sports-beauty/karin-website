@@ -420,6 +420,16 @@
   opacity: 1;
 }
 
+.training-page [aria-labelledby="tr-daily-heading"] {
+  background-color: #ffffff;
+  padding-top: 112px;
+  padding-bottom: 120px;
+}
+
+.training-page [aria-labelledby="tr-daily-heading"] > .tx-inner {
+  max-width: 40em;
+}
+
 .training-page .tr-rehab .tx-body,
 .training-page .tr-rehab .tx-section-lead {
   max-width: 46em;
@@ -693,6 +703,11 @@
   .training-page .tr-performance .tx-body p,
   .training-page .tr-performance .tx-text-link {
     color: #1E3A5F;
+  }
+
+  .training-page [aria-labelledby="tr-daily-heading"] {
+    padding-top: 64px;
+    padding-bottom: 68px;
   }
 
   .training-page .tr-rehab .tx-section-lead {
