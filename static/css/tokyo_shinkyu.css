@@ -685,6 +685,135 @@
   display: block;
 }
 
+.tokyo-shinkyu-page [aria-labelledby="ts-sport-heading"],
+.tokyo-shinkyu-page [aria-labelledby="ts-dance-heading"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #ffffff;
+  padding: 0;
+}
+
+.ts-feature--sport,
+.ts-feature--dance {
+  position: static;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  min-height: 640px;
+  margin: 0;
+  gap: 0;
+  text-align: left;
+}
+
+.ts-feature--sport .ts-feature-image,
+.ts-feature--dance .ts-feature-image {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+  overflow: hidden;
+  box-shadow: none;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ts-feature--sport .ts-feature-image {
+  right: 0;
+  left: auto;
+  width: 56%;
+}
+
+.ts-feature--dance .ts-feature-image {
+  order: 0;
+  left: 0;
+  right: auto;
+  width: 56%;
+}
+
+.ts-feature--sport .ts-feature-image img,
+.ts-feature--dance .ts-feature-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ts-feature--sport .ts-feature-image img {
+  object-position: right center;
+}
+
+.ts-feature--dance .ts-feature-image img {
+  object-position: left center;
+}
+
+.ts-feature--sport .ts-feature-image::after,
+.ts-feature--dance .ts-feature-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ts-feature--sport .ts-feature-image::after {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.9) 10%,
+    rgba(255, 255, 255, 0.45) 24%,
+    rgba(255, 255, 255, 0.08) 38%,
+    rgba(255, 255, 255, 0) 52%
+  );
+}
+
+.ts-feature--dance .ts-feature-image::after {
+  background: linear-gradient(
+    270deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.9) 10%,
+    rgba(255, 255, 255, 0.45) 24%,
+    rgba(255, 255, 255, 0.08) 38%,
+    rgba(255, 255, 255, 0) 52%
+  );
+}
+
+.ts-feature--sport .ts-feature-body,
+.ts-feature--dance .ts-feature-body {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(30rem, 40%);
+  padding: 88px 0 96px;
+}
+
+.ts-feature--sport .ts-feature-body {
+  margin-left: 8%;
+  margin-right: auto;
+}
+
+.ts-feature--dance .ts-feature-body {
+  margin-left: auto;
+  margin-right: 8%;
+}
+
+.tokyo-shinkyu-page .ts-feature--sport .ts-feature-body[data-aos="fade-right"] {
+  transform: translate3d(-28px, 0, 0);
+}
+
+.tokyo-shinkyu-page .ts-feature--dance .ts-feature-body[data-aos="fade-left"] {
+  transform: translate3d(28px, 0, 0);
+}
+
+.tokyo-shinkyu-page .ts-feature--sport .ts-feature-body[data-aos="fade-right"].aos-animate,
+.tokyo-shinkyu-page .ts-feature--dance .ts-feature-body[data-aos="fade-left"].aos-animate {
+  transform: none;
+}
+
 .ts-feature-highlight {
   margin: 18px 0 14px;
   font-size: 1.12rem;
@@ -1094,6 +1223,69 @@
     height: 240px;
   }
 
+  .tokyo-shinkyu-page [aria-labelledby="ts-sport-heading"],
+  .tokyo-shinkyu-page [aria-labelledby="ts-dance-heading"] {
+    padding: 72px 8% 80px;
+  }
+
+  .ts-feature--sport,
+  .ts-feature--dance {
+    display: block;
+    min-height: 0;
+    max-width: 40em;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ts-feature--sport .ts-feature-image,
+  .ts-feature--dance .ts-feature-image {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  .ts-feature--sport .ts-feature-image::after,
+  .ts-feature--dance .ts-feature-image::after {
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .ts-feature--sport .ts-feature-image img {
+    object-position: 76% 42%;
+  }
+
+  .ts-feature--dance .ts-feature-image img {
+    object-position: 22% 40%;
+  }
+
+  .ts-feature--sport .ts-feature-body,
+  .ts-feature--dance .ts-feature-body {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 8px 0;
+  }
+
+  .ts-feature--sport .ts-eyebrow,
+  .ts-feature--dance .ts-eyebrow,
+  .ts-feature--sport .ts-heading,
+  .ts-feature--dance .ts-heading {
+    text-align: center;
+  }
+
+  .ts-feature--sport .ts-heading::after,
+  .ts-feature--dance .ts-heading::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .tokyo-shinkyu-page .ts-feature--sport .ts-feature-body[data-aos="fade-right"] {
+    transform: translate3d(-16px, 0, 0);
+  }
+
+  .tokyo-shinkyu-page .ts-feature--dance .ts-feature-body[data-aos="fade-left"] {
+    transform: translate3d(16px, 0, 0);
+  }
+
   .ts-concern-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
@@ -1155,6 +1347,14 @@
 }
 
 @media (max-width: 768px) {
+  .ts-feature--sport .ts-feature-image img {
+    object-position: 78% 40%;
+  }
+
+  .ts-feature--dance .ts-feature-image img {
+    object-position: 18% 38%;
+  }
+
   .tokyo-shinkyu-page .ts-hero {
     min-height: 0;
     min-height: 62svh;
@@ -1502,6 +1702,15 @@
   .tokyo-shinkyu-page .ts-hero-en {
     padding: 12px 18px 10px 14px;
     font-size: 0.48rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tokyo-shinkyu-page .ts-feature--sport .ts-feature-body[data-aos],
+  .tokyo-shinkyu-page .ts-feature--dance .ts-feature-body[data-aos] {
+    opacity: 1;
+    transform: none;
+    transition-property: none;
   }
 }
 
