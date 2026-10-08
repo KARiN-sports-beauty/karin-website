@@ -566,6 +566,15 @@
     color: #1E3A5F;
     border-color: #1E3A5F;
   }
+
+  .tokyo-beauty-page .nav .nav-book {
+    width: auto;
+    max-width: none;
+    margin-top: 0;
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+  }
 }
 
 @media (max-width: 768px) {
