@@ -198,6 +198,11 @@
   padding-bottom: 116px;
 }
 
+.beauty-page .ts-section:has(.ts-view-list--three) {
+  padding-top: 104px;
+  padding-bottom: 112px;
+}
+
 .beauty-page .ts-about {
   display: grid;
   grid-template-columns: minmax(0, 20em) minmax(0, 34em);
@@ -346,7 +351,13 @@
 .beauty-page .ts-view-list--three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   max-width: none;
-  gap: 40px 48px;
+  gap: 40px 72px;
+  margin-top: 72px;
+}
+
+.beauty-page .ts-view-list--three .ts-num {
+  margin-bottom: 12px;
+  font-size: 1.02rem;
 }
 
 .beauty-page .ts-view-list--four {
@@ -661,6 +672,11 @@
     padding-bottom: 80px;
   }
 
+  .beauty-page .ts-section:has(.ts-view-list--three) {
+    padding-top: 72px;
+    padding-bottom: 84px;
+  }
+
   .beauty-page .ts-about {
     grid-template-columns: 1fr;
     row-gap: 28px;
@@ -691,11 +707,16 @@
   }
 
   .beauty-page .ts-view-list,
-  .beauty-page .ts-view-list--three,
   .beauty-page .ts-view-list--four {
     grid-template-columns: 1fr;
     gap: 36px;
     margin-top: 40px;
+  }
+
+  .beauty-page .ts-view-list--three {
+    grid-template-columns: 1fr;
+    gap: 52px;
+    margin-top: 48px;
   }
 
   .beauty-page .ts-view-list--divided {
