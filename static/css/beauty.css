@@ -692,10 +692,15 @@
 
   .beauty-page .ts-view-list,
   .beauty-page .ts-view-list--three,
-  .beauty-page .ts-view-list--four,
-  .beauty-page .ts-view-list--divided {
+  .beauty-page .ts-view-list--four {
     grid-template-columns: 1fr;
     gap: 36px;
+    margin-top: 40px;
+  }
+
+  .beauty-page .ts-view-list--divided {
+    grid-template-columns: 1fr;
+    gap: 0;
     margin-top: 40px;
   }
 
@@ -705,6 +710,9 @@
 
   .beauty-page .ts-view-list--divided .ts-view-item + .ts-view-item {
     border-left: none;
+    border-top: 1px solid rgba(192, 160, 98, 0.45);
+    margin-top: 22px;
+    padding-top: 22px;
   }
 
   .beauty-page .ts-view-item > p:last-child {
