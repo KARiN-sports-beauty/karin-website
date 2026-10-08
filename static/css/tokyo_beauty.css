@@ -24,7 +24,7 @@
 }
 
 .tokyo-beauty-page .logo {
-  color: #ffffff;
+  color: #1E3A5F;
   transition: color 0.4s ease;
 }
 
@@ -36,22 +36,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #1E3A5F;
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.06em;
   min-height: 32px;
   padding: 5px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(30, 58, 95, 0.55);
   border-radius: 40px;
   box-sizing: border-box;
   transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
 }
 
 .tokyo-beauty-page .nav a:hover:not(.nav-book) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #ffffff;
+  color: #1E3A5F;
+  background: rgba(30, 58, 95, 0.06);
+  border-color: #1E3A5F;
 }
 
 .tokyo-beauty-page .nav-book {
@@ -118,20 +118,25 @@
   isolation: isolate;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: center;
   box-sizing: border-box;
   min-height: 100svh;
   padding: 110px 8% 96px;
   text-align: left;
-  color: #ffffff;
-  background-color: #1E3A5F;
+  color: #1E3A5F;
+  background-color: #f4f1ec;
+  background-image: url("../images/tokyobeautyfv.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: left center;
 }
 
 .tokyo-beauty-page .ts-hero-copy {
   position: relative;
   z-index: 1;
-  max-width: 36em;
+  max-width: min(32em, 44%);
+  margin-left: auto;
 }
 
 .tokyo-beauty-page .ts-hero-en {
@@ -162,7 +167,7 @@
   font-weight: 500;
   letter-spacing: 0.12em;
   line-height: 1.4;
-  color: #ffffff;
+  color: #1E3A5F;
 }
 
 .tokyo-beauty-page .ts-hero-lead {
@@ -173,7 +178,7 @@
   font-weight: 400;
   letter-spacing: 0.06em;
   line-height: 2.05;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(30, 58, 95, 0.88);
 }
 
 .tokyo-beauty-page .ts-section {
@@ -559,7 +564,7 @@
     min-height: 30px;
     font-size: 0.72rem;
     padding: 4px 12px;
-    color: #ffffff;
+    color: #1E3A5F;
   }
 
   .tokyo-beauty-page.is-past-hero .nav a:not(.nav-book) {
@@ -581,6 +586,13 @@
   .tokyo-beauty-page .ts-hero {
     min-height: 62svh;
     padding: 88px 7% 72px;
+    align-items: flex-end;
+    justify-content: flex-end;
+    background-position: 30% center;
+  }
+
+  .tokyo-beauty-page .ts-hero-copy {
+    max-width: 68%;
   }
 
   .tokyo-beauty-page .ts-hero-en {
