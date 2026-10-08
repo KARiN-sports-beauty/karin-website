@@ -395,13 +395,38 @@
   border-left: 1px solid rgba(192, 160, 98, 0.45);
 }
 
+.beauty-page .ts-section:has(.ts-for-list) {
+  display: flex;
+  align-items: center;
+  min-height: 640px;
+  padding: 96px 8% 104px;
+  text-align: left;
+  background-color: #1E3A5F;
+  background-image:
+    linear-gradient(90deg, rgba(30, 58, 95, 0.66) 0%, rgba(30, 58, 95, 0.6) 44%, rgba(30, 58, 95, 0) 62%),
+    url("../images/beautyhuman.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center, center center;
+}
+
+.beauty-page .ts-section:has(.ts-for-list) .ts-inner {
+  max-width: 28em;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.beauty-page .ts-section:has(.ts-for-list) .ts-heading {
+  color: #ffffff;
+}
+
 .beauty-page .ts-for-list {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px 72px;
-  max-width: 920px;
-  margin: 56px auto 0;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: none;
+  margin: 36px 0 0;
   padding: 0;
   text-align: left;
 }
@@ -413,8 +438,8 @@
   font-size: 0.98rem;
   font-weight: 400;
   letter-spacing: 0.03em;
-  line-height: 1.9;
-  color: #1E3A5F;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.94);
 }
 
 .beauty-page .ts-for-list li::before {
@@ -754,14 +779,27 @@
     font-size: 0.94rem;
   }
 
+  .beauty-page .ts-section:has(.ts-for-list) {
+    min-height: 0;
+    padding: 72px 7% 80px;
+    background-image:
+      linear-gradient(90deg, rgba(30, 58, 95, 0.74) 0%, rgba(30, 58, 95, 0.72) 52%, rgba(30, 58, 95, 0) 68%),
+      url("../images/beautyhuman.jpg");
+    background-position: center, 68% center;
+  }
+
+  .beauty-page .ts-section:has(.ts-for-list) .ts-inner {
+    max-width: 52%;
+  }
+
   .beauty-page .ts-for-list {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    margin-top: 40px;
+    gap: 14px;
+    margin-top: 28px;
   }
 
   .beauty-page .ts-for-list li {
-    font-size: 0.94rem;
+    font-size: 0.92rem;
+    line-height: 1.75;
   }
 
   .beauty-page .ts-related {
