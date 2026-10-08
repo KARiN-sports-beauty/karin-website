@@ -155,6 +155,120 @@
         </div>
       </div>
     </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="tb-treatment-heading">
+      <div class="ts-inner">
+        <p class="ts-eyebrow">TREATMENT</p>
+        <h2 id="tb-treatment-heading" class="ts-heading">その日の状態に合わせて、施術を組み立てます。</h2>
+        <div class="ts-view-list ts-view-list--four">
+          <article class="ts-view-item">
+            <p class="ts-num">01</p>
+            <p class="ts-eyebrow">COUNSELING</p>
+            <h3 class="ts-view-title">カウンセリング</h3>
+            <p>お悩みや気になっていることだけでなく、普段の生活や身体の状態についてもお伺いします。</p>
+          </article>
+          <article class="ts-view-item">
+            <p class="ts-num">02</p>
+            <p class="ts-eyebrow">CHECK</p>
+            <h3 class="ts-view-title">状態の確認</h3>
+            <p>顔まわりだけでなく、必要に応じて首・肩や身体全体の状態を確認します。</p>
+          </article>
+          <article class="ts-view-item">
+            <p class="ts-num">03</p>
+            <p class="ts-eyebrow">BEAUTY ACUPUNCTURE</p>
+            <h3 class="ts-view-title">美容鍼</h3>
+            <p>その日の状態に合わせて、顔を中心に鍼を行います。</p>
+          </article>
+          <article class="ts-view-item">
+            <p class="ts-num">04</p>
+            <p class="ts-eyebrow">CONDITIONING</p>
+            <h3 class="ts-view-title">コンディショニング</h3>
+            <p>必要に応じて、身体への鍼灸やコンディショニングを組み合わせます。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="tb-for-heading">
+      <div class="ts-inner">
+        <p class="ts-eyebrow">FOR YOU</p>
+        <h2 id="tb-for-heading" class="ts-heading">こんな方に</h2>
+        <ul class="ts-for-list">
+          <li>美容鍼を受けてみたい</li>
+          <li>顔だけでなく、身体の状態も相談したい</li>
+          <li>顔まわりのむくみが気になる</li>
+          <li>疲れや睡眠不足が顔に出ているように感じる</li>
+          <li>首や肩まわりの緊張も気になる</li>
+          <li>肌や表情のコンディションを整えたい</li>
+          <li>落ち着いた環境で施術を受けたい</li>
+          <li>美容だけでなく、身体についても相談できる鍼灸師を探している</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted" aria-labelledby="tb-sports-heading">
+      <div class="ts-inner">
+        <p class="ts-eyebrow">SPORTS &amp; BEAUTY</p>
+        <h2 id="tb-sports-heading" class="ts-heading">身体を動かす人にも、日々を過ごす人にも。</h2>
+        <div class="ts-body ts-sports-lead">
+          <p><span class="karin-brand">KARiN.</span>では、美容とコンディショニングを別々のものとして考えていません。</p>
+          <p>鍼灸、整体、トレーニング、コンディショニング。それぞれの視点から身体を見ながら、その人が心地よく過ごせる状態を考えています。</p>
+        </div>
+        <nav aria-label="関連する施術">
+          <ul class="ts-related">
+            <li>
+              <a href="{{ url_for('tokyo_shinkyu') }}">
+                <span class="ts-num">01</span>
+                <span class="ts-eyebrow">ACUPUNCTURE</span>
+                <span class="ts-related-name">鍼灸</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('tokyo_seitai') }}">
+                <span class="ts-num">02</span>
+                <span class="ts-eyebrow">BODY CONDITIONING</span>
+                <span class="ts-related-name">整体</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('training') }}">
+                <span class="ts-num">03</span>
+                <span class="ts-eyebrow">TRAINING</span>
+                <span class="ts-related-name">トレーニング・リコンディショニング</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="tb-price-heading">
+      <div class="ts-inner">
+        <p class="ts-eyebrow">PRICE &amp; RESERVATION</p>
+        <h2 id="tb-price-heading" class="ts-heading">料金・ご予約について</h2>
+        <div class="ts-body ts-price-lead">
+          <p>施術内容についてのご相談や、ご予約に関するお問い合わせもお気軽にどうぞ。</p>
+        </div>
+        <div class="ts-cta-row">
+          <a href="{{ url_for('book_page') }}" class="ts-cta-btn">ご予約はこちら</a>
+          <a href="{{ url_for('contact') }}" class="ts-cta-btn ts-cta-btn--outline">お問い合わせ・ご相談</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ts-section ts-section--muted ts-close" aria-labelledby="tb-close-heading">
+      <div class="ts-inner">
+        <h2 id="tb-close-heading" class="ts-heading">美容を、身体から考える。</h2>
+        <div class="ts-body ts-close-lead">
+          <p>顔だけではなく、身体の状態や日々のコンディションまで。</p>
+          <p>鍼灸師として身体を見てきた経験をもとに、<span class="karin-brand">KARiN.</span>らしい美容鍼をご提案します。</p>
+        </div>
+        <nav class="ts-close-links" aria-label="関連コンテンツ">
+          <a href="{{ url_for('show_blog', slug='acupuncture') }}">鍼灸について</a>
+          <a href="{{ url_for('treatment') }}"><span class="karin-brand">KARiN.</span>について</a>
+        </nav>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
