@@ -25,7 +25,7 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.12;
+  opacity: 0.18;
   mix-blend-mode: multiply;
   pointer-events: none;
 }
@@ -372,7 +372,7 @@
 }
 
 .training-page .tr-training > .tx-inner {
-  max-width: min(24em, 54%);
+  max-width: 50%;
   margin-left: 0;
   margin-right: auto;
   text-align: left;
@@ -425,7 +425,7 @@
 }
 
 .training-page .tr-performance > .tx-inner {
-  max-width: min(24em, 54%);
+  max-width: 50%;
   margin-left: auto;
   margin-right: 0;
   text-align: left;
@@ -723,7 +723,7 @@
 @media (max-width: 768px) {
   .training-page::before {
     width: min(72vw, 300px);
-    opacity: 0.12;
+    opacity: 0.18;
   }
 
   .training-page .tx-hero {

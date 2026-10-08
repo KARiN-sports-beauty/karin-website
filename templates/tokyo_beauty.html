@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <link rel="canonical" href="https://karin-sb.jp/tokyo/beauty">
+  <meta name="description" content="東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="KARiN. ~Sports & Beauty~">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.">
+  <meta property="og:description" content="東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
+  <meta property="og:url" content="https://karin-sb.jp/tokyo/beauty">
+  <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
+  <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://karin-sb.jp/tokyo/beauty#webpage",
+        "url": "https://karin-sb.jp/tokyo/beauty",
+        "name": "東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.",
+        "description": "東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。",
+        "isPartOf": {
+          "@id": "https://karin-sb.jp/#website"
+        },
+        "about": {
+          "@id": "https://karin-sb.jp/#organization"
+        }
+      },
+      {
+        "@type": "Service",
+        "name": "東京の美容鍼",
+        "serviceType": "美容鍼",
+        "provider": {
+          "@id": "https://karin-sb.jp/#organization"
+        },
+        "areaServed": {
+          "@type": "AdministrativeArea",
+          "name": "東京都"
+        },
+        "description": "顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら行う美容鍼。"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_beauty.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="tokyo-beauty-page">
+
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+    <nav class="nav" id="nav-menu">
+      <a href="{{ url_for('lp') }}">初回相談</a>
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="ts-hero" aria-labelledby="tb-hero-heading">
+      <div class="ts-hero-copy">
+        <p class="ts-hero-en">BEAUTY ACUPUNCTURE</p>
+        <h1 id="tb-hero-heading" class="ts-hero-title">美容鍼</h1>
+        <p class="ts-hero-lead">
+          美容を、顔だけで考えない。<br>
+          身体の状態や日々のコンディションまで見ながら、<br>
+          鍼灸師として、その人らしい自然な美しさを考えます。
+        </p>
+      </div>
+    </section>
+
+    <section class="ts-section" aria-labelledby="tb-about-heading">
+      <div class="ts-inner ts-about">
+        <div class="ts-about-head">
+          <p class="ts-eyebrow">ABOUT BEAUTY ACUPUNCTURE</p>
+          <h2 id="tb-about-heading" class="ts-heading ts-heading--left">美容鍼は、顔だけを見る施術ではありません。</h2>
+        </div>
+        <div class="ts-body">
+          <p>肌や表情の状態は、顔だけで決まるものではありません。日々の疲れや睡眠、首や肩まわりの緊張、身体のバランスなど、普段のコンディションも含めて、その人の状態はつくられています。</p>
+          <p><span class="karin-brand">KARiN.</span>では、美容鍼を「顔に鍼をする施術」だけで終わらせず、その日の身体の状態も見ながら施術を行います。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="{{ url_for('index') }}" class="footer-logo">KARiN. <span>~Sports & Beauty~</span></a>
+          <p class="footer-role">鍼灸師 × アスレティックトレーナー</p>
+          <p class="footer-lead">出張施術。完全予約制。</p>
+        </div>
+
+        <nav class="footer-nav" aria-label="サイトナビゲーション">
+          <p class="footer-heading">ナビ</p>
+          <ul>
+            <li><a href="{{ url_for('index') }}">ホーム</a></li>
+            <li><a href="{{ url_for('lp') }}">初回相談</a></li>
+            <li><a href="{{ url_for('book_page') }}">ご予約</a></li>
+          </ul>
+        </nav>
+
+        <div class="footer-info">
+          <p class="footer-heading">ご案内</p>
+          <dl class="footer-facts">
+            <div>
+              <dt>対応エリア</dt>
+              <dd>東京（代々木上原中心）／福岡（薬院中心）<br>出張施術・完全予約制</dd>
+            </div>
+            <div>
+              <dt>営業時間</dt>
+              <dd>東京 12:00〜26:00<br>福岡 10:00〜19:00<br>定休日：不定休</dd>
+            </div>
+          </dl>
+          <a href="{{ url_for('book_page') }}" class="footer-book">ご予約はこちら</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-sns">
+          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">
+            <svg class="is-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c-4.7 0-8.5 3.1-8.5 6.9 0 3.1 2.8 5.8 6.6 6.6.3.1.6.4.5.8l-.2 1.2c0 .3.3.5.6.4 2.5-1.1 4.3-1.9 5.4-2.4 2.8-.7 5.6-3.2 5.6-6.6 0-3.8-3.8-6.9-8.5-6.9z"/></svg>
+            <span>LINE</span>
+          </a>
+          <a href="https://www.instagram.com/karin._shinkyu" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.6" cy="7.4" r="0.8" fill="currentColor" stroke="none"/></svg>
+            <span>Instagram</span>
+          </a>
+        </div>
+        <p class="footer-copy">© 2025 <span class="karin-brand">KARiN.</span> All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var page = document.querySelector(".tokyo-beauty-page");
+      var hero = document.querySelector(".ts-hero");
+      if (!page || !hero || !("IntersectionObserver" in window)) return;
+
+      var observer = new IntersectionObserver(function (entries) {
+        page.classList.toggle("is-past-hero", !entries[0].isIntersecting);
+      }, {
+        root: null,
+        threshold: 0,
+        rootMargin: "-70px 0px 0px 0px"
+      });
+      observer.observe(hero);
+    })();
+  </script>
+
+</body>
+</html>

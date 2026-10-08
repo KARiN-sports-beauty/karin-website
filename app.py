@@ -3249,6 +3249,12 @@ def tokyo_shinkyu():
     return render_template("tokyo_shinkyu.html")
 
 
+@app.route("/tokyo/beauty")
+def tokyo_beauty():
+    """東京の美容鍼ページ。鍼灸・整体ページとは独立。"""
+    return render_template("tokyo_beauty.html")
+
+
 @app.route("/price")
 def price():
     return render_template("price.html")
@@ -6428,6 +6434,7 @@ def sitemap():
             ("/lp", "monthly"),
             ("/tokyo/seitai", "weekly"),
             ("/tokyo/shinkyu", "weekly"),
+            ("/tokyo/beauty", "weekly"),
             ("/chat", "weekly"),
             ("/schedule", "daily"),
         ]
