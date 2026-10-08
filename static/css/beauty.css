@@ -361,7 +361,7 @@
 }
 
 .beauty-page .ts-section:has(.ts-treatment-visual) {
-  padding: 88px 0 0;
+  padding: 88px 0 55px;
   background-color: #faf9f5;
 }
 
@@ -370,7 +370,7 @@
 }
 
 .beauty-page .ts-treatment-visual {
-  margin: 56px 0 0;
+  margin: 56px 0 -55px;
 }
 
 .beauty-page .ts-treatment-visual img {
