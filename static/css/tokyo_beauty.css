@@ -193,12 +193,34 @@
   margin: 0 auto;
 }
 
+.tokyo-beauty-page .ts-section:has(.ts-about) {
+  padding-top: 108px;
+  padding-bottom: 116px;
+}
+
 .tokyo-beauty-page .ts-about {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  column-gap: 72px;
+  grid-template-columns: minmax(0, 20em) minmax(0, 34em);
+  column-gap: 88px;
+  justify-content: center;
   align-items: start;
   text-align: left;
+}
+
+.tokyo-beauty-page .ts-about .ts-heading {
+  max-width: 13em;
+  font-size: 1.64rem;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
+}
+
+.tokyo-beauty-page .ts-about .ts-body {
+  max-width: 34em;
+  padding-top: 2.7rem;
+}
+
+.tokyo-beauty-page .ts-about .ts-body p {
+  line-height: 2.2;
 }
 
 .tokyo-beauty-page .ts-eyebrow {
@@ -620,9 +642,25 @@
     padding: 64px 7% 72px;
   }
 
+  .tokyo-beauty-page .ts-section:has(.ts-about) {
+    padding-top: 72px;
+    padding-bottom: 80px;
+  }
+
   .tokyo-beauty-page .ts-about {
     grid-template-columns: 1fr;
     row-gap: 28px;
+  }
+
+  .tokyo-beauty-page .ts-about .ts-heading {
+    max-width: 12em;
+    font-size: 1.34rem;
+    line-height: 1.6;
+  }
+
+  .tokyo-beauty-page .ts-about .ts-body {
+    max-width: none;
+    padding-top: 0;
   }
 
   .tokyo-beauty-page .ts-heading {
