@@ -363,6 +363,20 @@
   line-height: 1.9;
 }
 
+.tokyo-beauty-page .ts-view-list--divided {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: none;
+  gap: 0;
+}
+
+.tokyo-beauty-page .ts-view-list--divided .ts-view-item {
+  padding: 4px 22px 0;
+}
+
+.tokyo-beauty-page .ts-view-list--divided .ts-view-item + .ts-view-item {
+  border-left: 1px solid rgba(192, 160, 98, 0.45);
+}
+
 .tokyo-beauty-page .ts-for-list {
   list-style: none;
   display: grid;
@@ -678,10 +692,19 @@
 
   .tokyo-beauty-page .ts-view-list,
   .tokyo-beauty-page .ts-view-list--three,
-  .tokyo-beauty-page .ts-view-list--four {
+  .tokyo-beauty-page .ts-view-list--four,
+  .tokyo-beauty-page .ts-view-list--divided {
     grid-template-columns: 1fr;
     gap: 36px;
     margin-top: 40px;
+  }
+
+  .tokyo-beauty-page .ts-view-list--divided .ts-view-item {
+    padding: 0;
+  }
+
+  .tokyo-beauty-page .ts-view-list--divided .ts-view-item + .ts-view-item {
+    border-left: none;
   }
 
   .tokyo-beauty-page .ts-view-item > p:last-child {
