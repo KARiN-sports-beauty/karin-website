@@ -260,6 +260,68 @@
   margin-bottom: 0;
 }
 
+.tokyo-beauty-page .ts-section--muted {
+  background-color: #fafafa;
+}
+
+.tokyo-beauty-page .ts-num {
+  margin: 0 0 8px;
+  font-family: "Playfair Display", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+  color: #c0a062;
+}
+
+.tokyo-beauty-page .ts-view-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px 64px;
+  max-width: 920px;
+  margin: 56px auto 0;
+  text-align: left;
+}
+
+.tokyo-beauty-page .ts-view-item {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.tokyo-beauty-page .ts-view-item .ts-eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.tokyo-beauty-page .ts-view-title {
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+}
+
+.tokyo-beauty-page .ts-view-item > p:last-child {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 2.05;
+  color: #1E3A5F;
+  opacity: 0.86;
+}
+
+.tokyo-beauty-page .ts-view-list--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: none;
+  gap: 40px 48px;
+}
+
 @media (max-width: 1024px) {
   .tokyo-beauty-page .nav {
     position: static;
@@ -338,6 +400,17 @@
   }
 
   .tokyo-beauty-page .ts-body p {
+    font-size: 0.94rem;
+  }
+
+  .tokyo-beauty-page .ts-view-list,
+  .tokyo-beauty-page .ts-view-list--three {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    margin-top: 40px;
+  }
+
+  .tokyo-beauty-page .ts-view-item > p:last-child {
     font-size: 0.94rem;
   }
 }
