@@ -360,51 +360,12 @@
   font-size: 1.02rem;
 }
 
-.beauty-page .ts-view-list--four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: none;
-  gap: 0 52px;
-  margin-top: 64px;
+.beauty-page .ts-treatment-visual {
+  margin: 72px 0 0;
 }
 
-.beauty-page .ts-view-list--four .ts-num {
-  margin-bottom: 12px;
-  font-size: 1.42rem;
-  line-height: 1;
-}
-
-.beauty-page .ts-view-list--four .ts-view-item {
-  position: relative;
-}
-
-.beauty-page .ts-view-list--four .ts-view-item:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: 0.62rem;
-  right: -37px;
-  width: 18px;
-  height: 1px;
-  background-color: rgba(192, 160, 98, 0.7);
-}
-
-.beauty-page .ts-view-list--four .ts-view-item:not(:last-child)::before {
-  content: "";
-  position: absolute;
-  top: calc(0.62rem - 2px);
-  right: -40px;
-  width: 5px;
-  height: 5px;
-  border-top: 1px solid rgba(192, 160, 98, 0.75);
-  border-right: 1px solid rgba(192, 160, 98, 0.75);
-  transform: rotate(45deg);
-}
-
-.beauty-page .ts-view-list--four .ts-view-item .ts-eyebrow {
-  letter-spacing: 0.12em;
-}
-
-.beauty-page .ts-view-list--four .ts-view-item > p:last-child {
-  line-height: 1.9;
+.beauty-page .ts-treatment-visual img {
+  width: 100%;
 }
 
 .beauty-page .ts-view-list--divided {
@@ -745,32 +706,8 @@
     margin-top: 40px;
   }
 
-  .beauty-page .ts-view-list--four {
-    grid-template-columns: 1fr;
-    gap: 0;
+  .beauty-page .ts-treatment-visual {
     margin-top: 48px;
-  }
-
-  .beauty-page .ts-view-list--four .ts-view-item:not(:last-child) {
-    padding-bottom: 64px;
-  }
-
-  .beauty-page .ts-view-list--four .ts-view-item:not(:last-child)::after {
-    top: auto;
-    right: auto;
-    bottom: 28px;
-    left: 50%;
-    width: 1px;
-    height: 14px;
-    transform: translateX(-50%);
-  }
-
-  .beauty-page .ts-view-list--four .ts-view-item:not(:last-child)::before {
-    top: auto;
-    right: auto;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%) rotate(135deg);
   }
 
   .beauty-page .ts-view-list--three {
