@@ -402,12 +402,10 @@
   padding: 96px 8% 104px;
   text-align: left;
   background-color: #1E3A5F;
-  background-image:
-    linear-gradient(90deg, rgba(30, 58, 95, 0.66) 0%, rgba(30, 58, 95, 0.6) 44%, rgba(30, 58, 95, 0) 62%),
-    url("../images/beautyhuman.jpg");
+  background-image: url("../images/beautyhuman.jpg");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: center, center center;
+  background-position: center center;
 }
 
 .beauty-page .ts-section:has(.ts-for-list) .ts-inner {
@@ -782,10 +780,8 @@
   .beauty-page .ts-section:has(.ts-for-list) {
     min-height: 0;
     padding: 72px 7% 80px;
-    background-image:
-      linear-gradient(90deg, rgba(30, 58, 95, 0.74) 0%, rgba(30, 58, 95, 0.72) 52%, rgba(30, 58, 95, 0) 68%),
-      url("../images/beautyhuman.jpg");
-    background-position: center, 68% center;
+    background-image: url("../images/beautyhuman.jpg");
+    background-position: 68% center;
   }
 
   .beauty-page .ts-section:has(.ts-for-list) .ts-inner {
