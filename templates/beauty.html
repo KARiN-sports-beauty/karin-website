@@ -4,19 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.</title>
+  <title>美容鍼｜KARiN. ～Sports & Beauty～</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
-  <link rel="canonical" href="https://karin-sb.jp/tokyo/beauty">
-  <meta name="description" content="東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
+  <link rel="canonical" href="https://karin-sb.jp/beauty">
+  <meta name="description" content="美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
   <meta name="robots" content="index, follow">
   <meta name="author" content="KARiN. ~Sports & Beauty~">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.">
-  <meta property="og:description" content="東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
-  <meta property="og:url" content="https://karin-sb.jp/tokyo/beauty">
+  <meta property="og:title" content="美容鍼｜KARiN. ～Sports & Beauty～">
+  <meta property="og:description" content="美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。">
+  <meta property="og:url" content="https://karin-sb.jp/beauty">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
@@ -27,10 +27,10 @@
     "@graph": [
       {
         "@type": "WebPage",
-        "@id": "https://karin-sb.jp/tokyo/beauty#webpage",
-        "url": "https://karin-sb.jp/tokyo/beauty",
-        "name": "東京の美容鍼｜鍼灸師×アスレティックトレーナー｜KARiN.",
-        "description": "東京・代々木上原で美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。",
+        "@id": "https://karin-sb.jp/beauty#webpage",
+        "url": "https://karin-sb.jp/beauty",
+        "name": "美容鍼｜KARiN. ～Sports & Beauty～",
+        "description": "美容鍼をお考えの方へ。KARiN.は顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら、鍼灸師としてその人らしい自然な美しさを考えます。",
         "isPartOf": {
           "@id": "https://karin-sb.jp/#website"
         },
@@ -40,15 +40,21 @@
       },
       {
         "@type": "Service",
-        "name": "東京の美容鍼",
+        "name": "美容鍼",
         "serviceType": "美容鍼",
         "provider": {
           "@id": "https://karin-sb.jp/#organization"
         },
-        "areaServed": {
-          "@type": "AdministrativeArea",
-          "name": "東京都"
-        },
+        "areaServed": [
+          {
+            "@type": "AdministrativeArea",
+            "name": "東京都"
+          },
+          {
+            "@type": "AdministrativeArea",
+            "name": "福岡県"
+          }
+        ],
         "description": "顔だけを見るのではなく、身体の状態や日々のコンディションまで見ながら行う美容鍼。"
       }
     ]
@@ -56,11 +62,11 @@
   </script>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_beauty.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/beauty.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 
-<body class="tokyo-beauty-page">
+<body class="beauty-page">
 
   <header class="header">
     <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
@@ -323,7 +329,7 @@
 
   <script>
     (function () {
-      var page = document.querySelector(".tokyo-beauty-page");
+      var page = document.querySelector(".beauty-page");
       var hero = document.querySelector(".ts-hero");
       if (!page || !hero || !("IntersectionObserver" in window)) return;
 
