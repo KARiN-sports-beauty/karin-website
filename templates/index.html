@@ -713,7 +713,8 @@
 
     function syncHeader() {
       var lastOn = lastSlide && lastSlide.classList.contains("active");
-      page.classList.toggle("is-header-solid", Boolean(lastOn) || pastHero);
+      page.classList.toggle("is-header-solid", pastHero);
+      page.classList.toggle("is-header-on-logo", Boolean(lastOn) && !pastHero);
     }
 
     if ("IntersectionObserver" in window) {

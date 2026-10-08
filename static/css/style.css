@@ -214,7 +214,7 @@ body.nav-open {
   top: 21px;
 }
 
-/* トップ：FV中は透明ヘッダー、最終スライド or about 以降は通常ヘッダー */
+/* トップ：FV中は透明ヘッダー。ロゴスライドは文字だけ紺。about 以降は通常ヘッダー */
 body.index-page .header {
   background-color: transparent;
   background-image: linear-gradient(180deg, rgba(18, 32, 48, 0.42) 0%, rgba(18, 32, 48, 0) 100%);
@@ -283,6 +283,26 @@ body.index-page.is-header-solid .nav-book {
 
 body.index-page.is-header-solid .hamburger span,
 body.index-page .hamburger.active span {
+  background: #1E3A5F;
+}
+
+body.index-page.is-header-on-logo .header {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-bottom: none;
+}
+
+body.index-page.is-header-on-logo .logo,
+body.index-page.is-header-on-logo .nav a:not(.nav-book) {
+  color: #1E3A5F;
+}
+
+body.index-page.is-header-on-logo .nav a:hover:not(.nav-book) {
+  color: #8fa3c1;
+}
+
+body.index-page.is-header-on-logo .hamburger span {
   background: #1E3A5F;
 }
 
