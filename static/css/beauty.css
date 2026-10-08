@@ -360,12 +360,25 @@
   font-size: 1.02rem;
 }
 
+.beauty-page .ts-section:has(.ts-treatment-visual) {
+  padding: 88px 0 0;
+  background-color: #faf9f5;
+}
+
+.beauty-page .ts-section:has(.ts-treatment-visual) .ts-inner {
+  max-width: none;
+}
+
 .beauty-page .ts-treatment-visual {
-  margin: 72px 0 0;
+  margin: 56px 0 0;
 }
 
 .beauty-page .ts-treatment-visual img {
-  width: 100%;
+  display: block;
+  width: 100vw;
+  max-width: none;
+  height: auto;
+  margin-left: calc(50% - 50vw);
 }
 
 .beauty-page .ts-view-list--divided {
@@ -706,8 +719,12 @@
     margin-top: 40px;
   }
 
+  .beauty-page .ts-section:has(.ts-treatment-visual) {
+    padding-top: 64px;
+  }
+
   .beauty-page .ts-treatment-visual {
-    margin-top: 48px;
+    margin-top: 40px;
   }
 
   .beauty-page .ts-view-list--three {
