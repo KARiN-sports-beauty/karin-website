@@ -633,7 +633,7 @@
 }
 
 .beauty-page .ts-close-lead {
-  max-width: 28em;
+  max-width: 39em;
   margin: 36px auto 0;
   padding-top: 0;
   text-align: center;
@@ -926,6 +926,10 @@
 
   .beauty-page .ts-close .ts-heading {
     font-size: 1.4rem;
+  }
+
+  .beauty-page .ts-close-lead {
+    max-width: 28em;
   }
 
   .beauty-page .ts-close-links {
