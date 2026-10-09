@@ -698,7 +698,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
   grid-template-areas:
     "copy ."
     "points points";
@@ -706,7 +706,7 @@
   row-gap: 72px;
   align-items: start;
   max-width: none;
-  padding: 0 5% 0 8%;
+  padding: 0 4% 0 7%;
   box-sizing: border-box;
 }
 
@@ -757,20 +757,26 @@
 .ts-view-photo {
   position: absolute;
   z-index: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 58%;
+  top: -100px;
+  right: -4%;
+  bottom: -88px;
+  width: 72%;
   margin: 0;
   pointer-events: none;
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.16) 18%, rgba(0, 0, 0, 0.62) 42%, #000 64%),
-    linear-gradient(180deg, #000 0%, #000 42%, rgba(0, 0, 0, 0.48) 68%, rgba(0, 0, 0, 0.32) 100%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.16) 18%, rgba(0, 0, 0, 0.62) 42%, #000 64%),
-    linear-gradient(180deg, #000 0%, #000 42%, rgba(0, 0, 0, 0.48) 68%, rgba(0, 0, 0, 0.32) 100%);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.22) 16%,
+    rgba(0, 0, 0, 0.72) 36%,
+    #000 54%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.22) 16%,
+    rgba(0, 0, 0, 0.72) 36%,
+    #000 54%
+  );
 }
 
 .ts-view-photo img {
@@ -1714,9 +1720,43 @@
     margin-top: 36px;
   }
 
+  .ts-view-layout {
+    position: static;
+  }
+
+  .ts-view-photo {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: auto;
+    height: auto;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .ts-view-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.86);
+  }
+
+  .ts-view-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 52% 46%;
+  }
+
   .ts-view .ts-view-list {
     gap: 0;
-    margin-top: 8px;
+    margin-top: 0;
+  }
+
+  .ts-view .ts-view-item,
+  .ts-view .ts-view-item:first-child,
+  .ts-view .ts-view-item:last-child {
+    padding: 22px 0;
   }
 
   .ts-view .ts-view-role {
