@@ -778,10 +778,11 @@
 .ts-view-photo {
   position: absolute;
   z-index: 0;
-  top: 0;
+  top: -100px;
   right: -4%;
-  bottom: 0;
-  width: 68%;
+  bottom: -88px;
+  left: -7%;
+  width: auto;
   margin: 0;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(
@@ -1590,6 +1591,12 @@
 
   .ts-recommend-list {
     gap: 16px 18px;
+  }
+
+  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) #ts-recommend-heading + .ts-section-lead,
+  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body,
+  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body p {
+    text-align: left;
   }
 
   .ts-place-list {
