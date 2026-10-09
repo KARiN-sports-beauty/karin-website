@@ -685,6 +685,132 @@
   margin: 0 0 10px;
 }
 
+/* 東京の「身体の見方」。福岡ページには ts-view を付けない。 */
+.ts-view {
+  position: relative;
+  overflow: hidden;
+  background-color: transparent;
+  text-align: left;
+  padding: 100px 0 88px;
+}
+
+.ts-view-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-areas:
+    "copy ."
+    "points points";
+  column-gap: 36px;
+  row-gap: 72px;
+  align-items: start;
+  max-width: none;
+  padding: 0 5% 0 8%;
+  box-sizing: border-box;
+}
+
+.ts-view-copy {
+  grid-area: copy;
+  position: relative;
+  z-index: 1;
+  max-width: 34em;
+}
+
+.ts-view .ts-heading--left {
+  margin-bottom: 28px;
+}
+
+.ts-view .ts-view-intro {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+
+.ts-view .ts-view-role {
+  margin: 0;
+  padding: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  text-align: left;
+}
+
+.ts-view .ts-view-role-break {
+  display: inline;
+}
+
+.ts-view .ts-view-intro > p:last-child {
+  margin: 22px 0 0;
+  max-width: 28em;
+  color: #1E3A5F;
+  opacity: 0.88;
+  line-height: 2.05;
+  text-align: left;
+}
+
+.ts-view-photo {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 58%;
+  margin: 0;
+  pointer-events: none;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.16) 18%, rgba(0, 0, 0, 0.62) 42%, #000 64%),
+    linear-gradient(180deg, #000 0%, #000 42%, rgba(0, 0, 0, 0.48) 68%, rgba(0, 0, 0, 0.32) 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.16) 18%, rgba(0, 0, 0, 0.62) 42%, #000 64%),
+    linear-gradient(180deg, #000 0%, #000 42%, rgba(0, 0, 0, 0.48) 68%, rgba(0, 0, 0, 0.32) 100%);
+  mask-composite: intersect;
+}
+
+.ts-view-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 46%;
+}
+
+.ts-view .ts-view-list {
+  grid-area: points;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+
+.ts-view .ts-view-item {
+  padding: 0 22px;
+  border-left: 1px solid rgba(192, 160, 98, 0.7);
+  background: none;
+}
+
+.ts-view .ts-view-item:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.ts-view .ts-view-item:last-child {
+  padding-right: 0;
+}
+
+.ts-view .ts-view-item p {
+  color: #1E3A5F;
+}
+
 /* ---------- スポーツ / ダンサー ---------- */
 .ts-feature {
   display: grid;
@@ -1326,6 +1452,66 @@
     gap: 32px 28px;
   }
 
+  .tokyo-shinkyu-page .ts-view {
+    padding: 72px 8% 80px;
+  }
+
+  .ts-view-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 0;
+  }
+
+  .ts-view-copy {
+    max-width: none;
+  }
+
+  .ts-view-photo {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    order: 2;
+    width: 100%;
+    height: auto;
+    margin: 4px 0;
+    pointer-events: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    -webkit-mask-composite: source-over;
+    mask-composite: add;
+  }
+
+  .ts-view-photo img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .ts-view .ts-view-list {
+    order: 3;
+  }
+
+  .ts-view .ts-view-list {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ts-view .ts-view-item,
+  .ts-view .ts-view-item:first-child,
+  .ts-view .ts-view-item:last-child {
+    padding: 22px 0 0;
+    border-left: none;
+    border-top: 1px solid rgba(192, 160, 98, 0.7);
+  }
+
+  .ts-view .ts-view-item:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+
   .ts-recommend-list {
     gap: 16px 18px;
   }
@@ -1473,6 +1659,7 @@
 
   .ts-about .ts-body {
     margin-top: 28px;
+    text-align: left;
   }
 
   .ts-lead,
@@ -1521,6 +1708,16 @@
     grid-template-columns: 1fr;
     gap: 28px;
     margin-top: 36px;
+  }
+
+  .ts-view .ts-view-list {
+    gap: 0;
+    margin-top: 8px;
+  }
+
+  .ts-view .ts-view-role {
+    font-size: 1.16rem;
+    letter-spacing: 0.04em;
   }
 
   .ts-view-title {
