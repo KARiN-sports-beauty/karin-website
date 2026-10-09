@@ -345,6 +345,39 @@
   transform: none;
 }
 
+.ts-about {
+  padding: 112px 8% 120px;
+  background-color: transparent;
+}
+
+.ts-about .ts-eyebrow {
+  margin-bottom: 22px;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+}
+
+.ts-about .ts-heading {
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
+  font-size: clamp(1.7rem, 3.2vw, 2.45rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.65;
+  margin-bottom: 0;
+  padding-bottom: 22px;
+}
+
+.ts-about .ts-heading::after {
+  width: 56px;
+  height: 1px;
+  border-radius: 0;
+}
+
+.ts-about .ts-body {
+  max-width: 34em;
+  margin-top: 36px;
+  text-align: center;
+}
+
 .ts-subheading {
   margin: 40px 0 16px;
   font-size: 1.08rem;
@@ -1433,6 +1466,17 @@
     letter-spacing: 0.04em;
   }
 
+  .ts-about .ts-heading {
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+    padding-bottom: 18px;
+  }
+
+  .ts-about .ts-body {
+    margin-top: 28px;
+  }
+
   .ts-lead,
   .ts-body p,
   .ts-section-lead,
@@ -1650,6 +1694,11 @@
 
   .tokyo-shinkyu-page .ts-hero-visual {
     font-size: 1.32rem;
+  }
+
+  .ts-about .ts-heading {
+    font-size: 1.32rem;
+    letter-spacing: 0.04em;
   }
 
   .ts-approach-list li {
