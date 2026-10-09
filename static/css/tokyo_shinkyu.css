@@ -753,7 +753,7 @@
   display: inline;
 }
 
-.ts-view .ts-view-intro > p:last-child {
+.ts-view .ts-view-intro > p:not(.ts-view-role) {
   margin: 22px 0 0;
   max-width: 28em;
   color: #1E3A5F;
@@ -762,8 +762,12 @@
   text-align: left;
 }
 
+.ts-view-copy .ts-view-title {
+  display: none;
+}
+
 .ts-view-copy .ts-view-item {
-  margin-top: 36px;
+  margin-top: 22px;
   padding: 0;
   border: none;
   background: none;
@@ -1504,6 +1508,10 @@
   .ts-view .ts-view-intro,
   .ts-view-photo {
     display: none;
+  }
+
+  .ts-view-copy .ts-view-title {
+    display: block;
   }
 
   .ts-view-copy .ts-view-item {
