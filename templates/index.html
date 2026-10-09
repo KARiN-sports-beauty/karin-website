@@ -134,7 +134,7 @@
       <a href="{{ url_for('price') }}">料金表</a>
       <a href="#blog">KARiN.NOTES</a>
       <a href="#profile">プロフィール</a>
-      <a href="{{ url_for('chat_page') }}">相談する</a>
+      <a href="{{ url_for('contact') }}">相談する</a>
       <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
     </nav>
   </header>
@@ -216,6 +216,10 @@
         <span class="for-you-num">04</span>
         <h3 class="for-you-item-title">何を受ければいいのか分からない</h3>
         <p class="for-you-item-text">鍼灸・整体・コンディショニング。今の自分に必要なことから一緒に考えます。</p>
+        <div class="for-you-links">
+          <a href="{{ url_for('tokyo_shinkyu') }}" class="services-link">鍼灸について →</a>
+          <a href="{{ url_for('tokyo_seitai') }}" class="services-link">整体について →</a>
+        </div>
       </article>
       <article class="for-you-item" data-aos="fade-up" data-aos-delay="240">
         <span class="for-you-num">05</span>
@@ -238,7 +242,7 @@
         <h3 class="services-name">出張施術・コンディショニング</h3>
         <p class="services-text">鍼灸・整体・トレーニングなどを、身体の状態や目的に合わせて組み合わせ、一人ひとりに必要なケアを行います。</p>
         <p class="services-text">ご自宅やご希望の場所へ伺い、忙しい日常の中でも無理なく身体を整える時間を提供します。</p>
-        <a href="#treatment-overview" class="services-link">施術内容を見る ↓</a>
+        <a href="{{ url_for('treatment') }}" class="services-link">施術内容を見る ↓</a>
       </article>
       <article class="services-item" data-aos="fade-up" data-aos-delay="80">
         <span class="services-num">02</span>
@@ -254,7 +258,7 @@
         <h3 class="services-name">法人向けコンディショニング</h3>
         <p class="services-text">福利厚生や従業員の健康サポートなど、企業・団体のニーズに合わせたコンディショニングをご提案します。</p>
         <p class="services-text">オフィスへの出張施術や健康支援など、目的や環境に合わせて柔軟に対応します。</p>
-        <a href="#contact-section" class="services-link">法人でのご利用について相談する ↓</a>
+        <a href="{{ url_for('contact') }}" class="services-link">法人でのご利用について相談する ↓</a>
       </article>
     </div>
   </section>
@@ -324,16 +328,16 @@
         <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸" />
         <h3>鍼灸</h3>
         <p>身体の状態に合わせて、痛みや不調、コンディションを整えます。症状の名前だけで決めるのではなく、その人の状態を見ながら整える、KARiN.の基本的なアプローチの一つです。</p>
-        <a href="{{ url_for('tokyo_shinkyu') }}" class="services-link">東京の出張鍼灸について →</a>
+        <a href="{{ url_for('tokyo_shinkyu') }}" class="services-link">鍼灸について →</a>
       </div>
       <div class="treatment-card" data-aos="fade-up" data-aos-delay="200">
         <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体・コンディショニング" />
         <h3>整体・コンディショニング</h3>
         <p>姿勢や可動域、身体のバランスを見ながら、動きやすい身体へ整えます。その日の状態を見て、必要な手技を組み合わせます。</p>
-        <a href="{{ url_for('tokyo_seitai') }}" class="services-link">東京の出張整体について →</a>
+        <a href="{{ url_for('tokyo_seitai') }}" class="services-link">整体について →</a>
       </div>
       <div class="treatment-card" data-aos="fade-up" data-aos-delay="300">
-        <img src="{{ url_for('static', filename='images/treatment6.jpg') }}" alt="トレーニング" />
+        <img src="{{ url_for('static', filename='images/traininghowabout.jpg') }}" alt="トレーニング" />
         <h3>トレーニング</h3>
         <p>整えるだけで終わらず、姿勢や動き、身体の使い方を含め、より良い状態へ育てていきます。再発予防やコンディションの維持にもつながるよう、整えた身体を日常や競技に活かしていきます。</p>
         <a href="{{ url_for('training') }}" class="services-link">トレーニング・リコンディショニング →</a>
@@ -375,7 +379,7 @@
           <p class="initial-path-text">お問い合わせ、またはLINEからお気軽にご相談ください。帯同・直前のご相談などもこちらから。</p>
           <div class="initial-path-ctas">
             <a href="{{ url_for('contact') }}" class="initial-btn">お問い合わせ</a>
-            <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn initial-btn--line">LINEで相談</a>
+            <a href="{{ url_for('lp') }}" class="initial-btn initial-btn--line">LINEで相談</a>
           </div>
         </article>
       </div>
@@ -421,7 +425,7 @@
         <p class="initial-close-text">どんな施術を受ければいいか分からない方も、<br class="br-sp">まずはお気軽にご相談ください。</p>
         <div class="initial-close-ctas">
           <a href="{{ url_for('contact') }}" class="initial-btn">お問い合わせ</a>
-          <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer" class="initial-btn initial-btn--line">LINEで相談</a>
+          <a href="{{ url_for('lp') }}" class="initial-btn initial-btn--line">LINEで相談</a>
         </div>
       </div>
     </div>
@@ -606,7 +610,7 @@
     <div class="contact-buttons">
       <div class="contact-cta-item">
         <p class="contact-cta-lead">施術について相談したい方</p>
-        <a href="{{ url_for('lp') }}" class="contact-btn">初回限定特典・LINE登録はこちら</a>
+        <a href="{{ url_for('lp') }}" class="contact-btn">LINEで相談</a>
         <p class="contact-cta-note">※公式LINE登録で、ご登録者限定の特典をご用意しています。</p>
       </div>
       <div class="contact-cta-item">

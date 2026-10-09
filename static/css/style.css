@@ -824,6 +824,16 @@ body.index-page.is-header-on-logo .hamburger span {
   margin: 0;
 }
 
+.for-you-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+}
+
+.for-you-links .services-link {
+  margin-top: 16px;
+}
+
 
 /* ===============================
    KARiN.のサービス
@@ -1644,6 +1654,8 @@ body.index-page .br-sp {
 
 /* 各カード */
 .treatment-card {
+  display: flex;
+  flex-direction: column;
   background-color: #ffffff;
   flex: 1 1 30%;
   border-radius: 16px;
@@ -1681,6 +1693,15 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.95;
   text-align: left;
+  margin-bottom: 0;
+}
+
+.treatment-card .services-link {
+  align-self: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .treatment-overview .treatment-note {
@@ -1797,6 +1818,7 @@ body.index-page .blog-section .notes-home-card__thumb {
   width: 100%;
   aspect-ratio: 3 / 2;
   overflow: hidden;
+  border-radius: 8px;
   background: #eceae6;
 }
 
@@ -3975,6 +3997,10 @@ section[id],
     font-size: 0.9rem;
     line-height: 1.8;
     text-align: left;
+  }
+
+  .treatment-card .services-link {
+    align-self: flex-start;
   }
 
   .treatment-card:nth-child(3) {
