@@ -490,6 +490,10 @@
 
 /* ---------- おすすめ ---------- */
 
+.ts-section:has(#ts-recommend-heading) {
+  background-color: #ffffff;
+}
+
 #ts-recommend-heading + .ts-section-lead {
   max-width: 36em;
   margin-left: auto;
