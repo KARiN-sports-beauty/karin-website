@@ -366,14 +366,12 @@
   padding-bottom: 22px;
 }
 
-.ts-about .ts-heading::after {
-  width: 56px;
-  height: 1px;
-  border-radius: 0;
+.ts-about .ts-inner--narrow {
+  max-width: 48em;
 }
 
 .ts-about .ts-body {
-  max-width: 34em;
+  max-width: 48em;
   margin-top: 36px;
   text-align: center;
 }
