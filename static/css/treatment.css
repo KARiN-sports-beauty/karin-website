@@ -317,6 +317,17 @@
   margin: 0;
 }
 
+.tx-pillar {
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-pillar .tx-text-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
 /* ---------- 美容鍼 ---------- */
 .tx-beauty {
   display: grid;

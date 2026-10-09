@@ -4188,6 +4188,12 @@ section[id],
     padding: 60px 5% !important;
   }
 
+  body.index-page .access-section .area-hours-lead {
+    padding-left: 20px;
+    padding-right: 20px;
+    box-sizing: border-box;
+  }
+
   /* ==========================
       Hero（ファーストビュー）
   ========================== */
