@@ -689,7 +689,7 @@
 .ts-view {
   position: relative;
   overflow: hidden;
-  background-color: transparent;
+  background-color: #ffffff;
   text-align: left;
   padding: 100px 0 88px;
 }
@@ -812,6 +812,10 @@
 }
 
 /* ---------- スポーツ / ダンサー ---------- */
+.ts-section:has(.ts-feature) {
+  background-color: #ffffff;
+}
+
 .ts-feature {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
