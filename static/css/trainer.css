@@ -253,6 +253,7 @@
 
 .trainer-fields {
   text-align: left;
+  background-color: #ffffff;
 }
 
 .trainer-fields-inner {
@@ -566,7 +567,7 @@
 }
 
 .trainer-page .tx-cta-section {
-  background-color: #ffffff;
+  background-color: transparent;
   padding-top: 108px;
   padding-bottom: 104px;
 }

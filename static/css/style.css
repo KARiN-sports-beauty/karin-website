@@ -24,6 +24,64 @@ body {
   overflow-x: clip;
 }
 
+/* 主要ページの固定ロゴ。配置・サイズ・透明度は /training と同じ。 */
+.index-page,
+.treatment-page,
+.beauty-page,
+.tokyo-shinkyu-page,
+.tokyo-seitai-page {
+  position: relative;
+  z-index: 0;
+}
+
+.index-page::before,
+.treatment-page::before,
+.beauty-page::before,
+.tokyo-shinkyu-page::before,
+.tokyo-seitai-page::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: min(62vw, 700px);
+  aspect-ratio: 1133 / 1108;
+  transform: translate(-50%, -50%);
+  background-color: transparent;
+  background-image: url("../images/logoname.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.index-page > section,
+.index-page > footer,
+.treatment-page > section,
+.treatment-page > footer,
+.beauty-page > main,
+.beauty-page > footer,
+.tokyo-shinkyu-page > main,
+.tokyo-shinkyu-page > footer,
+.tokyo-seitai-page > main,
+.tokyo-seitai-page > footer {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .index-page::before,
+  .treatment-page::before,
+  .beauty-page::before,
+  .tokyo-shinkyu-page::before,
+  .tokyo-seitai-page::before {
+    width: min(72vw, 300px);
+    opacity: 0.18;
+  }
+}
+
 @media (hover: none) {
   html, body {
     scroll-behavior: auto;
@@ -1889,11 +1947,14 @@ body.index-page #access {
 }
 
 body.index-page #for-you,
-body.index-page #profile,
+body.index-page #profile {
+  background-color: #ffffff;
+}
+
 body.index-page #initial-section,
 body.index-page #news,
 body.index-page #contact-section {
-  background-color: #ffffff;
+  background-color: transparent;
 }
 
 
