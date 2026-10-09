@@ -96,12 +96,49 @@
     }
 
     body {
+      position: relative;
+      z-index: 0;
       font-family: var(--font-body);
       color: var(--ink);
       background: var(--warm-white);
       line-height: 1.9;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* 固定ロゴ。配置・サイズ・透明度は /training と同じ。 */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 0;
+      width: min(62vw, 700px);
+      aspect-ratio: 1133 / 1108;
+      transform: translate(-50%, -50%);
+      background-color: transparent;
+      background-image: url("{{ url_for('static', filename='images/logoname.jpg') }}");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.18;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    body > .announce-bar,
+    body > section,
+    body > .lp-home-link,
+    body > footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+      body::before {
+        width: min(72vw, 300px);
+        opacity: 0.18;
+      }
     }
 
     img {
@@ -433,7 +470,7 @@
 
     /* ─── Worries ─── */
     .worries {
-      background: var(--warm-white);
+      background: transparent;
       padding: var(--space-xl) 0;
     }
 
@@ -674,7 +711,7 @@
 
     /* ─── Flow ─── */
     .flow {
-      background: var(--warm-white);
+      background: transparent;
       padding: var(--space-xl) 0;
     }
 
@@ -889,7 +926,7 @@
 
     /* ─── Trial ─── */
     .trial {
-      background: var(--warm-white);
+      background: transparent;
       padding: var(--space-xl) 0;
     }
 

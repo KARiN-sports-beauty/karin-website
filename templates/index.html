@@ -28,7 +28,7 @@
   ================================= -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="KARiN. ~Sports & Beauty~ | 鍼灸 × 整体 × トレーニングで整える">
-  <meta property="og:description" content="東京（代々木上原）・福岡（薬院）で国家資格者が出張施術。受付10:00〜19:00／LINE・フォーム24時間対応。">
+  <meta property="og:description" content="東京（代々木上原）・福岡（薬院）で国家資格者が出張施術。東京12:00〜26:00、福岡10:00〜19:00／LINE・フォーム24時間対応。">
   <meta property="og:url" content="https://karin-sb.jp/">
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
@@ -324,11 +324,13 @@
         <img src="{{ url_for('static', filename='images/treatment1.jpg') }}" alt="鍼灸" />
         <h3>鍼灸</h3>
         <p>身体の状態に合わせて、痛みや不調、コンディションを整えます。症状の名前だけで決めるのではなく、その人の状態を見ながら整える、KARiN.の基本的なアプローチの一つです。</p>
+        <a href="{{ url_for('tokyo_shinkyu') }}" class="services-link">東京の出張鍼灸について →</a>
       </div>
       <div class="treatment-card" data-aos="fade-up" data-aos-delay="200">
         <img src="{{ url_for('static', filename='images/treatment3.jpg') }}" alt="整体・コンディショニング" />
         <h3>整体・コンディショニング</h3>
         <p>姿勢や可動域、身体のバランスを見ながら、動きやすい身体へ整えます。その日の状態を見て、必要な手技を組み合わせます。</p>
+        <a href="{{ url_for('tokyo_seitai') }}" class="services-link">東京の出張整体について →</a>
       </div>
       <div class="treatment-card" data-aos="fade-up" data-aos-delay="300">
         <img src="{{ url_for('static', filename='images/treatment6.jpg') }}" alt="トレーニング" />
@@ -341,6 +343,7 @@
       このほか、ストレッチや筋膜へのアプローチ、カッピング、テーピングなど、状態に応じてさまざまな手法を組み合わせます。<br />
       美容鍼など、美容を目的とした施術にも対応しています。
     </p>
+    <a href="{{ url_for('beauty') }}" class="services-link">美容鍼について →</a>
     <div class="treatment-cta">
       <a href="{{ url_for('treatment') }}" class="services-link">詳しく見る ↓</a>
     </div>
@@ -603,7 +606,7 @@
     <div class="contact-buttons">
       <div class="contact-cta-item">
         <p class="contact-cta-lead">施術について相談したい方</p>
-        <a href="{{ url_for('lp') }}" class="contact-btn">LINEで相談する</a>
+        <a href="{{ url_for('lp') }}" class="contact-btn">初回限定特典・LINE登録はこちら</a>
         <p class="contact-cta-note">※公式LINE登録で、ご登録者限定の特典をご用意しています。</p>
       </div>
       <div class="contact-cta-item">
