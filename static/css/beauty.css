@@ -419,6 +419,8 @@
 }
 
 .beauty-page .ts-for-list {
+  position: relative;
+  isolation: isolate;
   list-style: none;
   display: grid;
   grid-template-columns: 1fr;
@@ -429,6 +431,22 @@
   text-align: left;
 }
 
+.beauty-page .ts-for-list::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -16%;
+  right: -12%;
+  top: -6%;
+  bottom: -16%;
+  background:
+    radial-gradient(ellipse 68% 62% at 42% 48%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.48) 36%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(ellipse 40% 34% at 12% 24%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 68%),
+    radial-gradient(ellipse 38% 32% at 88% 80%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 66%);
+  filter: blur(22px);
+  pointer-events: none;
+}
+
 .beauty-page .ts-for-list li {
   position: relative;
   margin: 0;
@@ -437,7 +455,7 @@
   font-weight: 400;
   letter-spacing: 0.03em;
   line-height: 1.85;
-  color: rgba(255, 255, 255, 0.94);
+  color: #1E3A5F;
 }
 
 .beauty-page .ts-for-list li::before {
@@ -791,6 +809,17 @@
   .beauty-page .ts-for-list {
     gap: 14px;
     margin-top: 28px;
+  }
+
+  .beauty-page .ts-for-list::before {
+    left: -12%;
+    right: -10%;
+    top: -6%;
+    bottom: -12%;
+    background:
+      radial-gradient(ellipse 84% 74% at 38% 50%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.55) 42%, rgba(255, 255, 255, 0) 74%),
+      radial-gradient(ellipse 36% 30% at 82% 74%, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0) 68%);
+    filter: blur(16px);
   }
 
   .beauty-page .ts-for-list li {
