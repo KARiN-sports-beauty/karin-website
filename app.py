@@ -3249,6 +3249,18 @@ def tokyo_shinkyu():
     return render_template("tokyo_shinkyu.html")
 
 
+@app.route("/fukuoka/seitai")
+def fukuoka_seitai():
+    """福岡の出張整体 SEOページ。東京ページとは独立。"""
+    return render_template("fukuoka_seitai.html")
+
+
+@app.route("/fukuoka/shinkyu")
+def fukuoka_shinkyu():
+    """福岡の出張鍼灸 SEOページ。東京ページとは独立。"""
+    return render_template("fukuoka_shinkyu.html")
+
+
 @app.route("/beauty")
 def beauty():
     """美容鍼ページ。鍼灸・整体ページとは独立。"""
@@ -6439,6 +6451,8 @@ def sitemap():
             ("/lp", "monthly"),
             ("/tokyo/seitai", "weekly"),
             ("/tokyo/shinkyu", "weekly"),
+            ("/fukuoka/seitai", "weekly"),
+            ("/fukuoka/shinkyu", "weekly"),
             ("/beauty", "weekly"),
             ("/chat", "weekly"),
             ("/schedule", "daily"),

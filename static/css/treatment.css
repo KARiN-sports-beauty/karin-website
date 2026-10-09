@@ -328,6 +328,20 @@
   padding-top: 28px;
 }
 
+.tx-pillar-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.tx-pillar-links .tx-text-link {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 /* ---------- 美容鍼 ---------- */
 .tx-beauty {
   display: grid;
