@@ -693,7 +693,7 @@
 .ts-view {
   position: relative;
   overflow: hidden;
-  background-color: transparent;
+  background-color: #ffffff;
   text-align: left;
   padding: 100px 0 88px;
 }
@@ -738,14 +738,16 @@
   text-align: left;
 }
 
-.ts-view .ts-view-role {
+.ts-view .ts-view-intro > .ts-view-role {
   margin: 0;
   padding: 0;
+  max-width: none;
   font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.7;
   color: #1E3A5F;
+  opacity: 1;
   text-align: left;
 }
 
@@ -818,9 +820,30 @@
 }
 
 .ts-view .ts-view-list .ts-view-item {
+  position: relative;
+  z-index: 1;
   padding: 0 28px;
   border-left: 1px solid #c0a062;
   background: none;
+}
+
+.ts-view .ts-view-list .ts-view-item::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -6%;
+  right: -4%;
+  top: -22%;
+  bottom: -18%;
+  background: radial-gradient(
+    ellipse at 46% 42%,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 0.88) 36%,
+    rgba(255, 255, 255, 0.45) 62%,
+    rgba(255, 255, 255, 0) 78%
+  );
+  filter: blur(8px);
+  pointer-events: none;
 }
 
 .ts-view .ts-view-list .ts-view-item:first-child {
@@ -1486,6 +1509,7 @@
   }
 
   .ts-view-layout {
+    position: static;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -1505,9 +1529,35 @@
     transform: translateX(-50%);
   }
 
-  .ts-view .ts-view-intro,
-  .ts-view-photo {
+  .ts-view .ts-view-intro {
     display: none;
+  }
+
+  .ts-view-photo {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    pointer-events: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .ts-view-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.86);
+  }
+
+  .ts-view-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 52% 46%;
   }
 
   .ts-view-copy .ts-view-title {
@@ -1532,6 +1582,10 @@
     padding: 22px 0;
     border-left: none;
     border-top: 1px solid #c0a062;
+  }
+
+  .ts-view .ts-view-list .ts-view-item::before {
+    content: none;
   }
 
   .ts-recommend-list {
