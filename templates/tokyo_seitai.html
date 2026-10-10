@@ -170,7 +170,7 @@
         <h2 id="ts-about-heading" class="ts-heading">身体の状態に合わせて、<br>整える。</h2>
         <div class="ts-body">
           <p>整体は、気になる部分だけでなく、身体全体の状態や動きにも目を向けながら行います。</p>
-          <p>その日の身体の状態やご希望に合わせて、必要な施術を考えていきます。<a href="{{ url_for('treatment') }}">施術内容</a>でも、同じ考え方をご案内しています。</p>
+          <p>その日の身体の状態やご希望に合わせて、必要な施術を考えていきます。詳しくは、<a href="{{ url_for('treatment') }}">施術内容</a>をご確認ください。</p>
         </div>
         <h3 class="ts-approach-heading">身体の状態に合わせて組み合わせる施術</h3>
         <ol class="ts-approach-list">
@@ -213,31 +213,32 @@
       </div>
     </section>
 
-    <section class="ts-section ts-section--muted" aria-labelledby="ts-view-heading">
-      <div class="ts-inner">
-        <h2 id="ts-view-heading" class="ts-heading" data-aos="fade-up"><span class="karin-brand">KARiN.</span>だからできる身体の見方</h2>
-        <div class="ts-view-intro" data-aos="fade-up">
-          <p class="ts-view-role">鍼灸師<span class="ts-view-role-break"> × </span>アスレティックトレーナー</p>
-          <p>鍼灸師・アスレティックトレーナーとしての経験を活かし、その日の身体の状態や動きまで確認しながら施術を行っています。</p>
+    <section class="ts-section ts-view" aria-labelledby="ts-view-heading">
+      <div class="ts-inner ts-view-layout">
+        <div class="ts-view-copy" data-aos="fade-up">
+          <h2 id="ts-view-heading" class="ts-heading ts-heading--left"><span class="karin-brand">KARiN.</span>だからできる身体の見方</h2>
+          <div class="ts-view-intro">
+            <p class="ts-view-role">鍼灸師<span class="ts-view-role-break"> × </span>アスレティックトレーナー</p>
+            <p>鍼灸師・アスレティックトレーナーとしての経験を活かし、その日の身体の状態や動きまで確認しながら施術を行っています。</p>
+          </div>
         </div>
+        <figure class="ts-view-photo">
+          <img src="{{ url_for('static', filename='images/trainerhistory.jpg') }}" alt="膝の状態を確認している様子" width="1672" height="941" decoding="async">
+        </figure>
         <div class="ts-view-list">
           <article class="ts-view-item" data-aos="fade-up">
-            <p class="ts-num">01</p>
             <h3 class="ts-view-title">身体全体を見て考える</h3>
             <p>姿勢や動き、身体の使い方まで含めて見ます。その日の身体がどのように使われているかを考えながら整えます。</p>
           </article>
           <article class="ts-view-item" data-aos="fade-up">
-            <p class="ts-num">02</p>
             <h3 class="ts-view-title">スポーツ・アスリートの現場経験</h3>
             <p>プロからアマチュアまで、スポーツの現場で約20年選手を支えてきました。競技やトレーニングによる負担を、現場で培った感覚を踏まえて整えます。</p>
           </article>
           <article class="ts-view-item" data-aos="fade-up">
-            <p class="ts-num">03</p>
             <h3 class="ts-view-title">アーティスト・ダンサーの現場経験</h3>
             <p>エンターテイメントのダンサー帯同や、アーティスト・プロダンサーへの施術・調整を現場で行ってきました。表現する身体のコンディションや使い方を考えてきた経験を、施術に活かしています。</p>
           </article>
           <article class="ts-view-item" data-aos="fade-up">
-            <p class="ts-num">04</p>
             <h3 class="ts-view-title">出張だからこその柔軟性</h3>
             <p>ご自宅・ホテル・スタジオなど、生活や活動の場所に合わせて伺います。通う時間を確保しにくいときでも、いつもの場所で整えることができます。</p>
           </article>
