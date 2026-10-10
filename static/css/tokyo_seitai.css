@@ -431,11 +431,19 @@
 
 /* ---------- おすすめ ---------- */
 
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-section:has(#ts-recommend-heading) {
+  background-color: #ffffff;
+}
+
 #ts-recommend-heading + .ts-section-lead {
   max-width: 36em;
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) #ts-recommend-heading + .ts-section-lead {
+  text-align: left;
 }
 
 .ts-recommend-list {
@@ -952,6 +960,10 @@
   text-align: center;
 }
 
+.tokyo-seitai-page:not(.fukuoka-seitai-page) #ts-place-heading + .ts-section-lead {
+  text-align: left;
+}
+
 .ts-place-list {
   list-style: none;
   display: grid;
@@ -972,6 +984,10 @@
 
 .ts-place-list li:first-child {
   border-left: none;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-place-list .ts-num {
+  display: none;
 }
 
 .ts-place-list h3 {
@@ -1013,6 +1029,12 @@
   color: #1E3A5F;
   opacity: 0.7;
   text-align: center;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-place-note {
+  width: fit-content;
+  max-width: min(36em, 100%);
+  text-align: left;
 }
 
 /* ---------- 流れ ---------- */
@@ -1069,12 +1091,25 @@
   opacity: 0.78;
 }
 
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-flow-list li > p:not(.ts-num) {
+  display: inline-block;
+  max-width: 100%;
+  text-align: left;
+  vertical-align: top;
+}
+
 /* ---------- 料金 ---------- */
 #ts-price-heading + .ts-section-lead {
   max-width: 28em;
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) #ts-price-heading + .ts-section-lead {
+  width: fit-content;
+  max-width: min(28em, 100%);
+  text-align: left;
 }
 
 .ts-price-list {
@@ -1132,6 +1167,12 @@
   color: #1E3A5F;
   opacity: 0.78;
   text-align: center;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-price-note {
+  width: fit-content;
+  max-width: 100%;
+  text-align: left;
 }
 
 .ts-text-link {
@@ -1212,6 +1253,15 @@
 .ts-cta-section .ts-body,
 .ts-cta-section .ts-body p {
   text-align: center;
+}
+
+.tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-cta-section .ts-body p {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
 }
 
 .ts-cta-row {
