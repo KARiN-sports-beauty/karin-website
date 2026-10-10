@@ -3,7 +3,6 @@
    共通の style.css（ヘッダー・フッター・固定ロゴ）と併用する。
    tokyo_seitai.css は読み込まない。
    福岡ページのHTMLに存在するクラスのスタイルだけを引き継いでいる。
-   東京ページだけの .ts-view 写真レイアウトは含まない。
 ========================================================= */
 
 .tokyo-seitai-page {
@@ -432,12 +431,15 @@
 }
 /* ---------- おすすめ ---------- */
 
+.ts-section:has(#ts-recommend-heading) {
+  background-color: #ffffff;
+}
 
 #ts-recommend-heading + .ts-section-lead {
   max-width: 36em;
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
+  text-align: left;
 }
 
 .ts-recommend-list {
@@ -619,6 +621,161 @@
   letter-spacing: 0.04em;
   line-height: 1.7;
   margin: 0 0 10px;
+}
+
+.ts-view {
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
+  text-align: left;
+  padding: 100px 0 88px;
+}
+
+.ts-view-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "copy ."
+    "points points";
+  column-gap: 36px;
+  row-gap: 64px;
+  align-items: start;
+  max-width: none;
+  padding: 0 4% 0 7%;
+  box-sizing: border-box;
+}
+
+.ts-view-copy {
+  grid-area: copy;
+  position: relative;
+  z-index: 1;
+  max-width: 32em;
+}
+
+.ts-view .ts-heading--left {
+  margin-bottom: 28px;
+}
+
+.ts-view .ts-view-intro {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+
+.ts-view .ts-view-intro > .ts-view-role {
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  color: #1E3A5F;
+  opacity: 1;
+  text-align: left;
+}
+
+.ts-view .ts-view-role-break {
+  display: inline;
+}
+
+.ts-view .ts-view-intro > p:not(.ts-view-role) {
+  margin: 22px 0 0;
+  max-width: 28em;
+  color: #1E3A5F;
+  opacity: 0.88;
+  line-height: 2.05;
+  text-align: left;
+}
+
+.ts-view-photo {
+  position: absolute;
+  z-index: 0;
+  top: -100px;
+  right: -4%;
+  bottom: -88px;
+  left: -7%;
+  width: auto;
+  margin: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.18) 16%,
+    rgba(0, 0, 0, 0.62) 36%,
+    #000 54%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.18) 16%,
+    rgba(0, 0, 0, 0.62) 36%,
+    #000 54%
+  );
+}
+
+.ts-view-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 46%;
+}
+
+.ts-view .ts-view-list {
+  grid-area: points;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+
+.ts-view .ts-view-list .ts-view-item {
+  position: relative;
+  z-index: 1;
+  padding: 0 28px;
+  border-left: 1px solid #c0a062;
+  background: none;
+}
+
+.ts-view .ts-view-list .ts-view-item::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -6%;
+  right: -4%;
+  top: -22%;
+  bottom: -18%;
+  background: radial-gradient(
+    ellipse at 46% 42%,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 0.88) 36%,
+    rgba(255, 255, 255, 0.45) 62%,
+    rgba(255, 255, 255, 0) 78%
+  );
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.ts-view .ts-view-list .ts-view-item:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.ts-view .ts-view-list .ts-view-item:last-child {
+  padding-right: 0;
+}
+
+.ts-view .ts-view-item p {
+  color: #1E3A5F;
 }
 
 /* ---------- スポーツ / ダンサー ---------- */
@@ -1262,6 +1419,76 @@
     gap: 32px 28px;
   }
 
+  .tokyo-seitai-page .ts-view {
+    padding: 72px 8% 80px;
+  }
+
+  .ts-view-layout {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  .ts-view-copy {
+    max-width: none;
+  }
+
+  .ts-view .ts-heading--left {
+    text-align: center;
+  }
+
+  .ts-view .ts-heading--left::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .ts-view-photo {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    pointer-events: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .ts-view-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.86);
+  }
+
+  .ts-view-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 52% 46%;
+  }
+
+  .ts-view .ts-view-list {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: 28px;
+  }
+
+  .ts-view .ts-view-list .ts-view-item,
+  .ts-view .ts-view-list .ts-view-item:first-child,
+  .ts-view .ts-view-list .ts-view-item:last-child {
+    padding: 22px 0;
+    border-left: none;
+    border-top: 1px solid #c0a062;
+  }
+
+  .ts-view .ts-view-list .ts-view-item::before {
+    content: none;
+  }
+
   .ts-recommend-list {
     gap: 16px 18px;
   }
@@ -1455,6 +1682,16 @@
 
   .ts-view-title {
     font-size: 0.98rem;
+  }
+
+  .ts-view .ts-view-item p {
+    font-size: 0.98rem;
+    line-height: 2.05;
+  }
+
+  .ts-view .ts-view-title {
+    font-size: 1.02rem;
+    line-height: 1.7;
   }
 
   .ts-recommend-list {
