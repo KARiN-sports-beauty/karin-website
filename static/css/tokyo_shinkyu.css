@@ -501,6 +501,10 @@
   text-align: center;
 }
 
+.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) #ts-recommend-heading + .ts-section-lead {
+  text-align: left;
+}
+
 .ts-recommend-list {
   list-style: none;
   display: grid;
@@ -1158,6 +1162,10 @@
   opacity: 0.78;
 }
 
+.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-flow-list li > p:not(.ts-num) {
+  text-align: left;
+}
+
 /* ---------- 料金 ---------- */
 #ts-price-heading + .ts-section-lead {
   max-width: 28em;
@@ -1301,6 +1309,11 @@
 .ts-cta-section .ts-body,
 .ts-cta-section .ts-body p {
   text-align: center;
+}
+
+.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body,
+.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body p {
+  text-align: left;
 }
 
 .ts-cta-row {
@@ -1591,12 +1604,6 @@
 
   .ts-recommend-list {
     gap: 16px 18px;
-  }
-
-  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) #ts-recommend-heading + .ts-section-lead,
-  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body,
-  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-cta-section .ts-body p {
-    text-align: left;
   }
 
   .ts-place-list {
