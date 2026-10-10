@@ -1163,7 +1163,10 @@
 }
 
 .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-flow-list li > p:not(.ts-num) {
+  display: inline-block;
+  max-width: 100%;
   text-align: left;
+  vertical-align: top;
 }
 
 /* ---------- 料金 ---------- */
@@ -1632,6 +1635,10 @@
     align-items: center;
     max-width: 22em;
     margin: 40px auto 0;
+  }
+
+  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-flow-list .ts-br-sp {
+    display: block;
   }
 
   .ts-flow-list li {
