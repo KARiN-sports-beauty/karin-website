@@ -133,7 +133,7 @@
   </script>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokyo_shinkyu.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fukuoka_shinkyu.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 </head>
@@ -295,11 +295,12 @@
 
     <section class="ts-section ts-section--muted" aria-labelledby="ts-place-heading">
       <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
-        <h2 id="ts-place-heading" class="ts-heading">福岡の訪問日に、ご希望の場所へ伺います</h2>
+        <h2 id="ts-place-heading" class="ts-heading">福岡のご希望の場所へお伺いします</h2>
         <div class="ts-body">
-          <p>拠点は福岡市中央区・薬院です。福岡への訪問日に合わせて、ご自宅などご希望の場所へお伺いします。</p>
-          <p>院内施術は現在行っていません。対応できる日は訪問日程によります。空いている日時は、Web予約でエリア「福岡」を選ぶと確認できます。直近の対応予定は<a href="{{ url_for('public_schedule') }}">スケジュール</a>でもご覧いただけます。</p>
-          <p>営業時間は10:00〜19:00です。距離に応じた出張費が別途かかります。場所について気になることがあれば、事前にご相談ください。</p>
+          <p>拠点は福岡市中央区・薬院です。ご自宅など、ご希望の場所へお伺いして施術を行っています。</p>
+          <p>院へ通うための移動を減らし、ご自宅など慣れた環境で鍼灸を受けていただけます。</p>
+          <p>対応可能な日時は、<a href="{{ url_for('index') }}">KARiN.ホームページの直近スケジュール</a>、または<a href="{{ url_for('book_page') }}">Web予約</a>でエリア「福岡」を選択してご確認いただけます。</p>
+          <p>場所について気になることがあれば、事前にご相談ください。</p>
         </div>
       </div>
     </section>
