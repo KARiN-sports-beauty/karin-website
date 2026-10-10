@@ -376,6 +376,15 @@
   text-align: center;
 }
 
+.ts-about .ts-body p {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
 .ts-subheading {
   margin: 40px 0 16px;
   font-size: 1.08rem;
@@ -1768,7 +1777,6 @@
 
   .ts-about .ts-body {
     margin-top: 28px;
-    text-align: left;
   }
 
   .ts-lead,
