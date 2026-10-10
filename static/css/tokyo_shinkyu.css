@@ -501,7 +501,8 @@
   text-align: center;
 }
 
-.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) #ts-recommend-heading + .ts-section-lead {
+.tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) #ts-recommend-heading + .ts-section-lead,
+.fukuoka-shinkyu-page #ts-recommend-heading + .ts-section-lead {
   text-align: left;
 }
 
@@ -693,7 +694,7 @@
   margin: 0 0 10px;
 }
 
-/* 東京の「身体の見方」。福岡ページには ts-view を付けない。 */
+/* 東京・福岡共通の「身体の見方」。 */
 .ts-view {
   position: relative;
   overflow: hidden;
@@ -1167,6 +1168,13 @@
   max-width: 100%;
   text-align: left;
   vertical-align: top;
+}
+
+@media (min-width: 1025px) {
+  .tokyo-shinkyu-page:not(.fukuoka-shinkyu-page) .ts-flow-list {
+    width: min(1180px, calc(100vw - 48px));
+    margin-left: calc((100% - min(1180px, 100vw - 48px)) / 2);
+  }
 }
 
 /* ---------- 料金 ---------- */
