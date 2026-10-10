@@ -1039,6 +1039,10 @@
 }
 
 /* ---------- 出張場所 ---------- */
+.ts-section:has(#ts-place-heading) .ts-inner--narrow {
+  max-width: 48em;
+}
+
 #ts-place-heading + .ts-section-lead {
   max-width: 36em;
   margin-left: auto;
