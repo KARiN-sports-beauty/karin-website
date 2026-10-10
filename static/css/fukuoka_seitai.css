@@ -952,7 +952,7 @@
   max-width: 36em;
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
+  text-align: left;
 }
 
 .ts-place-list {
@@ -975,6 +975,10 @@
 
 .ts-place-list li:first-child {
   border-left: none;
+}
+
+.ts-place-list .ts-num {
+  display: none;
 }
 
 .ts-place-list h3 {
@@ -1070,6 +1074,10 @@
   line-height: 1.8;
   color: #1E3A5F;
   opacity: 0.78;
+  display: inline-block;
+  max-width: 100%;
+  text-align: left;
+  vertical-align: top;
 }
 
 /* ---------- 料金 ---------- */
@@ -1215,6 +1223,15 @@
 .ts-cta-section .ts-body,
 .ts-cta-section .ts-body p {
   text-align: center;
+}
+
+.ts-cta-section .ts-body p {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
 }
 
 .ts-cta-row {

@@ -318,8 +318,13 @@
 
     <section class="ts-section ts-section--muted" aria-labelledby="ts-place-heading">
       <div class="ts-inner" data-aos="fade-up">
-        <h2 id="ts-place-heading" class="ts-heading">福岡の訪問日に、ご希望の場所へ伺います</h2>
-        <p class="ts-section-lead">拠点は福岡市中央区・薬院です。福岡への訪問日に合わせて出張します。空いている日は、Web予約でエリア「福岡」を選ぶと確認できます。直近の対応予定は<a href="{{ url_for('public_schedule') }}">スケジュール</a>でもご覧いただけます。</p>
+        <h2 id="ts-place-heading" class="ts-heading">福岡のご希望の場所へお伺いします</h2>
+        <div class="ts-body ts-section-lead">
+          <p>拠点は福岡市中央区・薬院です。ご自宅など、ご希望の場所へお伺いして施術を行っています。</p>
+          <p>院へ通うための移動を減らし、ご自宅など慣れた環境で鍼灸を受けていただけます。</p>
+          <p>対応可能な日時は、<a href="{{ url_for('index') }}">KARiN.ホームページの直近スケジュール</a>、または<a href="{{ url_for('book_page') }}">Web予約</a>でエリア「福岡」を選択してご確認いただけます。</p>
+          <p>場所について気になることがあれば、事前にご相談ください。</p>
+        </div>
         <ul class="ts-place-list">
           <li>
             <p class="ts-num">01</p>
@@ -328,18 +333,18 @@
           </li>
           <li>
             <p class="ts-num">02</p>
+            <h3>ホテル</h3>
+            <p>滞在先でゆっくり</p>
+          </li>
+          <li>
+            <p class="ts-num">03</p>
             <h3>スタジオ</h3>
             <p>練習・活動の場所で</p>
           </li>
           <li>
-            <p class="ts-num">03</p>
-            <h3>レンタルスペース</h3>
-            <p>別途レンタル費用がかかる場合があります</p>
-          </li>
-          <li>
             <p class="ts-num">04</p>
-            <h3>その他のご希望</h3>
-            <p>伺える場所は事前にご相談ください</p>
+            <h3>レンタルスペース</h3>
+            <p>ご希望の場所で</p>
           </li>
         </ul>
         <p class="ts-place-other">営業時間は10:00〜19:00</p>
@@ -409,7 +414,7 @@
         <div class="ts-faq">
           <details>
             <summary>自宅以外でも出張してもらえますか？</summary>
-            <p>ご自宅のほか、スタジオやレンタルスペースなどご希望の場所へ伺える場合があります。別途レンタル費用がかかることがあります。鍼灸をご希望の場合は、対応できる場所を事前にご相談ください。</p>
+            <p>はい。ホテルやスタジオなど、ご自宅以外のご希望の場所へも伺えます。鍼灸をご希望の場合は、対応可能な場所・条件について事前にご相談ください。</p>
           </details>
           <details>
             <summary>初めてでも相談できますか？</summary>
@@ -432,10 +437,6 @@
             <p>Web予約は、施術希望日の2週間前から、施術開始時刻の12時間前まで承っています。12時間以内のご予約をご希望の場合は、<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>からご連絡ください。<br>※LINE・お問い合わせフォームからのご連絡は、お返事までにお時間をいただく場合があります。</p>
           </details>
           <details>
-            <summary>福岡ではいつ出張していますか？</summary>
-            <p>福岡市中央区・薬院を拠点に、福岡への訪問日に合わせて出張しています。営業時間は10:00〜19:00です。対応日は訪問日程によります。Web予約ではエリア「福岡」を選び、空いている日時をご確認ください。直近の予定は<a href="{{ url_for('public_schedule') }}">スケジュール</a>でも確認できます。</p>
-          </details>
-          <details>
             <summary>予約前に相談できますか？</summary>
             <p>できます。<a href="{{ url_for('lp') }}">初回相談</a>から、施術内容や場所、時間についてお気軽にご相談ください。</p>
           </details>
@@ -447,7 +448,7 @@
       <div class="ts-inner ts-inner--narrow" data-aos="fade-up">
         <h2 id="ts-cta-heading" class="ts-heading">まずは<span class="karin-brand">KARiN.</span>にご相談ください</h2>
         <div class="ts-body">
-          <p>福岡での出張整体について、初めての方もお気軽にご相談ください。予約の際は、エリアで福岡をお選びください。</p>
+          <p>身体の状態やお悩み、施術内容について、<br class="ts-br-sp">初めての方もお気軽にご相談ください。</p>
         </div>
         <div class="ts-cta-row">
           <a href="{{ url_for('lp') }}" class="ts-cta-btn">初回相談</a>
