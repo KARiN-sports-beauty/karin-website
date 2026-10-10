@@ -168,6 +168,16 @@
   .ts-hero-copy {
     width: min(32em, 44vw);
   }
+
+  .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-hero-copy {
+    width: max-content;
+    max-width: calc(100vw - 16%);
+    flex-shrink: 0;
+  }
+
+  .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-hero-visual {
+    white-space: nowrap;
+  }
 }
 
 .ts-hero-kicker {
@@ -336,6 +346,37 @@
 
 .ts-body p:last-child {
   margin-bottom: 0;
+}
+
+.ts-about .ts-eyebrow {
+  margin-bottom: 22px;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+}
+
+.ts-about .ts-heading {
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
+  font-size: clamp(1.7rem, 3.2vw, 2.45rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.65;
+  margin-bottom: 0;
+  padding-bottom: 22px;
+}
+
+.ts-about .ts-body {
+  max-width: 48em;
+  margin-top: 36px;
+  text-align: center;
+}
+
+.ts-about .ts-body p {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
 }
 
 .ts-body--left {
@@ -1349,6 +1390,17 @@
   .ts-heading {
     font-size: 1.28rem;
     letter-spacing: 0.04em;
+  }
+
+  .ts-about .ts-heading {
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+    padding-bottom: 18px;
+  }
+
+  .ts-about .ts-body {
+    margin-top: 28px;
   }
 
   .ts-lead,
