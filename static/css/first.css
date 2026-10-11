@@ -376,10 +376,22 @@
 }
 
 .first-page .first-guide-item {
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  gap: 48px;
+  display: flex;
   align-items: center;
+  justify-content: flex-start;
+  gap: 48px;
+}
+
+.first-page .first-guide-item--reverse {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.first-page .first-guide-photo,
+.first-page .first-guide-copy {
+  flex: 0 1 22rem;
+  width: 22rem;
+  max-width: 100%;
 }
 
 .first-page .first-guide-item + .first-guide-item {
@@ -419,7 +431,7 @@
 
 .first-page .first-guide-text {
   margin: 0;
-  max-width: 34em;
+  max-width: none;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.95rem;
   font-weight: 400;
@@ -505,9 +517,18 @@
     margin-top: 40px;
   }
 
-  .first-page .first-guide-item {
-    grid-template-columns: 1fr;
+  .first-page .first-guide-item,
+  .first-page .first-guide-item--reverse {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     gap: 18px;
+  }
+
+  .first-page .first-guide-photo,
+  .first-page .first-guide-copy {
+    flex-basis: auto;
+    width: 100%;
   }
 
   .first-page .first-guide-item + .first-guide-item {
