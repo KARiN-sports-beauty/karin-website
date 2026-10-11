@@ -248,7 +248,8 @@
   margin: 0 auto;
 }
 
-.first-page .first-intro-en {
+.first-page .first-intro-en,
+.first-page .first-approach-en {
   margin: 0 0 16px;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.72rem;
@@ -258,7 +259,8 @@
   color: #c0a062;
 }
 
-.first-page .first-intro-title {
+.first-page .first-intro-title,
+.first-page .first-approach-title {
   margin: 0;
   font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
   font-weight: 500;
@@ -268,7 +270,8 @@
   color: #1E3A5F;
 }
 
-.first-page .first-intro-title::after {
+.first-page .first-intro-title::after,
+.first-page .first-approach-title::after {
   content: "";
   display: block;
   width: 70px;
@@ -277,7 +280,8 @@
   background: #c0a062;
 }
 
-.first-page .first-intro-body {
+.first-page .first-intro-body,
+.first-page .first-approach-body {
   max-width: 36em;
   margin-top: 28px;
   font-family: "Noto Sans JP", sans-serif;
@@ -288,12 +292,24 @@
   color: #1E3A5F;
 }
 
-.first-page .first-intro-body p:first-child {
+.first-page .first-intro-body p:first-child,
+.first-page .first-approach-body p:first-child {
   font-weight: 500;
 }
 
-.first-page .first-intro-body p + p {
+.first-page .first-intro-body p + p,
+.first-page .first-approach-body p + p {
   margin-top: 1.15em;
+}
+
+.first-page .first-approach {
+  background: #ffffff;
+  padding: 0 8% 104px;
+}
+
+.first-page .first-approach-inner {
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .first-page .first-intro-photo {
@@ -325,13 +341,19 @@
     gap: 32px;
   }
 
-  .first-page .first-intro-title {
+  .first-page .first-intro-title,
+  .first-page .first-approach-title {
     font-size: 1.35rem;
   }
 
-  .first-page .first-intro-body {
+  .first-page .first-intro-body,
+  .first-page .first-approach-body {
     font-size: 0.9rem;
     line-height: 1.9;
+  }
+
+  .first-page .first-approach {
+    padding: 8px 22px 72px;
   }
 
   .first-page .first-intro-photo {
