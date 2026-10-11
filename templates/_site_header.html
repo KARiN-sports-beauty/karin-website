@@ -20,7 +20,9 @@
     <a href="{{ url_for('blog') }}"{% if request.endpoint == 'blog' %} class="nav-current" aria-current="page"{% endif %}>KARiN.NOTES</a>
     <a href="{{ url_for('index') }}#profile">プロフィール</a>
     <div class="nav-cta">
-      <a href="{{ url_for('contact') }}" class="nav-consult{% if request.endpoint == 'contact' %} nav-current{% endif %}"{% if request.endpoint == 'contact' %} aria-current="page"{% endif %}>相談する</a>
+      {% if request.endpoint != 'contact' %}
+      <a href="{{ url_for('contact') }}" class="nav-consult">相談する</a>
+      {% endif %}
       <a href="{{ url_for('book_page') }}" class="nav-book{% if request.endpoint == 'book_page' %} nav-current{% endif %}"{% if request.endpoint == 'book_page' %} aria-current="page"{% endif %}>予約する</a>
     </div>
   </nav>

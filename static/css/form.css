@@ -47,6 +47,10 @@ body.contact-page .faq-section {
   margin-bottom: 40px;
 }
 
+body.contact-page .form-wrapper {
+  margin-top: 100px;
+}
+
 /* ---------- カード全体 ---------- */
 .form-card {
   display: flex;
@@ -1053,6 +1057,11 @@ body.form-page .home-btn {
   right: 15px !important;
   bottom: 15px !important;
   transform: none !important;
+}
+
+body.contact-page.nav-open .karin-chat[data-mode="widget"] .karin-chat-launcher,
+body.contact-page.nav-open .home-btn {
+  z-index: 900;
 }
 
 
