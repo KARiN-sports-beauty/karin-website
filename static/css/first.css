@@ -143,83 +143,95 @@
 
 @media (min-width: 769px) {
   .first-page .first-hero-line {
-    position: relative;
-    left: calc(100% - 21vw);
+    align-self: center;
   }
 }
 
 @media (max-width: 768px) {
   .first-page .first-hero {
-    min-height: 100svh;
-    height: 100svh;
+    --first-photo-h: clamp(280px, 50svh, 420px);
+    height: auto;
+    min-height: 0;
   }
 
   .first-page .first-hero-photo {
-    object-position: 36% center;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: var(--first-photo-h);
+    object-position: 32% 18%;
   }
 
   .first-page .first-hero::after {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.62) 0%,
-        rgba(255, 255, 255, 0) 16%
-      ),
-      linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 26%,
-        rgba(255, 255, 255, 0.18) 44%,
-        rgba(255, 255, 255, 0.72) 64%,
-        rgba(255, 255, 255, 0.94) 100%
-      );
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: var(--first-photo-h);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0) 16%,
+      rgba(255, 255, 255, 0) 64%,
+      rgba(255, 255, 255, 0.55) 84%,
+      #ffffff 100%
+    );
   }
 
   .first-page .first-hero-copy {
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
-    width: min(14.5rem, 58%);
+    width: 100%;
     max-width: none;
-    height: 100%;
-    margin-left: auto;
-    margin-right: 18px;
-    padding: 84px 0 36px;
-  }
-
-  .first-page .first-hero-line {
-    position: static;
-    left: auto;
+    height: auto;
+    margin: 0;
+    padding: 20px 22px 40px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f4f1 100%);
   }
 
   .first-page .first-hero-title {
-    margin-bottom: 14px;
-    font-size: 1.48rem;
-    letter-spacing: 0.04em;
+    position: absolute;
+    z-index: 2;
+    top: calc(max(92px, var(--first-photo-h) * 0.34) - var(--first-photo-h));
+    right: 18px;
+    left: auto;
+    width: min(12.4rem, 56%);
+    margin: 0;
+    font-size: 1.32rem;
+    line-height: 1.5;
+    letter-spacing: 0.03em;
   }
 
   .first-page .first-hero-title::after {
-    margin-top: 14px;
+    margin-top: 12px;
   }
 
   .first-page .first-hero-service,
   .first-page .first-hero-note {
-    font-size: 0.84rem;
+    font-size: 0.86rem;
   }
 
   .first-page .first-hero-service {
-    margin-bottom: 6px;
-    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    letter-spacing: 0.06em;
   }
 
   .first-page .first-hero-note {
-    margin-bottom: 18px;
-    line-height: 1.7;
+    margin-bottom: 22px;
+    line-height: 1.85;
   }
 
   .first-page .first-hero-note-pc {
-    display: none;
+    display: inline;
+    white-space: normal;
   }
 
   .first-page .first-hero-note-sp {
-    display: inline;
+    display: none;
+  }
+
+  .first-page .first-hero-line {
+    min-height: 48px;
+    margin-top: 2px;
   }
 }
