@@ -171,3 +171,64 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+
+/* -------------------------------
+   コピーライト長押しでスタッフログイン
+   通常のクリックでは遷移しない。指が動いたらキャンセル。
+-------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const secret = document.querySelector(".footer-copy");
+  if (!secret || secret.dataset.staffPressBound === "1") return;
+  secret.dataset.staffPressBound = "1";
+
+  const longPressDuration = 700;
+  const moveLimit = 10;
+  let pressTimer = null;
+  let startX = 0;
+  let startY = 0;
+
+  const cancelPress = () => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+
+  const startPress = (x, y) => {
+    cancelPress();
+    startX = x;
+    startY = y;
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      window.location.href = "/staff/login";
+    }, longPressDuration);
+  };
+
+  secret.addEventListener("click", (event) => {
+    event.preventDefault();
+  });
+
+  secret.addEventListener("mousedown", (event) => {
+    if (event.button !== 0) return;
+    startPress(event.clientX, event.clientY);
+  });
+
+  secret.addEventListener("mouseup", cancelPress);
+  secret.addEventListener("mouseleave", cancelPress);
+
+  secret.addEventListener("touchstart", (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    startPress(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  secret.addEventListener("touchmove", (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch || !pressTimer) return;
+    if (Math.abs(touch.clientX - startX) > moveLimit || Math.abs(touch.clientY - startY) > moveLimit) {
+      cancelPress();
+    }
+  }, { passive: true });
+
+  secret.addEventListener("touchend", cancelPress);
+  secret.addEventListener("touchcancel", cancelPress);
+});

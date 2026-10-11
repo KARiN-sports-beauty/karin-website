@@ -668,49 +668,6 @@
   });
   </script>
 
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const secretLink = document.querySelector(".footer-secret-link");
-
-    if (!secretLink) return;
-
-    let pressTimer = null;
-    let longPressDuration = 700; // ← この時間長押しで発動（ミリ秒）
-
-    // 通常クリックで遷移しないようにする
-    secretLink.addEventListener("click", function (e) {
-      e.preventDefault();
-    });
-
-    // 長押し開始
-    secretLink.addEventListener("mousedown", function () {
-      pressTimer = setTimeout(function () {
-        window.location.href = "/staff/login";
-      }, longPressDuration);
-    });
-
-    // 押しっぱなし解除でキャンセル
-    secretLink.addEventListener("mouseup", function () {
-      clearTimeout(pressTimer);
-    });
-
-    secretLink.addEventListener("mouseleave", function () {
-      clearTimeout(pressTimer);
-    });
-
-    // スマホ長押し対応（touchstart / touchend）
-    secretLink.addEventListener("touchstart", function () {
-      pressTimer = setTimeout(function () {
-        window.location.href = "/staff/login";
-      }, longPressDuration);
-    });
-
-    secretLink.addEventListener("touchend", function () {
-      clearTimeout(pressTimer);
-    });
-  });
-  </script>
-
   {% include '_karin_chat.html' %}
 
 </body>
