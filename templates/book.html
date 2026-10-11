@@ -17,7 +17,8 @@
   <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
   <meta name="twitter:card" content="summary_large_image">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
   <script type="application/ld+json">
   {
@@ -52,27 +53,7 @@
     .page {
       max-width: 720px;
       margin: 0 auto;
-      padding: 20px 16px 48px;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 8px;
-      font-family: "Playfair Display", "Noto Sans JP", serif;
-      font-weight: 700;
-      font-size: 2rem;
-      letter-spacing: 0.08em;
-      line-height: 1.2;
-      color: #1E3A5F;
-    }
-    .logo span {
-      display: inline-block;
-      font-family: "Great Vibes", cursive;
-      font-weight: 400;
-      font-size: 1.25rem;
-      letter-spacing: 0.04em;
-      color: #1E3A5F;
-      line-height: 1.2;
-      vertical-align: baseline;
+      padding: 90px 16px 48px;
     }
     h1 {
       text-align: center;
@@ -337,7 +318,7 @@
     .legend {
       font-size: 0.78rem;
       color: var(--muted);
-      margin-top: 10px;
+      margin: 10px 0 1em;
       line-height: 1.6;
     }
     .form-grid label {
@@ -391,10 +372,11 @@
       font-size: 0.9rem;
       padding: 20px 0;
     }
+    .empty-msg { margin: 1em 0; }
     .error-msg {
       color: #c0392b;
       font-size: 0.88rem;
-      margin-top: 8px;
+      margin: 8px 0 1em;
       text-align: center;
     }
     .back-link {
@@ -516,6 +498,9 @@
       border-radius: 50%;
       object-fit: contain;
     }
+    body.book-page.nav-open .home-btn {
+      z-index: 900;
+    }
     @media (max-width: 768px) {
       .home-btn {
         bottom: 15px;
@@ -530,10 +515,10 @@
     }
   </style>
 </head>
-<body>
+<body class="book-page">
+  {% include '_site_header.html' %}
   <div class="page">
     <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
-    <div class="logo">KARiN. <span>~Sports & Beauty~</span></div>
     <h1>ご予約</h1>
     <p class="lead">東京・福岡の院内（準備中）/出張をご予約いただけます。<br>帯同および12時間以内のご予約は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
 
@@ -1209,6 +1194,7 @@
     <img src="{{ url_for('static', filename='images/relogo.png') }}" alt="ホームへ戻る">
     <span>ホームに戻る</span>
   </a>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
 

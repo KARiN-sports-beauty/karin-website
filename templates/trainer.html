@@ -60,12 +60,7 @@
 
 <body class="treatment-page trainer-page">
 
-  <header class="header">
-    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
-    <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('contact') }}" class="nav-book">相談する</a>
-    </nav>
-  </header>
+  {% include '_site_header.html' %}
 
   <section class="tx-hero" aria-labelledby="trainer-heading">
     <div class="tx-hero-media" aria-hidden="true">
@@ -320,6 +315,7 @@
     </div>
   </footer>
 
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
     AOS.init({

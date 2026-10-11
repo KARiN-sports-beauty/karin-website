@@ -53,6 +53,10 @@
   animation: karin-launcher-in 10s ease-out forwards;
 }
 
+body.index-page.nav-open .karin-chat[data-mode="widget"] .karin-chat-launcher {
+  z-index: 900;
+}
+
 .karin-chat[data-mode="widget"] .karin-chat-launcher[hidden] {
   display: none !important;
 }

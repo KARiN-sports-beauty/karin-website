@@ -570,6 +570,10 @@
   z-index: 1000;
 }
 
+.treatment-page.nav-open .home-btn {
+  z-index: 900;
+}
+
 .treatment-page .home-btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);

@@ -25,7 +25,9 @@
       {% if request.endpoint != 'contact' %}
       <a href="{{ url_for('contact') }}" class="nav-consult">相談する</a>
       {% endif %}
-      <a href="{{ url_for('book_page') }}" class="nav-book{% if request.endpoint == 'book_page' %} nav-current{% endif %}"{% if request.endpoint == 'book_page' %} aria-current="page"{% endif %}>予約する</a>
+      {% if request.endpoint != 'book_page' and request.endpoint != 'trainer' %}
+      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
+      {% endif %}
     </div>
   </nav>
 </header>
