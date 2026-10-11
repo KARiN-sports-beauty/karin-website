@@ -227,6 +227,7 @@
   }
 
   .first-page .first-hero-line {
+    align-self: flex-end;
     min-height: 48px;
     margin-top: 2px;
   }
