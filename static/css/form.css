@@ -48,7 +48,9 @@ body.contact-page .faq-section {
 }
 
 body.contact-page .form-wrapper {
-  margin-top: 100px;
+  margin-top: 70px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 /* ---------- カード全体 ---------- */

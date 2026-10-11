@@ -17,7 +17,9 @@
     {% if request.endpoint != 'price' %}
     <a href="{{ url_for('price') }}">料金表</a>
     {% endif %}
-    <a href="{{ url_for('blog') }}"{% if request.endpoint == 'blog' %} class="nav-current" aria-current="page"{% endif %}>KARiN.NOTES</a>
+    {% if request.endpoint != 'blog' and request.endpoint != 'show_blog' %}
+    <a href="{{ url_for('blog') }}">KARiN.NOTES</a>
+    {% endif %}
     <a href="{{ url_for('index') }}#profile">プロフィール</a>
     <div class="nav-cta">
       {% if request.endpoint != 'contact' %}

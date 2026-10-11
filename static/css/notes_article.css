@@ -49,7 +49,7 @@
 
 /* ─── Article header (logo only, not the site fixed header) ─── */
 .notes-page {
-  padding-top: 0;
+  padding-top: 70px;
 }
 
 .notes-article-header {
@@ -89,9 +89,13 @@
 
 .notes-list-header {
   text-align: center;
-  padding: 48px 5% 8px;
+  padding: 118px 5% 8px;
   max-width: 720px;
   margin: 0 auto;
+}
+
+body.notes-list-page.nav-open .home-btn {
+  z-index: 900;
 }
 
 .notes-list-eyebrow {
@@ -254,7 +258,7 @@
 
 /* ─── Feature article ─── */
 .notes-page--feature {
-  padding: 0;
+  padding: 70px 0 0;
   background: var(--notes-cream);
 }
 
@@ -348,7 +352,7 @@
 /* ─── Column article ─── */
 .notes-page--column {
   background: #fff;
-  padding-top: 0;
+  padding-top: 70px;
 }
 
 .notes-column {
