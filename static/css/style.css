@@ -182,9 +182,13 @@ section, header, footer {
   gap: 26px;
 }
 
+.nav-cta {
+  display: contents;
+}
+
 @media (min-width: 1025px) {
   .nav.site-nav {
-    gap: 12px;
+    gap: 16px;
   }
 }
 
@@ -2906,6 +2910,7 @@ section[id],
     width: min(78%, 360px);
     height: 100vh;
     height: 100dvh;
+    box-sizing: border-box;
     background: #ffffff;
     flex-direction: column;
     justify-content: flex-start;
@@ -2934,11 +2939,38 @@ section[id],
     box-sizing: border-box;
   }
 
+  .nav-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: auto;
+    gap: 12px;
+  }
+
+  .nav .nav-consult {
+    width: 80%;
+    max-width: 240px;
+    min-height: 48px;
+    padding: 8px 20px;
+    border: 1px solid rgba(30, 58, 95, 0.72);
+    border-radius: 40px;
+    background: #ffffff;
+    color: #1E3A5F;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
   .nav .nav-book {
     width: 80%;
     max-width: 240px;
-    margin-top: 20px;
+    margin-top: 0;
     min-height: 48px;
+    padding: 8px 20px;
+    background: #c0a062;
+    color: #ffffff;
+    border-color: #c0a062;
+    box-shadow: none;
   }
 
   .nav.active {
@@ -2953,19 +2985,27 @@ section[id],
 
   body.index-page .nav .nav-book,
   body.index-page.is-header-solid .nav .nav-book {
-    background: #ffffff;
-    color: #1E3A5F;
-    border-color: rgba(30, 58, 95, 0.2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: #c0a062;
+    color: #ffffff;
+    border-color: #c0a062;
+    box-shadow: none;
   }
 
   @media (hover: hover) {
+    .nav a.nav-consult:hover,
+    body.index-page .nav a.nav-consult:hover {
+      color: #1E3A5F;
+      background: rgba(30, 58, 95, 0.06);
+      border-color: #1E3A5F;
+    }
+
+    .nav a.nav-book:hover,
     body.index-page .nav a.nav-book:hover,
     body.index-page.is-header-solid .nav a.nav-book:hover {
-      background: #1E3A5F;
+      background: #d4b57a;
       color: #ffffff;
-      border-color: #1E3A5F;
-      box-shadow: 0 4px 12px rgba(30, 58, 95, 0.16);
+      border-color: #d4b57a;
+      box-shadow: none;
     }
   }
 
