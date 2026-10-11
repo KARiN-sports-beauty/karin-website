@@ -33,7 +33,7 @@
     </button>
     <div class="nav-overlay" id="nav-overlay" hidden></div>
     <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('first') }}" aria-current="page">初めての方へ</a>
+      <a href="{{ url_for('first') }}" class="first-nav-current" aria-current="page">初めての方へ</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表</a>
       <a href="{{ url_for('index') }}#blog">KARiN.NOTES</a>
@@ -57,7 +57,7 @@
       <div class="first-hero-copy">
         <h1 class="first-hero-title">その一歩が、<br>身体の変わる瞬間。</h1>
         <p class="first-hero-service">東京・福岡の出張鍼灸・整体</p>
-        <p class="first-hero-note">鍼灸師 × アスレティックトレーナーが、身体の状態に合わせて施術をご提案します。</p>
+        <p class="first-hero-note"><span class="first-hero-note-pc">鍼灸師 × アスレティックトレーナーが、身体の状態に合わせて施術をご提案します。</span><span class="first-hero-note-sp">身体の状態に合わせた施術を。</span></p>
         <a class="first-hero-line" href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">LINEで相談する</a>
       </div>
     </div>
