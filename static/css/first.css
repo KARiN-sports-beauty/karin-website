@@ -58,10 +58,11 @@
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  width: min(26rem, 36%);
+  width: 40%;
   height: 100%;
   margin-left: auto;
-  padding: 90px 6vw 56px 0.5rem;
+  margin-right: 4%;
+  padding: 90px 0 56px 0;
 }
 
 .first-page .first-hero-title {
@@ -95,7 +96,7 @@
 
 .first-page .first-hero-note {
   margin: 0 0 32px;
-  max-width: 22em;
+  max-width: none;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.92rem;
   font-weight: 400;
