@@ -82,6 +82,80 @@
         </div>
       </div>
     </section>
+
+    <section class="first-guide" aria-labelledby="first-guide-title">
+      <div class="first-guide-inner">
+        <p class="first-guide-en">TREATMENT GUIDE</p>
+        <h2 id="first-guide-title" class="first-guide-title">身体の状態やご希望に合わせて。</h2>
+        <p class="first-guide-lead">身体の状態やご希望に合わせて、施術内容を考えていきます。何を受けるか迷っている場合も、まずはお気軽にご相談ください。</p>
+        <a class="first-guide-more" href="{{ url_for('treatment') }}">施術内容はこちら →</a>
+
+        <div class="first-guide-list">
+          <article class="first-guide-item">
+            <figure class="first-guide-photo">
+              <img
+                src="{{ url_for('static', filename='images/treatment1.jpg') }}"
+                alt="背中に鍼を打ち、手を添えている様子"
+                width="720"
+                height="480"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
+            <div class="first-guide-copy">
+              <h3 class="first-guide-name">鍼灸・美容鍼</h3>
+              <p class="first-guide-text">身体の状態に合わせた鍼灸と、顔と身体のつながりにも目を向ける美容鍼。</p>
+              <ul class="first-guide-links">
+                <li><a href="{{ url_for('tokyo_shinkyu') }}">東京の鍼灸</a></li>
+                <li><a href="{{ url_for('fukuoka_shinkyu') }}">福岡の鍼灸</a></li>
+                <li><a href="{{ url_for('beauty') }}">美容鍼</a></li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="first-guide-item">
+            <figure class="first-guide-photo">
+              <img
+                src="{{ url_for('static', filename='images/treatment3.jpg') }}"
+                alt="うつ伏せの方の首や肩に手を添えて整体している様子"
+                width="720"
+                height="480"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
+            <div class="first-guide-copy">
+              <h3 class="first-guide-name">整体</h3>
+              <p class="first-guide-text">姿勢や身体の動き、バランスを確認しながら、一人ひとりに合わせて整えていきます。</p>
+              <ul class="first-guide-links">
+                <li><a href="{{ url_for('tokyo_seitai') }}">東京の整体</a></li>
+                <li><a href="{{ url_for('fukuoka_seitai') }}">福岡の整体</a></li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="first-guide-item">
+            <figure class="first-guide-photo">
+              <img
+                src="{{ url_for('static', filename='images/trainingfv.jpg') }}"
+                alt="ランジの姿勢を、トレーナーがそばで見ている様子"
+                width="1536"
+                height="1024"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
+            <div class="first-guide-copy">
+              <h3 class="first-guide-name">トレーニング・リコンディショニング</h3>
+              <p class="first-guide-text">身体の状態や目的に合わせて、日常や仕事、運動で動きやすい身体を目指します。</p>
+              <ul class="first-guide-links">
+                <li><a href="{{ url_for('training') }}">トレーニングについて</a></li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
   </main>
 
   {% include '_site_footer.html' %}
