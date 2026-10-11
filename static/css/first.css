@@ -301,6 +301,7 @@
   margin: 0;
   aspect-ratio: 4 / 3;
   overflow: hidden;
+  border-radius: 10px;
   background: #f6f4f1;
 }
 
@@ -311,7 +312,7 @@
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center 42%;
+  object-position: center;
 }
 
 @media (max-width: 768px) {
