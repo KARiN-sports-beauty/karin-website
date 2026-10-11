@@ -1,0 +1,73 @@
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="{{ url_for('index') }}" class="footer-logo">KARiN. <span>~Sports & Beauty~</span></a>
+        <p class="footer-role">鍼灸師 × アスレティックトレーナー</p>
+        <p class="footer-lead">出張施術。完全予約制。</p>
+      </div>
+
+      <nav class="footer-nav" aria-label="サイトナビゲーション">
+        <p class="footer-heading">ナビ</p>
+        <ul>
+          <li><a href="{{ url_for('first') }}"{% if request.endpoint == 'first' %} aria-current="page"{% endif %}>初めての方へ</a></li>
+          <li><a href="{{ url_for('treatment') }}"{% if request.endpoint == 'treatment' %} aria-current="page"{% endif %}>施術内容</a></li>
+          <li><a href="{{ url_for('price') }}"{% if request.endpoint == 'price' %} aria-current="page"{% endif %}>料金表</a></li>
+          <li><a href="{{ url_for('blog') }}"{% if request.endpoint == 'blog' or request.endpoint == 'show_blog' %} aria-current="page"{% endif %}>KARiN.NOTES</a></li>
+          <li><a href="{{ url_for('index') }}#profile">プロフィール</a></li>
+          <li><a href="{{ url_for('training') }}"{% if request.endpoint == 'training' %} aria-current="page"{% endif %}>トレーニング</a></li>
+          <li><a href="{{ url_for('trainer') }}"{% if request.endpoint == 'trainer' %} aria-current="page"{% endif %}>トレーナー</a></li>
+        </ul>
+        <p class="footer-heading">東京・福岡</p>
+        <ul>
+          <li><a href="{{ url_for('tokyo_shinkyu') }}"{% if request.endpoint == 'tokyo_shinkyu' %} aria-current="page"{% endif %}>東京の鍼灸</a></li>
+          <li><a href="{{ url_for('tokyo_seitai') }}"{% if request.endpoint == 'tokyo_seitai' %} aria-current="page"{% endif %}>東京の整体</a></li>
+          <li><a href="{{ url_for('fukuoka_shinkyu') }}"{% if request.endpoint == 'fukuoka_shinkyu' %} aria-current="page"{% endif %}>福岡の鍼灸</a></li>
+          <li><a href="{{ url_for('fukuoka_seitai') }}"{% if request.endpoint == 'fukuoka_seitai' %} aria-current="page"{% endif %}>福岡の整体</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-info">
+        <p class="footer-heading">ご案内</p>
+        <dl class="footer-facts">
+          <div>
+            <dt>対応エリア</dt>
+            <dd>東京（代々木上原中心）／福岡（薬院中心）<br>出張施術・完全予約制</dd>
+          </div>
+          <div>
+            <dt>営業時間</dt>
+            <dd>東京 12:00〜26:00<br>福岡 10:00〜19:00<br>定休日：不定休</dd>
+          </div>
+          <div>
+            <dt>電話</dt>
+            <dd><a href="tel:090-8154-9313">090-8154-9313</a></dd>
+          </div>
+          <div>
+            <dt>メール</dt>
+            <dd><a href="mailto:info@karin-sb.jp">info@karin-sb.jp</a></dd>
+          </div>
+        </dl>
+        <div class="footer-actions">
+          <a href="{{ url_for('contact') }}" class="footer-book">お問い合わせはこちら</a>
+          {% if request.endpoint != 'trainer' %}
+          <a href="{{ url_for('book_page') }}" class="footer-book">ご予約はこちら</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-sns">
+        <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">
+          <svg class="is-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c-4.7 0-8.5 3.1-8.5 6.9 0 3.1 2.8 5.8 6.6 6.6.3.1.6.4.5.8l-.2 1.2c0 .3.3.5.6.4 2.5-1.1 4.3-1.9 5.4-2.4 2.8-.7 5.6-3.2 5.6-6.6 0-3.8-3.8-6.9-8.5-6.9z"/></svg>
+          <span>LINE</span>
+        </a>
+        <a href="https://www.instagram.com/karin._shinkyu" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.6" cy="7.4" r="0.8" fill="currentColor" stroke="none"/></svg>
+          <span>Instagram</span>
+        </a>
+      </div>
+      <p class="footer-copy">© 2025 KARiN. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

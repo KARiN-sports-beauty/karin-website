@@ -2656,6 +2656,10 @@ body.index-page .access-section .access-schedule-note {
   color: #c0a062;
 }
 
+.footer-nav ul + .footer-heading {
+  margin-top: 28px;
+}
+
 .footer-nav ul {
   list-style: none;
   margin: 0;
@@ -2739,6 +2743,12 @@ body.index-page .access-section .access-schedule-note {
     color: #1E3A5F;
     border-color: #ffffff;
   }
+}
+
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .footer-bottom {
@@ -4205,6 +4215,15 @@ section[id],
     width: 100%;
     max-width: 280px;
     margin: 8px auto 0;
+  }
+
+  .footer-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-actions .footer-book {
+    margin: 0;
   }
 
   .footer-bottom {
