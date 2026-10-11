@@ -11,8 +11,12 @@
     {% if request.endpoint != 'first' %}
     <a href="{{ url_for('first') }}">初めての方へ</a>
     {% endif %}
-    <a href="{{ url_for('treatment') }}"{% if request.endpoint == 'treatment' %} class="nav-current" aria-current="page"{% endif %}>施術内容</a>
-    <a href="{{ url_for('price') }}"{% if request.endpoint == 'price' %} class="nav-current" aria-current="page"{% endif %}>料金表</a>
+    {% if request.endpoint != 'treatment' %}
+    <a href="{{ url_for('treatment') }}">施術内容</a>
+    {% endif %}
+    {% if request.endpoint != 'price' %}
+    <a href="{{ url_for('price') }}">料金表</a>
+    {% endif %}
     <a href="{{ url_for('blog') }}"{% if request.endpoint == 'blog' %} class="nav-current" aria-current="page"{% endif %}>KARiN.NOTES</a>
     <a href="{{ url_for('index') }}#profile">プロフィール</a>
     <div class="nav-cta">

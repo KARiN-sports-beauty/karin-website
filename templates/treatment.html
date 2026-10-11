@@ -59,6 +59,7 @@
 </head>
 
 <body class="treatment-page">
+  {% include '_site_header.html' %}
 
   <section class="tx-hero" aria-labelledby="treatment-heading">
     <div class="tx-hero-media" aria-hidden="true">
@@ -195,6 +196,7 @@
     </div>
   </section>
 
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
     AOS.init({

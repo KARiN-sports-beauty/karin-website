@@ -2967,8 +2967,8 @@ section[id],
     margin-top: 0;
     min-height: 48px;
     padding: 8px 20px;
-    background: #c0a062;
-    color: #ffffff;
+    background: #ffffff;
+    color: #c0a062;
     border-color: #c0a062;
     box-shadow: none;
   }
@@ -2985,8 +2985,8 @@ section[id],
 
   body.index-page .nav .nav-book,
   body.index-page.is-header-solid .nav .nav-book {
-    background: #c0a062;
-    color: #ffffff;
+    background: #ffffff;
+    color: #c0a062;
     border-color: #c0a062;
     box-shadow: none;
   }
@@ -3002,8 +3002,8 @@ section[id],
     .nav a.nav-book:hover,
     body.index-page .nav a.nav-book:hover,
     body.index-page.is-header-solid .nav a.nav-book:hover {
-      background: #d4b57a;
-      color: #ffffff;
+      background: #ffffff;
+      color: #d4b57a;
       border-color: #d4b57a;
       box-shadow: none;
     }
