@@ -1,0 +1,17 @@
+<header class="header">
+  <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
+  <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-overlay" id="nav-overlay" hidden></div>
+  <nav class="nav site-nav" id="nav-menu" aria-label="メインメニュー">
+    <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} class="nav-current" aria-current="page"{% endif %}>トップ</a>
+    <a href="{{ url_for('first') }}"{% if request.endpoint == 'first' %} class="nav-current" aria-current="page"{% endif %}>初めての方へ</a>
+    <a href="{{ url_for('treatment') }}"{% if request.endpoint == 'treatment' %} class="nav-current" aria-current="page"{% endif %}>施術内容</a>
+    <a href="{{ url_for('price') }}"{% if request.endpoint == 'price' %} class="nav-current" aria-current="page"{% endif %}>料金表</a>
+    <a href="{{ url_for('blog') }}"{% if request.endpoint == 'blog' %} class="nav-current" aria-current="page"{% endif %}>KARiN.NOTES</a>
+    <a href="{{ url_for('index') }}#profile">プロフィール</a>
+    <a href="{{ url_for('contact') }}" class="nav-consult{% if request.endpoint == 'contact' %} nav-current{% endif %}"{% if request.endpoint == 'contact' %} aria-current="page"{% endif %}>相談する</a>
+    <a href="{{ url_for('book_page') }}" class="nav-book{% if request.endpoint == 'book_page' %} nav-current{% endif %}"{% if request.endpoint == 'book_page' %} aria-current="page"{% endif %}>予約する</a>
+  </nav>
+</header>

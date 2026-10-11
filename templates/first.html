@@ -26,22 +26,7 @@
 </head>
 <body class="first-page">
 
-  <header class="header">
-    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
-    <button type="button" class="hamburger" id="hamburger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav-menu">
-      <span></span><span></span><span></span>
-    </button>
-    <div class="nav-overlay" id="nav-overlay" hidden></div>
-    <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('first') }}" class="first-nav-current" aria-current="page">初めての方へ</a>
-      <a href="{{ url_for('treatment') }}">施術内容</a>
-      <a href="{{ url_for('price') }}">料金表</a>
-      <a href="{{ url_for('index') }}#blog">KARiN.NOTES</a>
-      <a href="{{ url_for('index') }}#profile">プロフィール</a>
-      <a href="{{ url_for('contact') }}">相談する</a>
-      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
-    </nav>
-  </header>
+  {% include '_site_header.html' %}
 
   <main>
     <div class="first-hero">

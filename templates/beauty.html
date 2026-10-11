@@ -68,13 +68,7 @@
 
 <body class="beauty-page">
 
-  <header class="header">
-    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
-    <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('lp') }}">初回相談</a>
-      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
-    </nav>
-  </header>
+  {% include '_site_header.html' %}
 
   <main>
     <section class="ts-hero" aria-labelledby="tb-hero-heading">
@@ -305,6 +299,7 @@
     </div>
   </footer>
 
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>
     (function () {
       var page = document.querySelector(".beauty-page");

@@ -3,6 +3,8 @@
 =============================== */
 document.addEventListener("DOMContentLoaded", () => {
   const slides = document.querySelectorAll(".slide");
+  if (slides.length === 0) return;
+
   let index = 0;
   let interval;
 

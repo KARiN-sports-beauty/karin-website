@@ -124,13 +124,7 @@
 
 <body class="tokyo-seitai-page fukuoka-seitai-page">
 
-  <header class="header">
-    <a href="{{ url_for('index') }}" class="logo">KARiN.</a>
-    <nav class="nav" id="nav-menu">
-      <a href="{{ url_for('lp') }}">初回相談</a>
-      <a href="{{ url_for('book_page') }}" class="nav-book">予約する</a>
-    </nav>
-  </header>
+  {% include '_site_header.html' %}
 
   <main>
     <section class="ts-hero" aria-labelledby="ts-hero-heading">

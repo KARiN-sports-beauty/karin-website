@@ -33,51 +33,9 @@
   transition: color 0.4s ease;
 }
 
-.tokyo-shinkyu-page .nav {
-  gap: 10px;
-}
-
-.tokyo-shinkyu-page .nav a:not(.nav-book) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  min-height: 32px;
-  padding: 5px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.88);
-  border-radius: 40px;
-  box-sizing: border-box;
-  transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
-}
-
-.tokyo-shinkyu-page .nav a:hover:not(.nav-book) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #ffffff;
-}
-
-.tokyo-shinkyu-page .nav-book {
-  min-height: 32px;
-  padding: 5px 16px;
-  background: #c0a062;
-  color: #ffffff;
-  border-color: #c0a062;
-  box-shadow: none;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-}
-
-@media (hover: hover) {
-  .tokyo-shinkyu-page .nav a.nav-book:hover {
-    background: #d4b57a;
-    color: #ffffff;
-    border-color: #d4b57a;
-    box-shadow: none;
-  }
+.tokyo-shinkyu-page .hamburger span {
+  background: #ffffff;
+  transition: background-color 0.4s ease;
 }
 
 .tokyo-shinkyu-page.is-past-hero .header {
@@ -91,25 +49,88 @@
   color: #1E3A5F;
 }
 
-.tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
-  color: #1E3A5F;
-  border-color: #1E3A5F;
-  background: transparent;
-}
-
-.tokyo-shinkyu-page.is-past-hero .nav a:hover:not(.nav-book) {
-  color: #1E3A5F;
-  background: rgba(30, 58, 95, 0.06);
-  border-color: #1E3A5F;
-}
-
-.tokyo-shinkyu-page.is-past-hero .nav-book {
+.tokyo-shinkyu-page.is-past-hero .hamburger span,
+.tokyo-shinkyu-page .hamburger.active span {
   background: #1E3A5F;
-  color: #ffffff;
-  border-color: #1E3A5F;
 }
 
-@media (hover: hover) {
+@media (min-width: 1025px) {
+  .tokyo-shinkyu-page .nav a:not(.nav-book) {
+    color: #ffffff;
+    transition: color 0.4s ease;
+  }
+
+  .tokyo-shinkyu-page .nav a:hover:not(.nav-book):not(.nav-consult) {
+    color: #c0a062;
+  }
+
+  .tokyo-shinkyu-page .nav-consult {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    min-height: 32px;
+    padding: 5px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    border-radius: 40px;
+    box-sizing: border-box;
+    transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
+  }
+
+  .tokyo-shinkyu-page .nav a.nav-consult:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+  }
+
+  .tokyo-shinkyu-page .nav-book {
+    min-height: 32px;
+    padding: 5px 16px;
+    background: #c0a062;
+    color: #ffffff;
+    border-color: #c0a062;
+    box-shadow: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
+    color: #1E3A5F;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav a:hover:not(.nav-book):not(.nav-consult) {
+    color: #8fa3c1;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav-consult {
+    border-color: #1E3A5F;
+    background: transparent;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav a.nav-consult:hover {
+    color: #1E3A5F;
+    background: rgba(30, 58, 95, 0.06);
+    border-color: #1E3A5F;
+  }
+
+  .tokyo-shinkyu-page.is-past-hero .nav-book {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+  }
+}
+
+@media (hover: hover) and (min-width: 1025px) {
+  .tokyo-shinkyu-page .nav a.nav-book:hover {
+    background: #d4b57a;
+    color: #ffffff;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
+
   .tokyo-shinkyu-page.is-past-hero .nav a.nav-book:hover {
     background: #4a5f7a;
     color: #ffffff;
@@ -1399,50 +1420,6 @@
 }
 
 @media (max-width: 1024px) {
-  .tokyo-shinkyu-page .hamburger,
-  .tokyo-shinkyu-page .nav-overlay {
-    display: none;
-  }
-
-  .tokyo-shinkyu-page .nav {
-    position: static;
-    right: auto;
-    width: auto;
-    height: auto;
-    background: transparent;
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    padding: 0;
-    box-shadow: none;
-    opacity: 1;
-    transform: none;
-    overflow: visible;
-  }
-
-  .tokyo-shinkyu-page .nav a:not(.nav-book) {
-    width: auto;
-    min-height: 30px;
-    font-size: 0.72rem;
-    padding: 4px 12px;
-    color: #ffffff;
-  }
-
-  .tokyo-shinkyu-page.is-past-hero .nav a:not(.nav-book) {
-    color: #1E3A5F;
-    border-color: #1E3A5F;
-  }
-
-  .tokyo-shinkyu-page .nav .nav-book {
-    width: auto;
-    max-width: none;
-    margin-top: 0;
-    min-height: 30px;
-    padding: 4px 12px;
-    font-size: 0.74rem;
-  }
-
   .tokyo-shinkyu-page .ts-hero {
     min-height: 72svh;
     padding: 100px 7% 80px;
@@ -1984,18 +1961,6 @@
 @media (max-width: 480px) {
   .tokyo-shinkyu-page .logo {
     font-size: 1.55rem;
-  }
-
-  .tokyo-shinkyu-page .nav a:not(.nav-book) {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    min-height: 28px;
-  }
-
-  .tokyo-shinkyu-page .nav .nav-book {
-    padding: 4px 10px;
-    font-size: 0.72rem;
-    min-height: 28px;
   }
 
   .tokyo-shinkyu-page .ts-hero {

@@ -28,53 +28,6 @@
   transition: color 0.4s ease;
 }
 
-.beauty-page .nav {
-  gap: 10px;
-}
-
-.beauty-page .nav a:not(.nav-book) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #1E3A5F;
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  min-height: 32px;
-  padding: 5px 16px;
-  border: 1px solid rgba(30, 58, 95, 0.55);
-  border-radius: 40px;
-  box-sizing: border-box;
-  transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
-}
-
-.beauty-page .nav a:hover:not(.nav-book) {
-  color: #1E3A5F;
-  background: rgba(30, 58, 95, 0.06);
-  border-color: #1E3A5F;
-}
-
-.beauty-page .nav-book {
-  min-height: 32px;
-  padding: 5px 16px;
-  background: #c0a062;
-  color: #ffffff;
-  border-color: #c0a062;
-  box-shadow: none;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-}
-
-@media (hover: hover) {
-  .beauty-page .nav a.nav-book:hover {
-    background: #d4b57a;
-    color: #ffffff;
-    border-color: #d4b57a;
-    box-shadow: none;
-  }
-}
-
 .beauty-page.is-past-hero .header {
   background-color: #ffffff;
   background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
@@ -86,25 +39,76 @@
   color: #1E3A5F;
 }
 
-.beauty-page.is-past-hero .nav a:not(.nav-book) {
-  color: #1E3A5F;
-  border-color: #1E3A5F;
-  background: transparent;
+@media (min-width: 1025px) {
+  .beauty-page .nav a:not(.nav-book) {
+    color: #1E3A5F;
+    transition: color 0.4s ease;
+  }
+
+  .beauty-page .nav-consult {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    min-height: 32px;
+    padding: 5px 16px;
+    border: 1px solid rgba(30, 58, 95, 0.55);
+    border-radius: 40px;
+    box-sizing: border-box;
+    transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
+  }
+
+  .beauty-page .nav a.nav-consult:hover {
+    color: #1E3A5F;
+    background: rgba(30, 58, 95, 0.06);
+    border-color: #1E3A5F;
+  }
+
+  .beauty-page .nav-book {
+    min-height: 32px;
+    padding: 5px 16px;
+    background: #c0a062;
+    color: #ffffff;
+    border-color: #c0a062;
+    box-shadow: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  .beauty-page.is-past-hero .nav a:not(.nav-book) {
+    color: #1E3A5F;
+  }
+
+  .beauty-page.is-past-hero .nav-consult {
+    color: #1E3A5F;
+    border-color: #1E3A5F;
+    background: transparent;
+  }
+
+  .beauty-page.is-past-hero .nav a.nav-consult:hover {
+    color: #1E3A5F;
+    background: rgba(30, 58, 95, 0.06);
+    border-color: #1E3A5F;
+  }
+
+  .beauty-page.is-past-hero .nav-book {
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+  }
 }
 
-.beauty-page.is-past-hero .nav a:hover:not(.nav-book) {
-  color: #1E3A5F;
-  background: rgba(30, 58, 95, 0.06);
-  border-color: #1E3A5F;
-}
+@media (hover: hover) and (min-width: 1025px) {
+  .beauty-page .nav a.nav-book:hover {
+    background: #d4b57a;
+    color: #ffffff;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
 
-.beauty-page.is-past-hero .nav-book {
-  background: #1E3A5F;
-  color: #ffffff;
-  border-color: #1E3A5F;
-}
-
-@media (hover: hover) {
   .beauty-page.is-past-hero .nav a.nav-book:hover {
     background: #4a5f7a;
     color: #ffffff;
@@ -680,47 +684,6 @@
 
   .beauty-page .ts-close-links a:hover {
     color: #8fa3c1;
-  }
-}
-
-@media (max-width: 1024px) {
-  .beauty-page .nav {
-    position: static;
-    right: auto;
-    width: auto;
-    height: auto;
-    background: transparent;
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    padding: 0;
-    box-shadow: none;
-    opacity: 1;
-    transform: none;
-    overflow: visible;
-  }
-
-  .beauty-page .nav a:not(.nav-book) {
-    width: auto;
-    min-height: 30px;
-    font-size: 0.72rem;
-    padding: 4px 12px;
-    color: #1E3A5F;
-  }
-
-  .beauty-page.is-past-hero .nav a:not(.nav-book) {
-    color: #1E3A5F;
-    border-color: #1E3A5F;
-  }
-
-  .beauty-page .nav .nav-book {
-    width: auto;
-    max-width: none;
-    margin-top: 0;
-    min-height: 30px;
-    padding: 4px 12px;
-    font-size: 0.74rem;
   }
 }
 
