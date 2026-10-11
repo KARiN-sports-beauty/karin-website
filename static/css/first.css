@@ -10,6 +10,18 @@
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 100%);
   box-shadow: none;
   border-bottom: none;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.first-page.is-past-hero .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
 }
 
 .first-page .first-hero {

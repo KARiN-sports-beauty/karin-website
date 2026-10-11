@@ -161,5 +161,21 @@
   {% include '_site_footer.html' %}
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    (function () {
+      var page = document.querySelector(".first-page");
+      var hero = document.querySelector(".first-hero");
+      if (!page || !hero || !("IntersectionObserver" in window)) return;
+
+      var observer = new IntersectionObserver(function (entries) {
+        page.classList.toggle("is-past-hero", !entries[0].isIntersecting);
+      }, {
+        root: null,
+        threshold: 0,
+        rootMargin: "-70px 0px 0px 0px"
+      });
+      observer.observe(hero);
+    })();
+  </script>
 </body>
 </html>
