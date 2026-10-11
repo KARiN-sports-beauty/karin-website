@@ -226,13 +226,28 @@ section, header, footer {
     letter-spacing: 0.08em;
   }
 
-  /* 白ヘッダー。施術内容は常時。トップとトレーニングはFV通過後 */
+  /* 白ヘッダー。施術内容は常時。トップ・トレーニング・初めての方へはFV通過後 */
   body.treatment-page:not(.trainer-page):not(.training-page) .nav-book,
   body.index-page.is-header-solid .nav-book,
-  body.training-page.is-past-hero .nav-book {
+  body.training-page.is-past-hero .nav-book,
+  body.first-page.is-past-hero .nav-book {
     background: #1E3A5F;
     color: #ffffff;
     border-color: #1E3A5F;
+  }
+
+  /* トップの暗いFVだけ、相談するを白枠にする。白ヘッダーとロゴ帯は紺枠 */
+  body.index-page .nav-consult {
+    color: #ffffff;
+    background: transparent;
+    border-color: #ffffff;
+  }
+
+  body.index-page.is-header-solid .nav-consult,
+  body.index-page.is-header-on-logo .nav-consult {
+    color: #1E3A5F;
+    background: transparent;
+    border-color: rgba(30, 58, 95, 0.72);
   }
 }
 
@@ -441,7 +456,14 @@ body.index-page.is-header-on-logo .hamburger span {
 }
 
 @media (hover: hover) and (min-width: 1025px) {
-  body.index-page .nav a.nav-consult:hover,
+  body.index-page .nav a.nav-consult:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+  }
+
+  body.index-page.is-header-solid .nav a.nav-consult:hover,
+  body.index-page.is-header-on-logo .nav a.nav-consult:hover,
   body.first-page .nav a.nav-consult:hover,
   body.treatment-page:not(.trainer-page) .nav a.nav-consult:hover {
     color: #1E3A5F;
@@ -458,7 +480,8 @@ body.index-page.is-header-on-logo .hamburger span {
   }
 
   body.treatment-page:not(.trainer-page):not(.training-page) .nav a.nav-book:hover,
-  body.training-page.is-past-hero .nav a.nav-book:hover {
+  body.training-page.is-past-hero .nav a.nav-book:hover,
+  body.first-page.is-past-hero .nav a.nav-book:hover {
     background: #4a5f7a;
     color: #ffffff;
     border-color: #4a5f7a;
