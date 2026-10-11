@@ -43,13 +43,15 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/price.css') }}">
 
   <!-- ✅ Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 
   <!-- ✅ AOS（ふわっとアニメ） -->
   <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
 </head>
 
 <body>
+  {% include '_site_header.html' %}
+
   <main class="price-wrapper">
 
     <section class="price-inner">
@@ -211,6 +213,7 @@
   <span>ホームに戻る</span>
 </a>
 
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <!-- AOS JS -->
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
