@@ -129,7 +129,7 @@
     </button>
     <div class="nav-overlay" id="nav-overlay" hidden></div>
     <nav class="nav" id="nav-menu">
-      <a href="#initial-section">初めての方へ</a>
+      <a href="{{ url_for('first') }}">初めての方へ</a>
       <a href="{{ url_for('treatment') }}">施術内容</a>
       <a href="{{ url_for('price') }}">料金表</a>
       <a href="#blog">KARiN.NOTES</a>
@@ -640,7 +640,7 @@
         <nav class="footer-nav" aria-label="サイトナビゲーション">
           <p class="footer-heading">ナビ</p>
           <ul>
-            <li><a href="#initial-section">初めての方へ</a></li>
+            <li><a href="{{ url_for('first') }}">初めての方へ</a></li>
             <li><a href="{{ url_for('treatment') }}">施術内容</a></li>
             <li><a href="{{ url_for('training') }}">トレーニング</a></li>
             <li><a href="{{ url_for('price') }}">料金表</a></li>

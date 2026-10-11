@@ -3216,6 +3216,12 @@ def lp():
     )
 
 
+@app.route("/first")
+def first():
+    """初めての方へ。ヘッダーとファーストビュー。"""
+    return render_template("first.html")
+
+
 @app.route("/lp-yoyogiuehara")
 def lp_yoyogiuehara():
     return redirect(url_for("lp"), code=301)
