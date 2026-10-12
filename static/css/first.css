@@ -336,6 +336,18 @@
 .first-page .first-approach-inner {
   max-width: 1100px;
   margin: 0 auto;
+  text-align: center;
+}
+
+.first-page .first-approach-title::after {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.first-page .first-approach-body {
+  margin-right: auto;
+  margin-left: auto;
+  text-align: left;
 }
 
 .first-page .first-intro-photo {
