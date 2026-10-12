@@ -262,7 +262,8 @@
 
 .first-page .first-intro-en,
 .first-page .first-approach-en,
-.first-page .first-guide-en {
+.first-page .first-guide-en,
+.first-page .first-area-en {
   margin: 0 0 16px;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.72rem;
@@ -274,7 +275,8 @@
 
 .first-page .first-intro-title,
 .first-page .first-approach-title,
-.first-page .first-guide-title {
+.first-page .first-guide-title,
+.first-page .first-area-title {
   margin: 0;
   font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
   font-weight: 500;
@@ -286,7 +288,8 @@
 
 .first-page .first-intro-title::after,
 .first-page .first-approach-title::after,
-.first-page .first-guide-title::after {
+.first-page .first-guide-title::after,
+.first-page .first-area-title::after {
   content: "";
   display: block;
   width: 70px;
@@ -356,7 +359,8 @@
   margin: 0 auto;
 }
 
-.first-page .first-guide-lead {
+.first-page .first-guide-lead,
+.first-page .first-area-lead {
   max-width: 36em;
   margin: 28px 0 0;
   font-family: "Noto Sans JP", sans-serif;
@@ -440,7 +444,8 @@
   color: #1E3A5F;
 }
 
-.first-page .first-guide-links {
+.first-page .first-guide-links,
+.first-page .first-area-links {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 28px;
@@ -450,7 +455,8 @@
 }
 
 .first-page .first-guide-more,
-.first-page .first-guide-links a {
+.first-page .first-guide-links a,
+.first-page .first-area-links a {
   display: inline-flex;
   align-items: flex-end;
   box-sizing: border-box;
@@ -466,9 +472,73 @@
   border-bottom: 1px solid #c0a062;
 }
 
+.first-page .first-area {
+  background: #ffffff;
+  padding: 0 8% 104px;
+}
+
+.first-page .first-area-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.first-page .first-area-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px 80px;
+  margin-top: 64px;
+}
+
+.first-page .first-area-photo {
+  margin: 0 0 22px;
+}
+
+.first-page .first-area-photo:not(:has(img)) {
+  display: none;
+}
+
+.first-page .first-area-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.first-page .first-area-place {
+  margin: 0 0 10px;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  line-height: 1.6;
+  color: #c0a062;
+}
+
+.first-page .first-area-name {
+  margin: 0;
+  font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+}
+
+.first-page .first-area-text {
+  margin: 12px 0 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.95;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+}
+
 @media (hover: hover) {
   .first-page .first-guide-more:hover,
-  .first-page .first-guide-links a:hover {
+  .first-page .first-guide-links a:hover,
+  .first-page .first-area-links a:hover {
     color: #8fa3c1;
   }
 }
@@ -485,7 +555,8 @@
 
   .first-page .first-intro-title,
   .first-page .first-approach-title,
-  .first-page .first-guide-title {
+  .first-page .first-guide-title,
+  .first-page .first-area-title {
     font-size: 1.35rem;
   }
 
@@ -508,6 +579,8 @@
   }
 
   .first-page .first-guide-lead,
+  .first-page .first-area-lead,
+  .first-page .first-area-text,
   .first-page .first-guide-text {
     font-size: 0.9rem;
     line-height: 1.9;
@@ -536,9 +609,20 @@
     padding-top: 28px;
   }
 
-  .first-page .first-guide-links {
+  .first-page .first-guide-links,
+  .first-page .first-area-links {
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
+  }
+
+  .first-page .first-area {
+    padding: 8px 22px 72px;
+  }
+
+  .first-page .first-area-list {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    margin-top: 40px;
   }
 }
