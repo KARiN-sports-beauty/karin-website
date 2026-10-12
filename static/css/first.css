@@ -329,7 +329,7 @@
 }
 
 .first-page .first-approach {
-  background: #ffffff;
+  background: #fafafa;
   padding: 0 8% 104px;
 }
 
@@ -377,6 +377,12 @@
 .first-page .first-guide-inner {
   max-width: 1100px;
   margin: 0 auto;
+  text-align: center;
+}
+
+.first-page .first-guide-title::after {
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .first-page .first-guide-lead,
@@ -391,24 +397,31 @@
   color: #1E3A5F;
 }
 
+.first-page .first-guide-lead {
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+}
+
 .first-page .first-guide-more {
   margin-top: 22px;
 }
 
 .first-page .first-guide-list {
-  margin-top: 64px;
+  max-width: calc(22rem * 2 + 48px);
+  margin: 64px auto 0;
 }
 
 .first-page .first-guide-item {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 48px;
+  text-align: left;
 }
 
 .first-page .first-guide-item--reverse {
   flex-direction: row-reverse;
-  justify-content: flex-end;
 }
 
 .first-page .first-guide-photo,
@@ -494,7 +507,7 @@
 }
 
 .first-page .first-area {
-  background: #ffffff;
+  background: #fafafa;
   padding: 0 8% 104px;
 }
 
@@ -557,7 +570,7 @@
 }
 
 .first-page .first-flow {
-  background: #ffffff;
+  background: transparent;
   padding: 0 8% 104px;
 }
 
@@ -637,7 +650,7 @@
 }
 
 .first-page .first-next {
-  background: #ffffff;
+  background: #fafafa;
   padding: 0 8% 104px;
 }
 

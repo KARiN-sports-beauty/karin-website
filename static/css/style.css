@@ -29,7 +29,8 @@ body {
 .treatment-page,
 .beauty-page,
 .tokyo-shinkyu-page,
-.tokyo-seitai-page {
+.tokyo-seitai-page,
+.first-page {
   position: relative;
   z-index: 0;
 }
@@ -38,7 +39,8 @@ body {
 .treatment-page::before,
 .beauty-page::before,
 .tokyo-shinkyu-page::before,
-.tokyo-seitai-page::before {
+.tokyo-seitai-page::before,
+.first-page::before {
   content: "";
   position: fixed;
   top: 50%;
@@ -66,7 +68,9 @@ body {
 .tokyo-shinkyu-page > main,
 .tokyo-shinkyu-page > footer,
 .tokyo-seitai-page > main,
-.tokyo-seitai-page > footer {
+.tokyo-seitai-page > footer,
+.first-page > main,
+.first-page > footer {
   position: relative;
   z-index: 1;
 }
@@ -76,7 +80,8 @@ body {
   .treatment-page::before,
   .beauty-page::before,
   .tokyo-shinkyu-page::before,
-  .tokyo-seitai-page::before {
+  .tokyo-seitai-page::before,
+  .first-page::before {
     width: min(72vw, 300px);
     opacity: 0.18;
   }
