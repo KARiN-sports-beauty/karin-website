@@ -263,7 +263,9 @@
 .first-page .first-intro-en,
 .first-page .first-approach-en,
 .first-page .first-guide-en,
-.first-page .first-area-en {
+.first-page .first-area-en,
+.first-page .first-flow-en,
+.first-page .first-next-en {
   margin: 0 0 16px;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.72rem;
@@ -276,7 +278,9 @@
 .first-page .first-intro-title,
 .first-page .first-approach-title,
 .first-page .first-guide-title,
-.first-page .first-area-title {
+.first-page .first-area-title,
+.first-page .first-flow-title,
+.first-page .first-next-title {
   margin: 0;
   font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
   font-weight: 500;
@@ -289,7 +293,9 @@
 .first-page .first-intro-title::after,
 .first-page .first-approach-title::after,
 .first-page .first-guide-title::after,
-.first-page .first-area-title::after {
+.first-page .first-area-title::after,
+.first-page .first-flow-title::after,
+.first-page .first-next-title::after {
   content: "";
   display: block;
   width: 70px;
@@ -299,7 +305,8 @@
 }
 
 .first-page .first-intro-body,
-.first-page .first-approach-body {
+.first-page .first-approach-body,
+.first-page .first-next-body {
   max-width: 36em;
   margin-top: 28px;
   font-family: "Noto Sans JP", sans-serif;
@@ -316,7 +323,8 @@
 }
 
 .first-page .first-intro-body p + p,
-.first-page .first-approach-body p + p {
+.first-page .first-approach-body p + p,
+.first-page .first-next-body p + p {
   margin-top: 1.15em;
 }
 
@@ -456,7 +464,8 @@
 
 .first-page .first-guide-more,
 .first-page .first-guide-links a,
-.first-page .first-area-links a {
+.first-page .first-area-links a,
+.first-page .first-next-line {
   display: inline-flex;
   align-items: flex-end;
   box-sizing: border-box;
@@ -535,10 +544,155 @@
   color: #1E3A5F;
 }
 
+.first-page .first-flow {
+  background: #ffffff;
+  padding: 0 8% 104px;
+}
+
+.first-page .first-flow-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.first-page .first-flow-list {
+  list-style: none;
+  max-width: 40rem;
+  margin: 56px 0 0;
+  padding: 0;
+}
+
+.first-page .first-flow-step {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  column-gap: 22px;
+  position: relative;
+  padding-bottom: 40px;
+}
+
+.first-page .first-flow-step:last-child {
+  padding-bottom: 0;
+}
+
+.first-page .first-flow-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 2.55rem;
+  bottom: 8px;
+  left: 1.625rem;
+  width: 1px;
+  background: rgba(192, 160, 98, 0.85);
+}
+
+.first-page .first-flow-num {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  color: #c0a062;
+}
+
+.first-page .first-flow-num span {
+  margin-bottom: 4px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+}
+
+.first-page .first-flow-name {
+  margin: 0;
+  font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #1E3A5F;
+}
+
+.first-page .first-flow-text {
+  margin: 10px 0 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.95;
+  letter-spacing: 0.04em;
+  color: #1E3A5F;
+}
+
+.first-page .first-next {
+  background: #ffffff;
+  padding: 0 8% 104px;
+}
+
+.first-page .first-next-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.first-page .first-next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 36px;
+}
+
+.first-page .first-next-consult,
+.first-page .first-next-book {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 28px;
+  border-radius: 40px;
+  box-sizing: border-box;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.first-page .first-next-consult {
+  background: #1E3A5F;
+  color: #ffffff;
+  border: 1px solid #1E3A5F;
+}
+
+.first-page .first-next-book {
+  background: transparent;
+  color: #1E3A5F;
+  border: 1px solid #c0a062;
+}
+
+.first-page .first-next-line {
+  margin-top: 8px;
+}
+
+@media (hover: hover) {
+  .first-page .first-next-consult:hover {
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: #c0a062;
+  }
+
+  .first-page .first-next-book:hover {
+    color: #8fa3c1;
+  }
+}
+
 @media (hover: hover) {
   .first-page .first-guide-more:hover,
   .first-page .first-guide-links a:hover,
-  .first-page .first-area-links a:hover {
+  .first-page .first-area-links a:hover,
+  .first-page .first-next-line:hover {
     color: #8fa3c1;
   }
 }
@@ -556,12 +710,15 @@
   .first-page .first-intro-title,
   .first-page .first-approach-title,
   .first-page .first-guide-title,
-  .first-page .first-area-title {
+  .first-page .first-area-title,
+  .first-page .first-flow-title,
+  .first-page .first-next-title {
     font-size: 1.35rem;
   }
 
   .first-page .first-intro-body,
-  .first-page .first-approach-body {
+  .first-page .first-approach-body,
+  .first-page .first-next-body {
     font-size: 0.9rem;
     line-height: 1.9;
   }
@@ -581,6 +738,7 @@
   .first-page .first-guide-lead,
   .first-page .first-area-lead,
   .first-page .first-area-text,
+  .first-page .first-flow-text,
   .first-page .first-guide-text {
     font-size: 0.9rem;
     line-height: 1.9;
@@ -624,5 +782,26 @@
     grid-template-columns: 1fr;
     gap: 48px;
     margin-top: 40px;
+  }
+
+  .first-page .first-flow {
+    padding: 8px 22px 72px;
+  }
+
+  .first-page .first-flow-list {
+    margin-top: 40px;
+  }
+
+  .first-page .first-flow-step {
+    column-gap: 16px;
+    padding-bottom: 32px;
+  }
+
+  .first-page .first-next {
+    padding: 8px 22px 72px;
+  }
+
+  .first-page .first-next-actions {
+    gap: 12px;
   }
 }
