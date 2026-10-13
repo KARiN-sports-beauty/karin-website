@@ -581,19 +581,34 @@
   margin: 0 auto;
 }
 
+.first-page .first-flow-en,
+.first-page .first-flow-title {
+  text-align: center;
+}
+
+.first-page .first-flow-title::after {
+  margin-right: auto;
+  margin-left: auto;
+}
+
 .first-page .first-flow-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 36px;
   list-style: none;
-  max-width: 40rem;
+  max-width: none;
   margin: 56px 0 0;
   padding: 0;
 }
 
 .first-page .first-flow-step {
-  display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr);
-  column-gap: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   position: relative;
-  padding-bottom: 40px;
+  min-width: 0;
+  padding: 0;
+  text-align: center;
 }
 
 .first-page .first-flow-step:last-child {
@@ -603,11 +618,18 @@
 .first-page .first-flow-step:not(:last-child)::before {
   content: "";
   position: absolute;
-  top: 2.55rem;
-  bottom: 8px;
-  left: 1.625rem;
-  width: 1px;
+  top: 1.15rem;
+  right: auto;
+  bottom: auto;
+  left: calc(50% + 1.45rem);
+  width: calc(100% + 36px - 2.9rem);
+  height: 1px;
   background: rgba(192, 160, 98, 0.85);
+}
+
+.first-page .first-flow-copy {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .first-page .first-flow-num {
@@ -644,9 +666,9 @@
 .first-page .first-flow-text {
   margin: 10px 0 0;
   font-family: "Noto Sans JP", sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 400;
-  line-height: 1.95;
+  line-height: 1.85;
   letter-spacing: 0.04em;
   color: #1E3A5F;
 }
@@ -659,11 +681,22 @@
 .first-page .first-next-inner {
   max-width: 1100px;
   margin: 0 auto;
+  text-align: center;
+}
+
+.first-page .first-next-title::after {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.first-page .first-next-body {
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .first-page .first-next-benefit {
   max-width: 36em;
-  margin-top: 40px;
+  margin: 40px auto 0;
   padding: 28px 0 24px;
   border-top: 1px solid rgba(192, 160, 98, 0.85);
   border-bottom: 1px solid rgba(192, 160, 98, 0.85);
@@ -717,6 +750,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   margin-top: 32px;
 }
@@ -835,12 +869,27 @@
   }
 
   .first-page .first-flow-list {
+    display: block;
+    max-width: 40rem;
     margin-top: 40px;
   }
 
   .first-page .first-flow-step {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr);
     column-gap: 16px;
-    padding-bottom: 32px;
+    align-items: start;
+    padding: 0 0 32px;
+    text-align: left;
+  }
+
+  .first-page .first-flow-step:not(:last-child)::before {
+    top: 2.55rem;
+    right: auto;
+    bottom: 8px;
+    left: 1.625rem;
+    width: 1px;
+    height: auto;
   }
 
   .first-page .first-next {
