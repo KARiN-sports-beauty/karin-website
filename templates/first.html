@@ -165,24 +165,42 @@
 
         <div class="first-area-list">
           <article class="first-area-item">
-            <figure class="first-area-photo"></figure>
+            <figure class="first-area-photo">
+              <img
+                src="{{ url_for('static', filename='images/firstyoyogiuehara.jpg') }}"
+                alt="木々と店が並ぶ、代々木上原周辺の通り"
+                width="1536"
+                height="1024"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
             <p class="first-area-place">TOKYO</p>
             <h3 class="first-area-name">東京｜代々木上原周辺</h3>
             <p class="first-area-text">出張鍼灸・整体</p>
             <ul class="first-area-links">
-              <li><a href="{{ url_for('tokyo_shinkyu') }}">東京の鍼灸</a></li>
-              <li><a href="{{ url_for('tokyo_seitai') }}">東京の整体</a></li>
+              <li><a href="{{ url_for('tokyo_shinkyu') }}">東京の鍼灸について→</a></li>
+              <li><a href="{{ url_for('tokyo_seitai') }}">東京の整体について→</a></li>
             </ul>
           </article>
 
           <article class="first-area-item">
-            <figure class="first-area-photo"></figure>
+            <figure class="first-area-photo">
+              <img
+                src="{{ url_for('static', filename='images/firstyakuin.jpg') }}"
+                alt="並木と店舗が続く、薬院周辺の通り"
+                width="1536"
+                height="1024"
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
             <p class="first-area-place">FUKUOKA</p>
             <h3 class="first-area-name">福岡｜薬院周辺</h3>
             <p class="first-area-text">出張鍼灸・整体</p>
             <ul class="first-area-links">
-              <li><a href="{{ url_for('fukuoka_shinkyu') }}">福岡の鍼灸</a></li>
-              <li><a href="{{ url_for('fukuoka_seitai') }}">福岡の整体</a></li>
+              <li><a href="{{ url_for('fukuoka_shinkyu') }}">福岡の鍼灸について→</a></li>
+              <li><a href="{{ url_for('fukuoka_seitai') }}">福岡の整体について→</a></li>
             </ul>
           </article>
         </div>

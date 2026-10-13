@@ -1430,22 +1430,6 @@
     padding: 72px 8% 80px;
   }
 
-  .ts-feature,
-  .ts-feature--reverse {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    max-width: 560px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .ts-feature--reverse .ts-feature-image {
-    order: 0;
-  }
-
-  .ts-feature-image {
-    height: 240px;
-  }
 
   .tokyo-shinkyu-page [aria-labelledby="ts-sport-heading"],
   .tokyo-shinkyu-page [aria-labelledby="ts-dance-heading"] {
@@ -1655,6 +1639,25 @@
 
   .ts-flow-list li:last-child {
     padding-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ts-feature,
+  .ts-feature--reverse {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ts-feature--reverse .ts-feature-image {
+    order: 0;
+  }
+
+  .ts-feature-image {
+    height: 240px;
   }
 }
 

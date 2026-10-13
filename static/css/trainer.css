@@ -1023,3 +1023,44 @@
     font-size: 1.55rem;
   }
 }
+
+@media (min-width: 641px) {
+  .trainer-fields-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "media heading"
+      "media copy";
+    column-gap: 52px;
+    row-gap: 0;
+    align-items: center;
+  }
+
+  .trainer-fields-media {
+    grid-area: media;
+    align-self: center;
+    position: relative;
+    aspect-ratio: 3 / 2;
+    margin-bottom: 0;
+  }
+
+  .trainer-fields-media img {
+    position: absolute;
+    inset: 0;
+  }
+
+  .trainer-fields-inner > .tx-heading {
+    grid-area: heading;
+    align-self: end;
+    margin-bottom: 0;
+    text-align: left;
+  }
+
+  .trainer-fields-copy {
+    grid-area: copy;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+}

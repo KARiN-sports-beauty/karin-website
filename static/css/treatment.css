@@ -765,14 +765,6 @@
     margin-right: auto;
   }
 
-  .tx-beauty {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    max-width: 540px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
   .tx-pillar + .tx-pillar {
     padding-top: 40px;
     border-top: 1px solid #eee8dc;
@@ -847,6 +839,16 @@
   .treatment-page .home-btn img {
     width: 26px;
     height: 26px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tx-beauty {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

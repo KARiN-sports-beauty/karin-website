@@ -429,6 +429,7 @@
   flex: 0 1 22rem;
   width: 22rem;
   max-width: 100%;
+  min-width: 0;
 }
 
 .first-page .first-guide-item + .first-guide-item {
@@ -727,11 +728,6 @@
     padding: 64px 22px 72px;
   }
 
-  .first-page .first-intro-inner {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
   .first-page .first-intro-title,
   .first-page .first-approach-title,
   .first-page .first-guide-title,
@@ -752,10 +748,6 @@
     padding: 64px 22px 72px;
   }
 
-  .first-page .first-intro-photo {
-    aspect-ratio: 16 / 10;
-  }
-
   .first-page .first-guide {
     padding: 64px 22px 72px;
   }
@@ -771,6 +763,47 @@
 
   .first-page .first-guide-list {
     margin-top: 40px;
+  }
+
+  .first-page .first-area {
+    padding: 64px 22px 72px;
+  }
+
+  .first-page .first-area-list {
+    gap: 40px 32px;
+    margin-top: 40px;
+  }
+
+  .first-page .first-flow {
+    padding: 64px 22px 72px;
+  }
+
+  .first-page .first-flow-list {
+    margin-top: 40px;
+  }
+
+  .first-page .first-flow-step {
+    column-gap: 16px;
+    padding-bottom: 32px;
+  }
+
+  .first-page .first-next {
+    padding: 64px 22px 72px;
+  }
+
+  .first-page .first-next-actions {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .first-page .first-intro-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .first-page .first-intro-photo {
+    aspect-ratio: 16 / 10;
   }
 
   .first-page .first-guide-item,
@@ -799,34 +832,8 @@
     gap: 0;
   }
 
-  .first-page .first-area {
-    padding: 64px 22px 72px;
-  }
-
   .first-page .first-area-list {
     grid-template-columns: 1fr;
     gap: 48px;
-    margin-top: 40px;
-  }
-
-  .first-page .first-flow {
-    padding: 64px 22px 72px;
-  }
-
-  .first-page .first-flow-list {
-    margin-top: 40px;
-  }
-
-  .first-page .first-flow-step {
-    column-gap: 16px;
-    padding-bottom: 32px;
-  }
-
-  .first-page .first-next {
-    padding: 64px 22px 72px;
-  }
-
-  .first-page .first-next-actions {
-    gap: 12px;
   }
 }
