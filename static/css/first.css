@@ -267,9 +267,9 @@
 .first-page .first-flow-en,
 .first-page .first-next-en {
   margin: 0 0 16px;
-  font-family: "Noto Sans JP", sans-serif;
+  font-family: "Playfair Display", serif;
   font-size: 0.72rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.22em;
   line-height: 1.6;
   color: #c0a062;
@@ -330,7 +330,7 @@
 
 .first-page .first-approach {
   background: #fafafa;
-  padding: 0 8% 104px;
+  padding: 96px 8% 104px;
 }
 
 .first-page .first-approach-inner {
@@ -371,7 +371,7 @@
 
 .first-page .first-guide {
   background: #ffffff;
-  padding: 0 8% 104px;
+  padding: 96px 8% 104px;
 }
 
 .first-page .first-guide-inner {
@@ -508,7 +508,7 @@
 
 .first-page .first-area {
   background: #fafafa;
-  padding: 0 8% 104px;
+  padding: 96px 8% 104px;
 }
 
 .first-page .first-area-inner {
@@ -571,7 +571,7 @@
 
 .first-page .first-flow {
   background: transparent;
-  padding: 0 8% 104px;
+  padding: 96px 8% 104px;
 }
 
 .first-page .first-flow-inner {
@@ -651,7 +651,7 @@
 
 .first-page .first-next {
   background: #fafafa;
-  padding: 0 8% 104px;
+  padding: 96px 8% 104px;
 }
 
 .first-page .first-next-inner {
@@ -749,7 +749,7 @@
   }
 
   .first-page .first-approach {
-    padding: 8px 22px 72px;
+    padding: 64px 22px 72px;
   }
 
   .first-page .first-intro-photo {
@@ -757,7 +757,7 @@
   }
 
   .first-page .first-guide {
-    padding: 8px 22px 72px;
+    padding: 64px 22px 72px;
   }
 
   .first-page .first-guide-lead,
@@ -800,7 +800,7 @@
   }
 
   .first-page .first-area {
-    padding: 8px 22px 72px;
+    padding: 64px 22px 72px;
   }
 
   .first-page .first-area-list {
@@ -810,7 +810,7 @@
   }
 
   .first-page .first-flow {
-    padding: 8px 22px 72px;
+    padding: 64px 22px 72px;
   }
 
   .first-page .first-flow-list {
@@ -823,7 +823,7 @@
   }
 
   .first-page .first-next {
-    padding: 8px 22px 72px;
+    padding: 64px 22px 72px;
   }
 
   .first-page .first-next-actions {
