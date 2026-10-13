@@ -265,7 +265,8 @@
 .first-page .first-guide-en,
 .first-page .first-area-en,
 .first-page .first-flow-en,
-.first-page .first-next-en {
+.first-page .first-next-en,
+.first-page .first-next-benefit-en {
   margin: 0 0 16px;
   font-family: "Playfair Display", serif;
   font-size: 0.72rem;
@@ -660,12 +661,64 @@
   margin: 0 auto;
 }
 
+.first-page .first-next-benefit {
+  max-width: 36em;
+  margin-top: 40px;
+  padding: 28px 0 24px;
+  border-top: 1px solid rgba(192, 160, 98, 0.85);
+  border-bottom: 1px solid rgba(192, 160, 98, 0.85);
+}
+
+.first-page .first-next-benefit-en {
+  margin-bottom: 12px;
+}
+
+.first-page .first-next-benefit-title {
+  margin: 0;
+  font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: #1E3A5F;
+}
+
+.first-page .first-next-benefit-off {
+  display: inline-block;
+  margin-left: 0.2em;
+  font-size: 1.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  color: #c0a062;
+}
+
+.first-page .first-next-benefit-lead {
+  margin: 12px 0 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+  color: #1E3A5F;
+}
+
+.first-page .first-next-benefit-note {
+  margin: 10px 0 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  color: #1E3A5F;
+}
+
 .first-page .first-next-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
-  margin-top: 36px;
+  margin-top: 32px;
 }
 
 .first-page .first-next-consult,
@@ -673,6 +726,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 148px;
   min-height: 48px;
   padding: 12px 28px;
   border-radius: 40px;
@@ -693,13 +747,13 @@
 }
 
 .first-page .first-next-book {
-  background: transparent;
+  background: #ffffff;
   color: #1E3A5F;
   border: 1px solid #c0a062;
 }
 
 .first-page .first-next-line {
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 @media (hover: hover) {
@@ -710,7 +764,9 @@
   }
 
   .first-page .first-next-book:hover {
-    color: #8fa3c1;
+    background: #ffffff;
+    color: #1E3A5F;
+    border-color: #1E3A5F;
   }
 }
 
@@ -791,8 +847,28 @@
     padding: 64px 22px 72px;
   }
 
+  .first-page .first-next-benefit {
+    margin-top: 32px;
+    padding: 22px 0 18px;
+  }
+
+  .first-page .first-next-benefit-off {
+    font-size: 1.45rem;
+  }
+
+  .first-page .first-next-benefit-lead,
+  .first-page .first-next-benefit-note {
+    font-size: 0.9rem;
+    line-height: 1.9;
+  }
+
   .first-page .first-next-actions {
     gap: 12px;
+  }
+
+  .first-page .first-next-consult,
+  .first-page .first-next-book {
+    flex: 1 1 140px;
   }
 }
 
