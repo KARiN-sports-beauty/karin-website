@@ -130,22 +130,22 @@
   text-align: left;
   color: #1E3A5F;
   background-color: #f4f1ec;
-  background-image: url("../images/beautyfv.jpg");
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: left center;
+  overflow: hidden;
 }
 
 .beauty-page .ts-hero::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -16px;
   z-index: 0;
   pointer-events: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
-  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+  background-color: #f4f1ec;
+  background-image: url("../images/beautyfv.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: left center;
+  filter: blur(2px);
+  transform: scale(1.04);
 }
 
 .beauty-page .ts-hero::after {
@@ -154,14 +154,24 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(
-    to left,
-    rgba(255, 255, 255, 0.82) 0%,
-    rgba(255, 255, 255, 0.58) 18%,
-    rgba(255, 255, 255, 0.22) 36%,
-    rgba(255, 255, 255, 0.04) 52%,
-    transparent 68%
-  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
+  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
+  background:
+    radial-gradient(
+      ellipse 78% 86% at 88% 50%,
+      rgba(255, 255, 255, 0.42) 0%,
+      rgba(255, 255, 255, 0.14) 46%,
+      transparent 72%
+    ),
+    linear-gradient(
+      to left,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.28) 20%,
+      rgba(255, 255, 255, 0.08) 42%,
+      transparent 66%
+    );
 }
 
 .beauty-page .ts-hero-copy {
@@ -693,17 +703,18 @@
     padding: 88px 7% 72px;
     align-items: flex-end;
     justify-content: flex-end;
-    background-position: 30% center;
   }
 
   .beauty-page .ts-hero::before {
+    background-position: 30% center;
+    filter: blur(1.5px);
+  }
+
+  .beauty-page .ts-hero::after {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
     mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
-  }
-
-  .beauty-page .ts-hero::after {
     background:
       linear-gradient(
         180deg,

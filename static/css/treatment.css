@@ -138,7 +138,7 @@
 /* /treatment のFV。写真は全面、文字は左側。trainer・training には当てない。 */
 .treatment-page:not(.training-page):not(.trainer-page) .header {
   background-color: transparent;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 100%);
+  background-image: none;
   box-shadow: none;
   border-bottom: none;
   transition:
@@ -146,6 +146,31 @@
     background-image 0.4s ease,
     box-shadow 0.4s ease,
     border-color 0.4s ease;
+}
+
+@media (min-width: 1025px) {
+  body.treatment-page:not(.training-page):not(.trainer-page) .nav-consult {
+    border-color: rgba(30, 58, 95, 0.55);
+  }
+
+  body.treatment-page:not(.training-page):not(.trainer-page) .nav-book {
+    background: #c0a062;
+    color: #ffffff;
+    border-color: #c0a062;
+  }
+
+  body.treatment-page:not(.training-page):not(.trainer-page).is-past-hero .nav-consult {
+    border-color: #1E3A5F;
+  }
+}
+
+@media (hover: hover) and (min-width: 1025px) {
+  body.treatment-page:not(.training-page):not(.trainer-page) .nav a.nav-book:hover {
+    background: #d4b57a;
+    color: #ffffff;
+    border-color: #d4b57a;
+    box-shadow: none;
+  }
 }
 
 .treatment-page:not(.training-page):not(.trainer-page).is-past-hero .header {
@@ -172,10 +197,13 @@
   grid-area: auto;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
   object-position: 62% 46%;
+  filter: blur(2px);
+  transform: scale(1.05);
   -webkit-mask-image: none;
   mask-image: none;
 }
@@ -186,22 +214,28 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
-  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::after {
   z-index: 1;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.82) 0%,
-    rgba(255, 255, 255, 0.58) 18%,
-    rgba(255, 255, 255, 0.22) 36%,
-    rgba(255, 255, 255, 0.04) 52%,
-    transparent 68%
-  );
+  background:
+    radial-gradient(
+      ellipse 78% 86% at 12% 50%,
+      rgba(255, 255, 255, 0.42) 0%,
+      rgba(255, 255, 255, 0.14) 46%,
+      transparent 72%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.28) 20%,
+      rgba(255, 255, 255, 0.08) 42%,
+      transparent 66%
+    );
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
@@ -762,6 +796,8 @@
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
     object-position: 68% 44%;
+    filter: blur(2px);
+    transform: scale(1.05);
   }
 
   .tx-section {
@@ -900,6 +936,8 @@
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
     object-position: 68% 24%;
+    filter: blur(1.5px);
+    transform: scale(1.05);
     -webkit-mask-image: none;
     mask-image: none;
   }

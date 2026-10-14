@@ -231,8 +231,8 @@ section, header, footer {
     letter-spacing: 0.08em;
   }
 
-  /* 白ヘッダー。施術内容は常時。トップ・トレーニング・初めての方へはFV通過後 */
-  body.treatment-page:not(.trainer-page):not(.training-page) .nav-book,
+  /* 白ヘッダー。施術内容はFV通過後。トップ・トレーニング・初めての方へもFV通過後 */
+  body.treatment-page:not(.trainer-page):not(.training-page).is-past-hero .nav-book,
   body.index-page.is-header-solid .nav-book,
   body.training-page.is-past-hero .nav-book,
   body.first-page.is-past-hero .nav-book {
@@ -484,7 +484,7 @@ body.index-page.is-header-on-logo .hamburger span {
     box-shadow: none;
   }
 
-  body.treatment-page:not(.trainer-page):not(.training-page) .nav a.nav-book:hover,
+  body.treatment-page:not(.trainer-page):not(.training-page).is-past-hero .nav a.nav-book:hover,
   body.training-page.is-past-hero .nav a.nav-book:hover,
   body.first-page.is-past-hero .nav a.nav-book:hover {
     background: #4a5f7a;
