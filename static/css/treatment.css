@@ -135,6 +135,89 @@
   opacity: 0.72;
 }
 
+/* /treatment のFV。/training と同じ全面写真。trainer・training には当てない。 */
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero {
+  display: block;
+  min-height: min(calc(100svh - 70px), 56.25vw);
+  margin-top: 70px;
+  padding: 0;
+  overflow: hidden;
+  background-color: #f6f4f1;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
+  object-position: center center;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    transparent 38%
+  );
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: min(34rem, 46%);
+  max-width: none;
+  padding: 40px 0;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy-inner {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero .tx-eyebrow {
+  margin-bottom: 12px;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-title {
+  font-family: "Noto Serif JP", "Playfair Display", serif;
+  font-weight: 500;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-message {
+  margin-top: 20px;
+  font-size: 1.12rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.75;
+  color: #1E3A5F;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead {
+  max-width: 26rem;
+  margin-top: 12px;
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.9;
+  opacity: 0.72;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead br {
+  display: none;
+}
+
 .tx-section {
   padding: 88px 8% 96px;
   text-align: center;
@@ -735,6 +818,65 @@
     line-height: 1.85;
   }
 
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: 70px;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ffffff;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1680 / 944;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
+    object-position: center center;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::after {
+    background: none;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    align-items: flex-start;
+    width: 100%;
+    padding: 28px 8% 36px;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy-inner {
+    max-width: 36rem;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-title {
+    font-size: 1.85rem;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-message {
+    margin-top: 16px;
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead {
+    max-width: none;
+    margin-top: 10px;
+    font-size: 0.88rem;
+    line-height: 1.85;
+  }
+
   .tx-br-pc {
     display: none;
   }
@@ -872,6 +1014,20 @@
 @media (max-width: 480px) {
   .tx-hero-copy {
     padding: 24px 0 20px 6%;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
+    width: calc(100% * 100 / 90);
+    margin: -55px calc(-5% * 100 / 90) 0;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
+    margin-bottom: -55px;
+    padding: 24px 1% 8px;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead br {
+    display: block;
   }
 
   .tx-section {
