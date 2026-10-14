@@ -87,8 +87,8 @@
 }
 
 .tx-hero-copy-inner {
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
+  max-width: 26.5rem;
 }
 
 .tx-hero-title {
@@ -97,8 +97,9 @@
   font-size: 2.35rem;
   font-weight: 600;
   letter-spacing: 0.08em;
+  line-height: 1.35;
   color: #1E3A5F;
-  margin: 0 0 12px;
+  margin: 0;
   padding: 0 0 16px;
 }
 
@@ -113,16 +114,25 @@
   border-radius: 2px;
 }
 
+.tx-hero-message {
+  margin: 22px 0 0;
+  font-size: 1.18rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: #1E3A5F;
+}
+
 .tx-hero-lead {
   width: auto;
   max-width: none;
-  margin: 24px 0 0;
-  font-size: 1.08rem;
+  margin: 12px 0 0;
+  font-size: 0.95rem;
   font-weight: 400;
-  letter-spacing: 0.03em;
-  line-height: 2;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
   color: #1E3A5F;
-  opacity: 0.86;
+  opacity: 0.72;
 }
 
 .tx-section {
@@ -705,17 +715,24 @@
 
   .tx-hero-copy-inner {
     width: 100%;
+    max-width: 100%;
   }
 
   .tx-hero-title {
     font-size: 1.7rem;
   }
 
+  .tx-hero-message {
+    margin-top: 16px;
+    font-size: 1.02rem;
+    line-height: 1.65;
+  }
+
   .tx-hero-lead {
     max-width: none;
-    font-size: 0.95rem;
-    line-height: 1.95;
-    margin-top: 20px;
+    margin-top: 10px;
+    font-size: 0.88rem;
+    line-height: 1.85;
   }
 
   .tx-br-pc {
@@ -854,7 +871,7 @@
 
 @media (max-width: 480px) {
   .tx-hero-copy {
-    padding: 24px 8% 20px 6%;
+    padding: 24px 0 20px 6%;
   }
 
   .tx-section {
