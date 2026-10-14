@@ -135,11 +135,32 @@
   opacity: 0.72;
 }
 
-/* /treatment のFV。/training と同じ全面写真。trainer・training には当てない。 */
+/* /treatment のFV。写真は全面、文字は左側。trainer・training には当てない。 */
+.treatment-page:not(.training-page):not(.trainer-page) .header {
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 100%);
+  box-shadow: none;
+  border-bottom: none;
+  transition:
+    background-color 0.4s ease,
+    background-image 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page).is-past-hero .header {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero {
-  display: block;
-  min-height: min(calc(100svh - 70px), 56.25vw);
-  margin-top: 70px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "copy";
+  min-height: 100svh;
+  margin-top: 0;
   padding: 0;
   overflow: hidden;
   background-color: #f6f4f1;
@@ -148,70 +169,103 @@
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
   position: absolute;
   inset: 0;
+  grid-area: auto;
   width: 100%;
   height: 100%;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
-  object-position: center center;
+  object-position: 62% 46%;
   -webkit-mask-image: none;
   mask-image: none;
 }
 
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.85) 16%, transparent 42%);
+}
+
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::after {
+  z-index: 1;
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.08) 20%,
-    transparent 38%
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.58) 18%,
+    rgba(255, 255, 255, 0.22) 36%,
+    rgba(255, 255, 255, 0.04) 52%,
+    transparent 68%
   );
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 7%;
+  position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  grid-area: copy;
   justify-content: center;
-  width: min(34rem, 46%);
+  align-items: flex-start;
+  width: 100%;
   max-width: none;
-  padding: 40px 0;
+  padding: 120px 42% 88px 8%;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy-inner {
-  width: 100%;
+  width: auto;
   max-width: 28rem;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero .tx-eyebrow {
-  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero .tx-eyebrow::before {
+  content: "";
+  width: 36px;
+  height: 1px;
+  background-color: #c0a062;
+  flex-shrink: 0;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-title {
+  display: block;
+  padding: 0;
   font-family: "Noto Serif JP", "Playfair Display", serif;
+  font-size: clamp(1.9rem, 4.2vw, 3.15rem);
   font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-hero-title::after {
+  content: none;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-message {
-  margin-top: 20px;
-  font-size: 1.12rem;
+  margin-top: 22px;
+  font-family: "Noto Serif JP", "Noto Sans JP", serif;
+  font-size: 1.05rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.75;
+  letter-spacing: 0.06em;
+  line-height: 1.85;
   color: #1E3A5F;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead {
   max-width: 26rem;
-  margin-top: 12px;
+  margin-top: 14px;
   font-size: 0.92rem;
   font-weight: 400;
-  line-height: 1.9;
-  opacity: 0.72;
+  line-height: 1.95;
+  opacity: 0.78;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead br {
@@ -698,6 +752,18 @@
     width: 100%;
   }
 
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero {
+    min-height: 72svh;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
+    padding: 108px 34% 72px 7%;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
+    object-position: 68% 44%;
+  }
+
   .tx-section {
     padding: 72px 8% 80px;
   }
@@ -819,55 +885,81 @@
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    margin-top: 70px;
+    grid-template-columns: 1fr;
+    min-height: 62svh;
+    margin-top: 0;
     padding: 0;
-    overflow: hidden;
-    background-color: #ffffff;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
-    position: relative;
-    inset: auto;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: auto;
-    aspect-ratio: 1680 / 944;
+    height: 100%;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
-    object-position: center center;
+    object-position: 68% 24%;
     -webkit-mask-image: none;
     mask-image: none;
   }
 
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::before {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
+  }
+
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media::after {
-    background: none;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.04) 34%,
+        rgba(255, 255, 255, 0.55) 62%,
+        rgba(255, 255, 255, 0.9) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0.12) 42%,
+        transparent 100%
+      );
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    left: auto;
+    justify-content: flex-end;
     align-items: flex-start;
     width: 100%;
-    padding: 28px 8% 36px;
+    padding: 96px 7% 32px;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy-inner {
-    max-width: 36rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero .tx-eyebrow {
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero .tx-eyebrow::before {
+    width: 22px;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-title {
-    font-size: 1.85rem;
+    font-size: 1.7rem;
+    letter-spacing: 0.08em;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-message {
-    margin-top: 16px;
-    font-size: 1.02rem;
-    line-height: 1.7;
+    margin-top: 14px;
+    font-size: 0.98rem;
+    line-height: 1.75;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead {
@@ -1014,16 +1106,6 @@
 @media (max-width: 480px) {
   .tx-hero-copy {
     padding: 24px 0 20px 6%;
-  }
-
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media {
-    width: calc(100% * 100 / 90);
-    margin: -55px calc(-5% * 100 / 90) 0;
-  }
-
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-copy {
-    margin-bottom: -55px;
-    padding: 24px 1% 8px;
   }
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-lead br {
