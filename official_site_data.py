@@ -664,7 +664,7 @@ KNOWLEDGE_DOCUMENTS: dict[str, dict[str, Any]] = {
         "source_key": "first_visit_discount",
         "title": "初回30%OFFについて",
         "category": "pricing",
-        "source_url": f"{SITE_BASE_URL}/lp",
+        "source_url": f"{SITE_BASE_URL}/first",
         "build_content": _content_first_visit_discount,
     },
     "booking_methods": {

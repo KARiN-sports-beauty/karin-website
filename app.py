@@ -3209,11 +3209,8 @@ def training():
 
 @app.route("/lp")
 def lp():
-    """東京・福岡共通の初回向けLP"""
-    return render_template(
-        "lp.html",
-        public_booking_enabled=public_booking_enabled(),
-    )
+    """旧初回LP。初めての方へへ統合。"""
+    return redirect(url_for("first"), code=301)
 
 
 @app.route("/first")
@@ -3224,23 +3221,23 @@ def first():
 
 @app.route("/lp-yoyogiuehara")
 def lp_yoyogiuehara():
-    return redirect(url_for("lp"), code=301)
+    return redirect(url_for("first"), code=301)
 
 
 @app.route("/lp-yakuin")
 def lp_yakuin():
-    return redirect(url_for("lp"), code=301)
+    return redirect(url_for("first"), code=301)
 
 
-# 旧エリアページ → 共通LP（中間URLを挟まず直接 301）
+# 旧エリアページ → 初めての方へ（中間URLを挟まず直接 301）
 @app.route("/yoyogiuehara/shinkyu")
 def yoyogiuehara_shinkyu_redirect():
-    return redirect(url_for("lp"), code=301)
+    return redirect(url_for("first"), code=301)
 
 
 @app.route("/yakuin/shinkyu")
 def yakuin_shinkyu_redirect():
-    return redirect(url_for("lp"), code=301)
+    return redirect(url_for("first"), code=301)
 
 
 @app.route("/tokyo/seitai")
@@ -6454,7 +6451,7 @@ def sitemap():
             ("/form", "weekly"),
             ("/blog", "daily"),
             ("/news", "daily"),
-            ("/lp", "monthly"),
+            ("/first", "weekly"),
             ("/tokyo/seitai", "weekly"),
             ("/tokyo/shinkyu", "weekly"),
             ("/fukuoka/seitai", "weekly"),
