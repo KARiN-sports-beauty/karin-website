@@ -130,22 +130,22 @@
   text-align: left;
   color: #1E3A5F;
   background-color: #f4f1ec;
-  overflow: hidden;
+  background-image: url("../images/beautyfv.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: left center;
 }
 
 .beauty-page .ts-hero::before {
   content: "";
   position: absolute;
-  inset: -16px;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: #f4f1ec;
-  background-image: url("../images/beautyfv.jpg");
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: left center;
-  filter: blur(2px);
-  transform: scale(1.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
+  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
 }
 
 .beauty-page .ts-hero::after {
@@ -154,10 +154,6 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
-  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.72) 14%, rgba(0, 0, 0, 0.28) 36%, transparent 62%);
   background:
     radial-gradient(
       ellipse 78% 86% at 88% 50%,
@@ -703,18 +699,17 @@
     padding: 88px 7% 72px;
     align-items: flex-end;
     justify-content: flex-end;
+    background-position: 30% center;
   }
 
   .beauty-page .ts-hero::before {
-    background-position: 30% center;
-    filter: blur(1.5px);
-  }
-
-  .beauty-page .ts-hero::after {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
     mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 48%, #000 100%);
+  }
+
+  .beauty-page .ts-hero::after {
     background:
       linear-gradient(
         180deg,

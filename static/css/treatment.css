@@ -162,6 +162,14 @@
   body.treatment-page:not(.training-page):not(.trainer-page).is-past-hero .nav-consult {
     border-color: #1E3A5F;
   }
+
+  body.treatment-page:not(.training-page):not(.trainer-page):not(.is-past-hero) .site-nav > a[href*="#profile"],
+  body.treatment-page:not(.training-page):not(.trainer-page):not(.is-past-hero) .site-nav > a[href="/schedule"] {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
+  }
 }
 
 @media (hover: hover) and (min-width: 1025px) {
@@ -197,13 +205,10 @@
   grid-area: auto;
   width: 100%;
   height: 100%;
-  overflow: hidden;
 }
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
   object-position: 62% 46%;
-  filter: blur(2px);
-  transform: scale(1.05);
   -webkit-mask-image: none;
   mask-image: none;
 }
@@ -796,8 +801,6 @@
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
     object-position: 68% 44%;
-    filter: blur(2px);
-    transform: scale(1.05);
   }
 
   .tx-section {
@@ -936,8 +939,6 @@
 
   .treatment-page:not(.training-page):not(.trainer-page) .tx-hero-media img {
     object-position: 68% 24%;
-    filter: blur(1.5px);
-    transform: scale(1.05);
     -webkit-mask-image: none;
     mask-image: none;
   }
