@@ -1108,6 +1108,7 @@ body.index-page.is-header-on-logo .hamburger span {
   margin-top: 25px;
   margin-bottom: 50px;
   opacity: 0.9;
+  text-align: center;
 }
 
 /* カードリスト */
@@ -1689,6 +1690,7 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.82;
   margin: 0 0 28px;
+  text-align: center;
 }
 
 .initial-close-ctas {
@@ -2192,6 +2194,7 @@ body.index-page .access-section .area-hours-lead {
   line-height: 1.95;
   color: #1E3A5F;
   opacity: 0.9;
+  text-align: center;
 }
 
 body.index-page .access-section .area-hours {
@@ -2328,6 +2331,7 @@ body.index-page .access-section .access-schedule-lead {
   line-height: 1.85;
   color: #1E3A5F;
   opacity: 0.8;
+  text-align: center;
 }
 
 body.index-page .access-section .access-schedule-note {
@@ -2639,14 +2643,16 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .contact-cta-note {
-  margin: 12px 0 0;
+  width: fit-content;
   max-width: 240px;
+  margin: 12px auto 0;
   font-size: 0.72rem;
   font-weight: 400;
   color: #8a97a8;
   line-height: 1.65;
   letter-spacing: 0.02em;
   white-space: normal;
+  text-align: left;
 }
 
 /* ---------- 各ボタン ---------- */
@@ -3869,12 +3875,7 @@ section[id],
 
 @media (max-width: 1024px) {
   body.index-page .initial-lead,
-  body.index-page .initial-close-text,
-  body.index-page .blog-lead-text,
-  body.index-page .news-section .section-subtitle,
-  body.index-page .access-section .area-hours-lead,
-  body.index-page .access-section .access-schedule-lead,
-  body.index-page .access-section .access-schedule-note {
+  body.index-page .blog-lead-text {
     text-align: left;
   }
 
