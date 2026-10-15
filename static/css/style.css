@@ -1842,6 +1842,33 @@ body.index-page .br-sp {
   padding-top: 0;
 }
 
+.treatment-link-br {
+  display: none;
+}
+
+.treatment-link-tail {
+  white-space: nowrap;
+}
+
+.treatment-card-links .services-link {
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1024px) {
+  .treatment-link-br {
+    display: block;
+  }
+
+  .treatment-card-links .services-link {
+    white-space: normal;
+    letter-spacing: 0.04em;
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+}
+
 .treatment-overview .treatment-note {
   max-width: 1100px;
   margin: 0 auto 36px;
