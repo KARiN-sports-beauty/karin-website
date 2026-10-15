@@ -1213,6 +1213,9 @@ body.index-page.is-header-on-logo .hamburger span {
 
 .intro-content {
   grid-area: content;
+  justify-self: start;
+  width: 100%;
+  max-width: min(43em, 100%);
   color: #1E3A5F;
 }
 
