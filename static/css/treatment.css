@@ -350,6 +350,52 @@
   margin-right: auto;
 }
 
+.treatment-page:not(.training-page):not(.trainer-page) .tx-philosophy .tx-section-lead {
+  max-width: 36em;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 40px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-flow-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  color: #1E3A5F;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-flow-name::after {
+  content: "";
+  display: block;
+  width: calc(100% + 40px);
+  height: 1px;
+  margin-top: 14px;
+  background-color: rgba(192, 160, 98, 0.85);
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child .tx-flow-name::after {
+  width: 40px;
+}
+
+.treatment-page:not(.training-page):not(.trainer-page) .tx-flow-text {
+  margin: 16px 0 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.95;
+  color: #1E3A5F;
+  opacity: 0.82;
+}
+
 .tx-inner {
   max-width: 1100px;
   margin: 0 auto;
@@ -840,6 +886,20 @@
     font-size: 1.08rem;
   }
 
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 32em;
+    margin-top: 40px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-name::after,
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child .tx-flow-name::after {
+    width: 36px;
+  }
+
   .tx-beauty {
     gap: 40px;
   }
@@ -1052,7 +1112,8 @@
 
   .tx-body p,
   .tx-section-lead,
-  .tx-pillar-text {
+  .tx-pillar-text,
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-text {
     font-size: 0.94rem;
     line-height: 2.05;
   }
