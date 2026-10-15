@@ -1051,7 +1051,6 @@
   color: #1E3A5F;
   opacity: 0.7;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-place-note {
@@ -1116,7 +1115,6 @@
   opacity: 0.78;
   text-align: left;
   vertical-align: top;
-  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-flow-list li > p:not(.ts-num) {
@@ -1133,7 +1131,6 @@
   margin-left: auto;
   margin-right: auto;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) #ts-price-heading + .ts-section-lead {

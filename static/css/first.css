@@ -404,7 +404,6 @@
   margin-right: auto;
   margin-left: auto;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .first-page .first-guide-more {
@@ -677,7 +676,6 @@
   letter-spacing: 0.04em;
   color: #1E3A5F;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .first-page .first-next {
@@ -702,7 +700,6 @@
   margin-right: auto;
   margin-left: auto;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .first-page .first-next-benefit {
@@ -742,7 +739,6 @@
   max-width: 100%;
   margin: 12px auto 0;
   text-align: left;
-  word-break: auto-phrase;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
@@ -756,7 +752,6 @@
   max-width: 100%;
   margin: 10px auto 0;
   text-align: left;
-  word-break: auto-phrase;
   font-family: "Noto Sans JP", sans-serif;
   font-size: 0.88rem;
   font-weight: 400;

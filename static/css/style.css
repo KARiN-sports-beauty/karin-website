@@ -784,7 +784,7 @@ body.index-page.is-header-on-logo .hamburger span {
   margin: 0;
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 768px) {
   .about-section {
     padding: 108px 0 120px;
     min-height: 560px;
@@ -828,6 +828,29 @@ body.index-page.is-header-on-logo .hamburger span {
   .about-heading::after {
     left: 0;
     transform: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .about-inner {
+    width: min(520px, calc(100% - 18%));
+    max-width: 520px;
+  }
+
+  .about-section::after {
+    background-image: linear-gradient(
+      90deg,
+      #ffffff 0%,
+      #ffffff 34%,
+      rgba(255, 255, 255, 0.94) 48%,
+      rgba(255, 255, 255, 0.62) 64%,
+      rgba(255, 255, 255, 0.2) 80%,
+      rgba(255, 255, 255, 0) 92%
+    );
+  }
+
+  .about-heading {
+    font-size: clamp(1.42rem, 2.55vw, 1.9rem);
   }
 }
 
@@ -1110,7 +1133,6 @@ body.index-page.is-header-on-logo .hamburger span {
   font-size: 1rem;
   opacity: 0.9;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 /* カードリスト */
@@ -1305,10 +1327,10 @@ body.index-page .br-sp {
 
 /* ---------- 資格・略歴（アコーディオン） ---------- */
 .accordion-btn {
-  display: inline-block;
+  display: block;
   width: max-content;
   max-width: 100%;
-  margin: 28px 0 0;
+  margin: 28px auto 0;
   background: none;
   color: #1E3A5F;
   padding: 0 0 3px;
@@ -1459,7 +1481,6 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.86;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .initial-paths {
@@ -1691,7 +1712,7 @@ body.index-page .br-sp {
 
 .initial-close-text {
   width: fit-content;
-  max-width: 36em;
+  max-width: 100%;
   margin: 0 auto 28px;
   font-size: 0.95rem;
   letter-spacing: 0.03em;
@@ -1699,7 +1720,6 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.82;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .initial-close-ctas {
@@ -1767,7 +1787,6 @@ body.index-page .br-sp {
   line-height: 1.9;
   opacity: 0.9;
   margin-bottom: 60px;
-  word-break: auto-phrase;
 }
 
 .treatment-overview > p {
@@ -1971,7 +1990,6 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.9;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 /* 最新3記事（トップ専用） */
@@ -2212,7 +2230,6 @@ body.index-page .access-section .area-hours-lead {
   color: #1E3A5F;
   opacity: 0.9;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 body.index-page .access-section .area-hours {
@@ -2351,18 +2368,22 @@ body.index-page .access-section .access-schedule-lead {
   color: #1E3A5F;
   opacity: 0.8;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 body.index-page .access-section .access-schedule-note {
   width: fit-content;
-  max-width: min(28em, 100%);
+  max-width: 100%;
   margin: 16px auto 0;
   font-size: 0.85rem;
   line-height: 1.8;
   color: #666;
   text-align: left;
-  word-break: auto-phrase;
+}
+
+@media (min-width: 1025px) {
+  body.index-page .access-section .access-schedule-note {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2638,7 +2659,6 @@ body.index-page .access-section .access-schedule-note {
   color: #4a5f7a;
   line-height: 1.8;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 /* ---------- ボタン全体 ---------- */
@@ -2669,7 +2689,6 @@ body.index-page .access-section .access-schedule-note {
   letter-spacing: 0.02em;
   white-space: normal;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .contact-cta-note {
@@ -2771,7 +2790,6 @@ body.index-page .access-section .access-schedule-note {
   color: #6b7c8f;
   line-height: 1.6;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 
@@ -3411,6 +3429,72 @@ section[id],
   }
 }
 
+/* スマートフォンは見出しを縦に組む。タブレット以上はPCと同じ左テキスト・右写真 */
+@media (max-width: 767px) {
+  .about-section {
+    padding: 88px 8% 96px;
+    min-height: 0;
+    text-align: left;
+  }
+
+  .about-section::before {
+    background-position: 52% 46%;
+  }
+
+  .about-section::after {
+    background-color: rgba(255, 255, 255, 0.86);
+    background-image: none;
+  }
+
+  .about-inner {
+    width: auto;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .about-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12em;
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+    padding-bottom: 22px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .about-heading::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .about-heading-mark {
+    margin: 0;
+    font-size: 0.85em;
+    font-weight: 400;
+    opacity: 0.7;
+    line-height: 1.2;
+  }
+
+  .about-lead {
+    font-size: 1.12rem;
+    line-height: 2;
+    margin: 32px 0 24px;
+  }
+
+  .about-body {
+    font-size: 0.95rem;
+    line-height: 2.2;
+  }
+}
+
 /* ===============================
    🩵 トップページ 768px レスポンシブ調整
    （タブレット縦向き・小型デバイス）
@@ -3450,10 +3534,6 @@ section[id],
   /* ==========================
      About（サービス紹介）
   ========================== */
-  .about-section {
-    padding: 88px 8% 96px;
-  }
-
   /* AOSのスクロール待ちを無効化し、読み込み時にフェードイン */
   .about-section [data-aos] {
     pointer-events: auto !important;
@@ -3470,36 +3550,14 @@ section[id],
   }
 
   .about-heading {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.12em;
-    font-size: 1.8rem;
-    letter-spacing: 0.04em;
-    line-height: 1.45;
-    padding-bottom: 22px;
     animation-delay: 0.5s;
-    text-align: left;
-  }
-
-  .about-heading-mark {
-    margin: 0;
-    font-size: 0.85em;
-    font-weight: 400;
-    opacity: 0.7;
-    line-height: 1.2;
   }
 
   .about-lead {
-    font-size: 1.12rem;
-    line-height: 2;
-    margin: 32px 0 24px;
     animation-delay: 0.85s;
   }
 
   .about-body {
-    font-size: 0.95rem;
-    line-height: 2.2;
     animation-delay: 1.15s;
   }
 
@@ -3643,7 +3701,7 @@ section[id],
   }
 
   .accordion-btn {
-    display: inline-block;
+    display: block;
     margin: 28px auto 0;
     padding: 0 0 3px;
     font-size: 1rem;
@@ -4173,7 +4231,7 @@ section[id],
   }
 
   .accordion-btn {
-    display: inline-block;
+    display: block;
     margin: 24px auto 0;
     padding: 0 0 3px;
     font-size: 1rem;

@@ -1137,7 +1137,6 @@
   color: #1E3A5F;
   opacity: 0.7;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 /* ---------- 流れ ---------- */
@@ -1196,7 +1195,6 @@
   opacity: 0.78;
   text-align: left;
   vertical-align: top;
-  word-break: auto-phrase;
 }
 
 @media (min-width: 1025px) {
@@ -1213,7 +1211,6 @@
   margin-left: auto;
   margin-right: auto;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .ts-price-list {

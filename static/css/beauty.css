@@ -218,11 +218,6 @@
   line-height: 2.05;
   color: rgba(30, 58, 95, 0.88);
   text-align: left;
-  word-break: auto-phrase;
-}
-
-.beauty-page .ts-hero-lead .ts-keep {
-  white-space: nowrap;
 }
 
 .beauty-page .ts-section {
@@ -577,7 +572,6 @@
   margin: 28px auto 0;
   padding-top: 0;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .beauty-page .ts-price-lead p {
@@ -656,7 +650,6 @@
   margin: 36px auto 0;
   padding-top: 0;
   text-align: left;
-  word-break: auto-phrase;
 }
 
 .beauty-page .ts-close-lead p {
