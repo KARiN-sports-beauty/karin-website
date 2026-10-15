@@ -655,6 +655,14 @@
   padding-bottom: 140px;
 }
 
+.treatment-page:not(.training-page):not(.trainer-page) .tx-cta-section .tx-body {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
 .tx-cta-row {
   display: flex;
   justify-content: center;
