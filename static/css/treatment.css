@@ -137,13 +137,22 @@
 
 /* /treatment のFV。写真は全面、文字は左側。trainer・training には当てない。 */
 .treatment-page:not(.training-page):not(.trainer-page) .header {
-  background-color: transparent;
-  background-image: none;
+  background-color: rgba(255, 255, 255, 0.42);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.46) 62%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: none;
   border-bottom: none;
   transition:
     background-color 0.4s ease,
     background-image 0.4s ease,
+    backdrop-filter 0.4s ease,
+    -webkit-backdrop-filter 0.4s ease,
     box-shadow 0.4s ease,
     border-color 0.4s ease;
 }
@@ -162,14 +171,6 @@
   body.treatment-page:not(.training-page):not(.trainer-page).is-past-hero .nav-consult {
     border-color: #1E3A5F;
   }
-
-  body.treatment-page:not(.training-page):not(.trainer-page):not(.is-past-hero) .site-nav > a[href*="#profile"],
-  body.treatment-page:not(.training-page):not(.trainer-page):not(.is-past-hero) .site-nav > a[href="/schedule"] {
-    padding: 2px 8px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
-  }
 }
 
 @media (hover: hover) and (min-width: 1025px) {
@@ -183,7 +184,9 @@
 
 .treatment-page:not(.training-page):not(.trainer-page).is-past-hero .header {
   background-color: #ffffff;
-  background-image: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   border-bottom: 1px solid rgba(30, 58, 95, 0.08);
 }
