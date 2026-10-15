@@ -1446,7 +1446,8 @@ body.index-page .br-sp {
 }
 
 .initial-lead {
-  max-width: 640px;
+  width: fit-content;
+  max-width: 100%;
   margin: 28px auto 0;
   font-size: 0.98rem;
   font-weight: 400;
@@ -1454,6 +1455,7 @@ body.index-page .br-sp {
   line-height: 2.05;
   color: #1E3A5F;
   opacity: 0.86;
+  text-align: left;
 }
 
 .initial-paths {
@@ -1756,6 +1758,14 @@ body.index-page .br-sp {
   margin-bottom: 60px;
 }
 
+.treatment-overview > p {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
 /* カード全体配置 */
 .treatment-preview {
   display: flex;
@@ -1816,6 +1826,20 @@ body.index-page .br-sp {
   max-width: 100%;
   margin-top: auto;
   padding-top: 18px;
+}
+
+.treatment-card-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.treatment-card-links .services-link {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .treatment-overview .treatment-note {
@@ -1895,11 +1919,14 @@ body.index-page .br-sp {
 }
 
 .blog-lead-text {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   font-size: 0.95rem;
   line-height: 1.95;
   color: #1E3A5F;
   opacity: 0.9;
-  margin: 0;
+  text-align: left;
 }
 
 /* 最新3記事（トップ専用） */
@@ -4161,6 +4188,10 @@ section[id],
 
   .treatment-card .services-link {
     align-self: flex-start;
+  }
+
+  .treatment-card-links {
+    align-items: flex-start;
   }
 
   .treatment-card:nth-child(3) {
