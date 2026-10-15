@@ -1860,6 +1860,7 @@ body.index-page .br-sp {
   max-width: 100%;
   margin-top: auto;
   padding-top: 18px;
+  text-align: center;
 }
 
 .treatment-card-links {
@@ -4307,11 +4308,12 @@ section[id],
   }
 
   .treatment-card .services-link {
-    align-self: flex-start;
+    align-self: center;
+    text-align: center;
   }
 
   .treatment-card-links {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .treatment-card:nth-child(3) {
