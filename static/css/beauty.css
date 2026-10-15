@@ -217,6 +217,12 @@
   letter-spacing: 0.06em;
   line-height: 2.05;
   color: rgba(30, 58, 95, 0.88);
+  text-align: left;
+  word-break: auto-phrase;
+}
+
+.beauty-page .ts-hero-lead .ts-keep {
+  white-space: nowrap;
 }
 
 .beauty-page .ts-section {
@@ -566,14 +572,16 @@
 }
 
 .beauty-page .ts-price-lead {
-  max-width: 38em;
+  width: fit-content;
+  max-width: min(38em, 100%);
   margin: 28px auto 0;
   padding-top: 0;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .beauty-page .ts-price-lead p {
-  text-align: center;
+  text-align: left;
 }
 
 .beauty-page .ts-cta-row {
@@ -643,14 +651,16 @@
 }
 
 .beauty-page .ts-close-lead {
-  max-width: 39em;
+  width: fit-content;
+  max-width: min(39em, 100%);
   margin: 36px auto 0;
   padding-top: 0;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .beauty-page .ts-close-lead p {
-  text-align: center;
+  text-align: left;
 }
 
 .beauty-page .ts-close-links {

@@ -23,10 +23,13 @@
 }
 
 .public-schedule-lead {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 22px;
   font-size: 0.92rem;
   line-height: 1.7;
   color: #5b6b80;
-  margin-bottom: 22px;
+  text-align: left;
 }
 
 .public-schedule-list {

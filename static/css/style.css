@@ -1103,12 +1103,14 @@ body.index-page.is-header-on-logo .hamburger span {
 }
 
 .news-section .section-subtitle {
+  width: fit-content;
+  max-width: min(28em, 100%);
+  margin: 25px auto 50px;
   color: #1E3A5F;
   font-size: 1rem;
-  margin-top: 25px;
-  margin-bottom: 50px;
   opacity: 0.9;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 /* カードリスト */
@@ -1448,7 +1450,7 @@ body.index-page .br-sp {
 
 .initial-lead {
   width: fit-content;
-  max-width: 100%;
+  max-width: min(36em, 100%);
   margin: 28px auto 0;
   font-size: 0.98rem;
   font-weight: 400;
@@ -1457,6 +1459,7 @@ body.index-page .br-sp {
   color: #1E3A5F;
   opacity: 0.86;
   text-align: left;
+  word-break: auto-phrase;
 }
 
 .initial-paths {
@@ -1675,22 +1678,28 @@ body.index-page .br-sp {
 }
 
 .initial-close-heading {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 16px;
   font-size: 1.28rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.7;
   color: #1E3A5F;
-  margin: 0 0 16px;
+  text-align: left;
 }
 
 .initial-close-text {
+  width: fit-content;
+  max-width: 36em;
+  margin: 0 auto 28px;
   font-size: 0.95rem;
   letter-spacing: 0.03em;
   line-height: 2;
   color: #1E3A5F;
   opacity: 0.82;
-  margin: 0 0 28px;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .initial-close-ctas {
@@ -1758,11 +1767,12 @@ body.index-page .br-sp {
   line-height: 1.9;
   opacity: 0.9;
   margin-bottom: 60px;
+  word-break: auto-phrase;
 }
 
 .treatment-overview > p {
   width: fit-content;
-  max-width: 100%;
+  max-width: min(36em, 100%);
   margin-left: auto;
   margin-right: auto;
   text-align: left;
@@ -1872,11 +1882,13 @@ body.index-page .br-sp {
 }
 
 .treatment-overview .treatment-note {
-  max-width: 1100px;
+  width: fit-content;
+  max-width: min(36em, 100%);
   margin: 0 auto 36px;
   font-size: 0.98rem;
   line-height: 1.95;
   opacity: 0.88;
+  text-align: left;
 }
 
 /* CTA（サービスと同じテキストリンク） */
@@ -1939,23 +1951,27 @@ body.index-page .br-sp {
 }
 
 .blog-lead-catch {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
   font-size: 1.05rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   color: #1E3A5F;
-  margin: 0 0 14px;
   line-height: 1.7;
+  text-align: left;
 }
 
 .blog-lead-text {
   width: fit-content;
-  max-width: 100%;
+  max-width: min(36em, 100%);
   margin: 0 auto;
   font-size: 0.95rem;
   line-height: 1.95;
   color: #1E3A5F;
   opacity: 0.9;
   text-align: left;
+  word-break: auto-phrase;
 }
 
 /* 最新3記事（トップ専用） */
@@ -2188,13 +2204,15 @@ body.index-page #contact-section {
 
 /* ---------- 対応エリア（ファイル風・専用） ---------- */
 body.index-page .access-section .area-hours-lead {
-  max-width: 560px;
+  width: fit-content;
+  max-width: min(34em, calc(100% - 40px));
   margin: 0 auto 32px;
   font-size: 0.98rem;
   line-height: 1.95;
   color: #1E3A5F;
   opacity: 0.9;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 body.index-page .access-section .area-hours {
@@ -2325,22 +2343,26 @@ body.index-page .access-section .area-hours-divider {
 }
 
 body.index-page .access-section .access-schedule-lead {
-  max-width: 480px;
+  width: fit-content;
+  max-width: min(34em, 100%);
   margin: 0 auto 28px;
   font-size: 0.92rem;
   line-height: 1.85;
   color: #1E3A5F;
   opacity: 0.8;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 body.index-page .access-section .access-schedule-note {
-  text-align: center;
+  width: fit-content;
+  max-width: min(28em, 100%);
+  margin: 16px auto 0;
   font-size: 0.85rem;
   line-height: 1.8;
   color: #666;
-  margin: 16px auto 0;
-  max-width: 520px;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 @media (max-width: 768px) {
@@ -2609,10 +2631,14 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .contact-text {
+  width: fit-content;
+  max-width: min(36em, 100%);
+  margin: 0 auto 40px;
   font-size: 1rem;
   color: #4a5f7a;
-  margin-bottom: 40px;
   line-height: 1.8;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 /* ---------- ボタン全体 ---------- */
@@ -2633,13 +2659,17 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .contact-cta-lead {
-  margin: 0 0 14px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
   font-size: 0.9rem;
   font-weight: 400;
   color: #4a5f7a;
   line-height: 1.7;
   letter-spacing: 0.02em;
   white-space: normal;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .contact-cta-note {
@@ -2734,13 +2764,14 @@ body.index-page .access-section .access-schedule-note {
 }
 
 .contact-booking-note {
-  width: 100%;
-  max-width: 420px;
+  width: fit-content;
+  max-width: min(28em, 100%);
   margin: -6px auto 4px;
   font-size: 0.82rem;
   color: #6b7c8f;
   line-height: 1.6;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 
@@ -4310,7 +4341,7 @@ section[id],
   }
 
   .contact-text {
-    text-align: center;
+    text-align: left;
     margin-top: 8px;
     margin-bottom: 30px;
   }
@@ -4414,12 +4445,6 @@ section[id],
   ========================== */
   section {
     padding: 60px 5% !important;
-  }
-
-  body.index-page .access-section .area-hours-lead {
-    padding-left: 20px;
-    padding-right: 20px;
-    box-sizing: border-box;
   }
 
   /* ==========================

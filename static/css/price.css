@@ -36,10 +36,16 @@
 }
 
 .price-lead {
+  width: fit-content;
+  max-width: min(36em, 100%);
+  margin-left: auto;
+  margin-right: auto;
   font-size: 0.95rem;
   line-height: 1.8;
   color: #1E3A5F;
   opacity: 0.9;
+  word-break: auto-phrase;
+  text-align: left;
 }
 
 /* ========== 2カラム（東京/福岡） ========== */

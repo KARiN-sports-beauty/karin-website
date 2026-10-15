@@ -32,11 +32,14 @@ body {
 }
 
 .form-lead {
-  text-align: center;
+  width: fit-content;
+  max-width: min(36em, 100%);
+  margin: 0 auto 40px;
   color: #1E3A5F;
   font-size: 0.95rem;
   line-height: 1.8;
-  margin-bottom: 40px;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .form-lead-br-pc {

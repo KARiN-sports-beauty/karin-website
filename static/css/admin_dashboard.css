@@ -2238,11 +2238,12 @@ form .admin-news-btn {
 
 .admin-resv-day-badge {
   margin-top: 2px;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: 1.2;
   opacity: 0.9;
+  white-space: nowrap;
 }
 
 .admin-resv-day.tokyo-day .admin-resv-day-badge,

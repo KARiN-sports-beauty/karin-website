@@ -387,13 +387,7 @@
           'tokyo': 'tokyo-day',
           'fukuoka': 'fukuoka-day'
         }.get(day_status, 'unset-day') %}
-        {% set day_badge = {
-          'tokyo': '東',
-          'fukuoka': '福',
-          'field': '帯',
-          'off': '休',
-          'unset': ''
-        }.get(day_status, '') %}
+        {% set day_badge = shift_badge_map.get(day_key, '') %}
         
         <a href="/admin/reservations?ym={{ current_ym }}&day={{ day_key }}&place_type={{ place_type_filter }}&staff={{ staff_filter }}" 
            data-day="{{ day_key }}"
@@ -694,6 +688,9 @@ document.addEventListener('DOMContentLoaded', function() {
         syncTimeInputsForMode();
         if (mode === 'field') {
           workTimeMessage.textContent = '帯同日: 時間を設定し、タイムラインに帯同カードを置けます。公開スケジュールは「休」、Web予約は受付不可です。';
+          workTimeMessage.style.color = '#64748b';
+        } else if (mode === 'clinic') {
+          workTimeMessage.textContent = 'この時間と別に帯同がある日は、タイムラインへ帯同予定を置いてください。早い方が前に出ます。';
           workTimeMessage.style.color = '#64748b';
         } else if (mode === 'off') {
           workTimeMessage.textContent = '休み設定中: この日は全時間グレー表示になります。';

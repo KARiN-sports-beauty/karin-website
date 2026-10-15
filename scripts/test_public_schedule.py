@@ -47,6 +47,7 @@ def main():
         }
 
     appmod.fetch_staff_shifts_in_range = fake_fetch
+    appmod.fetch_staff_field_blocks_in_range = lambda name, start_date, end_date: {}
     entries = appmod.build_public_schedule_entries(start, end, today=today)
     dates = [e["date"] for e in entries]
     report(len(entries) == 14 and dates[0] == "2026-10-03" and dates[-1] == "2026-10-16", "14件で10/3開始・10/16終了", str(dates))
@@ -78,6 +79,99 @@ def main():
     report("10月3日" in html and "10月16日" in html and "10月17日" not in html and "10月2日" not in html, "ページは10/3〜10/16だけ")
     report("トレーナー帯同" in html and "休業" in html and "東京（代々木上原）" in html and "福岡（薬院）" in html, "専用ページの区分表示")
     report(html.count("public-schedule-day") == 14, "日付行は14")
+
+    def entry(mode, area, start_hm, end_hm, fields):
+        row = {
+            "work_mode": mode,
+            "area": area,
+            "is_off": mode == "off",
+            "start_time": start_hm,
+            "end_time": end_hm,
+        }
+        return appmod.make_public_schedule_entry(date(2026, 10, 5), row, fields)
+
+    tokyo_then_field = entry("clinic", "tokyo", "12:00", "16:00", [(17 * 60, 22 * 60)])
+    report(
+        tokyo_then_field["place"] == "東京（代々木上原）"
+        and tokyo_then_field["detail_place"] == "東京（代々木上原）/トレーナー帯同"
+        and tokyo_then_field["badge"] == "東/帯"
+        and tokyo_then_field["status"] == "tokyo",
+        "昼東京・夕方帯同は東京が前",
+        str(tokyo_then_field),
+    )
+    field_then_tokyo = entry("clinic", "tokyo", "13:00", "19:00", [(10 * 60, 13 * 60)])
+    report(
+        field_then_tokyo["place"] == "東京（代々木上原）"
+        and field_then_tokyo["detail_place"] == "トレーナー帯同/東京（代々木上原）"
+        and field_then_tokyo["badge"] == "帯/東",
+        "朝帯同・午後東京は帯同が前、トップは東京",
+        str(field_then_tokyo),
+    )
+    fukuoka_then_field = entry("clinic", "fukuoka", "10:00", "15:00", [(16 * 60, 20 * 60)])
+    report(
+        fukuoka_then_field["place"] == "福岡（薬院）"
+        and fukuoka_then_field["detail_place"] == "福岡（薬院）/トレーナー帯同"
+        and fukuoka_then_field["badge"] == "福/帯",
+        "福岡のあとに帯同",
+        str(fukuoka_then_field),
+    )
+    field_then_fukuoka = entry("clinic", "fukuoka", "14:00", "19:00", [(9 * 60, 12 * 60)])
+    report(
+        field_then_fukuoka["place"] == "福岡（薬院）"
+        and field_then_fukuoka["detail_place"] == "トレーナー帯同/福岡（薬院）"
+        and field_then_fukuoka["badge"] == "帯/福",
+        "帯同のあとに福岡、トップは福岡",
+        str(field_then_fukuoka),
+    )
+    split_tokyo = entry("clinic", "tokyo", "10:00", "19:00", [(12 * 60, 14 * 60)])
+    report(
+        split_tokyo["detail_place"] == "東京（代々木上原）/トレーナー帯同/東京（代々木上原）"
+        and split_tokyo["badge"] == "東/帯/東"
+        and split_tokyo["place"] == "東京（代々木上原）",
+        "勤務時間の途中の帯同は前後に東京",
+        str(split_tokyo),
+    )
+    field_day = entry("field", None, "10:00", "19:00", [(17 * 60, 22 * 60)])
+    report(
+        field_day["place"] == "休" and field_day["detail_place"] == "トレーナー帯同" and field_day["badge"] == "帯",
+        "帯同だけの日は組み合わせない",
+        str(field_day),
+    )
+    off_day = entry("off", None, "10:00", "19:00", [(10 * 60, 12 * 60)])
+    report(
+        off_day["place"] == "休" and off_day["detail_place"] == "休業" and off_day["badge"] == "休",
+        "休みの日は帯同予定があっても休業",
+        str(off_day),
+    )
+    clinic_only = entry("clinic", "tokyo", "12:00", "19:00", None)
+    report(
+        clinic_only["place"] == "東京（代々木上原）" and clinic_only["detail_place"] == "東京（代々木上原）" and clinic_only["badge"] == "東",
+        "帯同予定がなければ東京だけ",
+        str(clinic_only),
+    )
+
+    blocks = appmod.field_blocks_by_day(
+        [
+            {"place_type": "field", "status": "reserved", "reserved_at": "2026-10-05T08:00:00+09:00", "duration_minutes": 180},
+            {"place_type": "field", "status": "canceled", "reserved_at": "2026-10-05T17:00:00+09:00", "duration_minutes": 120},
+            {"place_type": "in_house", "status": "reserved", "reserved_at": "2026-10-05T12:00:00+09:00", "duration_minutes": 60},
+            {"place_type": "field", "status": "reserved", "reserved_at": "2026-10-06T10:00:00+09:00", "duration_minutes": 60},
+        ],
+        date(2026, 10, 5),
+        date(2026, 10, 6),
+    )
+    report(blocks.get("2026-10-05") == [(8 * 60, 11 * 60)], "キャンセルと帯同以外は除く", str(blocks))
+    report(blocks.get("2026-10-06") == [(10 * 60, 11 * 60)], "翌日の帯同は別の日", str(blocks))
+
+    appmod.fetch_staff_shifts_in_range = lambda name, start_date, end_date: {
+        "2026-10-05": {"work_mode": "clinic", "area": "tokyo", "is_off": False, "start_time": "12:00", "end_time": "16:00"},
+    }
+    appmod.fetch_staff_field_blocks_in_range = lambda name, start_date, end_date: {
+        "2026-10-05": [(17 * 60, 22 * 60)],
+    }
+    status_map, badge_map = appmod.build_calendar_shift_marks(2026, 10)
+    report(status_map["2026-10-05"] == "tokyo" and badge_map["2026-10-05"] == "東/帯", "管理カレンダーは東/帯", f"{badge_map.get('2026-10-05')}")
+    report(status_map["2026-10-01"] == "unset" and badge_map["2026-10-01"] == "", "未登録日のバッジは空")
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

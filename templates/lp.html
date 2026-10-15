@@ -531,7 +531,12 @@
     }
 
     .worries__message {
-      text-align: center;
+      width: fit-content;
+      max-width: min(28em, 100%);
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      word-break: auto-phrase;
       font-family: var(--font-display);
       font-size: clamp(17px, 2.2vw, 22px);
       font-weight: 300;
@@ -626,9 +631,14 @@
     }
 
     .philosophy__lead {
+      width: fit-content;
+      max-width: min(28em, 100%);
+      margin-left: auto;
+      margin-right: auto;
       font-size: 15px;
       color: var(--stone-600);
-      text-align: center;
+      text-align: left;
+      word-break: auto-phrase;
       line-height: 1.9;
       font-weight: 300;
       margin-top: 16px;
@@ -697,10 +707,16 @@
       color: var(--stone-600);
       line-height: 1.85;
       font-weight: 300;
+      word-break: auto-phrase;
     }
 
     .philosophy__footer {
-      text-align: center;
+      width: fit-content;
+      max-width: min(24em, 100%);
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      word-break: auto-phrase;
       font-family: var(--font-display);
       font-size: clamp(18px, 2.4vw, 24px);
       font-weight: 300;
@@ -784,14 +800,25 @@
     }
 
     .flow-step__body {
+      width: fit-content;
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
       font-size: 12.5px;
       color: var(--stone-600);
       line-height: 1.85;
       font-weight: 300;
+      text-align: left;
+      word-break: auto-phrase;
     }
 
     .flow__note {
-      text-align: center;
+      width: fit-content;
+      max-width: min(28em, 100%);
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      word-break: auto-phrase;
       margin-top: 48px;
       font-size: 13px;
       color: var(--stone-400);
@@ -947,6 +974,7 @@
       line-height: 1.95;
       font-weight: 300;
       margin-bottom: 18px;
+      word-break: auto-phrase;
     }
 
     .trial__body strong {

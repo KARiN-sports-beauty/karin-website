@@ -61,10 +61,13 @@
       margin: 0 0 6px;
     }
     .lead {
-      text-align: center;
+      width: fit-content;
+      max-width: min(36em, 100%);
+      margin: 0 auto 24px;
       font-size: 0.88rem;
       color: var(--muted);
-      margin: 0 0 24px;
+      text-align: left;
+      word-break: auto-phrase;
     }
     .lead a {
       color: var(--navy);
@@ -520,7 +523,7 @@
   <div class="page">
     <a href="{{ url_for('index') }}" class="back-link">← トップに戻る</a>
     <h1>ご予約</h1>
-    <p class="lead">東京・福岡の院内（準備中）/出張をご予約いただけます。<br>帯同および12時間以内のご予約は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
+    <p class="lead">東京・福岡の院内（準備中）/出張をご予約いただけます。帯同および12時間以内のご予約は<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener">公式LINE</a>または<a href="{{ url_for('contact') }}">お問い合わせフォーム</a>をご利用ください。</p>
 
     <div class="card is-active" id="step-area" data-step="1">
       <h2><span class="step-num">1</span>ご希望のエリア<span class="step-summary" id="summary-1"></span><button type="button" class="step-edit hidden" data-edit="1">変更</button></h2>

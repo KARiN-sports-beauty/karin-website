@@ -1127,7 +1127,8 @@
 }
 
 .ts-place-note {
-  max-width: 36em;
+  width: fit-content;
+  max-width: min(36em, 100%);
   margin: 20px auto 0;
   font-size: 0.86rem;
   font-weight: 400;
@@ -1135,7 +1136,8 @@
   line-height: 1.9;
   color: #1E3A5F;
   opacity: 0.7;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 /* ---------- 流れ ---------- */
@@ -1194,6 +1196,7 @@
   opacity: 0.78;
   text-align: left;
   vertical-align: top;
+  word-break: auto-phrase;
 }
 
 @media (min-width: 1025px) {
@@ -1205,10 +1208,12 @@
 
 /* ---------- 料金 ---------- */
 #ts-price-heading + .ts-section-lead {
-  max-width: 28em;
+  width: fit-content;
+  max-width: min(28em, 100%);
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .ts-price-list {

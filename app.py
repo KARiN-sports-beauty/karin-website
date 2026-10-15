@@ -613,6 +613,114 @@ def calendar_status_for_mode(mode, area=None):
     return "unset"
 
 
+CALENDAR_BADGES = {
+    "tokyo": "東",
+    "fukuoka": "福",
+    "field": "帯",
+    "off": "休",
+    "unset": "",
+}
+
+
+def merge_minute_intervals(intervals):
+    """重なる分区間をまとめる。終了が開始以下の区間は捨てる。"""
+    items = sorted((int(a), int(b)) for a, b in (intervals or []) if int(b) > int(a))
+    if not items:
+        return []
+    merged = [[items[0][0], items[0][1]]]
+    for start_min, end_min in items[1:]:
+        if start_min <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end_min)
+        else:
+            merged.append([start_min, end_min])
+    return [(start_min, end_min) for start_min, end_min in merged]
+
+
+def remaining_minute_intervals(start_min, end_min, blocks):
+    """[start, end) から blocks を除いた残り。"""
+    if start_min is None or end_min is None or end_min <= start_min:
+        return []
+    cursor = start_min
+    pieces = []
+    for block_start, block_end in merge_minute_intervals(blocks):
+        if block_end <= cursor or block_start >= end_min:
+            continue
+        if block_start > cursor:
+            pieces.append((cursor, min(block_start, end_min)))
+        cursor = max(cursor, block_end)
+        if cursor >= end_min:
+            break
+    if cursor < end_min:
+        pieces.append((cursor, end_min))
+    return [(a, b) for a, b in pieces if b > a]
+
+
+def compose_split_day_labels(mode, area, start_min, end_min, field_intervals):
+    """東京・福岡の勤務と帯同予定が同じ日にあるときの表示。
+
+    早い方を前にする。帯同だけの日や休みは対象外。
+    place はトップ用で、東京または福岡を優先する。
+    """
+    if mode != "clinic":
+        return None
+    fields = merge_minute_intervals(field_intervals)
+    if not fields:
+        return None
+    area_key = "fukuoka" if normalize_staff_area(area) == "fukuoka" else "tokyo"
+    location = PUBLIC_PLACE_FUKUOKA if area_key == "fukuoka" else PUBLIC_PLACE_TOKYO
+    short = CALENDAR_BADGES[area_key]
+    markers = []
+    remain = remaining_minute_intervals(start_min, end_min, fields)
+    if start_min is not None and end_min is not None and end_min > start_min and not remain:
+        # 勤務時間が帯同で埋まる。同時刻なら帯同を前にする。
+        markers.append((start_min, "clinic", 1))
+    elif remain:
+        for piece_start, _piece_end in remain:
+            markers.append((piece_start, "clinic", 0))
+    else:
+        markers.append((fields[0][0] - 1, "clinic", 0))
+    for field_start, _field_end in fields:
+        markers.append((field_start, "field", 0))
+    markers.sort(key=lambda item: (item[0], item[2], 0 if item[1] == "field" else 1))
+    kinds = []
+    for _minute, kind, _tie in markers:
+        if not kinds or kinds[-1] != kind:
+            kinds.append(kind)
+    detail_for = {"clinic": location, "field": PUBLIC_PLACE_FIELD}
+    badge_for = {"clinic": short, "field": CALENDAR_BADGES["field"]}
+    return {
+        "place": location,
+        "detail_place": "/".join(detail_for[kind] for kind in kinds),
+        "badge": "/".join(badge_for[kind] for kind in kinds),
+        "status": area_key,
+    }
+
+
+def field_blocks_by_day(rows, start_date, end_date):
+    """帯同予定を日付ごとの (開始分, 終了分) に分ける。キャンセルは含めない。"""
+    grouped = {}
+    for row in rows or []:
+        if (row.get("place_type") or "") != "field":
+            continue
+        if (row.get("status") or "") == "canceled":
+            continue
+        start = parse_iso_to_jst(row.get("reserved_at"))
+        if start is None:
+            continue
+        day = start.date()
+        if day < start_date or day > end_date:
+            continue
+        try:
+            duration = int(row.get("duration_minutes") or 0)
+        except (TypeError, ValueError):
+            duration = 0
+        if duration <= 0:
+            duration = time_block_default_duration_minutes("field")
+        start_min = start.hour * 60 + start.minute
+        grouped.setdefault(day.strftime("%Y-%m-%d"), []).append((start_min, start_min + duration))
+    return grouped
+
+
 def reservation_place_type_label(place_type):
     """予定の区分表示名。"""
     labels = {
@@ -1740,13 +1848,6 @@ def fetch_booking_day_shifts(day_str, staff_names):
         return {}
 
 
-def staff_field_only_on_day(staff_name, day_reservations):
-    rows = [r for r in day_reservations if (r.get("staff_name") or "").strip() == staff_name]
-    if not rows:
-        return False
-    return all((r.get("place_type") or "") == "field" for r in rows)
-
-
 def reservation_interval_jst(row):
     try:
         start = datetime.fromisoformat(str(row.get("reserved_at", "")).replace("Z", "+00:00")).astimezone(JST)
@@ -1790,8 +1891,6 @@ def working_staff_for_booking_day(area, day_str, staff_entries, shifts_map, day_
             continue
         shift_row = shifts_map.get(name)
         if resolve_shift_work_mode(shift_row) != "clinic":
-            continue
-        if staff_field_only_on_day(name, day_reservations):
             continue
         st_min, ed_min = shift_open_minutes(shift_row)
         if st_min is None:
@@ -3013,22 +3112,58 @@ def clamp_public_schedule_range(start_date, end_date, today=None):
     return start, end_date
 
 
-def make_public_schedule_entry(day, row):
+def make_public_schedule_entry(day, row, field_intervals=None):
     """1日分の公開スケジュール。place はトップ用、detail_place は /schedule 用。"""
     day_str = day.strftime("%Y-%m-%d")
     mode = resolve_shift_work_mode(row)
     area = (row or {}).get("area")
+    status = calendar_status_for_mode(mode, area)
+    place = public_place_label_for_mode(mode, area)
+    detail_place = public_schedule_detail_label(mode, area)
+    badge = CALENDAR_BADGES.get(status, "")
+    start_min, end_min = shift_open_minutes(row)
+    mixed = compose_split_day_labels(mode, area, start_min, end_min, field_intervals)
+    if mixed:
+        place = mixed["place"]
+        detail_place = mixed["detail_place"]
+        status = mixed["status"]
+        badge = mixed["badge"]
     return {
         "date": day_str,
-        "place": public_place_label_for_mode(mode, area),
-        "detail_place": public_schedule_detail_label(mode, area),
-        "status": calendar_status_for_mode(mode, area),
+        "place": place,
+        "detail_place": detail_place,
+        "status": status,
+        "badge": badge,
         "work_mode": mode,
         "area": normalize_staff_area(area) if mode == "clinic" else None,
         "month": day_str[5:7],
         "day": day_str[8:10],
         "weekday": PUBLIC_SCHEDULE_WEEKDAYS[day.weekday()],
     }
+
+
+def fetch_staff_field_blocks_in_range(staff_name, start_date, end_date):
+    """公開オーナーの帯同予定。{ 'YYYY-MM-DD': [(開始分, 終了分), ...] }"""
+    name = (staff_name or "").strip()
+    if not name or end_date < start_date:
+        return {}
+    win_start = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=JST)
+    win_end = datetime.combine(end_date + timedelta(days=1), datetime.min.time()).replace(tzinfo=JST)
+    try:
+        res = (
+            supabase_admin.table("reservations")
+            .select("reserved_at, duration_minutes, place_type, status")
+            .eq("staff_name", name)
+            .eq("place_type", "field")
+            .neq("status", "canceled")
+            .gte("reserved_at", win_start.isoformat())
+            .lt("reserved_at", win_end.isoformat())
+            .execute()
+        )
+        return field_blocks_by_day(res.data or [], start_date, end_date)
+    except Exception as e:
+        print(f"❌ 帯同予定の範囲取得エラー: {e}")
+        return {}
 
 
 def build_public_schedule_entries(start_date, end_date, today=None):
@@ -3038,10 +3173,12 @@ def build_public_schedule_entries(start_date, end_date, today=None):
         return []
     start, end = span
     shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start, end)
+    field_blocks = fetch_staff_field_blocks_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start, end)
     entries = []
     day = start
     while day <= end:
-        entries.append(make_public_schedule_entry(day, shifts.get(day.strftime("%Y-%m-%d"))))
+        day_str = day.strftime("%Y-%m-%d")
+        entries.append(make_public_schedule_entry(day, shifts.get(day_str), field_blocks.get(day_str)))
         day += timedelta(days=1)
     return entries
 
@@ -3125,8 +3262,8 @@ def build_gbp_schedule_entries(start_date, end_date, profile):
     return entries
 
 
-def build_calendar_shift_status_map(year, month, staff_name=None):
-    """管理カレンダー用 {YYYY-MM-DD: status}。既定は公開オーナー。"""
+def build_calendar_shift_marks(year, month, staff_name=None):
+    """管理カレンダー用の色とバッジ。既定は公開オーナー。未登録日は unset。"""
     name = (staff_name or PUBLIC_SCHEDULE_STAFF_NAME).strip()
     start = datetime(year, month, 1, tzinfo=JST).date()
     if month == 12:
@@ -3134,15 +3271,22 @@ def build_calendar_shift_status_map(year, month, staff_name=None):
     else:
         end = datetime(year, month + 1, 1, tzinfo=JST).date() - timedelta(days=1)
     shifts = fetch_staff_shifts_in_range(name, start, end)
+    field_blocks = fetch_staff_field_blocks_in_range(name, start, end)
     status_map = {}
-    # 月内全日を埋め、未登録日は unset
-    d = start
-    while d <= end:
-        day_str = d.strftime("%Y-%m-%d")
-        row = shifts.get(day_str)
-        mode = resolve_shift_work_mode(row)
-        status_map[day_str] = calendar_status_for_mode(mode, (row or {}).get("area"))
-        d += timedelta(days=1)
+    badge_map = {}
+    day = start
+    while day <= end:
+        day_str = day.strftime("%Y-%m-%d")
+        entry = make_public_schedule_entry(day, shifts.get(day_str), field_blocks.get(day_str))
+        status_map[day_str] = entry["status"]
+        badge_map[day_str] = entry["badge"]
+        day += timedelta(days=1)
+    return status_map, badge_map
+
+
+def build_calendar_shift_status_map(year, month, staff_name=None):
+    """管理カレンダー用 {YYYY-MM-DD: status}。既定は公開オーナー。"""
+    status_map, _badge_map = build_calendar_shift_marks(year, month, staff_name=staff_name)
     return status_map
 
 
@@ -7080,8 +7224,10 @@ def admin_reservations():
             next_month_first = datetime(current_date.year, current_date.month + 1, 1, tzinfo=JST)
         days_in_month = (next_month_first - current_date).days
         
-        # カレンダー表示用ステータス（オーナーの work_mode）
-        shift_status_map = build_calendar_shift_status_map(current_date.year, current_date.month)
+        # カレンダー表示用ステータス（オーナーの work_mode と帯同予定）
+        shift_status_map, shift_badge_map = build_calendar_shift_marks(
+            current_date.year, current_date.month
+        )
 
         tl = _build_reservation_timeline_context(
             reservations_of_day, staff_entries, staff_filter, selected_day
@@ -7105,6 +7251,7 @@ def admin_reservations():
             now_jst=now_jst,
             schedule_map=shift_status_map,
             shift_status_map=shift_status_map,
+            shift_badge_map=shift_badge_map,
             shift_can_edit_all=(viewer_is_admin or viewer_is_reception),
             viewer_staff_name=viewer_name,
             viewer_is_admin=viewer_is_admin,

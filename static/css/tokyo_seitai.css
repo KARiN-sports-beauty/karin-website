@@ -1041,7 +1041,8 @@
 }
 
 .ts-place-note {
-  max-width: 36em;
+  width: fit-content;
+  max-width: min(36em, 100%);
   margin: 20px auto 0;
   font-size: 0.86rem;
   font-weight: 400;
@@ -1049,7 +1050,8 @@
   line-height: 1.9;
   color: #1E3A5F;
   opacity: 0.7;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-place-note {
@@ -1103,6 +1105,8 @@
 }
 
 .ts-flow-list li > p:not(.ts-num) {
+  display: inline-block;
+  max-width: 100%;
   margin: 0;
   font-size: 0.82rem;
   font-weight: 400;
@@ -1110,6 +1114,9 @@
   line-height: 1.8;
   color: #1E3A5F;
   opacity: 0.78;
+  text-align: left;
+  vertical-align: top;
+  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) .ts-flow-list li > p:not(.ts-num) {
@@ -1121,10 +1128,12 @@
 
 /* ---------- 料金 ---------- */
 #ts-price-heading + .ts-section-lead {
-  max-width: 28em;
+  width: fit-content;
+  max-width: min(28em, 100%);
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .tokyo-seitai-page:not(.fukuoka-seitai-page) #ts-price-heading + .ts-section-lead {

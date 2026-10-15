@@ -133,6 +133,12 @@
   line-height: 1.9;
   color: #1E3A5F;
   opacity: 0.72;
+  text-align: left;
+  word-break: auto-phrase;
+}
+
+.tx-hero-lead .tx-keep {
+  white-space: nowrap;
 }
 
 /* /treatment のFV。写真は全面、文字は左側。trainer・training には当てない。 */
@@ -425,6 +431,7 @@
   color: #1E3A5F;
   margin: 0 0 12px;
   padding: 0 0 16px;
+  text-align: left;
 }
 
 .tx-heading::after {
@@ -462,6 +469,7 @@
   color: #1E3A5F;
   opacity: 0.86;
   margin: 0 0 1.1em;
+  word-break: auto-phrase;
 }
 
 .tx-body p:last-child {
@@ -473,12 +481,16 @@
 }
 
 .tx-section-lead {
+  width: fit-content;
+  max-width: min(40em, 100%);
   margin: 28px auto 0;
   font-size: 0.98rem;
   letter-spacing: 0.03em;
   line-height: 2;
   color: #1E3A5F;
   opacity: 0.86;
+  text-align: left;
+  word-break: auto-phrase;
 }
 
 .tx-catch {
@@ -713,7 +725,7 @@
 
 .treatment-page:not(.training-page):not(.trainer-page) .tx-cta-section .tx-body {
   width: fit-content;
-  max-width: 100%;
+  max-width: min(36em, 100%);
   margin-left: auto;
   margin-right: auto;
   text-align: left;
