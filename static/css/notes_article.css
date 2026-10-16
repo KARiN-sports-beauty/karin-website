@@ -274,7 +274,7 @@ body.notes-list-page.nav-open .home-btn {
   display: inline-block;
   margin-left: 8px;
   font-size: 0.78rem;
-  color: var(--notes-muted);
+  color: var(--notes-sage);
 }
 
 .notes-card-title {

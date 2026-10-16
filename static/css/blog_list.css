@@ -29,7 +29,7 @@ body {
   color: #777;
 }
 
-/* 一覧カードのタグ：下線なしのグレージュ。リンクや見出しと区別する */
+/* 一覧カードのタグ：KARiN.ネイビーの薄い色。下線なし */
 body.notes-list-page .notes-tags {
   gap: 16px;
   align-items: baseline;
@@ -41,7 +41,7 @@ body.notes-list-page .notes-tag {
   margin: 0;
   border-radius: 0;
   background: none;
-  color: #6b6560;
+  color: #8fa3c1;
   font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.08em;
