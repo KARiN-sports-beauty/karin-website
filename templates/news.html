@@ -49,9 +49,11 @@
   <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/news_style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="news-list-page">
+  {% include '_site_header.html' %}
 
   <section class="news-list">
 
@@ -78,5 +80,7 @@
     </div>
   </section>
 
+  {% include '_site_footer.html' %}
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

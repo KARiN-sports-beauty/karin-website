@@ -220,6 +220,10 @@ body {
    🗞 お知らせ一覧（news.html）
 ========================================================= */
 
+body.news-list-page {
+  padding: 0;
+}
+
 .news-list {
   max-width: 900px;
   margin: 120px auto 80px;
