@@ -32,13 +32,15 @@ body {
 }
 
 .form-lead {
+  box-sizing: border-box;
   width: fit-content;
-  max-width: min(36em, 100%);
+  max-width: min(48em, 92%);
   margin: 0 auto 40px;
   color: #1E3A5F;
   font-size: 0.95rem;
   line-height: 1.8;
   text-align: left;
+  text-wrap: pretty;
 }
 
 .form-lead-br-pc {
@@ -106,6 +108,7 @@ body.contact-page .form-wrapper {
 .form-field input[type="number"],
 .form-field input[type="tel"],
 .form-field input[type="email"],
+.form-field input[type="date"],
 .form-field textarea,
 .form-field select {
   width: 100%;
@@ -113,10 +116,53 @@ body.contact-page .form-wrapper {
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 10px;
   padding: 12px 14px;
+  font-family: "Noto Sans JP", sans-serif;
   font-size: 0.95rem;
+  font-weight: 300;
+  font-synthesis: none;
   color: #1E3A5F;
   box-shadow: 0 2px 4px rgba(0,0,0,0.03) inset;
   box-sizing: border-box; /* ✅ はみ出し対策 */
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  font-family: "Noto Sans JP", sans-serif;
+  font-weight: 300;
+  font-synthesis: none;
+  color: rgba(30, 58, 95, 0.4);
+  -webkit-text-fill-color: rgba(30, 58, 95, 0.4);
+  opacity: 1;
+}
+
+/* 未入力の生年月日。年・月・日と区切りを同じ細さ・濃さにする */
+.form-field input[type="date"],
+.form-field input[type="date"]::-webkit-datetime-edit,
+.form-field input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.form-field input[type="date"]::-webkit-datetime-edit-text,
+.form-field input[type="date"]::-webkit-datetime-edit-year-field,
+.form-field input[type="date"]::-webkit-datetime-edit-month-field,
+.form-field input[type="date"]::-webkit-datetime-edit-day-field {
+  font-family: "Noto Sans JP", sans-serif;
+  font-weight: 300;
+  font-synthesis: none;
+  color: rgba(30, 58, 95, 0.4);
+  -webkit-text-fill-color: rgba(30, 58, 95, 0.4);
+}
+
+.form-field input[type="date"]:valid,
+.form-field input[type="date"]:valid::-webkit-datetime-edit,
+.form-field input[type="date"]:valid::-webkit-datetime-edit-text,
+.form-field input[type="date"]:valid::-webkit-datetime-edit-year-field,
+.form-field input[type="date"]:valid::-webkit-datetime-edit-month-field,
+.form-field input[type="date"]:valid::-webkit-datetime-edit-day-field {
+  color: #1E3A5F;
+  -webkit-text-fill-color: #1E3A5F;
+}
+
+#agreement_confirmed + span {
+  position: relative;
+  top: 4px;
 }
 
 .form-field textarea {
@@ -130,6 +176,7 @@ body.contact-page .form-wrapper {
   margin-bottom: 15px;
   line-height: 1.6;
   opacity: 0.85;
+  text-wrap: pretty;
 }
 
 
