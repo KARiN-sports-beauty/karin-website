@@ -7,30 +7,23 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <meta name="robots" content="noindex, follow">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
       min-height: 100vh;
       background: #fafafa;
       font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
       color: #1E3A5F;
-    }
-    body {
-      box-sizing: border-box;
       display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      padding-top: 70px;
+      justify-content: center;
+      align-items: center;
       text-align: center;
     }
     .wrap {
       box-sizing: border-box;
-      width: 90%;
-      max-width: 616px;
-      margin: auto;
+      width: min(92%, 560px);
       background: #fff;
       border-radius: 20px;
       box-shadow: 0 16px 48px rgba(0,0,0,0.06);
@@ -40,10 +33,18 @@
       font-size: 1.5rem;
       margin: 0 0 16px;
     }
-    .wrap p {
+    .copy {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       width: fit-content;
       max-width: 100%;
-      margin: 0 auto 12px;
+      margin: 0 auto;
+      text-align: left;
+      text-wrap: pretty;
+    }
+    .copy p {
+      margin: 0;
       line-height: 1.85;
       font-size: 0.95rem;
       text-align: left;
@@ -79,20 +80,24 @@
       background: #06C755;
       color: #fff;
     }
+    @media (max-width: 480px) {
+      .copy {
+        max-width: 16em;
+      }
+    }
   </style>
 </head>
 <body>
-  {% include '_site_header.html' %}
   <div class="wrap">
     <h1>ご予約ありがとうございます</h1>
-    <p>ご予約を承りました。<br>確認メールをお送りしましたのでご確認ください。</p>
-    <p class="note">院内の場合は開始時刻の5分前までにご来院ください。<br>出張の場合は開始時刻までにご指定の場所でお待ちください。<br>キャンセル・変更はお早めにご連絡ください。</p>
+    <div class="copy">
+      <p>ご予約を承りました。<br>確認メールをお送りしましたのでご確認ください。</p>
+      <p class="note">院内の場合は開始時刻の5分前までにご来院ください。<br>出張の場合は開始時刻までにご指定の場所でお待ちください。<br>キャンセル・変更はお早めにご連絡ください。</p>
+    </div>
     <div class="actions">
       <a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener" class="line-btn">公式LINEでお問い合わせ</a>
       <a href="{{ url_for('index') }}" class="home-btn">トップページへ</a>
     </div>
   </div>
-  {% include '_site_footer.html' %}
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

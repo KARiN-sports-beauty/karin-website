@@ -3693,7 +3693,7 @@ def admin_contact_delete(contact_id):
 # ===================================================
 @app.route("/thanks")
 def thanks():
-    message = request.args.get("message", "送信ありがとうございました。内容を確認のうえ、24時間以内にご連絡いたします。")
+    message = request.args.get("message", "送信ありがとうございました。<br>内容を確認のうえ、24時間以内にご連絡いたします。")
     return render_template("thanks.html", message=message)
 
 
