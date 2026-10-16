@@ -1518,16 +1518,27 @@
   }
 
   .ts-view-copy {
-    max-width: none;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
   }
 
   .ts-view .ts-heading--left {
-    text-align: center;
+    width: fit-content;
+    max-width: 100%;
+    text-align: left;
   }
 
   .ts-view .ts-heading--left::after {
     left: 50%;
     transform: translateX(-50%);
+  }
+
+  .ts-view-copy .ts-view-item p {
+    max-width: 36em;
   }
 
   .ts-view .ts-view-intro {
@@ -1757,12 +1768,19 @@
   }
 
   .ts-feature--sport .ts-heading,
-  .ts-feature--dance .ts-heading,
-  .ts-view .ts-heading--left {
+  .ts-feature--dance .ts-heading {
     width: fit-content;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+    text-align: left;
+  }
+
+  .ts-view .ts-heading--left {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
     text-align: left;
   }
 

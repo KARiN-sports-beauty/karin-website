@@ -1445,19 +1445,25 @@
   .ts-view-copy {
     box-sizing: border-box;
     width: fit-content;
-    max-width: min(32em, 100%);
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
     text-align: left;
   }
 
   .ts-view .ts-heading--left {
+    width: fit-content;
+    max-width: 100%;
     text-align: left;
   }
 
   .ts-view .ts-heading--left::after {
-    left: 0;
-    transform: none;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .ts-view .ts-view-intro > p:not(.ts-view-role) {
+    max-width: 32em;
   }
 
   .ts-view-photo {
@@ -1672,7 +1678,7 @@
   }
 
   .ts-view .ts-heading--left {
-    width: auto;
+    width: fit-content;
     max-width: 100%;
     margin-left: 0;
     margin-right: 0;
