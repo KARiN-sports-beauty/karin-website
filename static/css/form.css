@@ -43,6 +43,14 @@ body {
   text-wrap: pretty;
 }
 
+.form-lead a {
+  color: #1E3A5F;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
 .form-lead-br-pc {
   display: inline;
 }

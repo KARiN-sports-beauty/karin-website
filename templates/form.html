@@ -56,7 +56,7 @@
 <section class="form-wrapper">
   <h1 class="form-title">初診問診票</h1>
   <p class="form-lead">
-    初めてKARiN.をご利用の方に、施術前にお身体の状態やこれまでの経過、施術に関するご希望などを伺うためのフォームです。ご予約確定後に、こちらへご入力ください。予約の変更・ご相談は、Web予約またはお問い合わせ・公式LINEをご利用ください。
+    初めてKARiN.をご利用の方に、施術前にお身体の状態やこれまでの経過、施術に関するご希望などを伺うためのフォームです。ご予約確定後に、こちらへご入力ください。予約の変更・ご相談は、<a href="{{ url_for('contact') }}">お問い合わせ</a>・<a href="https://lin.ee/rVEbNhl5" target="_blank" rel="noopener noreferrer">公式LINE</a>をご利用ください。
   </p>
 
   <form action="{{ url_for('submit_form') }}" method="POST" class="form-card h-adr">
