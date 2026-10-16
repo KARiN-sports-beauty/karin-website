@@ -971,7 +971,8 @@
 /* ---------- 出張場所 ---------- */
 #ts-place-heading + .ts-section-lead {
   box-sizing: border-box;
-  width: min(60em, 92%);
+  width: fit-content;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   text-align: left;
