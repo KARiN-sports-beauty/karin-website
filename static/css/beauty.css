@@ -777,10 +777,22 @@
     row-gap: 28px;
   }
 
+  .beauty-page .ts-about-head {
+    text-align: center;
+  }
+
   .beauty-page .ts-about .ts-heading {
     max-width: 12em;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
     font-size: 1.34rem;
     line-height: 1.6;
+  }
+
+  .beauty-page .ts-about .ts-heading::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .beauty-page .ts-about .ts-body {
