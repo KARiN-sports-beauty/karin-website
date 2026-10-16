@@ -793,6 +793,12 @@
     letter-spacing: 0.04em;
   }
 
+  .beauty-page .ts-heading:not(.ts-heading--left) {
+    width: fit-content;
+    max-width: 100%;
+    text-align: left;
+  }
+
   .beauty-page .ts-body {
     padding-top: 0;
   }

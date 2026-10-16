@@ -1737,6 +1737,22 @@
     letter-spacing: 0.04em;
   }
 
+  .ts-heading:not(.ts-heading--left) {
+    width: fit-content;
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .ts-feature--sport .ts-heading,
+  .ts-feature--dance .ts-heading,
+  .ts-view .ts-heading--left {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+
   .ts-about .ts-heading {
     font-size: 1.5rem;
     letter-spacing: 0.05em;

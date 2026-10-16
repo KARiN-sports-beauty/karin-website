@@ -841,6 +841,17 @@
     font-size: 1.35rem;
   }
 
+  .first-page .first-approach-title,
+  .first-page .first-guide-title,
+  .first-page .first-flow-title,
+  .first-page .first-next-title {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+
   .first-page .first-intro-body,
   .first-page .first-approach-body,
   .first-page .first-next-body {

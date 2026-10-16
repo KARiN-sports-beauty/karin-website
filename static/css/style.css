@@ -3615,8 +3615,11 @@ section[id],
   }
 
   .services-title {
+    width: fit-content;
+    max-width: 100%;
     font-size: 1.7rem;
     letter-spacing: 0.06em;
+    text-align: left;
   }
 
   .services-list {
@@ -3673,6 +3676,7 @@ section[id],
     letter-spacing: 0.04em;
     margin: 0 0 4px;
     justify-self: auto;
+    text-align: left;
   }
 
   body.index-page .br-sp {
@@ -3858,7 +3862,18 @@ section[id],
   }
 
   body.index-page .access-section .section-title {
+    width: fit-content;
+    max-width: 100%;
     font-size: 1.6rem;
+    text-align: left;
+  }
+
+  .contact-heading {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
   }
 
   .access-container {
@@ -4398,7 +4413,11 @@ section[id],
   }
 
   .contact-heading {
-    text-align: center;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
     line-height: 1.4;
     text-size-adjust: 95%;
   }

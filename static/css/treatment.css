@@ -1129,6 +1129,14 @@
     letter-spacing: 0.04em;
   }
 
+  .training-page .tx-philosophy-title {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+
   .tx-body {
     margin-top: 28px;
   }
