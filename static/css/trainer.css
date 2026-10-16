@@ -930,7 +930,15 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     line-height: 1.6;
-    text-align: center;
+    text-align: left;
+  }
+
+  .trainer-page .trainer-role-inner > .tx-heading {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
   }
 
   .trainer-page .trainer-intro-key::after {
@@ -1112,17 +1120,14 @@
   .trainer-page .tx-heading,
   .trainer-page .trainer-fields-inner > .tx-heading,
   .trainer-page .trainer-span-block .tx-subheading {
-    text-align: center;
-  }
-
-  .trainer-page .trainer-fields-inner > .tx-heading,
-  .trainer-page .trainer-span-block .tx-subheading {
     width: fit-content;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+    text-align: left;
   }
 
+  .trainer-page .tx-heading::after,
   .trainer-page .trainer-fields-inner > .tx-heading::after {
     left: 50%;
     transform: translateX(-50%);
