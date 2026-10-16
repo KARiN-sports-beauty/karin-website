@@ -29,7 +29,7 @@ body {
   color: #777;
 }
 
-/* 一覧カードのタグ：トップ「もっと見る →」と同系統のゴールド下線テキスト */
+/* 一覧カードのタグ：下線なしのグレージュ。リンクや見出しと区別する */
 body.notes-list-page .notes-tags {
   gap: 16px;
   align-items: baseline;
@@ -41,12 +41,13 @@ body.notes-list-page .notes-tag {
   margin: 0;
   border-radius: 0;
   background: none;
-  color: #1E3A5F;
+  color: #6b6560;
   font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   line-height: 1.4;
-  border-bottom: 1px solid #c0a062;
+  border-bottom: none;
+  text-decoration: none;
 }
 
 /* ===============================

@@ -896,6 +896,15 @@ body.notes-list-page.nav-open .home-btn {
 }
 
 @media (max-width: 768px) {
+  .notes-list-lead {
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: min(17em, 100%);
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+
   .notes-card--feature-hero .notes-card-link {
     grid-template-columns: 1fr;
   }
