@@ -970,10 +970,12 @@
 
 /* ---------- 出張場所 ---------- */
 #ts-place-heading + .ts-section-lead {
-  max-width: 36em;
+  box-sizing: border-box;
+  width: min(60em, 92%);
   margin-left: auto;
   margin-right: auto;
   text-align: left;
+  text-wrap: pretty;
 }
 
 .ts-place-list {
