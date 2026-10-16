@@ -1504,6 +1504,7 @@
   }
 
   .ts-view-copy {
+    align-self: center;
     box-sizing: border-box;
     width: fit-content;
     max-width: 100%;
@@ -1515,12 +1516,22 @@
   .ts-view .ts-heading--left {
     width: fit-content;
     max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
     text-align: left;
   }
 
   .ts-view .ts-heading--left::after {
     left: 50%;
     transform: translateX(-50%);
+  }
+
+  .ts-view .ts-view-intro > .ts-view-role {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
   }
 
   .ts-view-copy .ts-view-item p {
@@ -1560,6 +1571,11 @@
 
   .ts-view-copy .ts-view-title {
     display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
   }
 
   .ts-view-copy .ts-view-item {
@@ -1765,8 +1781,8 @@
   .ts-view .ts-heading--left {
     width: fit-content;
     max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
+    margin-left: auto;
+    margin-right: auto;
     text-align: left;
   }
 
@@ -1813,10 +1829,6 @@
     font-size: 1.08rem;
     letter-spacing: 0.08em;
     padding: 0;
-  }
-
-  .ts-view-role-break {
-    display: block;
   }
 
   .ts-view-intro > p:last-child {
@@ -1984,6 +1996,15 @@
 }
 
 @media (max-width: 480px) {
+  .ts-view .ts-view-role-break,
+  .ts-view .ts-view-role-mark {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .tokyo-shinkyu-page .logo {
     font-size: 1.55rem;
   }
