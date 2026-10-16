@@ -589,8 +589,8 @@
               <input type="text" id="first_name" name="first_name" required autocomplete="given-name">
             </div>
           </div>
-          <label for="phone">電話番号 <span style="color:#c0392b">*</span></label>
-          <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="09012345678">
+          <label for="phone">電話番号</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="09012345678">
           <label for="email">メールアドレス <span style="color:#c0392b">*</span></label>
           <input type="email" id="email" name="email" required autocomplete="email">
           <div id="address-wrap" class="hidden">
@@ -647,9 +647,8 @@
     function isCustomerComplete() {
       const last = ($("last_name") && $("last_name").value.trim()) || "";
       const first = ($("first_name") && $("first_name").value.trim()) || "";
-      const phone = ($("phone") && $("phone").value.trim()) || "";
       const email = ($("email") && $("email").value.trim()) || "";
-      if (!last || !first || !phone || !email) return false;
+      if (!last || !first || !email) return false;
       if (state.placeType === "visit") {
         const placeName = ($("place_name") && $("place_name").value.trim()) || "";
         if (!placeName) return false;
@@ -1125,10 +1124,9 @@
       hide(err);
       const last = $("last_name").value.trim();
       const first = $("first_name").value.trim();
-      const phone = $("phone").value.trim();
       const email = $("email").value.trim();
       const placeName = $("place_name").value.trim();
-      if (!last || !first || !phone || !email) {
+      if (!last || !first || !email) {
         err.textContent = "必須項目を入力してください";
         show(err);
         return;

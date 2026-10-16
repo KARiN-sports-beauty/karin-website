@@ -1643,23 +1643,25 @@ def _insert_web_reservation_pg(cur, reservation_data):
 def _pg_upsert_web_patient(cur, last_name, first_name, phone, email, place_name):
     norm_phone = normalize_phone_digits(phone)
     try:
-        cur.execute(
-            """
-            SELECT id, last_name, first_name, phone
-            FROM patients
-            WHERE last_name = %s AND first_name = %s
-            """,
-            (last_name.strip(), first_name.strip()),
-        )
-        for row in cur.fetchall():
-            if normalize_phone_digits(row[3]) == norm_phone:
-                patient_id = row[0]
-                if place_name:
-                    cur.execute(
-                        "UPDATE patients SET address = %s, email = %s WHERE id = %s",
-                        (place_name, email, patient_id),
-                    )
-                return patient_id
+        # 電話番号の数字があるときだけ既存カルテを照合する。空欄は姓名が同じでも新規作成する。
+        if norm_phone:
+            cur.execute(
+                """
+                SELECT id, last_name, first_name, phone
+                FROM patients
+                WHERE last_name = %s AND first_name = %s
+                """,
+                (last_name.strip(), first_name.strip()),
+            )
+            for row in cur.fetchall():
+                if normalize_phone_digits(row[3]) == norm_phone:
+                    patient_id = row[0]
+                    if place_name:
+                        cur.execute(
+                            "UPDATE patients SET address = %s, email = %s WHERE id = %s",
+                            (place_name, email, patient_id),
+                        )
+                    return patient_id
         name = f"{last_name} {first_name}".strip()
         if place_name:
             cur.execute(
@@ -6484,7 +6486,7 @@ def api_book_create():
             return jsonify({"success": False, "message": "施術時間が不正です"}), 400
         course_type = resolved_type
 
-        if not all([day_str, time_hm, last_name, first_name, phone, email]):
+        if not all([day_str, time_hm, last_name, first_name, email]):
             return jsonify({"success": False, "message": "必須項目を入力してください"}), 400
         if place_type == "visit" and not place_name:
             return jsonify({"success": False, "message": "出張先のエリア・住所を入力してください"}), 400
