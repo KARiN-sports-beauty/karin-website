@@ -159,22 +159,25 @@
 
 .trainer-page .tx-philosophy {
   position: relative;
-  overflow: visible;
-  padding: 0;
+  overflow: hidden;
+  padding: 0 !important;
   text-align: left;
   background-color: #ffffff;
 }
 
 .trainer-intro {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
   align-items: stretch;
-  min-height: 420px;
+  min-height: 480px;
 }
 
 .trainer-intro-copy {
-  box-sizing: border-box;
+  position: relative;
   z-index: 1;
+  box-sizing: border-box;
+  grid-column: 1;
   padding: 72px 6% 72px 8vw;
 }
 
@@ -188,6 +191,10 @@
   line-height: 1.75;
   letter-spacing: 0.04em;
   text-align: left;
+}
+
+.trainer-intro-br {
+  display: none;
 }
 
 .trainer-page .trainer-intro-key::after {
@@ -213,8 +220,9 @@
 }
 
 .trainer-intro-media {
-  position: relative;
-  min-height: 420px;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -236,9 +244,10 @@
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    rgba(255, 255, 255, 0.72) 14%,
-    rgba(255, 255, 255, 0.22) 32%,
-    transparent 52%
+    rgba(255, 255, 255, 0.94) 22%,
+    rgba(255, 255, 255, 0.72) 38%,
+    rgba(255, 255, 255, 0.28) 52%,
+    transparent 66%
   );
 }
 
@@ -576,11 +585,13 @@
 
 .trainer-role .tx-body {
   grid-area: body;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(36em, 100%);
   margin-top: 28px;
   margin-left: auto;
   margin-right: auto;
-  max-width: 36em;
-  text-align: center;
+  text-align: left;
 }
 
 .trainer-role .tx-body p + p {
@@ -791,6 +802,17 @@
     padding: 36px 32px 32px;
   }
 
+  .trainer-page .tx-cta-section {
+    padding-top: 120px;
+    padding-bottom: 104px;
+  }
+
+  .trainer-page .tx-cta-section .tx-inner--narrow {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 901px) {
   .trainer-role {
     padding-top: 108px;
     padding-bottom: 120px;
@@ -818,7 +840,7 @@
 
   .trainer-role-inner {
     box-sizing: border-box;
-    width: min(28.5rem, 38%);
+    width: min(28.5rem, 42%);
     max-width: 460px;
     margin-left: 8%;
     margin-right: auto;
@@ -837,61 +859,35 @@
   }
 
   .trainer-role .tx-body {
+    width: auto;
     margin-top: 28px;
     margin-left: 0;
     margin-right: 0;
     max-width: none;
     text-align: left;
   }
+}
 
-  .trainer-page .tx-cta-section {
-    padding-top: 120px;
-    padding-bottom: 104px;
+@media (min-width: 901px) and (max-width: 1024px) {
+  .trainer-intro {
+    grid-template-columns: minmax(0, 1.35fr) minmax(160px, 0.65fr);
   }
 
-  .trainer-page .tx-cta-section .tx-inner--narrow {
-    max-width: 640px;
+  .trainer-intro-media::after {
+    background: linear-gradient(
+      90deg,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0.96) 46%,
+      rgba(255, 255, 255, 0.88) 64%,
+      rgba(255, 255, 255, 0.28) 78%,
+      transparent 88%
+    );
   }
 }
 
 @media (max-width: 1024px) {
   .trainer-page .tx-hero-copy {
     padding: 96px 42% 56px 7%;
-  }
-
-  .trainer-page .tx-philosophy {
-    isolation: isolate;
-    background-color: #ffffff;
-  }
-
-  .trainer-page .tx-philosophy .trainer-intro {
-    position: static;
-    grid-template-columns: 1fr;
-    min-height: 0;
-    transform: none;
-  }
-
-  .trainer-intro-copy {
-    position: relative;
-    z-index: 1;
-    padding: 64px 8% 72px;
-  }
-
-  .trainer-intro-media {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    min-height: 0;
-    width: auto;
-    height: auto;
-  }
-
-  .trainer-intro-media img {
-    object-position: 60% 48%;
-  }
-
-  .trainer-intro-media::after {
-    background: rgba(255, 255, 255, 0.86);
   }
 
   .trainer-fields-inner > .tx-heading {
@@ -912,6 +908,47 @@
   .trainer-fields-copy .tx-body {
     margin-top: 0;
   }
+}
+
+@media (max-width: 900px) {
+  .trainer-page .tx-philosophy .trainer-intro {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .trainer-intro-copy {
+    padding: 56px 8% 60px;
+  }
+
+  .trainer-page .trainer-intro-key {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.18rem;
+    text-align: center;
+  }
+
+  .trainer-page .trainer-intro-key::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .trainer-page .tx-philosophy .tx-philosophy-body {
+    width: fit-content;
+    max-width: min(36em, 100%);
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+
+  .trainer-intro-media img {
+    object-position: 62% 48%;
+  }
+
+  .trainer-intro-media::after {
+    background: rgba(255, 255, 255, 0.86);
+  }
 
   .trainer-role::before {
     background-position: 60% 52%;
@@ -921,6 +958,12 @@
     display: block;
     margin: 0.06em 0 0.1em;
     letter-spacing: 0.12em;
+  }
+}
+
+@media (max-width: 560px) {
+  .trainer-intro-br {
+    display: unset;
   }
 }
 
@@ -953,20 +996,6 @@
 
   .trainer-page .tx-hero-media img {
     object-position: 60% 48%;
-  }
-
-  .trainer-intro {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .trainer-intro-copy {
-    padding: 52px 8% 56px;
-  }
-
-  .trainer-page .trainer-intro-key {
-    max-width: none;
-    font-size: 1.18rem;
   }
 
   .trainer-page .tx-philosophy + .tx-section {
