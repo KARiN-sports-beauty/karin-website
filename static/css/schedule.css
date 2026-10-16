@@ -1,5 +1,60 @@
 /* /schedule 専用。トップの .schedule-table とはクラスを分ける。 */
 
+/* 白背景ヘッダー。料金表・NOTES と同じ */
+body.schedule-page .header {
+  background-color: #ffffff;
+  background-image: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(30, 58, 95, 0.08);
+}
+
+@media (min-width: 1025px) {
+  body.schedule-page .nav-consult {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 5px 16px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: #1E3A5F;
+    background: transparent;
+    border: 1px solid rgba(30, 58, 95, 0.72);
+    border-radius: 40px;
+    box-sizing: border-box;
+    box-shadow: none;
+    transition: color 0.4s ease, border-color 0.4s ease, background-color 0.4s ease;
+  }
+
+  body.schedule-page .nav-book {
+    min-height: 32px;
+    padding: 5px 14px;
+    background: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    box-shadow: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (hover: hover) and (min-width: 1025px) {
+  body.schedule-page .nav a.nav-consult:hover {
+    color: #1E3A5F;
+    background: rgba(30, 58, 95, 0.06);
+    border-color: #1E3A5F;
+  }
+
+  body.schedule-page .nav a.nav-book:hover {
+    background: #4a5f7a;
+    color: #ffffff;
+    border-color: #4a5f7a;
+    box-shadow: none;
+  }
+}
+
 .schedule-page .public-schedule {
   max-width: 640px;
   margin: 0 auto;
