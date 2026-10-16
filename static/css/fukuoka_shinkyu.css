@@ -1384,10 +1384,6 @@
   border-color: #1E3A5F;
 }
 
-.tokyo-shinkyu-page .footer-bottom {
-  margin-top: 40px;
-}
-
 @media (hover: hover) and (min-width: 1025px) {
   .ts-text-link:hover,
   .ts-body a:hover,

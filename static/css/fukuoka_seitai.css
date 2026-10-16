@@ -1293,10 +1293,6 @@
   border-color: #1E3A5F;
 }
 
-.tokyo-seitai-page .footer-bottom {
-  margin-top: 40px;
-}
-
 @media (hover: hover) and (min-width: 1025px) {
   .ts-text-link:hover,
   .ts-body a:hover,
@@ -1413,16 +1409,21 @@
   }
 
   .ts-view-copy {
-    max-width: none;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: min(32em, 100%);
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
   }
 
   .ts-view .ts-heading--left {
-    text-align: center;
+    text-align: left;
   }
 
   .ts-view .ts-heading--left::after {
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    transform: none;
   }
 
   .ts-view-photo {
@@ -1628,12 +1629,19 @@
   }
 
   .ts-feature--sport .ts-heading,
-  .ts-feature--dance .ts-heading,
-  .ts-view .ts-heading--left {
+  .ts-feature--dance .ts-heading {
     width: fit-content;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+    text-align: left;
+  }
+
+  .ts-view .ts-heading--left {
+    width: auto;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
     text-align: left;
   }
 
