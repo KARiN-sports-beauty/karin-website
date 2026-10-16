@@ -925,7 +925,11 @@
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
-    font-size: 1.18rem;
+    font-family: "Noto Sans JP", system-ui, sans-serif;
+    font-size: 1.48rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
     text-align: center;
   }
 
@@ -968,6 +972,12 @@
 }
 
 @media (max-width: 768px) {
+  .trainer-page .trainer-intro-key {
+    font-size: 1.38rem;
+    letter-spacing: 0.04em;
+    line-height: 1.55;
+  }
+
   .trainer-page .tx-hero {
     min-height: 0;
   }
@@ -1051,6 +1061,10 @@
   .trainer-page .logo {
     font-size: 1.55rem;
   }
+
+  .trainer-page .trainer-intro-key {
+    font-size: 1.28rem;
+  }
 }
 
 @media (min-width: 641px) {
@@ -1091,5 +1105,26 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .trainer-page .tx-heading,
+  .trainer-page .trainer-fields-inner > .tx-heading,
+  .trainer-page .trainer-span-block .tx-subheading {
+    text-align: center;
+  }
+
+  .trainer-page .trainer-fields-inner > .tx-heading,
+  .trainer-page .trainer-span-block .tx-subheading {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .trainer-page .trainer-fields-inner > .tx-heading::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
