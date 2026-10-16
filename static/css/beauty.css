@@ -522,21 +522,11 @@
   gap: 32px 48px;
   margin: 56px 0 0;
   padding: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .beauty-page .ts-related li {
   margin: 0;
-}
-
-.beauty-page .ts-related a {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-}
-
-.beauty-page .ts-related a:hover {
-  opacity: 0.72;
 }
 
 .beauty-page .ts-related .ts-num {
@@ -559,11 +549,25 @@
   color: #1E3A5F;
 }
 
-.beauty-page .ts-related-name::after {
+.beauty-page .ts-sports-more {
+  margin: 48px 0 0;
+  text-align: center;
+}
+
+.beauty-page .ts-sports-more a {
+  color: #1E3A5F;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  text-decoration: none;
+}
+
+.beauty-page .ts-sports-more a::after {
   content: "→";
-  margin-left: 0.4em;
-  font-weight: 400;
+  margin-left: 0.45em;
   color: #c0a062;
+  font-weight: 400;
 }
 
 .beauty-page .ts-price-lead {
@@ -691,7 +695,8 @@
     color: #1E3A5F;
   }
 
-  .beauty-page .ts-close-links a:hover {
+  .beauty-page .ts-close-links a:hover,
+  .beauty-page .ts-sports-more a:hover {
     color: #8fa3c1;
   }
 }

@@ -189,31 +189,26 @@
           <p><span class="karin-brand">KARiN.</span>では、美容とコンディショニングを別々のものとして考えていません。</p>
           <p>鍼灸、整体、トレーニング、コンディショニング。それぞれの視点から身体を見ながら、その人が心地よく過ごせる状態を考えています。</p>
         </div>
-        <nav aria-label="関連する施術">
-          <ul class="ts-related">
-            <li>
-              <a href="{{ url_for('tokyo_shinkyu') }}">
-                <span class="ts-num">01</span>
-                <span class="ts-eyebrow">ACUPUNCTURE</span>
-                <span class="ts-related-name">鍼灸</span>
-              </a>
-            </li>
-            <li>
-              <a href="{{ url_for('tokyo_seitai') }}">
-                <span class="ts-num">02</span>
-                <span class="ts-eyebrow">BODY CONDITIONING</span>
-                <span class="ts-related-name">整体</span>
-              </a>
-            </li>
-            <li>
-              <a href="{{ url_for('training') }}">
-                <span class="ts-num">03</span>
-                <span class="ts-eyebrow">TRAINING</span>
-                <span class="ts-related-name">トレーニング・リコンディショニング</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
+        <ul class="ts-related">
+          <li>
+            <span class="ts-num">01</span>
+            <span class="ts-eyebrow">ACUPUNCTURE</span>
+            <span class="ts-related-name">鍼灸</span>
+          </li>
+          <li>
+            <span class="ts-num">02</span>
+            <span class="ts-eyebrow">BODY CONDITIONING</span>
+            <span class="ts-related-name">整体</span>
+          </li>
+          <li>
+            <span class="ts-num">03</span>
+            <span class="ts-eyebrow">TRAINING</span>
+            <span class="ts-related-name">トレーニング・リコンディショニング</span>
+          </li>
+        </ul>
+        <p class="ts-sports-more">
+          <a href="{{ url_for('treatment') }}">詳しい施術案内はこちら</a>
+        </p>
       </div>
     </section>
 
@@ -240,8 +235,8 @@
           <p>鍼灸師として身体を見てきた経験をもとに、<span class="karin-brand">KARiN.</span>らしい美容鍼をご提案します。</p>
         </div>
         <nav class="ts-close-links" aria-label="関連コンテンツ">
-          <a href="{{ url_for('treatment') }}"><span class="karin-brand">KARiN.</span>について</a>
-          <a href="{{ url_for('show_blog', slug='acupuncture') }}">鍼灸について</a>
+          <a href="{{ url_for('index') }}"><span class="karin-brand">KARiN.</span>について</a>
+          <a href="{{ url_for('treatment') }}">施術について</a>
         </nav>
       </div>
     </section>
