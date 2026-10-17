@@ -637,7 +637,7 @@
   display: flex;
   align-items: stretch;
   gap: 18px;
-  transform: rotate(-26deg);
+  transform: rotate(26deg);
   transform-origin: center center;
 }
 
@@ -1186,7 +1186,7 @@
     width: 136%;
     height: 148%;
     gap: 10px;
-    transform: rotate(-24deg);
+    transform: rotate(24deg);
   }
 
   .tx-extra-bg::after {
