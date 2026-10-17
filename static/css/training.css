@@ -757,27 +757,7 @@
   }
 }
 
-@media (max-width: 1024px) and (min-width: 841px) {
-  .training-page [aria-labelledby="tr-both-heading"] > .tx-inner {
-    width: 22.6em;
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 1000px) and (min-width: 841px) {
-  .training-page [aria-labelledby="tr-both-heading"]::before {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.96) 0%,
-      rgba(255, 255, 255, 0.86) 28%,
-      rgba(255, 255, 255, 0.5) 46%,
-      rgba(255, 255, 255, 0.18) 58%,
-      rgba(255, 255, 255, 0) 70%
-    );
-  }
-}
-
-@media (max-width: 840px) {
+@media (max-width: 1176px) {
   .training-page [aria-labelledby="tr-both-heading"] {
     background-size: cover;
     background-position: 68% 40%;
@@ -836,6 +816,15 @@
   .training-page .tr-recondition-copy,
   .training-page .tr-recondition-copy .tx-eyebrow {
     text-align: left;
+  }
+
+  .training-page .tr-recondition-copy .tx-heading {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
   }
 
   .training-page .tr-recondition > .tr-points {
