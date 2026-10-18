@@ -75,9 +75,9 @@ GBP東京と GBP福岡は、1つの「GBP」にまとめない。記事ごとに
 
 ## 1.4 送信処理
 
-GBP / Instagram / Facebook の HTTP クライアント、location ID、認証情報の利用はリポジトリにない。
+投稿用の HTTP クライアントはまだない。読み取りだけ `gbp_read.py` が行う。東京と福岡のロケーション名と OAuth の値は環境変数で、コードには置かない。
 
-送信口の関数 `publish_external_post` は STEP 0 で置いてある。呼ぶと未接続の例外になり、成功結果は返さない。管理画面のルートからは呼ばない。
+送信口の関数 `publish_external_post` は未接続のままである。呼ぶと例外になり、成功結果は返さない。管理画面のルートからは呼ばない。読み取り接続からも呼ばない。
 
 サイト上の Instagram は公開プロフィールへのリンクのみ。Facebook の URL はコードベースにない。
 
@@ -286,7 +286,17 @@ STEP 0 の保存は `edited`。詳細に「保存のみ。外部サービスへ�
 
 共有してよいのは、STEP 1 で実装する GBP 送信処理だけである。`publish_external_post` を、記事・サービス・半月スケジュールの送信側が使う。予定行を組み立てる関数は、そのために変更しない。
 
-認証情報と location ID は環境変数で持つ。コードとログに書かない。変数名は、承認後の認証方式が分かってから決める。
+認証情報と location ID は環境変数で持つ。コードとログに書かない。
+
+読み取りは、東京と福岡の両方を管理できる Google アカウントの OAuth を使う。サービスアカウントへは切り替えない。変数は次の5つ。
+
+- `GBP_OAUTH_CLIENT_ID`
+- `GBP_OAUTH_CLIENT_SECRET`
+- `GBP_OAUTH_REFRESH_TOKEN`
+- `GBP_TOKYO_LOCATION_NAME`（`locations/{locationId}`）
+- `GBP_FUKUOKA_LOCATION_NAME`（`locations/{locationId}`）
+
+`gbp_read.py` はトークン更新と、アカウント一覧・指定ロケーションへの GET だけを送る。投稿、更新、削除は送らない。ロケーション名が無い地域は、もう一方の結果で補わない。
 
 ## 5.1 将来拡張：特別営業時間
 
@@ -365,5 +375,8 @@ STEP 0 では実装しない。STEP 1 の投稿接続が動いたあとに、同
 | `templates/admin_dashboard.html` | カード1枚 |
 | `static/css/admin_dashboard.css` | 4ボタンの折返しと状態の色 |
 | `scripts/test_external_posts.py` | 表示・保存・未接続の検証 |
+| `gbp_read.py` | GBP の読み取り。投稿はしない |
+| `scripts/test_gbp_read.py` | 認証失敗・権限不足・未取得の区別 |
+| `scripts/check_gbp_read.py` | 環境変数を使った読み取り確認。秘密は出さない |
 
 STEP 1 以降で足すもの：GBP の実装クラス、Instagram / Facebook の実装クラス、サービス投稿の切り口画面、必要なら `gbp_schedule_posts`。予定組み立て関数の置換は含まない。
