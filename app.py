@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 import external_posts
+import gbp_local_post
 from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
@@ -4820,6 +4821,15 @@ def admin_blog_delete(blog_id):
     return redirect("/admin/blogs")
 
 
+def _gbp_post_preview(target, body, link_url, image_url):
+    """GBPの送信JSONを検証する。Googleへは送らない。"""
+    if target.get("channel") != "gbp":
+        return None
+    built = gbp_local_post.build_standard_post(body, link_url, image_url or "")
+    built["payload_text"] = gbp_local_post.payload_text(built["payload"])
+    return built
+
+
 def _external_post_form_values(blog, target, existing):
     """保存済みがあればそれを、無ければ媒体別の下書きを表示する。保存はしない。"""
     public_url = ""
@@ -4891,21 +4901,70 @@ def admin_blog_external_post(blog_id, target_key):
                 events=events,
             )
         staff = session.get("staff") or {}
-        prepared, reason = external_posts.prepare_notes_save(
-            existing,
-            target,
-            blog["id"],
-            body,
-            link_url,
-            image_url,
-            staff.get("id"),
-            now_iso(),
-        )
+        action = (request.form.get("action") or "save").strip()
+        now = now_iso()
+        if action == "confirm":
+            preview = _gbp_post_preview(target, body, link_url, image_url)
+            if preview is None:
+                flash("この投稿先は確認済にできません", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            if not preview["ok"]:
+                flash(preview["errors"][0], "error")
+                return render_template(
+                    "admin_blog_external_post.html",
+                    blog=blog,
+                    target=target,
+                    form={
+                        "body": body,
+                        "link_url": link_url,
+                        "image_url": image_url,
+                        "status_label": external_posts.status_caption((existing or {}).get("status")),
+                    },
+                    events=events,
+                    gbp_preview=preview,
+                )
+            prepared, reason = external_posts.prepare_notes_confirm(
+                existing, target, body, link_url, image_url, staff.get("id"), now
+            )
+            saved_message = f"{target['button_label']} の内容を確認済にしました。外部サービスへは投稿していません。"
+        elif existing and existing.get("status") == "posted" and target.get("channel") == "gbp":
+            preview = _gbp_post_preview(target, body, link_url, image_url)
+            if preview and not preview["ok"]:
+                flash(preview["errors"][0], "error")
+                return render_template(
+                    "admin_blog_external_post.html",
+                    blog=blog,
+                    target=target,
+                    form={
+                        "body": body,
+                        "link_url": link_url,
+                        "image_url": image_url,
+                        "status_label": external_posts.status_caption(existing.get("status")),
+                    },
+                    events=events,
+                    gbp_preview=preview,
+                )
+            prepared, reason = external_posts.prepare_notes_revision(
+                existing, target, body, link_url, image_url, staff.get("id"), now
+            )
+            saved_message = f"{target['button_label']} の内容を更新しました。投稿IDは保持しています。外部サービスへは投稿していません。"
+        else:
+            prepared, reason = external_posts.prepare_notes_save(
+                existing,
+                target,
+                blog["id"],
+                body,
+                link_url,
+                image_url,
+                staff.get("id"),
+                now,
+            )
+            saved_message = f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。"
+            if prepared and prepared["fields"]["status"] != "draft":
+                flash("投稿文の保存に失敗しました", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         if reason:
             flash(reason, "error")
-            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        if prepared["fields"]["status"] != "draft":
-            flash("投稿文の保存に失敗しました", "error")
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         try:
             external_posts.save_notes_post(supabase_admin, existing, prepared)
@@ -4913,15 +4972,17 @@ def admin_blog_external_post(blog_id, target_key):
             print("❌ 外部投稿の保存エラー:", exc)
             flash(f"投稿文の保存に失敗しました: {exc}", "error")
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        flash(f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。", "success")
+        flash(saved_message, "success")
         return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
 
+    form = _external_post_form_values(blog, target, existing)
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
         target=target,
-        form=_external_post_form_values(blog, target, existing),
+        form=form,
         events=events,
+        gbp_preview=_gbp_post_preview(target, form["body"], form["link_url"], form["image_url"]),
     )
 
 

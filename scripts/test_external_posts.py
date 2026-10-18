@@ -142,6 +142,26 @@ def main():
             form={"body": "下書き文", "link_url": "https://example.com", "image_url": "", "status_label": "未投稿"},
             events=[],
         )
+        gbp_ok = appmod.gbp_local_post.build_standard_post("本文", "https://karin-sb.jp/")
+        gbp_ok["payload_text"] = appmod.gbp_local_post.payload_text(gbp_ok["payload"])
+        gbp_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=tokyo,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "未投稿"},
+            events=[],
+            gbp_preview=gbp_ok,
+        )
+        gbp_bad = appmod.gbp_local_post.build_standard_post("本文", "https://karin-sb.jp/", "/static/images/a.jpg")
+        gbp_bad["payload_text"] = ""
+        gbp_bad_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=tokyo,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "/static/images/a.jpg", "status_label": "未投稿"},
+            events=[],
+            gbp_preview=gbp_bad,
+        )
     report("is-disabled" in draft_html and "/posts/gbp_tokyo" not in draft_html, "下書きの外部投稿はリンクではない")
     report('href="/admin/blogs/12/posts/gbp_tokyo"' in live_html, "公開記事からGBP東京へ進める")
     report('href="/admin/blogs/12/posts/gbp_fukuoka"' in live_html, "公開記事からGBP福岡へ進める")
@@ -154,6 +174,13 @@ def main():
         and "外部サービスへの送信は" in preview_html,
         "確認画面は管理画面への保存まで",
     )
+    report(
+        "Googleへ送信しません" in gbp_html
+        and "この内容を確認済にする" in gbp_html
+        and "mybusiness.googleapis.com" not in gbp_html,
+        "GBP確認画面は送信せず内容だけ出す",
+    )
+    report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
     print(f"\n{PASSED} passed, {FAILED} failed")

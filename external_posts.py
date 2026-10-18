@@ -89,7 +89,7 @@ GBP_SERVICE_AREAS = {
     "fukuoka": "福岡",
 }
 
-LOCKED_STATUSES = frozenset({"posted", "posting"})
+LOCKED_STATUSES = frozenset({"posted", "posting", "unknown"})
 
 EVENT_LABELS = {
     "generated": "文面を作成",
@@ -261,10 +261,26 @@ def clean_image_ref(value):
     raise ValueError("画像は https のURLか、/static/ から始まるパスにしてください")
 
 
+def _kept_receipt(existing):
+    """保存し直しても、一度受け取った投稿IDと投稿日時は消さない。"""
+    if not existing:
+        return None, None
+    external_id = existing.get("external_id")
+    posted_at = existing.get("posted_at")
+    if not isinstance(external_id, str) or not external_id.strip():
+        external_id = None
+    else:
+        external_id = external_id.strip()
+    if not isinstance(posted_at, str) or not posted_at.strip():
+        posted_at = None
+    return external_id, posted_at
+
+
 def prepare_notes_save(existing, target, blog_id, body, link_url, image_url, staff_id, now):
     """保存用のフィールド。status は draft 固定。投稿済にはしない。"""
     if existing and existing.get("status") in LOCKED_STATUSES:
-        return None, "投稿済み、または送信中の記録は、この画面からは変更しません。"
+        return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
+    external_id, posted_at = _kept_receipt(existing)
     fields = {
         "source_kind": "notes_article",
         "blog_id": str(blog_id),
@@ -276,9 +292,9 @@ def prepare_notes_save(existing, target, blog_id, body, link_url, image_url, sta
         "link_url": link_url or None,
         "image_url": image_url or None,
         "angle_label": None,
-        "external_id": None,
+        "external_id": external_id,
         "error_message": None,
-        "posted_at": None,
+        "posted_at": posted_at,
         "updated_at": now,
     }
     if not existing:
@@ -294,6 +310,82 @@ def prepare_notes_save(existing, target, blog_id, body, link_url, image_url, sta
         "created_at": now,
     }
     return {"fields": fields, "event": event, "is_insert": existing is None}, None
+
+
+def prepare_notes_revision(existing, target, body, link_url, image_url, staff_id, now):
+    """投稿済みGBPの文面更新。external_id は残し、状態は確認待ちに戻す。送信はしない。"""
+    if not existing or not existing.get("id"):
+        return None, "先に投稿文を保存してください。"
+    if existing.get("status") != "posted":
+        return None, "投稿済みの記録だけ、投稿IDを保持したまま内容を更新できます。"
+    if target.get("channel") != "gbp":
+        return None, "この投稿先の投稿済み記録は、この画面からは変更しません。"
+    external_id, posted_at = _kept_receipt(existing)
+    if not external_id:
+        return None, "投稿IDがないため、投稿済みの内容は変更しません。"
+    fields = {
+        "source_kind": "notes_article",
+        "blog_id": str(existing.get("blog_id")),
+        "service_key": None,
+        "channel": target["channel"],
+        "gbp_profile": target["gbp_profile"],
+        "status": "ready",
+        "body": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "angle_label": None,
+        "external_id": external_id,
+        "error_message": None,
+        "posted_at": posted_at,
+        "updated_at": now,
+    }
+    event = {
+        "event": "edited",
+        "body_snapshot": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "detail": "投稿IDは保持しています。外部サービスへは投稿していません。",
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "is_insert": False}, None
+
+
+def prepare_notes_confirm(existing, target, body, link_url, image_url, staff_id, now):
+    """確認済みにする。Googleへは送らない。"""
+    if not existing or not existing.get("id"):
+        return None, "先に投稿文を保存してください。"
+    if existing.get("status") in LOCKED_STATUSES:
+        return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
+    if target.get("channel") != "gbp":
+        return None, "この投稿先は確認済にできません。"
+    external_id, posted_at = _kept_receipt(existing)
+    fields = {
+        "source_kind": "notes_article",
+        "blog_id": str(existing.get("blog_id")),
+        "service_key": None,
+        "channel": target["channel"],
+        "gbp_profile": target["gbp_profile"],
+        "status": "ready",
+        "body": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "angle_label": None,
+        "external_id": external_id,
+        "error_message": None,
+        "posted_at": posted_at,
+        "updated_at": now,
+    }
+    event = {
+        "event": "confirmed",
+        "body_snapshot": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "detail": "確認のみ。外部サービスへは投稿していません。",
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "is_insert": False}, None
 
 
 def find_notes_post(client, blog_id, target):

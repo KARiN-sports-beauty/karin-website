@@ -38,7 +38,21 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
     <input type="text" name="image_url" value="{{ form.image_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
-  <button type="submit" class="admin-blog-btn">この内容を保存</button>
+  <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
+  {% if gbp_preview %}
+  <h3 class="admin-subtitle">送信内容の確認</h3>
+  <p class="admin-blog-body">この画面ではGoogleへ送信しません。内容が問題なければ確認済にできます。</p>
+  {% if gbp_preview.ok %}
+  <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ gbp_preview.payload_text }}</pre>
+  <button type="submit" name="action" value="confirm" class="admin-blog-btn">この内容を確認済にする</button>
+  {% else %}
+  <ul>
+    {% for error in gbp_preview.errors %}
+    <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
 </form>
 
 {% if events %}
