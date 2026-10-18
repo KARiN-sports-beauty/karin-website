@@ -40,7 +40,8 @@
   </div>
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
   {% if gbp_action == "check" %}
-  <p class="admin-blog-body">結果が未確認です。確認では新しい投稿を作らず、保存済みの投稿があればそれを取得します。</p>
+  <p class="admin-blog-body">投稿結果を確定できないため、新規送信を停止中</p>
+  <p class="admin-blog-body">確認では新しい投稿を作りません。同じ確認を繰り返せます。</p>
   <button type="submit" name="action" value="check" class="admin-blog-btn">Google側の投稿を確認する</button>
   {% endif %}
   {% if gbp_preview %}

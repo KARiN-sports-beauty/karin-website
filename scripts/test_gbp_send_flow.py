@@ -126,6 +126,10 @@ class Http:
         if self.mode == "denied":
             return 404, {"error": {"status": "NOT_FOUND"}}
         if "pageSize=" in url:
+            if self.mode == "incomplete":
+                return 200, {"localPosts": self.posts, "nextPageToken": "next"}
+            if self.mode == "list-error":
+                return 503, {"error": {"status": "UNAVAILABLE"}}
             return 200, {"localPosts": self.posts}
         if method == "GET":
             name = url.split("/v4/", 1)[1]
@@ -299,7 +303,19 @@ def main():
     none_found = Http(posts=[{"name": OLD_TOKYO, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}])
     none_row = FakeDB(ready(status="unknown", updated_at=NOW))
     missed = check(none_row, none_found, dict(none_row.row), started)
-    report(missed["record"]["status"] == "failed" and all(call["method"] == "GET" for call in none_found.calls), "古い東京投稿は採用せず、新規POSTもしない")
+    report(
+        missed["record"]["status"] == "unknown"
+        and missed["record"]["external_id"] in (None, "")
+        and all(call["method"] == "GET" for call in none_found.calls),
+        "候補0件でも失敗にせず、新規POSTもしない",
+    )
+    retry_empty = Http()
+    blocked_empty = send(none_row, retry_empty, record=dict(none_row.row))
+    report(not blocked_empty["ok"] and retry_empty.calls == [] and none_row.row["status"] == "unknown", "候補0件のあと再送ボタン相当の送信はしない", blocked_empty["message"])
+    report(blocked_empty["message"] == gbp_local_post.UNRESOLVED_POST_MESSAGE, "再送を止めた理由を表示する")
+    again_empty = Http(posts=[])
+    repeated = check(none_row, again_empty, dict(none_row.row), started)
+    report(repeated["record"]["status"] == "unknown" and [call["method"] for call in again_empty.calls] == ["GET"], "確認は繰り返せて、POSTはしない")
 
     one = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"}])
     one_row = FakeDB(ready(status="unknown", updated_at=NOW))
@@ -314,6 +330,9 @@ def main():
     many_row = FakeDB(ready(status="unknown", updated_at=NOW))
     ambiguous = check(many_row, many, dict(many_row.row), started)
     report(many_row.row["status"] == "unknown" and len(many.calls) == 1, "候補が複数なら確定しない", ambiguous["message"])
+    many_retry = Http()
+    many_blocked = send(many_row, many_retry, record=dict(many_row.row))
+    report(not many_blocked["ok"] and many_retry.calls == [], "複数候補のあと新規POSTしない")
 
     known = Http()
     known_row = FakeDB(ready(status="unknown", external_id=CREATED))
@@ -324,13 +343,63 @@ def main():
     young = Http(posts=[])
     young_row = FakeDB(ready(status="posting", updated_at=NOW))
     held = check(young_row, young, dict(young_row.row), started, now=NOW)
-    report(not held["ok"] and young_row.row["status"] == "posting", "送信直後に見つからなくても失敗にしない")
+    report(
+        young_row.row["status"] == "unknown" and all(call["method"] == "GET" for call in young.calls),
+        "送信直後に見つからなくても失敗にせず、新規POSTもしない",
+    )
+    young_retry = Http()
+    young_blocked = send(young_row, young_retry, record=dict(young_row.row))
+    report(not young_blocked["ok"] and young_retry.calls == [], "反映待ちでも再送しない")
 
     old_events = [{"event": "submit_started", "body_snapshot": "本文", "created_at": EARLIER}]
     old = Http(posts=[])
     old_row = FakeDB(ready(status="posting", updated_at=EARLIER))
     aged = check(old_row, old, dict(old_row.row), old_events, now=NOW)
-    report(old_row.row["status"] == "failed" and all(call["method"] == "GET" for call in old.calls), "送信から時間が経って見つからなければ失敗にする")
+    report(old_row.row["status"] == "unknown" and all(call["method"] == "GET" for call in old.calls), "時間が経って見つからなくても新規送信は停止したまま")
+    old_retry = Http()
+    old_blocked = send(old_row, old_retry, record=dict(old_row.row))
+    report(not old_blocked["ok"] and old_retry.calls == [], "2分以上たっても候補0件では再送しない")
+
+    incomplete = Http("incomplete", posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"}])
+    incomplete_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    partial = check(incomplete_row, incomplete, dict(incomplete_row.row), started)
+    report(
+        partial["record"]["status"] == "unknown"
+        and incomplete_row.row["external_id"] in (None, "")
+        and [call["method"] for call in incomplete.calls] == ["GET"],
+        "一覧が途中なら候補があっても確定せず、POSTしない",
+    )
+    partial_retry = Http()
+    partial_blocked = send(incomplete_row, partial_retry, record=dict(incomplete_row.row))
+    report(not partial_blocked["ok"] and partial_retry.calls == [], "一覧が途中のあと再送しない")
+
+    list_error = Http("list-error")
+    list_row = FakeDB(ready(status="posting", updated_at=NOW))
+    listed_bad = check(list_row, list_error, dict(list_row.row), started)
+    report(list_row.row["status"] == "unknown" and [call["method"] for call in list_error.calls] == ["GET"], "一覧取得の失敗でも新規送信は停止したまま")
+    report(listed_bad["message"] == gbp_local_post.UNRESOLVED_POST_MESSAGE, "一覧失敗の表示は送信停止")
+
+    saved_late = FakeDB(ready())
+    saved_late.fail_update_after = 1
+    late_http = Http()
+    late = send(saved_late, late_http)
+    report(not late["ok"] and saved_late.row["status"] == "posting" and len(late_http.calls) == 1, "成功応答の保存失敗後は投稿済にしない")
+    late_retry = Http()
+    late_blocked = send(saved_late, late_retry, record=dict(saved_late.row))
+    report(not late_blocked["ok"] and late_retry.calls == [], "成功応答の保存失敗から再POSTしない")
+    saved_late.fail_update_after = None
+    delayed = Http(posts=[])
+    still_unknown = check(saved_late, delayed, dict(saved_late.row), [{"event": "submit_started", "body_snapshot": "本文", "created_at": NOW}])
+    report(still_unknown["record"]["status"] == "unknown" and delayed.calls[0]["method"] == "GET", "保存失敗後に一覧が空でも失敗へ戻さない")
+    appeared = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"}])
+    resolved = check(saved_late, appeared, dict(saved_late.row), [{"event": "submit_started", "body_snapshot": "本文", "created_at": NOW}])
+    report(
+        resolved["ok"]
+        and saved_late.row["status"] == "posted"
+        and saved_late.row["external_id"] == CREATED
+        and [call["method"] for call in appeared.calls] == ["GET", "GET"],
+        "あとから一覧に出た投稿はGETで確定し、POSTしない",
+    )
 
     import requests
     original = requests.request

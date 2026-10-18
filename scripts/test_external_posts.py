@@ -202,7 +202,13 @@ def main():
         "未確認の画面には送信ボタンが無い",
     )
     report("この内容をGoogleに投稿する" in send_html and "外部サービスへの送信は" in send_html, "確認済の画面に送信ボタンがある")
-    report("Google側の投稿を確認する" in check_html and "この内容をGoogleに投稿する" not in check_html, "未確認の画面は確認ボタンだけ")
+    report(
+        "Google側の投稿を確認する" in check_html
+        and "この内容をGoogleに投稿する" not in check_html
+        and "投稿結果を確定できないため、新規送信を停止中" in check_html,
+        "未確認の画面は確認ボタンだけで、新規送信を止める",
+    )
+    report("投稿結果を確定できないため、新規送信を停止中" not in send_html, "確認済の画面は送信停止の表示を出さない")
     report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 

@@ -184,7 +184,12 @@ def main():
         submitted_at=NOW,
         parent=PARENT,
     )
-    report(missed["fields"]["status"] == "failed" and missed["fields"]["external_id"] is None, "古い東京投稿は紐づけない")
+    report(
+        missed["fields"]["status"] == "unknown"
+        and missed["fields"]["external_id"] is None
+        and missed["fields"]["error_message"] == gbp_local_post.UNRESOLVED_POST_MESSAGE,
+        "古い東京投稿は紐づけず、新規送信も再開しない",
+    )
 
     ambiguous = gbp_local_post.reconcile_unknown(
         ready_record(status="unknown"),

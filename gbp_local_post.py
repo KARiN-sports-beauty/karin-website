@@ -320,17 +320,17 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
         }
     return _outcome(
         record,
-        status="failed",
-        external_id=None,
-        posted_at=None,
-        error_message="送信後に作成された投稿は見つかりませんでした。",
-        event="failed",
-        detail="作成された投稿は見つかりませんでした。自動では再送しません。",
+        status="unknown",
+        external_id=(record.get("external_id") or "").strip() or None,
+        posted_at=record.get("posted_at") or None,
+        error_message=UNRESOLVED_POST_MESSAGE,
+        event="unknown",
+        detail="一覧だけでは投稿を確定できません。新規送信は停止しています。",
         now=submitted_at,
     )
 
 
-POSTING_HOLD_SECONDS = 120
+UNRESOLVED_POST_MESSAGE = "投稿結果を確定できないため、新規送信を停止中"
 
 
 def google_exchange(method, url, *, access_token, body=None, timeout=20):
@@ -475,20 +475,14 @@ def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exch
             http_status, response = _call_exchange(
                 post_exchange, request["method"], request["url"], access_token
             )
-            if http_status != 200:
-                return _flow(False, record, "投稿一覧を取得できなかったため、状態は変えていません。")
             posts, incomplete = read_local_post_page(response)
-            if incomplete:
-                outcome = _outcome(
-                    record,
-                    status="unknown",
-                    external_id=None,
-                    posted_at=record.get("posted_at") or None,
-                    error_message="投稿一覧が途中までしか取得できないため、確定しません。",
-                    event="unknown",
-                    detail="投稿一覧が途中までしか取得できないため、投稿済にしていません。",
-                    now=now,
+            if http_status != 200:
+                outcome = _unresolved_outcome(record, now, "投稿一覧を取得できなかったため、確定しません。")
+                return _store_outcome(
+                    client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id
                 )
+            if incomplete:
+                outcome = _unresolved_outcome(record, now, "投稿一覧が途中までしか取得できないため、確定しません。")
             else:
                 outcome = reconcile_unknown(
                     record,
@@ -497,8 +491,6 @@ def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exch
                     submitted_at=submitted_at,
                     parent=parent,
                 )
-                if outcome["fields"]["status"] == "failed" and _posting_hold(record.get("status"), submitted_at, now):
-                    return _flow(False, record, "送信中のため、見つからなくても失敗にはしません。自動では再送しません。")
                 candidate = outcome.get("candidate_name")
                 if candidate:
                     fetched = get_request(candidate)
@@ -523,7 +515,7 @@ def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exch
                         if outcome["fields"]["status"] != "posted":
                             outcome["fields"]["external_id"] = None
     except GbpPostTimeout:
-        return _flow(False, record, "確認の通信結果が不明です。自動では再送しません。")
+        return _flow(False, record, UNRESOLVED_POST_MESSAGE)
     except GbpPostRefused as exc:
         return _flow(False, record, exc.detail)
     return _store_outcome(client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id)
@@ -536,7 +528,7 @@ def _prepare_send(record, config):
         return "東京か福岡の投稿だけ送信できます。"
     if record.get("status") != "ready":
         if record.get("status") in {"unknown", "posting"}:
-            return "結果が未確認です。再送せず、Google側の投稿を確認してください。"
+            return UNRESOLVED_POST_MESSAGE
         return "確認済みの内容だけ送信できます。"
     built = build_standard_post(record.get("body"), record.get("link_url"), record.get("image_url") or "")
     if not built["ok"]:
@@ -610,7 +602,7 @@ def _store_outcome(client, record, outcome, now, from_statuses=("posting",), sta
     if status == "posted":
         message = "投稿成功を確認しました。"
     elif status == "unknown":
-        message = "結果が未確認です。自動では再送しません。Google側の投稿を確認してください。"
+        message = UNRESOLVED_POST_MESSAGE
     elif status == "failed":
         message = saved.get("error_message") or "投稿に失敗しました。自動では再送しません。"
     else:
@@ -622,14 +614,17 @@ def _flow(ok, record, message):
     return {"ok": ok, "record": record, "message": message}
 
 
-def _posting_hold(status, submitted_at, now):
-    if status != "posting":
-        return False
-    started = _parse_time(submitted_at)
-    current = _parse_time(now)
-    if started is None or current is None:
-        return True
-    return (current - started).total_seconds() < POSTING_HOLD_SECONDS
+def _unresolved_outcome(record, now, detail):
+    return _outcome(
+        record,
+        status="unknown",
+        external_id=(record.get("external_id") or "").strip() or None,
+        posted_at=record.get("posted_at") or None,
+        error_message=UNRESOLVED_POST_MESSAGE,
+        event="unknown",
+        detail=detail,
+        now=now,
+    )
 
 
 def confirm_fetched_post(record, post_body, submitted_summary, now):
