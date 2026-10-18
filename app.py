@@ -4830,6 +4830,56 @@ def _gbp_post_preview(target, body, link_url, image_url):
     return built
 
 
+def _gbp_saved_matches(existing, body, link_url, image_url):
+    def norm(value):
+        return (value or "").strip()
+    return (
+        norm(existing.get("body")) == norm(body)
+        and norm(existing.get("link_url")) == norm(link_url)
+        and norm(existing.get("image_url")) == norm(image_url)
+    )
+
+
+def _gbp_live_exchange(method, url, body=None, access_token=None):
+    return gbp_local_post.google_exchange(method, url, access_token=access_token, body=body)
+
+
+def _run_gbp_external_action(existing, *, mode, staff_id, now, events=None):
+    """確認済みの送信、または結果確認。呼び出しまで Google へは送らない。"""
+    config = gbp_read.load_gbp_read_config()
+    if mode == "send":
+        return gbp_local_post.perform_notes_gbp_send(
+            supabase_admin,
+            existing,
+            config=config,
+            token_exchange=gbp_read.requests_exchange,
+            post_exchange=_gbp_live_exchange,
+            now=now,
+            staff_id=staff_id,
+        )
+    return gbp_local_post.perform_notes_gbp_check(
+        supabase_admin,
+        existing,
+        config=config,
+        token_exchange=gbp_read.requests_exchange,
+        post_exchange=_gbp_live_exchange,
+        now=now,
+        events=events,
+        staff_id=staff_id,
+    )
+
+
+def _gbp_screen_action(target, existing, preview):
+    if target.get("channel") != "gbp" or not existing:
+        return None
+    status = existing.get("status")
+    if status == "ready" and preview and preview.get("ok"):
+        return "send"
+    if status in {"unknown", "posting"}:
+        return "check"
+    return None
+
+
 def _external_post_form_values(blog, target, existing):
     """保存済みがあればそれを、無ければ媒体別の下書きを表示する。保存はしない。"""
     public_url = ""
@@ -4853,7 +4903,7 @@ def _external_post_form_values(blog, target, existing):
 @app.route("/admin/blogs/<blog_id>/posts/<target_key>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_external_post(blog_id, target_key):
-    """媒体別の投稿確認。API未接続のため保存まで。外部サービスへは送らない。"""
+    """媒体別の投稿。GBPは確認済みの明示操作だけで送り、結果不明なら再送しない。"""
     target = external_posts.get_target(target_key)
     if target is None:
         flash("投稿先が見つかりません", "error")
@@ -4882,6 +4932,23 @@ def admin_blog_external_post(blog_id, target_key):
         flash("保存済みの投稿文を読み込めませんでした", "error")
 
     if request.method == "POST":
+        action = (request.form.get("action") or "save").strip()
+        staff = session.get("staff") or {}
+        now = now_iso()
+        if action == "check":
+            if target.get("channel") != "gbp" or not existing:
+                flash("確認できるGBPの記録がありません", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            try:
+                result = _run_gbp_external_action(
+                    existing, mode="check", staff_id=staff.get("id"), now=now, events=events
+                )
+            except Exception:
+                print("❌ GBP投稿の確認エラー")
+                flash("投稿の確認に失敗しました。自動では再送しません。", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         try:
             body = external_posts.clean_body(request.form.get("body"))
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
@@ -4900,9 +4967,23 @@ def admin_blog_external_post(blog_id, target_key):
                 },
                 events=events,
             )
-        staff = session.get("staff") or {}
-        action = (request.form.get("action") or "save").strip()
-        now = now_iso()
+        if action == "send":
+            if target.get("channel") != "gbp" or not existing:
+                flash("確認済みのGBPだけ送信できます", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            if not _gbp_saved_matches(existing, body, link_url, image_url):
+                flash("保存した内容と違うため送信しません。確認済にしてから送信してください。", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            try:
+                result = _run_gbp_external_action(
+                    existing, mode="send", staff_id=staff.get("id"), now=now
+                )
+            except Exception:
+                print("❌ GBP投稿の送信エラー")
+                flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         if action == "confirm":
             preview = _gbp_post_preview(target, body, link_url, image_url)
             if preview is None:
@@ -4976,13 +5057,16 @@ def admin_blog_external_post(blog_id, target_key):
         return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
 
     form = _external_post_form_values(blog, target, existing)
+    gbp_preview = _gbp_post_preview(target, form["body"], form["link_url"], form["image_url"])
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
         target=target,
         form=form,
         events=events,
-        gbp_preview=_gbp_post_preview(target, form["body"], form["link_url"], form["image_url"]),
+        gbp_preview=gbp_preview,
+        gbp_action=_gbp_screen_action(target, existing, gbp_preview),
+        gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
     )
 
 

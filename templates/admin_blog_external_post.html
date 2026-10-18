@@ -23,7 +23,7 @@
 {% endif %}
 <p class="admin-blog-body">{{ target.guide }}</p>
 <p class="admin-blog-category">状態: {{ form.status_label }}</p>
-<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信は、API承認後に接続します。</p>
+<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信は、確認済のGBPだけ、この画面のボタンで行います。未確認の内容はGoogleへ送信しません。結果が不明なときは自動で送り直しません。</p>
 
 <form method="POST" action="/admin/blogs/{{ blog.id }}/posts/{{ target.key }}" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
@@ -39,12 +39,21 @@
     <input type="text" name="image_url" value="{{ form.image_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
+  {% if gbp_action == "check" %}
+  <p class="admin-blog-body">結果が未確認です。確認では新しい投稿を作らず、保存済みの投稿があればそれを取得します。</p>
+  <button type="submit" name="action" value="check" class="admin-blog-btn">Google側の投稿を確認する</button>
+  {% endif %}
   {% if gbp_preview %}
   <h3 class="admin-subtitle">送信内容の確認</h3>
-  <p class="admin-blog-body">この画面ではGoogleへ送信しません。内容が問題なければ確認済にできます。</p>
+  <p class="admin-blog-body">内容が問題なければ確認済にできます。確認済のあと、明示してからGoogleへ送ります。</p>
   {% if gbp_preview.ok %}
   <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ gbp_preview.payload_text }}</pre>
+  {% if not gbp_locked %}
   <button type="submit" name="action" value="confirm" class="admin-blog-btn">この内容を確認済にする</button>
+  {% endif %}
+  {% if gbp_action == "send" %}
+  <button type="submit" name="action" value="send" class="admin-blog-btn">この内容をGoogleに投稿する</button>
+  {% endif %}
   {% else %}
   <ul>
     {% for error in gbp_preview.errors %}

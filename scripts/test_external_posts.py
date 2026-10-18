@@ -162,6 +162,26 @@ def main():
             events=[],
             gbp_preview=gbp_bad,
         )
+        send_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=tokyo,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "確認済"},
+            events=[],
+            gbp_preview=gbp_ok,
+            gbp_action="send",
+            gbp_locked=False,
+        )
+        check_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=tokyo,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "要確認"},
+            events=[],
+            gbp_preview=gbp_ok,
+            gbp_action="check",
+            gbp_locked=True,
+        )
     report("is-disabled" in draft_html and "/posts/gbp_tokyo" not in draft_html, "下書きの外部投稿はリンクではない")
     report('href="/admin/blogs/12/posts/gbp_tokyo"' in live_html, "公開記事からGBP東京へ進める")
     report('href="/admin/blogs/12/posts/gbp_fukuoka"' in live_html, "公開記事からGBP福岡へ進める")
@@ -177,9 +197,12 @@ def main():
     report(
         "Googleへ送信しません" in gbp_html
         and "この内容を確認済にする" in gbp_html
+        and "この内容をGoogleに投稿する" not in gbp_html
         and "mybusiness.googleapis.com" not in gbp_html,
-        "GBP確認画面は送信せず内容だけ出す",
+        "未確認の画面には送信ボタンが無い",
     )
+    report("この内容をGoogleに投稿する" in send_html and "外部サービスへの送信は" in send_html, "確認済の画面に送信ボタンがある")
+    report("Google側の投稿を確認する" in check_html and "この内容をGoogleに投稿する" not in check_html, "未確認の画面は確認ボタンだけ")
     report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 

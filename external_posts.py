@@ -21,6 +21,10 @@ class ExternalPostNotConnected(Exception):
     """外部APIが未接続。呼び出し元は投稿済にしてはいけない。"""
 
 
+class ExternalPostConflict(Exception):
+    """状態が先に変わった。上書きも再送もしない。"""
+
+
 EXTERNAL_POST_TARGETS = (
     {
         "key": "gbp_tokyo",
@@ -410,7 +414,7 @@ def list_post_events(client, post_id):
         return []
     res = (
         client.table("external_post_events")
-        .select("id,event,detail,created_at,actor_staff_id")
+        .select("id,event,detail,body_snapshot,created_at,actor_staff_id")
         .eq("external_post_id", post_id)
         .order("created_at", desc=True)
         .limit(10)
@@ -429,12 +433,13 @@ def save_notes_post(client, existing, prepared):
     if prepared["is_insert"]:
         res = client.table("external_posts").insert(fields).execute()
     else:
-        res = (
-            client.table("external_posts")
-            .update(fields)
-            .eq("id", existing["id"])
-            .execute()
-        )
+        query = client.table("external_posts").update(fields).eq("id", existing["id"])
+        expected = existing.get("status")
+        if expected:
+            query = query.eq("status", expected)
+        res = query.execute()
+        if expected and not (res.data or []):
+            raise ExternalPostConflict("状態が変わったため保存しませんでした。画面を開き直してください。")
     rows = res.data or []
     saved = rows[0] if rows else dict(existing or {})
     if not saved.get("id") and existing:
@@ -443,6 +448,25 @@ def save_notes_post(client, existing, prepared):
     event["external_post_id"] = saved["id"]
     client.table("external_post_events").insert(event).execute()
     return saved
+
+
+def update_notes_post_if_status(client, post_id, from_statuses, fields):
+    """status を条件にした1回の UPDATE。0件なら、先に状態が変わっている。"""
+    statuses = [status for status in from_statuses if status]
+    query = client.table("external_posts").update(fields).eq("id", post_id)
+    if len(statuses) == 1:
+        query = query.eq("status", statuses[0])
+    elif statuses:
+        query = query.in_("status", statuses)
+    res = query.execute()
+    rows = res.data or []
+    return rows[0] if rows else None
+
+
+def insert_post_event(client, post_id, event):
+    payload = dict(event)
+    payload["external_post_id"] = post_id
+    client.table("external_post_events").insert(payload).execute()
 
 
 def service_status_map(client, area):
