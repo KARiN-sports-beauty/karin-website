@@ -880,6 +880,58 @@
   }
 
   .tx-pillars {
+    column-gap: 28px;
+  }
+
+  .tx-pillar-image {
+    height: 176px;
+  }
+
+  .tx-pillar-title {
+    font-size: 1.02rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow {
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 34em;
+    margin-top: 32px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step,
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:first-child,
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child {
+    padding: 20px 0 18px;
+    border-left: none;
+    border-top: 1px solid rgba(192, 160, 98, 0.55);
+  }
+
+  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child {
+    border-bottom: 1px solid rgba(192, 160, 98, 0.55);
+  }
+
+  .tx-beauty {
+    gap: 40px;
+  }
+
+  .tx-beauty-image {
+    height: 280px;
+  }
+
+  .tx-cta-btn {
+    min-width: 130px;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+/* 各列が約260pxを下回ると見出しとリンクの折り返しが崩れるため、縦に戻す */
+@media (max-width: 999px) {
+  .tx-pillars {
     grid-template-columns: 1fr;
     margin-top: 40px;
     gap: 40px;
@@ -899,42 +951,16 @@
 
   .tx-pillar-title {
     font-size: 1.08rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
 
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow {
-    grid-template-columns: 1fr;
-    gap: 0;
-    max-width: 34em;
-    margin-top: 32px;
-    margin-left: auto;
-    margin-right: auto;
+  .tx-pillar-links {
+    align-items: center;
   }
 
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step,
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:first-child,
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child {
-    padding: 20px 0 0;
-    border-left: none;
-    border-top: 1px solid rgba(192, 160, 98, 0.55);
-  }
-
-  .treatment-page:not(.training-page):not(.trainer-page) .tx-flow-step:last-child {
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(192, 160, 98, 0.55);
-  }
-
-  .tx-beauty {
-    gap: 40px;
-  }
-
-  .tx-beauty-image {
-    height: 280px;
-  }
-
-  .tx-cta-btn {
-    min-width: 130px;
-    padding: 9px 16px;
-    font-size: 0.85rem;
+  .tx-pillar .tx-text-link {
+    align-self: center;
   }
 }
 
@@ -1237,11 +1263,45 @@
 
 @media (max-width: 640px) {
   .tx-beauty {
-    grid-template-columns: 1fr;
-    gap: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     max-width: 540px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .tx-beauty-body {
+    display: contents;
+  }
+
+  .tx-beauty .tx-eyebrow {
+    order: 1;
+  }
+
+  .tx-beauty .tx-heading {
+    order: 2;
+    margin-bottom: 20px;
+  }
+
+  .tx-beauty-image {
+    order: 3;
+    margin-bottom: 22px;
+  }
+
+  .tx-beauty .tx-catch {
+    order: 4;
+    margin-top: 0;
+  }
+
+  .tx-beauty .tx-body {
+    order: 5;
+  }
+
+  .tx-beauty .tx-text-link {
+    order: 6;
+    align-self: center;
   }
 }
 
