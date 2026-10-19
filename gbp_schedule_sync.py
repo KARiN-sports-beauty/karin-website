@@ -80,18 +80,14 @@ def hours_status(profile, mode, area, has_field):
 
 
 def post_entry(profile, mode, area, has_field, labels=None):
-    """投稿に載せる1日。時間が無い日は作らない。"""
+    """投稿に載せる1日。時間が無い日は作らない。帯同がある日は施術対応日にしない。"""
     names = labels or DEFAULT_LABELS
     if profile not in PROFILES:
         return None
-    if mode == "clinic" and area == profile and has_field:
-        return {"kind": "clinic", "label": f"{names[area]}／{names['field']}"}
+    if mode == "field" or (mode == "clinic" and area in PROFILES and has_field):
+        return {"kind": "field", "label": names["field"]}
     if mode == "clinic" and area == profile:
         return {"kind": "clinic", "label": names[area]}
-    if mode == "clinic" and area in PROFILES and has_field:
-        return {"kind": "field", "label": names["field"]}
-    if mode == "field":
-        return {"kind": "field", "label": names["field"]}
     if mode == "off":
         return {"kind": "off", "label": names["closed"]}
     return None
