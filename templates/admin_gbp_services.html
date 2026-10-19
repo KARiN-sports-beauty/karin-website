@@ -13,7 +13,7 @@
 <h3 class="admin-subtitle">{{ area_label }}</h3>
 <div class="admin-blog-grid">
   {% for service in services %}
-  <div class="admin-blog-card">
+  <a href="/admin/gbp/services/{{ area }}/{{ service.key }}" class="admin-blog-card">
     <div class="admin-blog-head">
       <strong>{{ service.label }}</strong>
     </div>
@@ -21,7 +21,7 @@
     {% if service.note %}
     <p class="admin-blog-body">{{ service.note }}</p>
     {% endif %}
-  </div>
+  </a>
   {% endfor %}
 </div>
 {% endblock %}

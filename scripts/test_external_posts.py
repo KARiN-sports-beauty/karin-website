@@ -212,6 +212,108 @@ def main():
     report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
+    tokyo_screen, tokyo_reason = external_posts.resolve_service_screen("tokyo", "acupuncture")
+    fukuoka_screen, fukuoka_reason = external_posts.resolve_service_screen("fukuoka", "acupuncture")
+    report(tokyo_reason is None and fukuoka_reason is None, "鍼灸の東京と福岡は開ける")
+    report(
+        tokyo_screen["gbp_profile"] == "tokyo"
+        and fukuoka_screen["gbp_profile"] == "fukuoka"
+        and tokyo_screen["service"]["key"] == "acupuncture"
+        and fukuoka_screen["service"]["key"] == "acupuncture",
+        "同じ鍼灸でも地域は別の投稿対象",
+    )
+    missing, missing_reason = external_posts.resolve_service_screen("osaka", "acupuncture")
+    unknown, unknown_reason = external_posts.resolve_service_screen("fukuoka", "unknown")
+    report(missing is None and unknown is None and missing_reason and unknown_reason, "不正な地域とサービスは拒否する")
+
+    tokyo_save, tokyo_save_reason = external_posts.prepare_service_save(
+        None, "tokyo", "acupuncture", "本文", "https://karin-sb.jp/tokyo/shinkyu", "", "staff-1", "2026-10-19T10:00:00+09:00"
+    )
+    fukuoka_save, fukuoka_save_reason = external_posts.prepare_service_save(
+        None, "fukuoka", "acupuncture", "本文", "https://karin-sb.jp/fukuoka/shinkyu", "", "staff-1", "2026-10-19T10:00:00+09:00"
+    )
+    report(
+        tokyo_save_reason is None
+        and fukuoka_save_reason is None
+        and tokyo_save["fields"]["source_kind"] == "service"
+        and tokyo_save["fields"]["gbp_profile"] == "tokyo"
+        and fukuoka_save["fields"]["gbp_profile"] == "fukuoka"
+        and tokyo_save["fields"]["status"] == "draft",
+        "サービス保存は地域ごとに別行で、下書きのまま",
+    )
+    mixed, mixed_reason = external_posts.prepare_service_save(
+        {"id": "row-1", "source_kind": "service", "channel": "gbp", "gbp_profile": "tokyo", "service_key": "acupuncture", "status": "draft"},
+        "fukuoka",
+        "acupuncture",
+        "本文",
+        "https://karin-sb.jp/fukuoka/shinkyu",
+        "",
+        "staff-1",
+        "2026-10-19T10:00:00+09:00",
+    )
+    report(mixed is None and mixed_reason, "東京の記録を福岡として保存しない", str(mixed_reason))
+
+    with appmod.app.test_request_context("/admin/gbp/services"):
+        tokyo_list = appmod.render_template(
+            "admin_gbp_services.html",
+            area="tokyo",
+            area_label="東京",
+            services=[
+                {
+                    "key": item["key"],
+                    "label": item["label"],
+                    "note": item["note"],
+                    "status_label": "未投稿",
+                }
+                for item in external_posts.GBP_SERVICE_CATALOG
+            ],
+        )
+        tokyo_detail = appmod.render_template(
+            "admin_gbp_service_post.html",
+            screen=tokyo_screen,
+            form={"body": "東京の鍼灸", "link_url": "https://karin-sb.jp/tokyo/shinkyu", "image_url": "", "status_label": "未投稿"},
+            events=[],
+            gbp_preview=None,
+            gbp_locked=False,
+        )
+        fukuoka_detail = appmod.render_template(
+            "admin_gbp_service_post.html",
+            screen=fukuoka_screen,
+            form={"body": "福岡の鍼灸", "link_url": "https://karin-sb.jp/fukuoka/shinkyu", "image_url": "", "status_label": "未投稿"},
+            events=[],
+            gbp_preview={"ok": True, "payload_text": '{"summary":"本文"}', "errors": []},
+            gbp_locked=False,
+        )
+    report('href="/admin/gbp/services/tokyo/acupuncture"' in tokyo_list, "東京の鍼灸カードから東京の画面へ進める")
+    report('href="/admin/gbp/services/fukuoka/acupuncture"' in service_html, "福岡の鍼灸カードから福岡の画面へ進める")
+    report(
+        'action="/admin/gbp/services/tokyo/acupuncture"' in tokyo_detail
+        and "対象地域: 東京" in tokyo_detail
+        and "サービス: 鍼灸" in tokyo_detail
+        and "この内容をGoogleに投稿する" not in tokyo_detail,
+        "東京鍼灸の確認画面は東京のまま、送信ボタンは無い",
+    )
+    report(
+        'action="/admin/gbp/services/fukuoka/acupuncture"' in fukuoka_detail
+        and "対象地域: 福岡" in fukuoka_detail
+        and "この内容を確認済にする" in fukuoka_detail
+        and "この画面ではGoogleへ送信しません" in fukuoka_detail
+        and "mybusiness.googleapis.com" not in fukuoka_detail,
+        "福岡鍼灸の確認画面は福岡のまま、Googleへ送らない",
+    )
+
+    with appmod.app.test_client() as client:
+        locked = client.get("/admin/gbp/services/fukuoka/acupuncture")
+        location = locked.headers.get("Location") or ""
+        report(locked.status_code in (301, 302) and "login" in location, "未ログインはサービス画面を開けない", location)
+        send_try = client.post("/admin/gbp/services/fukuoka/acupuncture", data={"action": "send", "body": "本文"})
+        send_location = send_try.headers.get("Location") or ""
+        report(send_try.status_code in (301, 302) and "login" in send_location, "未ログインの送信操作も開けない")
+
+    rules = [rule.rule for rule in appmod.app.url_map.iter_rules() if rule.endpoint == "admin_gbp_service_post"]
+    report("/admin/gbp/services/<area>/<service_key>" in rules, "サービス確認のルートがある")
+    report("perform_notes_gbp_send" not in open(os.path.join(ROOT, "templates/admin_gbp_service_post.html"), encoding="utf-8").read(), "サービス画面は送信関数を持たない")
+
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
 

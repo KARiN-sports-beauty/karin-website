@@ -122,11 +122,68 @@ def get_target(target_key):
     return None
 
 
-def service_area(raw):
+def parse_service_area(raw):
+    """不明な地域は採用しない。一覧の未指定だけ service_area が東京に戻す。"""
     area = (raw or "").strip().lower()
     if area in GBP_SERVICE_AREAS:
         return area
-    return "tokyo"
+    return None
+
+
+def service_area(raw):
+    return parse_service_area(raw) or "tokyo"
+
+
+def get_service(service_key):
+    key = (service_key or "").strip()
+    for item in GBP_SERVICE_CATALOG:
+        if item["key"] == key:
+            return item
+    return None
+
+
+def resolve_service_screen(area, service_key):
+    """地域とサービスの組だけ返す。見つからなければ画面を開かない。"""
+    parsed = parse_service_area(area)
+    service = get_service(service_key)
+    if parsed is None or service is None:
+        return None, "サービスまたは地域が見つかりません"
+    return {
+        "area": parsed,
+        "area_label": GBP_SERVICE_AREAS[parsed],
+        "service": service,
+        "gbp_profile": parsed,
+        "channel": "gbp",
+    }, None
+
+
+def service_public_path(area, service_key):
+    paths = {
+        ("tokyo", "acupuncture"): "/tokyo/shinkyu",
+        ("fukuoka", "acupuncture"): "/fukuoka/shinkyu",
+        ("tokyo", "seitai_conditioning"): "/tokyo/seitai",
+        ("fukuoka", "seitai_conditioning"): "/fukuoka/seitai",
+        ("tokyo", "beauty_acupuncture"): "/beauty",
+        ("fukuoka", "beauty_acupuncture"): "/beauty",
+        ("tokyo", "training_reconditioning"): "/training",
+        ("fukuoka", "training_reconditioning"): "/training",
+        ("tokyo", "trainer_accompany"): "/trainer",
+        ("fukuoka", "trainer_accompany"): "/trainer",
+    }
+    return paths.get((area, service_key), "/")
+
+
+def starter_service_body(area, service, link_url):
+    """地域とサービス名だけの下書き。料金や効果は書かない。"""
+    place = GBP_SERVICE_AREAS.get(area) or ""
+    label = (service or {}).get("label") or "施術"
+    url = (link_url or "").strip()
+    lines = [
+        f"KARiN.の{label}について。",
+        f"{place}での出張施術をご検討の方へ。内容はウェブサイトにまとめています。",
+        url,
+    ]
+    return "\n\n".join(line for line in lines if line)
 
 
 def target_key_for_row(row):
@@ -390,6 +447,112 @@ def prepare_notes_confirm(existing, target, body, link_url, image_url, staff_id,
         "created_at": now,
     }
     return {"fields": fields, "event": event, "is_insert": False}, None
+
+
+def _same_service_row(existing, area, service_key):
+    return (
+        existing.get("source_kind") == "service"
+        and existing.get("channel") == "gbp"
+        and existing.get("gbp_profile") == area
+        and existing.get("service_key") == service_key
+    )
+
+
+def prepare_service_save(existing, area, service_key, body, link_url, image_url, staff_id, now):
+    """サービス投稿の下書き保存。Googleへは送らない。"""
+    screen, reason = resolve_service_screen(area, service_key)
+    if reason:
+        return None, reason
+    if existing and not _same_service_row(existing, screen["area"], screen["service"]["key"]):
+        return None, "別の地域・サービスの記録は変更しません。"
+    if existing and existing.get("status") in LOCKED_STATUSES:
+        return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
+    external_id, posted_at = _kept_receipt(existing)
+    fields = {
+        "source_kind": "service",
+        "blog_id": None,
+        "service_key": screen["service"]["key"],
+        "channel": "gbp",
+        "gbp_profile": screen["gbp_profile"],
+        "status": "draft",
+        "body": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "angle_label": existing.get("angle_label") if existing else None,
+        "external_id": external_id,
+        "error_message": None,
+        "posted_at": posted_at,
+        "updated_at": now,
+    }
+    if not existing:
+        fields["created_by"] = staff_id or None
+        fields["created_at"] = now
+    event = {
+        "event": "edited",
+        "body_snapshot": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "detail": "保存のみ。外部サービスへは投稿していません。",
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "is_insert": existing is None}, None
+
+
+def prepare_service_confirm(existing, area, service_key, body, link_url, image_url, staff_id, now):
+    """サービス投稿を確認済にする。Googleへは送らない。"""
+    screen, reason = resolve_service_screen(area, service_key)
+    if reason:
+        return None, reason
+    if not existing or not existing.get("id"):
+        return None, "先に投稿文を保存してください。"
+    if not _same_service_row(existing, screen["area"], screen["service"]["key"]):
+        return None, "別の地域・サービスの記録は変更しません。"
+    if existing.get("status") in LOCKED_STATUSES:
+        return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
+    external_id, posted_at = _kept_receipt(existing)
+    fields = {
+        "source_kind": "service",
+        "blog_id": None,
+        "service_key": screen["service"]["key"],
+        "channel": "gbp",
+        "gbp_profile": screen["gbp_profile"],
+        "status": "ready",
+        "body": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "angle_label": existing.get("angle_label"),
+        "external_id": external_id,
+        "error_message": None,
+        "posted_at": posted_at,
+        "updated_at": now,
+    }
+    event = {
+        "event": "confirmed",
+        "body_snapshot": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "detail": "確認のみ。外部サービスへは投稿していません。",
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "is_insert": False}, None
+
+
+def find_latest_service_post(client, service_key, area):
+    res = (
+        client.table("external_posts")
+        .select("*")
+        .eq("source_kind", "service")
+        .eq("channel", "gbp")
+        .eq("service_key", service_key)
+        .eq("gbp_profile", area)
+        .order("updated_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = res.data or []
+    return rows[0] if rows else None
 
 
 def find_notes_post(client, blog_id, target):

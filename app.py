@@ -5092,6 +5092,122 @@ def admin_gbp_services():
     )
 
 
+def _service_form_values(screen, existing):
+    public_url = url_for("index", _external=True).rstrip("/") + external_posts.service_public_path(
+        screen["area"], screen["service"]["key"]
+    )
+    if existing:
+        return {
+            "body": existing.get("body") or "",
+            "link_url": existing.get("link_url") or public_url,
+            "image_url": existing.get("image_url") or "",
+            "status_label": external_posts.status_caption(existing.get("status")),
+        }
+    return {
+        "body": external_posts.starter_service_body(screen["area"], screen["service"], public_url),
+        "link_url": public_url,
+        "image_url": "",
+        "status_label": external_posts.status_caption(None),
+    }
+
+
+@app.route("/admin/gbp/services/<area>/<service_key>", methods=["GET", "POST"])
+@staff_section_required("blogs")
+def admin_gbp_service_post(area, service_key):
+    """地域とサービスの確認・下書き保存。Googleへは送らない。"""
+    screen, reason = external_posts.resolve_service_screen(area, service_key)
+    if reason:
+        flash(reason, "error")
+        return redirect("/admin/gbp/services")
+    existing = None
+    events = []
+    try:
+        existing = external_posts.find_latest_service_post(
+            supabase_admin, screen["service"]["key"], screen["area"]
+        )
+        events = external_posts.list_post_events(supabase_admin, (existing or {}).get("id"))
+    except Exception as exc:
+        print("❌ サービス投稿の読み込みエラー:", exc)
+        flash("保存済みの投稿文を読み込めませんでした", "error")
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "save").strip()
+        if action in {"send", "check"}:
+            flash("この画面からGoogleへは送信しません", "error")
+            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        try:
+            body = external_posts.clean_body(request.form.get("body"))
+            link_url = external_posts.clean_http_url(request.form.get("link_url"))
+            image_url = external_posts.clean_image_ref(request.form.get("image_url"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template(
+                "admin_gbp_service_post.html",
+                screen=screen,
+                form={
+                    "body": request.form.get("body") or "",
+                    "link_url": request.form.get("link_url") or "",
+                    "image_url": request.form.get("image_url") or "",
+                    "status_label": external_posts.status_caption((existing or {}).get("status")),
+                },
+                events=events,
+                gbp_preview=None,
+                gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
+            )
+        staff = session.get("staff") or {}
+        now = now_iso()
+        preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, image_url)
+        if action == "confirm":
+            if preview and not preview["ok"]:
+                flash(preview["errors"][0], "error")
+                return render_template(
+                    "admin_gbp_service_post.html",
+                    screen=screen,
+                    form={
+                        "body": body,
+                        "link_url": link_url,
+                        "image_url": image_url,
+                        "status_label": external_posts.status_caption((existing or {}).get("status")),
+                    },
+                    events=events,
+                    gbp_preview=preview,
+                    gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
+                )
+            prepared, reason = external_posts.prepare_service_confirm(
+                existing, screen["area"], screen["service"]["key"], body, link_url, image_url, staff.get("id"), now
+            )
+            saved_message = f"{screen['area_label']}の{screen['service']['label']}を確認済にしました。外部サービスへは投稿していません。"
+        else:
+            prepared, reason = external_posts.prepare_service_save(
+                existing, screen["area"], screen["service"]["key"], body, link_url, image_url, staff.get("id"), now
+            )
+            saved_message = f"{screen['area_label']}の{screen['service']['label']}を保存しました。外部サービスへは投稿していません。"
+            if prepared and prepared["fields"]["status"] != "draft":
+                flash("投稿文の保存に失敗しました", "error")
+                return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        if reason:
+            flash(reason, "error")
+            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        try:
+            external_posts.save_notes_post(supabase_admin, existing, prepared)
+        except Exception as exc:
+            print("❌ サービス投稿の保存エラー:", exc)
+            flash(f"投稿文の保存に失敗しました: {exc}", "error")
+            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        flash(saved_message, "success")
+        return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+
+    form = _service_form_values(screen, existing)
+    return render_template(
+        "admin_gbp_service_post.html",
+        screen=screen,
+        form=form,
+        events=events,
+        gbp_preview=_gbp_post_preview({"channel": "gbp"}, form["body"], form["link_url"], form["image_url"]),
+        gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
+    )
+
+
 # ===================================================
 # ✅ ニュース管理（/admin/news）
 # ===================================================
