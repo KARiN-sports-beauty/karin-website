@@ -249,10 +249,93 @@ def plan_hours_update(profile, config, existing_body, closed_dates, window_start
     return request
 
 
+_DAY_INDEX = {name: index for index, name in enumerate(WEEKDAYS_API)}
+_MINUTES_IN_DAY = 24 * 60
+_MINUTES_IN_WEEK = 7 * _MINUTES_IN_DAY
+
+
+def _clock_minutes(value):
+    """0:00〜24:00 を分にする。{} と省略は 00:00。hours=24 は 24:00。"""
+    if value is None:
+        return 0
+    if not isinstance(value, dict):
+        return None
+    if not value:
+        return 0
+    try:
+        hours = int(value["hours"]) if "hours" in value else 0
+        minutes = int(value["minutes"]) if "minutes" in value else 0
+    except (TypeError, ValueError):
+        return None
+    if minutes < 0 or minutes > 59:
+        return None
+    if hours == 24:
+        return None if minutes else _MINUTES_IN_DAY
+    if hours < 0 or hours > 23:
+        return None
+    return hours * 60 + minutes
+
+
+def _period_span(period):
+    if not isinstance(period, dict):
+        return None
+    open_day = _DAY_INDEX.get(period.get("openDay"))
+    close_day = _DAY_INDEX.get(period.get("closeDay"))
+    if open_day is None or close_day is None:
+        return None
+    start = _clock_minutes(period.get("openTime"))
+    end = _clock_minutes(period.get("closeTime"))
+    if start is None or end is None:
+        return None
+    start_abs = open_day * _MINUTES_IN_DAY + start
+    end_abs = close_day * _MINUTES_IN_DAY + end
+    if end_abs <= start_abs:
+        end_abs += _MINUTES_IN_WEEK
+    return start_abs, end_abs
+
+
+def _normalized_week(hours):
+    """曜日ごとの開いている区間。日またぎは 24:00 / 00:00 で分割する。"""
+    if not isinstance(hours, dict):
+        return None
+    periods = hours.get("periods")
+    if not isinstance(periods, list):
+        return None
+    pieces = [[] for _ in range(7)]
+    for period in periods:
+        span = _period_span(period)
+        if span is None:
+            return None
+        start, end = span
+        cursor = start
+        while cursor < end:
+            day = (cursor // _MINUTES_IN_DAY) % 7
+            local_start = cursor % _MINUTES_IN_DAY
+            day_end = cursor - local_start + _MINUTES_IN_DAY
+            stop = min(end, day_end)
+            pieces[day].append((local_start, stop - (cursor - local_start)))
+            cursor = stop
+    merged = []
+    for spans in pieces:
+        spans.sort()
+        out = []
+        for start, end in spans:
+            if end <= start:
+                continue
+            if out and start <= out[-1][1]:
+                out[-1] = (out[-1][0], max(out[-1][1], end))
+            else:
+                out.append((start, end))
+        merged.append(tuple(out))
+    return tuple(merged)
+
+
 def regular_hours_match(expected, actual):
-    got = actual.get("periods") if isinstance(actual, dict) else None
-    want = expected.get("periods") if isinstance(expected, dict) else None
-    return _json_same(want, got)
+    want = _normalized_week(expected)
+    got = _normalized_week(actual)
+    if want is None or got is None:
+        return False
+    return want == got
 
 
 def window_specials_match(expected, actual, window_start, window_end):

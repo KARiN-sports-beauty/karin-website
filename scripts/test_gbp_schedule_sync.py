@@ -93,6 +93,62 @@ def main():
         "福岡の通常は同日10:00-19:00",
     )
 
+    google_tokyo = {"periods": []}
+    for day in ("SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"):
+        google_tokyo["periods"].append({"openDay": day, "openTime": {}, "closeDay": day, "closeTime": {"hours": 2}})
+        google_tokyo["periods"].append(
+            {"openDay": day, "openTime": {"hours": 12}, "closeDay": day, "closeTime": {"hours": 24}}
+        )
+    report(sync.regular_hours_match(tokyo_hours, google_tokyo), "東京の送信7件とGoogleの14件は同じ営業時間")
+    different_close = {"periods": [dict(item) for item in google_tokyo["periods"]]}
+    different_close["periods"][0] = {
+        "openDay": "SUNDAY",
+        "openTime": {},
+        "closeDay": "SUNDAY",
+        "closeTime": {"hours": 3},
+    }
+    report(not sync.regular_hours_match(tokyo_hours, different_close), "終了時刻が違う通常営業時間は不一致")
+    different_open = {"periods": [dict(item) for item in tokyo_hours["periods"]]}
+    different_open["periods"][0] = {
+        "openDay": "MONDAY",
+        "openTime": {"hours": 11, "minutes": 0},
+        "closeDay": "TUESDAY",
+        "closeTime": {"hours": 2, "minutes": 0},
+    }
+    report(not sync.regular_hours_match(tokyo_hours, different_open), "開始時刻が違う通常営業時間は不一致")
+    fukuoka_google = {
+        "periods": [
+            {"openDay": item["openDay"], "openTime": {"hours": 10}, "closeDay": item["closeDay"], "closeTime": {"hours": 19}}
+            for item in fukuoka_hours["periods"]
+        ]
+    }
+    report(sync.regular_hours_match(fukuoka_hours, fukuoka_google), "minutes省略の福岡通常時間は一致")
+
+    special_sent = {
+        "specialHourPeriods": [
+            {"startDate": {"year": 2026, "month": 10, "day": 29}, "closed": True},
+            {"startDate": {"year": 2026, "month": 10, "day": 30}, "closed": True},
+        ]
+    }
+    special_got = {
+        "specialHourPeriods": [
+            {
+                "startDate": {"year": 2026, "month": 10, "day": 29},
+                "endDate": {"year": 2026, "month": 10, "day": 29},
+                "closed": True,
+            },
+            {
+                "startDate": {"year": 2026, "month": 10, "day": 30},
+                "endDate": {"year": 2026, "month": 10, "day": 30},
+                "closed": True,
+            },
+        ]
+    }
+    report(
+        sync.window_specials_match(special_sent, special_got, date(2026, 10, 19), date(2026, 10, 31)),
+        "10/29・10/30の終日休業は引き続き一致する",
+    )
+
     today = date(2026, 10, 19)
     window = sync.hours_window(date(2026, 10, 16), date(2026, 10, 31), today)
     report(window == (date(2026, 10, 19), date(2026, 10, 31)), "特別営業時間は今日以降", str(window))
