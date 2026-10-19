@@ -10,6 +10,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 import external_posts
+import gbp_read
 from external_posts import ExternalPostNotConnected
 
 FAILED = 0
@@ -376,6 +377,40 @@ def main():
         and appmod._safe_gbp_exception_text(RuntimeError("Bearer ya29.secret")) == "redacted"
         and appmod._safe_gbp_exception_text(RuntimeError("refresh_token=abc")) == "redacted",
         "送信例外のログはクラス名用に安全な文言だけ残す",
+    )
+    report(getattr(appmod, "gbp_read", None) is gbp_read, "送信共通処理は既存のgbp_readを使う")
+    report(
+        callable(getattr(appmod.gbp_read, "load_gbp_read_config", None))
+        and callable(getattr(appmod.gbp_read, "requests_exchange", None)),
+        "送信共通処理が使う読み取り関数は実在する",
+    )
+    sent = {}
+    original_send = appmod.gbp_local_post.perform_notes_gbp_send
+    original_load = appmod.gbp_read.load_gbp_read_config
+    try:
+        appmod.gbp_read.load_gbp_read_config = lambda: {"locations": {"fukuoka": "locations/test"}}
+        appmod.gbp_local_post.perform_notes_gbp_send = lambda *args, **kwargs: sent.update(kwargs) or {
+            "ok": True,
+            "message": "テスト用送信",
+        }
+        result = appmod._run_gbp_external_action(
+            {"id": "svc-1", "status": "ready", "gbp_profile": "fukuoka"},
+            mode="send",
+            staff_id="staff-1",
+            now="2026-10-19T14:00:00+09:00",
+        )
+        name_error = False
+    except NameError:
+        name_error = True
+        result = None
+    finally:
+        appmod.gbp_local_post.perform_notes_gbp_send = original_send
+        appmod.gbp_read.load_gbp_read_config = original_load
+    report(
+        not name_error
+        and result == {"ok": True, "message": "テスト用送信"}
+        and sent.get("token_exchange") is gbp_read.requests_exchange,
+        "サービス送信の共通処理はgbp_read未定義で落ちない",
     )
 
     print(f"\n{PASSED} passed, {FAILED} failed")

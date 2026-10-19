@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 import external_posts
 import gbp_local_post
+import gbp_read
 from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
