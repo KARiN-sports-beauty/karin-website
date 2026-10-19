@@ -378,11 +378,13 @@ def latest_submit_marker(record, events):
     return record.get("body") or "", record.get("updated_at")
 
 
-def perform_notes_gbp_send(client, record, *, config, token_exchange, post_exchange, now, staff_id=None):
+def perform_notes_gbp_send(
+    client, record, *, config, token_exchange, post_exchange, now, staff_id=None, post_store=None
+):
     """ready を posting にしてから1回だけ送る。条件付き更新に失敗したら送らない。"""
-    import external_posts
     import gbp_read
 
+    store = _post_store(post_store)
     refused = _prepare_send(record, config)
     if refused:
         return _flow(False, record, refused)
@@ -394,7 +396,7 @@ def perform_notes_gbp_send(client, record, *, config, token_exchange, post_excha
     except (GbpPostRefused, gbp_read.GbpReadError) as exc:
         return _flow(False, record, exc.detail)
     try:
-        claimed = external_posts.update_notes_post_if_status(
+        claimed = store["update_if_status"](
             client,
             record["id"],
             ("ready",),
@@ -407,16 +409,23 @@ def perform_notes_gbp_send(client, record, *, config, token_exchange, post_excha
     outgoing = dict(claimed)
     outgoing["location_name"] = location_name
     try:
-        external_posts.insert_post_event(client, claimed["id"], _started_event(outgoing, staff_id, now))
+        store["insert_event"](client, claimed["id"], _started_event(outgoing, staff_id, now))
     except Exception:
         return _flow(False, claimed, "送信開始の記録に失敗したため、Googleへは送っていません。再送せず、結果を確認してください。")
     try:
         request = plan_request(outgoing, account_name)
     except GbpPostRefused as exc:
-        return _store_outcome(client, outgoing, _local_failure(outgoing, exc.detail, now), now, staff_id=staff_id)
+        return _store_outcome(
+            client, outgoing, _local_failure(outgoing, exc.detail, now), now, staff_id=staff_id, post_store=store
+        )
     if outgoing.get("external_id") and request["method"] != "PATCH":
         return _store_outcome(
-            client, outgoing, _local_failure(outgoing, "投稿IDがあるため、新規投稿はしません。", now), now, staff_id=staff_id
+            client,
+            outgoing,
+            _local_failure(outgoing, "投稿IDがあるため、新規投稿はしません。", now),
+            now,
+            staff_id=staff_id,
+            post_store=store,
         )
     try:
         http_status, response = post_exchange(
@@ -435,13 +444,16 @@ def perform_notes_gbp_send(client, record, *, config, token_exchange, post_excha
         now=now,
         parent=request["parent"],
     )
-    return _store_outcome(client, outgoing, finished, now, staff_id=staff_id)
+    return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
 
 
-def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exchange, now, events=None, staff_id=None):
+def perform_notes_gbp_check(
+    client, record, *, config, token_exchange, post_exchange, now, events=None, staff_id=None, post_store=None
+):
     """unknown または送信中を GET で確認する。新規投稿は作らない。"""
     import gbp_read
 
+    store = _post_store(post_store)
     if not record or record.get("status") not in {"unknown", "posting"}:
         return _flow(False, record, "成否未確認、または送信中の記録だけ確認します。")
     try:
@@ -479,7 +491,13 @@ def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exch
             if http_status != 200:
                 outcome = _unresolved_outcome(record, now, "投稿一覧を取得できなかったため、確定しません。")
                 return _store_outcome(
-                    client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id
+                    client,
+                    record,
+                    outcome,
+                    now,
+                    from_statuses=("posting", "unknown"),
+                    staff_id=staff_id,
+                    post_store=store,
                 )
             if incomplete:
                 outcome = _unresolved_outcome(record, now, "投稿一覧が途中までしか取得できないため、確定しません。")
@@ -518,7 +536,9 @@ def perform_notes_gbp_check(client, record, *, config, token_exchange, post_exch
         return _flow(False, record, UNRESOLVED_POST_MESSAGE)
     except GbpPostRefused as exc:
         return _flow(False, record, exc.detail)
-    return _store_outcome(client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id)
+    return _store_outcome(
+        client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id, post_store=store
+    )
 
 
 def _prepare_send(record, config):
@@ -581,13 +601,23 @@ def _local_failure(record, detail, now):
     )
 
 
-def _store_outcome(client, record, outcome, now, from_statuses=("posting",), staff_id=None):
+def _post_store(store):
+    if store:
+        return store
     import external_posts
 
+    return {
+        "update_if_status": external_posts.update_notes_post_if_status,
+        "insert_event": external_posts.insert_post_event,
+    }
+
+
+def _store_outcome(client, record, outcome, now, from_statuses=("posting",), staff_id=None, post_store=None):
+    store = _post_store(post_store)
     event = dict(outcome["event"])
     event["actor_staff_id"] = staff_id or None
     try:
-        saved = external_posts.update_notes_post_if_status(
+        saved = store["update_if_status"](
             client, record["id"], from_statuses, outcome["fields"]
         )
     except Exception:
@@ -595,7 +625,7 @@ def _store_outcome(client, record, outcome, now, from_statuses=("posting",), sta
     if not saved:
         return _flow(False, record, "通信後に状態を保存できませんでした。自動では再送しません。結果を確認してください。")
     try:
-        external_posts.insert_post_event(client, saved["id"], event)
+        store["insert_event"](client, saved["id"], event)
     except Exception:
         return _flow(True, saved, "状態は保存しました。履歴の記録に失敗しました。自動では再送しません。")
     status = saved.get("status")

@@ -138,7 +138,10 @@ BEGIN
     'self_care_videos',
     'staff',
     'external_posts',
-    'external_post_events'
+    'external_post_events',
+    'gbp_schedule_posts',
+    'gbp_schedule_post_events',
+    'gbp_hours_syncs'
   ]
   LOOP
     IF to_regclass(format('public.%I', t)) IS NOT NULL THEN

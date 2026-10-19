@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}GBPスケジュール連携 | KARiN.{% endblock %}
+
+{% block content %}
+<h2 class="admin-title">GBPスケジュール連携</h2>
+
+{% if get_flashed_messages() %}
+  {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="admin-alert admin-alert-{{ message[0] }}" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: {% if message[0] == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message[0] == 'success' %}#155724{% else %}#721c24{% endif %};">
+      {{ message[1] }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<p class="admin-blog-body">公開スケジュールと同じシフトと帯同予定から、東京と福岡のGBP営業時間とスケジュール投稿を分けて扱います。営業時間の成功を投稿成功とはみなしません。Googleへの変更は、内容を確認してからこの画面のボタンで行います。</p>
+
+<div class="admin-blog-buttons">
+  <a href="/admin/gbp/schedule?year={{ period.prev.year }}&month={{ period.prev.month }}&half={{ period.prev.half }}" class="admin-blog-btn-white">前の半月</a>
+  <span class="admin-blog-category">{{ period.year }}年{{ period.month }}月 {{ period.half }}（{{ period.start }}〜{{ period.end }}）</span>
+  <a href="/admin/gbp/schedule?year={{ period.next.year }}&month={{ period.next.month }}&half={{ period.next.half }}" class="admin-blog-btn-white">次の半月</a>
+</div>
+
+<h3 class="admin-subtitle">対象日と判定</h3>
+<p class="admin-blog-body">営業時間は「東京のみ」「福岡のみ」の日だけ通常営業です。帯同・重複・予定なし・休業・判定不能は休業です。投稿には確定した予定だけを書きます。</p>
+<div style="overflow-x: auto;">
+  <table class="admin-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th style="text-align: left; padding: 8px;">日付</th>
+        <th style="text-align: left; padding: 8px;">東京 営業時間</th>
+        <th style="text-align: left; padding: 8px;">福岡 営業時間</th>
+        <th style="text-align: left; padding: 8px;">東京 投稿</th>
+        <th style="text-align: left; padding: 8px;">福岡 投稿</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in days %}
+      <tr>
+        <td style="padding: 8px;">{{ row.date }}（{{ row.weekday }}）</td>
+        <td style="padding: 8px;">{{ row.hours.tokyo.label }}（{{ row.hours.tokyo.reason_label }}）</td>
+        <td style="padding: 8px;">{{ row.hours.fukuoka.label }}（{{ row.hours.fukuoka.reason_label }}）</td>
+        <td style="padding: 8px;">{{ row.post_labels.tokyo or "—" }}</td>
+        <td style="padding: 8px;">{{ row.post_labels.fukuoka or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for profile in profiles %}
+  {% set item = screens[profile] %}
+  <h3 class="admin-subtitle">{{ item.area_label }}GBP</h3>
+  <p class="admin-blog-category">営業時間: {{ item.hours_status_label }}</p>
+  <p class="admin-blog-category">投稿: {{ item.post_status_label }}</p>
+  {% if hours_window %}
+  <p class="admin-blog-body">営業時間の更新対象: {{ hours_window[0] }}〜{{ hours_window[1] }}（日本時間の今日以降。過去日は既存の特別営業時間を残します）</p>
+  {% else %}
+  <p class="admin-blog-body">この半月はすべて過去のため、営業時間は更新しません。</p>
+  {% endif %}
+
+  <h4 class="admin-subtitle">営業時間プレビュー</h4>
+  <ul>
+    {% for hour_row in item.hours_preview %}
+    <li>{{ hour_row.date }}（{{ hour_row.weekday }}） {{ hour_row.action }}／{{ hour_row.reason_label }}</li>
+    {% endfor %}
+  </ul>
+  {% if item.hours_locked %}
+  <p class="admin-blog-body">前回の営業時間更新が未確認です。自動では再実行しません。</p>
+  <form method="POST" action="/admin/gbp/schedule" style="margin-bottom: 16px;">
+    <input type="hidden" name="year" value="{{ period.year }}">
+    <input type="hidden" name="month" value="{{ period.month }}">
+    <input type="hidden" name="half" value="{{ period.half }}">
+    <button type="submit" name="action" value="hours_check_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の営業時間を確認する</button>
+  </form>
+  {% elif hours_window %}
+  <form method="POST" action="/admin/gbp/schedule" style="margin-bottom: 16px;">
+    <input type="hidden" name="year" value="{{ period.year }}">
+    <input type="hidden" name="month" value="{{ period.month }}">
+    <input type="hidden" name="half" value="{{ period.half }}">
+    <button type="submit" name="action" value="hours_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の営業時間を更新する</button>
+  </form>
+  {% endif %}
+
+  <form method="POST" action="/admin/gbp/schedule" style="max-width: 800px; margin-bottom: 32px;">
+    <input type="hidden" name="year" value="{{ period.year }}">
+    <input type="hidden" name="month" value="{{ period.month }}">
+    <input type="hidden" name="half" value="{{ period.half }}">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{{ item.area_label }}の投稿文</label>
+      <textarea name="body_{{ profile }}" rows="12" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ item.body }}</textarea>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">リンク先</label>
+      <input type="text" name="link_url_{{ profile }}" value="{{ item.link_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+    </div>
+    <button type="submit" name="action" value="save_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の投稿文を保存</button>
+    {% if item.post_action == "check" %}
+    <p class="admin-blog-body">投稿結果を確定できないため、新規送信を停止中</p>
+    <button type="submit" name="action" value="check_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の投稿を確認する</button>
+    {% endif %}
+    {% if item.post_preview and item.post_preview.ok and not item.post_locked %}
+    <button type="submit" name="action" value="confirm_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の内容を確認済にする</button>
+    {% endif %}
+    {% if item.post_action == "send" %}
+    <button type="submit" name="action" value="send_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}のスケジュールをGoogleに投稿する</button>
+    {% endif %}
+    {% if item.post_preview and not item.post_preview.ok %}
+    <ul>
+      {% for error in item.post_preview.errors %}
+      <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </form>
+{% endfor %}
+{% endblock %}

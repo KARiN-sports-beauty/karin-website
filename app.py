@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import external_posts
 import gbp_local_post
 import gbp_read
+import gbp_schedule_sync
 from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
@@ -5289,6 +5290,287 @@ def admin_gbp_service_post(area, service_key):
         gbp_preview=gbp_preview,
         gbp_action=_gbp_screen_action({"channel": "gbp"}, existing, gbp_preview),
         gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
+    )
+
+
+def _gbp_schedule_shift_half(year, month, half, delta):
+    index = year * 24 + (month - 1) * 2 + (0 if half == "H1" else 1) + delta
+    year, rem = divmod(index, 24)
+    month_index, half_index = divmod(rem, 2)
+    return year, month_index + 1, "H1" if half_index == 0 else "H2"
+
+
+def _gbp_schedule_period(args, today=None):
+    today = today or datetime.now(JST).date()
+    default_half = "H1" if today.day <= 15 else "H2"
+    try:
+        year = int(args.get("year") or today.year)
+        month = int(args.get("month") or today.month)
+        half = (args.get("half") or default_half).strip().upper()
+        key = gbp_period_key(year, month, half)
+        start, end = get_gbp_period_range(year, month, half)
+    except (TypeError, ValueError):
+        year, month, half = today.year, today.month, default_half
+        key = gbp_period_key(year, month, half)
+        start, end = get_gbp_period_range(year, month, half)
+    prev_year, prev_month, prev_half = _gbp_schedule_shift_half(year, month, half, -1)
+    next_year, next_month, next_half = _gbp_schedule_shift_half(year, month, half, 1)
+    return {
+        "year": year,
+        "month": month,
+        "half": half,
+        "key": key,
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "start_date": start,
+        "end_date": end,
+        "prev": {"year": prev_year, "month": prev_month, "half": prev_half},
+        "next": {"year": next_year, "month": next_month, "half": next_half},
+    }
+
+
+def _gbp_schedule_day_facts(start, end):
+    shifts = fetch_staff_shifts_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start, end)
+    fields = fetch_staff_field_blocks_in_range(PUBLIC_SCHEDULE_STAFF_NAME, start, end)
+    facts = []
+    day = start
+    while day <= end:
+        key = day.strftime("%Y-%m-%d")
+        row = shifts.get(key)
+        facts.append(
+            {
+                "date": day,
+                "mode": resolve_shift_work_mode(row),
+                "area": gbp_explicit_area((row or {}).get("area")),
+                "has_field": bool(merge_minute_intervals(fields.get(key))),
+            }
+        )
+        day += timedelta(days=1)
+    return facts
+
+
+def _split_gbp_schedule_action(raw):
+    text = (raw or "").strip()
+    for prefix in ("hours_check_", "check_", "confirm_", "save_", "send_", "hours_"):
+        if text.startswith(prefix):
+            profile = text[len(prefix):]
+            if profile in GBP_PROFILES:
+                return prefix[:-1], profile
+    return None, None
+
+
+def _run_schedule_gbp_action(existing, *, mode, staff_id, now, events=None):
+    config = gbp_read.load_gbp_read_config()
+    kwargs = {
+        "config": config,
+        "token_exchange": gbp_read.requests_exchange,
+        "post_exchange": _gbp_live_exchange,
+        "now": now,
+        "staff_id": staff_id,
+    }
+    if mode == "send":
+        return gbp_schedule_sync.perform_schedule_gbp_send(supabase_admin, existing, **kwargs)
+    kwargs["events"] = events
+    return gbp_schedule_sync.perform_schedule_gbp_check(supabase_admin, existing, **kwargs)
+
+
+@app.route("/admin/gbp/schedule", methods=["GET", "POST"])
+@staff_section_required("blogs")
+def admin_gbp_schedule():
+    """スケジュール由来のGBP営業時間と投稿。確認してから明示実行する。"""
+    source = request.form if request.method == "POST" else request.args
+    period = _gbp_schedule_period(source)
+    today = datetime.now(JST).date()
+    path = f"/admin/gbp/schedule?year={period['year']}&month={period['month']}&half={period['half']}"
+    facts = _gbp_schedule_day_facts(period["start_date"], period["end_date"])
+    days = gbp_schedule_sync.describe_days(
+        facts,
+        labels={
+            "tokyo": PUBLIC_PLACE_TOKYO,
+            "fukuoka": PUBLIC_PLACE_FUKUOKA,
+            "field": PUBLIC_PLACE_FIELD,
+            "closed": PUBLIC_PLACE_CLOSED,
+        },
+        weekdays=PUBLIC_SCHEDULE_WEEKDAYS,
+    )
+    window = gbp_schedule_sync.hours_window(period["start_date"], period["end_date"], today)
+    hours_preview = gbp_schedule_sync.hours_preview_rows(days, today, window)
+
+    if request.method == "POST":
+        action, profile = _split_gbp_schedule_action(request.form.get("action"))
+        staff = session.get("staff") or {}
+        now = now_iso()
+        if not action or not profile:
+            flash("操作対象の地域が確認できません", "error")
+            return redirect(path)
+        if action in {"hours", "hours_check"}:
+            try:
+                existing_hours = gbp_schedule_sync.find_hours_sync(supabase_admin, period["key"], profile)
+            except Exception as exc:
+                print("❌ GBP営業時間の記録読み込みエラー:", exc)
+                flash("営業時間の記録を読み込めませんでした。テーブル未作成の可能性があります。", "error")
+                return redirect(path)
+            if action == "hours_check":
+                payload = (existing_hours or {}).get("payload")
+                window_start = window[0] if window else period["start_date"]
+                window_end = window[1] if window else period["end_date"]
+                try:
+                    result = gbp_schedule_sync.perform_hours_check(
+                        supabase_admin,
+                        period_key=period["key"],
+                        profile=profile,
+                        config=gbp_read.load_gbp_read_config(),
+                        token_exchange=gbp_read.requests_exchange,
+                        hours_http=gbp_schedule_sync.hours_exchange,
+                        expected_payload=payload,
+                        window_start=window_start,
+                        window_end=window_end,
+                        now=now,
+                        existing=existing_hours,
+                    )
+                except Exception as exc:
+                    _log_gbp_exception("❌ GBP営業時間の確認エラー", exc)
+                    flash("営業時間の確認に失敗しました。自動では再実行しません。", "error")
+                    return redirect(path)
+                flash(result["message"], "success" if result["ok"] else "error")
+                return redirect(path)
+            if not window:
+                flash("更新できる日付がないため、営業時間は変更しません。", "error")
+                return redirect(path)
+            closed_dates = gbp_schedule_sync.closed_dates_for(days, profile, window[0], window[1])
+            try:
+                result = gbp_schedule_sync.perform_hours_apply(
+                    supabase_admin,
+                    period_key=period["key"],
+                    profile=profile,
+                    config=gbp_read.load_gbp_read_config(),
+                    token_exchange=gbp_read.requests_exchange,
+                    hours_http=gbp_schedule_sync.hours_exchange,
+                    closed_dates=closed_dates,
+                    window_start=window[0],
+                    window_end=window[1],
+                    now=now,
+                    existing=existing_hours,
+                )
+            except Exception as exc:
+                _log_gbp_exception("❌ GBP営業時間の更新エラー", exc)
+                flash("営業時間の更新に失敗しました。自動では再実行しません。", "error")
+                return redirect(path)
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(path)
+
+        body = (request.form.get(f"body_{profile}") or "").strip()
+        link_url = (request.form.get(f"link_url_{profile}") or gbp_schedule_sync.SCHEDULE_URL).strip()
+        try:
+            existing_post = gbp_schedule_sync.find_schedule_post(supabase_admin, period["key"], profile)
+            events = gbp_schedule_sync.list_schedule_events(supabase_admin, (existing_post or {}).get("id"))
+        except Exception as exc:
+            print("❌ スケジュール投稿の読み込みエラー:", exc)
+            flash("スケジュール投稿の記録を読み込めませんでした。テーブル未作成の可能性があります。", "error")
+            return redirect(path)
+        if action == "check":
+            try:
+                result = _run_schedule_gbp_action(
+                    existing_post, mode="check", staff_id=staff.get("id"), now=now, events=events
+                )
+            except Exception as exc:
+                _log_gbp_exception("❌ スケジュールGBP投稿の確認エラー", exc)
+                flash("投稿の確認に失敗しました。自動では再送しません。", "error")
+                return redirect(path)
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(path)
+        if action == "send":
+            preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, "")
+            if not existing_post or existing_post.get("gbp_profile") != profile:
+                flash("確認済みのこの地域の記録だけ送信できます", "error")
+                return redirect(path)
+            if not _gbp_saved_matches(existing_post, body, link_url, existing_post.get("image_url") or ""):
+                flash("保存した内容と違うため送信しません。確認済にしてから送信してください。", "error")
+                return redirect(path)
+            if preview and not preview.get("ok"):
+                flash(preview["errors"][0], "error")
+                return redirect(path)
+            try:
+                result = _run_schedule_gbp_action(
+                    existing_post, mode="send", staff_id=staff.get("id"), now=now
+                )
+            except Exception as exc:
+                _log_gbp_exception("❌ スケジュールGBP投稿の送信エラー", exc)
+                flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                return redirect(path)
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(path)
+        preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, "")
+        if action == "confirm":
+            if preview and not preview["ok"]:
+                flash(preview["errors"][0], "error")
+                return redirect(path)
+            prepared, reason = gbp_schedule_sync.prepare_schedule_confirm(
+                existing_post, period["key"], profile, body, link_url, staff.get("id"), now
+            )
+            saved_message = f"{'東京' if profile == 'tokyo' else '福岡'}のスケジュール投稿を確認済にしました。外部サービスへは投稿していません。"
+        else:
+            prepared, reason = gbp_schedule_sync.prepare_schedule_save(
+                existing_post, period["key"], profile, body, link_url, staff.get("id"), now
+            )
+            saved_message = f"{'東京' if profile == 'tokyo' else '福岡'}のスケジュール投稿を保存しました。外部サービスへは投稿していません。"
+        if reason:
+            flash(reason, "error")
+            return redirect(path)
+        try:
+            gbp_schedule_sync.save_schedule_post(supabase_admin, existing_post, prepared)
+        except Exception as exc:
+            print("❌ スケジュール投稿の保存エラー:", exc)
+            flash("投稿文の保存に失敗しました。テーブル未作成の可能性があります。", "error")
+            return redirect(path)
+        flash(saved_message, "success")
+        return redirect(path)
+
+    screens = {}
+    for profile in ("tokyo", "fukuoka"):
+        generated = gbp_schedule_sync.build_schedule_body(
+            profile,
+            facts,
+            labels={
+                "tokyo": PUBLIC_PLACE_TOKYO,
+                "fukuoka": PUBLIC_PLACE_FUKUOKA,
+                "field": PUBLIC_PLACE_FIELD,
+                "closed": PUBLIC_PLACE_CLOSED,
+            },
+            weekdays=PUBLIC_SCHEDULE_WEEKDAYS,
+        )
+        existing_post = None
+        events = []
+        existing_hours = None
+        try:
+            existing_post = gbp_schedule_sync.find_schedule_post(supabase_admin, period["key"], profile)
+            events = gbp_schedule_sync.list_schedule_events(supabase_admin, (existing_post or {}).get("id"))
+            existing_hours = gbp_schedule_sync.find_hours_sync(supabase_admin, period["key"], profile)
+        except Exception as exc:
+            print("❌ スケジュール連携の読み込みエラー:", exc)
+        body = (existing_post or {}).get("body") or generated
+        link_url = (existing_post or {}).get("link_url") or gbp_schedule_sync.SCHEDULE_URL
+        preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, "")
+        screens[profile] = {
+            "area_label": "東京" if profile == "tokyo" else "福岡",
+            "body": body,
+            "link_url": link_url,
+            "hours_preview": hours_preview.get(profile) or [],
+            "hours_status_label": gbp_schedule_sync.hours_status_caption((existing_hours or {}).get("status")),
+            "hours_locked": bool(existing_hours and existing_hours.get("status") in gbp_schedule_sync.HOURS_LOCKED),
+            "post_status_label": external_posts.status_caption((existing_post or {}).get("status")),
+            "post_preview": preview,
+            "post_action": _gbp_screen_action({"channel": "gbp"}, existing_post, preview),
+            "post_locked": bool(existing_post and existing_post.get("status") in external_posts.LOCKED_STATUSES),
+            "events": events,
+        }
+    return render_template(
+        "admin_gbp_schedule.html",
+        period=period,
+        days=days,
+        hours_window=[window[0].isoformat(), window[1].isoformat()] if window else None,
+        profiles=("tokyo", "fukuoka"),
+        screens=screens,
     )
 
 
