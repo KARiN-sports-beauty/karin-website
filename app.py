@@ -4844,6 +4844,27 @@ def _gbp_live_exchange(method, url, body=None, access_token=None):
     return gbp_local_post.google_exchange(method, url, access_token=access_token, body=body)
 
 
+def _safe_gbp_exception_text(exc):
+    """ログ用。認証情報や長い本文は残さない。"""
+    text = " ".join(str(exc).split())
+    lowered = text.lower()
+    markers = (
+        "bearer ",
+        "authorization",
+        "access_token",
+        "refresh_token",
+        "client_secret",
+        "client_id",
+    )
+    if any(marker in lowered for marker in markers):
+        return "redacted"
+    return text[:200]
+
+
+def _log_gbp_exception(label, exc):
+    print(f"{label} {type(exc).__name__}: {_safe_gbp_exception_text(exc)}")
+
+
 def _run_gbp_external_action(existing, *, mode, staff_id, now, events=None):
     """確認済みの送信、または結果確認。呼び出しまで Google へは送らない。"""
     config = gbp_read.load_gbp_read_config()
@@ -5189,8 +5210,8 @@ def admin_gbp_service_post(area, service_key):
                 result = _run_gbp_external_action(
                     existing, mode="send", staff_id=staff.get("id"), now=now
                 )
-            except Exception:
-                print("❌ サービスGBP投稿の送信エラー")
+            except Exception as exc:
+                _log_gbp_exception("❌ サービスGBP投稿の送信エラー", exc)
                 flash("投稿処理に失敗しました。自動では再送しません。", "error")
                 return redirect(path)
             flash(result["message"], "success" if result["ok"] else "error")

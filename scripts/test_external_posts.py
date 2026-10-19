@@ -371,6 +371,12 @@ def main():
     report("/admin/gbp/services/<area>/<service_key>" in rules, "サービス確認のルートがある")
     service_src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
     report("mode=\"send\"" in service_src and "admin_gbp_service_post" in service_src, "サービス画面は既存の送信処理を使う")
+    report(
+        appmod._safe_gbp_exception_text(ValueError("保存に失敗しました")) == "保存に失敗しました"
+        and appmod._safe_gbp_exception_text(RuntimeError("Bearer ya29.secret")) == "redacted"
+        and appmod._safe_gbp_exception_text(RuntimeError("refresh_token=abc")) == "redacted",
+        "送信例外のログはクラス名用に安全な文言だけ残す",
+    )
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
