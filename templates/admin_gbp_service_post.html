@@ -21,7 +21,7 @@
 {% if screen.service.note %}
 <p class="admin-blog-body">{{ screen.service.note }}</p>
 {% endif %}
-<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信はしません。東京と福岡は別の投稿対象です。</p>
+<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信は、確認済の内容だけ、この画面のボタンで行います。東京と福岡は別の投稿対象です。結果が不明なときは自動で送り直しません。</p>
 
 <form method="POST" action="/admin/gbp/services/{{ screen.area }}/{{ screen.service.key }}" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
@@ -36,16 +36,22 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
     <input type="text" name="image_url" value="{{ form.image_url }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
-  {% if not gbp_locked %}
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
+  {% if gbp_action == "check" %}
+  <p class="admin-blog-body">投稿結果を確定できないため、新規送信を停止中</p>
+  <p class="admin-blog-body">確認では新しい投稿を作りません。同じ確認を繰り返せます。</p>
+  <button type="submit" name="action" value="check" class="admin-blog-btn">Google側の投稿を確認する</button>
   {% endif %}
   {% if gbp_preview %}
   <h3 class="admin-subtitle">送信内容の確認</h3>
-  <p class="admin-blog-body">この画面ではGoogleへ送信しません。</p>
+  <p class="admin-blog-body">内容が問題なければ確認済にできます。確認済のあと、明示してからGoogleへ送ります。</p>
   {% if gbp_preview.ok %}
   <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ gbp_preview.payload_text }}</pre>
   {% if not gbp_locked %}
   <button type="submit" name="action" value="confirm" class="admin-blog-btn">この内容を確認済にする</button>
+  {% endif %}
+  {% if gbp_action == "send" %}
+  <button type="submit" name="action" value="send" class="admin-blog-btn">この内容をGoogleに投稿する</button>
   {% endif %}
   {% else %}
   <ul>

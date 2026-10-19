@@ -241,6 +241,33 @@ def main():
         and tokyo_save["fields"]["status"] == "draft",
         "サービス保存は地域ごとに別行で、下書きのまま",
     )
+    revised, revise_reason = external_posts.prepare_service_revision(
+        {
+            "id": "row-1",
+            "source_kind": "service",
+            "channel": "gbp",
+            "gbp_profile": "fukuoka",
+            "service_key": "acupuncture",
+            "status": "posted",
+            "external_id": "accounts/1/locations/2/localPosts/3",
+            "posted_at": "2026-10-19T10:00:00+09:00",
+        },
+        "fukuoka",
+        "acupuncture",
+        "更新後",
+        "https://karin-sb.jp/fukuoka/shinkyu",
+        "",
+        "staff-1",
+        "2026-10-19T11:00:00+09:00",
+    )
+    report(
+        revise_reason is None
+        and revised["fields"]["external_id"] == "accounts/1/locations/2/localPosts/3"
+        and revised["fields"]["status"] == "ready"
+        and revised["fields"]["gbp_profile"] == "fukuoka",
+        "投稿済みの更新でも投稿IDと福岡を残す",
+        str(revise_reason),
+    )
     mixed, mixed_reason = external_posts.prepare_service_save(
         {"id": "row-1", "source_kind": "service", "channel": "gbp", "gbp_profile": "tokyo", "service_key": "acupuncture", "status": "draft"},
         "fukuoka",
@@ -284,6 +311,24 @@ def main():
             gbp_preview={"ok": True, "payload_text": '{"summary":"本文"}', "errors": []},
             gbp_locked=False,
         )
+        send_detail = appmod.render_template(
+            "admin_gbp_service_post.html",
+            screen=fukuoka_screen,
+            form={"body": "福岡の鍼灸", "link_url": "https://karin-sb.jp/fukuoka/shinkyu", "image_url": "", "status_label": "確認済・未投稿"},
+            events=[],
+            gbp_preview={"ok": True, "payload_text": '{"summary":"本文"}', "errors": []},
+            gbp_action="send",
+            gbp_locked=False,
+        )
+        check_detail = appmod.render_template(
+            "admin_gbp_service_post.html",
+            screen=fukuoka_screen,
+            form={"body": "福岡の鍼灸", "link_url": "https://karin-sb.jp/fukuoka/shinkyu", "image_url": "", "status_label": "要確認"},
+            events=[],
+            gbp_preview={"ok": True, "payload_text": '{"summary":"本文"}', "errors": []},
+            gbp_action="check",
+            gbp_locked=True,
+        )
     report('href="/admin/gbp/services/tokyo/acupuncture"' in tokyo_list, "東京の鍼灸カードから東京の画面へ進める")
     report('href="/admin/gbp/services/fukuoka/acupuncture"' in service_html, "福岡の鍼灸カードから福岡の画面へ進める")
     report(
@@ -297,9 +342,21 @@ def main():
         'action="/admin/gbp/services/fukuoka/acupuncture"' in fukuoka_detail
         and "対象地域: 福岡" in fukuoka_detail
         and "この内容を確認済にする" in fukuoka_detail
-        and "この画面ではGoogleへ送信しません" in fukuoka_detail
+        and "この内容をGoogleに投稿する" not in fukuoka_detail
         and "mybusiness.googleapis.com" not in fukuoka_detail,
-        "福岡鍼灸の確認画面は福岡のまま、Googleへ送らない",
+        "未確認の福岡画面に送信ボタンは無い",
+    )
+    report(
+        "この内容をGoogleに投稿する" in send_detail
+        and "この内容を保存" in send_detail
+        and "対象地域: 福岡" in send_detail,
+        "確認済の福岡画面だけ送信ボタンがある",
+    )
+    report(
+        "Google側の投稿を確認する" in check_detail
+        and "この内容をGoogleに投稿する" not in check_detail
+        and "投稿結果を確定できないため、新規送信を停止中" in check_detail,
+        "結果不明の画面は確認だけで再送しない",
     )
 
     with appmod.app.test_client() as client:
@@ -312,7 +369,8 @@ def main():
 
     rules = [rule.rule for rule in appmod.app.url_map.iter_rules() if rule.endpoint == "admin_gbp_service_post"]
     report("/admin/gbp/services/<area>/<service_key>" in rules, "サービス確認のルートがある")
-    report("perform_notes_gbp_send" not in open(os.path.join(ROOT, "templates/admin_gbp_service_post.html"), encoding="utf-8").read(), "サービス画面は送信関数を持たない")
+    service_src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
+    report("mode=\"send\"" in service_src and "admin_gbp_service_post" in service_src, "サービス画面は既存の送信処理を使う")
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

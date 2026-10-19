@@ -5111,10 +5111,19 @@ def _service_form_values(screen, existing):
     }
 
 
+def _service_row_matches_screen(existing, screen):
+    return bool(
+        existing
+        and existing.get("gbp_profile") == screen["area"]
+        and existing.get("service_key") == screen["service"]["key"]
+        and existing.get("source_kind") == "service"
+    )
+
+
 @app.route("/admin/gbp/services/<area>/<service_key>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_gbp_service_post(area, service_key):
-    """地域とサービスの確認・下書き保存。Googleへは送らない。"""
+    """地域とサービスの確認・保存。確認済の明示操作だけ送信する。"""
     screen, reason = external_posts.resolve_service_screen(area, service_key)
     if reason:
         flash(reason, "error")
@@ -5132,9 +5141,23 @@ def admin_gbp_service_post(area, service_key):
 
     if request.method == "POST":
         action = (request.form.get("action") or "save").strip()
-        if action in {"send", "check"}:
-            flash("この画面からGoogleへは送信しません", "error")
-            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        staff = session.get("staff") or {}
+        now = now_iso()
+        path = f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}"
+        if action == "check":
+            if not _service_row_matches_screen(existing, screen):
+                flash("確認できるこの地域の記録がありません", "error")
+                return redirect(path)
+            try:
+                result = _run_gbp_external_action(
+                    existing, mode="check", staff_id=staff.get("id"), now=now, events=events
+                )
+            except Exception:
+                print("❌ サービスGBP投稿の確認エラー")
+                flash("投稿の確認に失敗しました。自動では再送しません。", "error")
+                return redirect(path)
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(path)
         try:
             body = external_posts.clean_body(request.form.get("body"))
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
@@ -5154,9 +5177,24 @@ def admin_gbp_service_post(area, service_key):
                 gbp_preview=None,
                 gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
             )
-        staff = session.get("staff") or {}
-        now = now_iso()
         preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, image_url)
+        if action == "send":
+            if not _service_row_matches_screen(existing, screen):
+                flash("確認済みのこの地域の記録だけ送信できます", "error")
+                return redirect(path)
+            if not _gbp_saved_matches(existing, body, link_url, image_url):
+                flash("保存した内容と違うため送信しません。確認済にしてから送信してください。", "error")
+                return redirect(path)
+            try:
+                result = _run_gbp_external_action(
+                    existing, mode="send", staff_id=staff.get("id"), now=now
+                )
+            except Exception:
+                print("❌ サービスGBP投稿の送信エラー")
+                flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                return redirect(path)
+            flash(result["message"], "success" if result["ok"] else "error")
+            return redirect(path)
         if action == "confirm":
             if preview and not preview["ok"]:
                 flash(preview["errors"][0], "error")
@@ -5171,12 +5209,34 @@ def admin_gbp_service_post(area, service_key):
                     },
                     events=events,
                     gbp_preview=preview,
+                    gbp_action=None,
                     gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
                 )
             prepared, reason = external_posts.prepare_service_confirm(
                 existing, screen["area"], screen["service"]["key"], body, link_url, image_url, staff.get("id"), now
             )
             saved_message = f"{screen['area_label']}の{screen['service']['label']}を確認済にしました。外部サービスへは投稿していません。"
+        elif existing and existing.get("status") == "posted" and _service_row_matches_screen(existing, screen):
+            if preview and not preview["ok"]:
+                flash(preview["errors"][0], "error")
+                return render_template(
+                    "admin_gbp_service_post.html",
+                    screen=screen,
+                    form={
+                        "body": body,
+                        "link_url": link_url,
+                        "image_url": image_url,
+                        "status_label": external_posts.status_caption(existing.get("status")),
+                    },
+                    events=events,
+                    gbp_preview=preview,
+                    gbp_action=None,
+                    gbp_locked=True,
+                )
+            prepared, reason = external_posts.prepare_service_revision(
+                existing, screen["area"], screen["service"]["key"], body, link_url, image_url, staff.get("id"), now
+            )
+            saved_message = f"{screen['area_label']}の{screen['service']['label']}を更新しました。投稿IDは保持しています。外部サービスへは投稿していません。"
         else:
             prepared, reason = external_posts.prepare_service_save(
                 existing, screen["area"], screen["service"]["key"], body, link_url, image_url, staff.get("id"), now
@@ -5184,26 +5244,28 @@ def admin_gbp_service_post(area, service_key):
             saved_message = f"{screen['area_label']}の{screen['service']['label']}を保存しました。外部サービスへは投稿していません。"
             if prepared and prepared["fields"]["status"] != "draft":
                 flash("投稿文の保存に失敗しました", "error")
-                return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+                return redirect(path)
         if reason:
             flash(reason, "error")
-            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+            return redirect(path)
         try:
             external_posts.save_notes_post(supabase_admin, existing, prepared)
         except Exception as exc:
             print("❌ サービス投稿の保存エラー:", exc)
             flash(f"投稿文の保存に失敗しました: {exc}", "error")
-            return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+            return redirect(path)
         flash(saved_message, "success")
-        return redirect(f"/admin/gbp/services/{screen['area']}/{screen['service']['key']}")
+        return redirect(path)
 
     form = _service_form_values(screen, existing)
+    gbp_preview = _gbp_post_preview({"channel": "gbp"}, form["body"], form["link_url"], form["image_url"])
     return render_template(
         "admin_gbp_service_post.html",
         screen=screen,
         form=form,
         events=events,
-        gbp_preview=_gbp_post_preview({"channel": "gbp"}, form["body"], form["link_url"], form["image_url"]),
+        gbp_preview=gbp_preview,
+        gbp_action=_gbp_screen_action({"channel": "gbp"}, existing, gbp_preview),
         gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
     )
 

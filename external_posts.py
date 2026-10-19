@@ -499,6 +499,48 @@ def prepare_service_save(existing, area, service_key, body, link_url, image_url,
     return {"fields": fields, "event": event, "is_insert": existing is None}, None
 
 
+def prepare_service_revision(existing, area, service_key, body, link_url, image_url, staff_id, now):
+    """投稿済みサービスの文面更新。external_id は残し、Googleへは送らない。"""
+    screen, reason = resolve_service_screen(area, service_key)
+    if reason:
+        return None, reason
+    if not existing or not existing.get("id"):
+        return None, "先に投稿文を保存してください。"
+    if existing.get("status") != "posted":
+        return None, "投稿済みの記録だけ、投稿IDを保持したまま内容を更新できます。"
+    if not _same_service_row(existing, screen["area"], screen["service"]["key"]):
+        return None, "別の地域・サービスの記録は変更しません。"
+    external_id, posted_at = _kept_receipt(existing)
+    if not external_id:
+        return None, "投稿IDがないため、投稿済みの内容は変更しません。"
+    fields = {
+        "source_kind": "service",
+        "blog_id": None,
+        "service_key": screen["service"]["key"],
+        "channel": "gbp",
+        "gbp_profile": screen["gbp_profile"],
+        "status": "ready",
+        "body": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "angle_label": existing.get("angle_label"),
+        "external_id": external_id,
+        "error_message": None,
+        "posted_at": posted_at,
+        "updated_at": now,
+    }
+    event = {
+        "event": "edited",
+        "body_snapshot": body,
+        "link_url": link_url or None,
+        "image_url": image_url or None,
+        "detail": "投稿IDは保持しています。外部サービスへは投稿していません。",
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "is_insert": False}, None
+
+
 def prepare_service_confirm(existing, area, service_key, body, link_url, image_url, staff_id, now):
     """サービス投稿を確認済にする。Googleへは送らない。"""
     screen, reason = resolve_service_screen(area, service_key)
