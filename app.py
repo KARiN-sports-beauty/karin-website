@@ -5438,6 +5438,11 @@ def admin_gbp_schedule():
                 flash("更新できる日付がないため、営業時間は変更しません。", "error")
                 return redirect(path)
             closed_dates = gbp_schedule_sync.closed_dates_for(days, profile, window[0], window[1])
+            if gbp_schedule_sync.hours_content_unchanged(
+                existing_hours, profile, closed_dates, window[0], window[1]
+            ):
+                flash("同じ内容は既に更新済みです。予定が変わったときだけ再実行します。", "error")
+                return redirect(path)
             try:
                 result = gbp_schedule_sync.perform_hours_apply(
                     supabase_admin,
@@ -5551,13 +5556,18 @@ def admin_gbp_schedule():
         body = (existing_post or {}).get("body") or generated
         link_url = (existing_post or {}).get("link_url") or gbp_schedule_sync.SCHEDULE_URL
         preview = _gbp_post_preview({"channel": "gbp"}, body, link_url, "")
+        closed_dates = (
+            gbp_schedule_sync.closed_dates_for(days, profile, window[0], window[1]) if window else []
+        )
         screens[profile] = {
             "area_label": "東京" if profile == "tokyo" else "福岡",
             "body": body,
             "link_url": link_url,
             "hours_preview": hours_preview.get(profile) or [],
             "hours_status_label": gbp_schedule_sync.hours_status_caption((existing_hours or {}).get("status")),
-            "hours_locked": bool(existing_hours and existing_hours.get("status") in gbp_schedule_sync.HOURS_LOCKED),
+            "hours_action": gbp_schedule_sync.hours_screen_action(
+                existing_hours, profile, closed_dates, window
+            ),
             "post_status_label": external_posts.status_caption((existing_post or {}).get("status")),
             "post_preview": preview,
             "post_action": _gbp_screen_action({"channel": "gbp"}, existing_post, preview),

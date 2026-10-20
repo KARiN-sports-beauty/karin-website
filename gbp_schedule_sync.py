@@ -469,6 +469,60 @@ def hours_status_caption(status):
     }.get(status or "", "未更新")
 
 
+def stored_closed_dates(payload, window_start, window_end):
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except ValueError:
+            return None
+    if not isinstance(payload, dict):
+        return None
+    special = payload.get("specialHours") if isinstance(payload.get("specialHours"), dict) else {}
+    periods = special.get("specialHourPeriods") if isinstance(special.get("specialHourPeriods"), list) else []
+    closed = []
+    for period in periods:
+        if not isinstance(period, dict) or not period.get("closed"):
+            continue
+        start = payload_date(period.get("startDate"))
+        if start is None or start < window_start or start > window_end:
+            continue
+        closed.append(start)
+    return sorted(closed)
+
+
+def hours_content_unchanged(existing, profile, closed_dates, window_start, window_end):
+    """applied の保存内容と、今の休業日・通常時間が同じか。"""
+    if not existing or existing.get("status") != "applied":
+        return False
+    stored = stored_closed_dates(existing.get("payload"), window_start, window_end)
+    if stored is None:
+        return False
+    planned = sorted({item for item in (closed_dates or []) if window_start <= item <= window_end})
+    if stored != planned:
+        return False
+    try:
+        payload = existing.get("payload")
+        parsed = json.loads(payload) if isinstance(payload, str) else payload
+    except ValueError:
+        return False
+    if not isinstance(parsed, dict):
+        return False
+    return regular_hours_match(parsed.get("regularHours"), regular_hours_for(profile))
+
+
+def hours_screen_action(existing, profile, closed_dates, window):
+    """check / apply / None。applied で同じ内容なら再送信しない。"""
+    status = (existing or {}).get("status")
+    if status == "unknown":
+        return "check"
+    if window is None:
+        return None
+    window_start, window_end = window
+    if hours_content_unchanged(existing, profile, closed_dates, window_start, window_end):
+        return None
+    return "apply"
+
+
 def hours_preview_rows(rows, today, window):
     preview = {profile: [] for profile in PROFILES}
     for row in rows or []:
@@ -687,6 +741,13 @@ def perform_hours_apply(
         }
     if window_start is None or window_end is None or window_end < window_start:
         return {"ok": False, "status": "failed", "message": "更新できる日付がありません。"}
+    if hours_content_unchanged(existing, profile, closed_dates, window_start, window_end):
+        return _hours_result(
+            False,
+            "applied",
+            "同じ内容は既に更新済みです。予定が変わったときだけ再実行します。",
+            existing,
+        )
     try:
         location_name = profile_location_name(config, profile)
         token = gbp_read.fetch_access_token(config, token_exchange)

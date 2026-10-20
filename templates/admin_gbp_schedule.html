@@ -64,7 +64,7 @@
     <li>{{ hour_row.date }}（{{ hour_row.weekday }}） {{ hour_row.action }}／{{ hour_row.reason_label }}</li>
     {% endfor %}
   </ul>
-  {% if item.hours_locked %}
+  {% if item.hours_action == "check" %}
   <p class="admin-blog-body">前回の営業時間更新が未確認です。自動では再実行しません。</p>
   <form method="POST" action="/admin/gbp/schedule" style="margin-bottom: 16px;">
     <input type="hidden" name="year" value="{{ period.year }}">
@@ -72,13 +72,15 @@
     <input type="hidden" name="half" value="{{ period.half }}">
     <button type="submit" name="action" value="hours_check_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の営業時間を確認する</button>
   </form>
-  {% elif hours_window %}
+  {% elif item.hours_action == "apply" %}
   <form method="POST" action="/admin/gbp/schedule" style="margin-bottom: 16px;">
     <input type="hidden" name="year" value="{{ period.year }}">
     <input type="hidden" name="month" value="{{ period.month }}">
     <input type="hidden" name="half" value="{{ period.half }}">
     <button type="submit" name="action" value="hours_{{ profile }}" class="admin-blog-btn">{{ item.area_label }}の営業時間を更新する</button>
   </form>
+  {% elif hours_window %}
+  <p class="admin-blog-body">この内容は更新済みです。予定が変わると、再び更新できます。</p>
   {% endif %}
 
   <form method="POST" action="/admin/gbp/schedule" style="max-width: 800px; margin-bottom: 32px;">

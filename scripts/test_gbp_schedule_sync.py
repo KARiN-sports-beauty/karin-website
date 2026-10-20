@@ -2,6 +2,7 @@
 """GBPスケジュール判定と営業時間ペイロード。Googleへは送らない。"""
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import date
@@ -227,9 +228,102 @@ def main():
         mixed = True
     report(mixed, "東京と福岡のlocationが同じなら更新しない")
 
+    preview_days = sync.describe_days(
+        [
+            fact("2026-10-20", "clinic", "tokyo"),
+            fact("2026-10-21", "clinic", "fukuoka"),
+            fact("2026-10-22", "field"),
+        ]
+    )
+    hours_span = (date(2026, 10, 19), date(2026, 10, 31))
+    tokyo_closed = sync.closed_dates_for(preview_days, "tokyo", hours_span[0], hours_span[1])
+    fukuoka_closed = sync.closed_dates_for(preview_days, "fukuoka", hours_span[0], hours_span[1])
+    report(
+        date(2026, 10, 20) not in tokyo_closed and date(2026, 10, 20) in fukuoka_closed,
+        "東京のみの日は東京の営業時間対象で、福岡は休業",
+    )
+    report(
+        date(2026, 10, 21) not in fukuoka_closed and date(2026, 10, 21) in tokyo_closed,
+        "福岡のみの日は福岡の営業時間対象で、東京は休業",
+    )
+    report(
+        date(2026, 10, 22) in tokyo_closed and date(2026, 10, 22) in fukuoka_closed,
+        "トレーナー帯同日は両拠点とも通常営業の対象外",
+    )
+
+    applied_payload = json.dumps(
+        {
+            "regularHours": sync.regular_hours_for("tokyo"),
+            "specialHours": {
+                "specialHourPeriods": [
+                    {"startDate": {"year": 2026, "month": 10, "day": 21}, "closed": True},
+                    {"startDate": {"year": 2026, "month": 10, "day": 22}, "closed": True},
+                ]
+            },
+            "window_start": "2026-10-19",
+            "window_end": "2026-10-31",
+        },
+        ensure_ascii=False,
+    )
+    applied = {"status": "applied", "payload": applied_payload}
+    report(
+        sync.hours_content_unchanged(applied, "tokyo", tokyo_closed, hours_span[0], hours_span[1]),
+        "appliedで同じ休業日なら再送不要",
+    )
+    report(
+        sync.hours_screen_action(applied, "tokyo", tokyo_closed, hours_span) is None,
+        "appliedで同じ内容なら更新ボタンを出さない",
+    )
+
+    changed_days = sync.describe_days(
+        [
+            fact("2026-10-20", "clinic", "tokyo"),
+            fact("2026-10-21", "clinic", "tokyo"),
+            fact("2026-10-22", "field"),
+        ]
+    )
+    changed_closed = sync.closed_dates_for(changed_days, "tokyo", hours_span[0], hours_span[1])
+    report(
+        not sync.hours_content_unchanged(applied, "tokyo", changed_closed, hours_span[0], hours_span[1]),
+        "予定変更後は同じ内容ではない",
+    )
+    report(
+        sync.hours_screen_action(applied, "tokyo", changed_closed, hours_span) == "apply",
+        "予定変更後は必要な営業時間更新ができる",
+    )
+    report(
+        sync.hours_screen_action({"status": "unknown", "payload": applied_payload}, "tokyo", tokyo_closed, hours_span)
+        == "check",
+        "unknownは確認のみ",
+    )
+    report(sync.hours_screen_action(None, "tokyo", tokyo_closed, hours_span) == "apply", "未更新なら更新できる")
+
+    http_calls = []
+
+    def refuse_http(*args, **kwargs):
+        http_calls.append((args, kwargs))
+        raise AssertionError("Googleへ送ってはいけない")
+
+    same_result = sync.perform_hours_apply(
+        None,
+        period_key="2026-10-h2",
+        profile="tokyo",
+        config={"locations": {"tokyo": "locations/tokyo1", "fukuoka": "locations/fukuoka1"}},
+        token_exchange=refuse_http,
+        hours_http=refuse_http,
+        closed_dates=tokyo_closed,
+        window_start=hours_span[0],
+        window_end=hours_span[1],
+        now="2026-10-20T00:00:00+09:00",
+        existing=applied,
+    )
+    report(same_result["ok"] is False and same_result["status"] == "applied", "同じ内容の再送信はGoogle前に止める")
+    report(http_calls == [], "同じ内容の再送信ではtokenも営業時間APIも呼ばない")
+
     src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
     report("def build_gbp_schedule_entries" in src, "予定組み立て関数は残っている")
     report("/admin/gbp/schedule" in src and "perform_schedule_gbp_send" in src, "管理画面から既存の送信処理を使う")
+    report("hours_content_unchanged" in src and "hours_screen_action" in src, "管理画面は同じ内容の再送信を止める")
     report("publish_external_post" not in open(os.path.join(ROOT, "gbp_schedule_sync.py"), encoding="utf-8").read(), "スケジュール投稿は未接続口を使わない")
 
     print(f"\n{PASSED} passed, {FAILED} failed")
