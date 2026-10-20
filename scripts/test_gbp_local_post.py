@@ -101,6 +101,19 @@ def main():
         "https画像はmediaに1枚だけ載せる",
     )
     report("media" not in gbp_local_post.build_standard_post("本文", "https://karin-sb.jp/")["payload"], "画像なしはmediaを付けない")
+    preview = gbp_local_post.build_standard_post(
+        "本文\nhttps://karin-sb.jp/blog/stretch-pole-posture",
+        "https://karin-sb.jp/blog/stretch-pole-posture",
+        "https://karin-sb.jp/static/images/notes/stretch-pole-posture.jpg",
+    )
+    preview_text = gbp_local_post.payload_text(preview["payload"])
+    report(
+        preview["payload"]["callToAction"]["url"] == "https://karin-sb.jp/blog/stretch-pole-posture"
+        and preview["payload"]["media"][0]["sourceUrl"] == "https://karin-sb.jp/static/images/notes/stretch-pole-posture.jpg"
+        and "](" not in preview_text
+        and "[https://" not in preview["payload"]["summary"],
+        "送信JSONのURLはMarkdownではなく絶対https",
+    )
 
     report(gbp_local_post.require_single_account([{"name": ACCOUNT}]) == ACCOUNT, "アカウント1件は採用する")
     refused = False
@@ -138,10 +151,29 @@ def main():
     )
     report(
         image_patch["method"] == "PATCH"
-        and "updateMask=summary,callToAction,media" in image_patch["url"]
-        and image_patch["body"]["media"][0]["mediaFormat"] == "PHOTO",
-        "投稿済み更新のPATCHは同じ投稿へmediaを含める",
+        and CREATED in image_patch["url"]
+        and "updateMask=summary,callToAction.actionType,callToAction.url,media.mediaFormat,media.sourceUrl"
+        in image_patch["url"]
+        and image_patch["body"]["summary"] == "本文"
+        and image_patch["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/kata"
+        and image_patch["body"]["media"][0]["sourceUrl"] == "https://karin-sb.jp/static/images/blogs/pole.jpg"
+        and "languageCode" not in image_patch["body"],
+        "投稿済み更新のPATCHは同じ投稿へ本文・CTA・画像を指定する",
     )
+    stale = gbp_local_post.finish_notes_gbp_submit(
+        ready_record(external_id=CREATED, image_url="https://karin-sb.jp/static/images/blogs/pole.jpg"),
+        http_status=200,
+        body={
+            "name": CREATED,
+            "summary": "本文",
+            "callToAction": {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/old"},
+            "media": [{"mediaFormat": "PHOTO", "sourceUrl": "https://karin-sb.jp/old.jpg"}],
+        },
+        timed_out=False,
+        now=LATER,
+        parent=PARENT,
+    )
+    report(stale["fields"]["status"] == "unknown", "応答のリンクや画像が古ければ投稿成功にしない")
     report("media" not in fukuoka_req["url"] and "media" not in fukuoka_req["body"], "画像なしの送信はmediaを付けない")
 
     http = FakeHttp("ok")

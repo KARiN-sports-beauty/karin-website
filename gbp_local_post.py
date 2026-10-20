@@ -116,13 +116,18 @@ def plan_request(record, account_name):
             raise GbpPostRefused("保存済みの投稿IDがこのロケーションの投稿ではないため、送信しません")
         if not _POST_NAME.fullmatch(external_id):
             raise GbpPostRefused("保存済みの投稿IDが不正なため、送信しません")
-        mask = ["summary", "callToAction"]
+        patch_body = {
+            "summary": built["payload"]["summary"],
+            "callToAction": built["payload"]["callToAction"],
+        }
+        mask = ["summary", "callToAction.actionType", "callToAction.url"]
         if built["payload"].get("media"):
-            mask.append("media")
+            patch_body["media"] = built["payload"]["media"]
+            mask.extend(["media.mediaFormat", "media.sourceUrl"])
         return {
             "method": "PATCH",
             "url": LOCAL_POST_URL.format(name=external_id) + "?updateMask=" + ",".join(mask),
-            "body": built["payload"],
+            "body": patch_body,
             "parent": parent,
         }
     return {
@@ -198,6 +203,18 @@ def finish_notes_gbp_submit(record, *, http_status, body, timed_out, now, parent
                     error_message="応答の本文が送信内容と一致しません。",
                     event="unknown",
                     detail="応答の本文が送信内容と一致しないため、投稿済にしていません。",
+                    now=now,
+                )
+            mismatch = _response_fields_mismatch(record, body)
+            if mismatch:
+                return _outcome(
+                    record,
+                    status="unknown",
+                    external_id=external_id,
+                    posted_at=posted_at,
+                    error_message=mismatch,
+                    event="unknown",
+                    detail="応答のリンクまたは画像が送信内容と一致しないため、投稿済にしていません。",
                     now=now,
                 )
             return _outcome(
@@ -662,6 +679,27 @@ def _unresolved_outcome(record, now, detail):
     )
 
 
+def _response_fields_mismatch(record, body):
+    """応答にリンクや画像が含まれるときだけ、送信内容と違うかを見る。"""
+    cta = body.get("callToAction") if isinstance(body.get("callToAction"), dict) else None
+    if cta is not None:
+        actual_url = cta.get("url") if isinstance(cta.get("url"), str) else ""
+        expected_url = (record.get("link_url") or "").strip()
+        if actual_url != expected_url:
+            return "応答のリンクが送信内容と一致しません。"
+    media_items = body.get("media") if isinstance(body.get("media"), list) else None
+    expected_image = (record.get("image_url") or "").strip()
+    if media_items is not None and expected_image:
+        source_urls = [
+            item.get("sourceUrl").strip()
+            for item in media_items
+            if isinstance(item, dict) and isinstance(item.get("sourceUrl"), str) and item.get("sourceUrl").strip()
+        ]
+        if source_urls and expected_image not in source_urls:
+            return "応答の画像が送信内容と一致しません。"
+    return None
+
+
 def confirm_fetched_post(record, post_body, submitted_summary, now):
     """GET の結果が送信内容と一致したときだけ posted にする。"""
     if not record or record.get("status") not in {"unknown", "posting"}:
@@ -671,6 +709,17 @@ def confirm_fetched_post(record, post_body, submitted_summary, now):
     summary = post_body.get("summary") if isinstance(post_body, dict) else ""
     expected_summary = (submitted_summary or "").replace("\r\n", "\n").strip()
     if name != expected_name or summary != expected_summary or not _POST_NAME.fullmatch(name or ""):
+        return _outcome(
+            record,
+            status="unknown",
+            external_id=expected_name or None,
+            posted_at=record.get("posted_at") or None,
+            error_message="取得した投稿が送信内容と一致しません。",
+            event="unknown",
+            detail="取得した投稿が送信内容と一致しないため、投稿済にしていません。",
+            now=now,
+        )
+    if _response_fields_mismatch(record, post_body):
         return _outcome(
             record,
             status="unknown",
