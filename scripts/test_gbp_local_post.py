@@ -89,6 +89,18 @@ def main():
     report(not relative["ok"], "サイト内パスの画像は送らない")
     http_link = gbp_local_post.build_standard_post("本文", "http://karin-sb.jp/")
     report(not http_link["ok"], "httpのリンクは送らない")
+    with_image = gbp_local_post.build_standard_post(
+        "本文",
+        "https://karin-sb.jp/blog/stretch-pole-posture",
+        "https://karin-sb.jp/static/images/blogs/pole.jpg",
+    )
+    report(
+        with_image["ok"]
+        and with_image["payload"]["media"]
+        == [{"mediaFormat": "PHOTO", "sourceUrl": "https://karin-sb.jp/static/images/blogs/pole.jpg"}],
+        "https画像はmediaに1枚だけ載せる",
+    )
+    report("media" not in gbp_local_post.build_standard_post("本文", "https://karin-sb.jp/")["payload"], "画像なしはmediaを付けない")
 
     report(gbp_local_post.require_single_account([{"name": ACCOUNT}]) == ACCOUNT, "アカウント1件は採用する")
     refused = False
@@ -108,6 +120,29 @@ def main():
     fukuoka_req = gbp_local_post.plan_request(ready_record(), ACCOUNT)
     report("8877844916727282076" in tokyo_req["url"] and "9653834603317620900" in fukuoka_req["url"], "東京と福岡は別の投稿先")
     report(tokyo_req["method"] == "POST" and fukuoka_req["method"] == "POST", "投稿IDがなければPOST")
+    image_create = gbp_local_post.plan_request(
+        ready_record(image_url="https://karin-sb.jp/static/images/blogs/pole.jpg"),
+        ACCOUNT,
+    )
+    report(
+        image_create["method"] == "POST"
+        and image_create["body"]["media"][0]["sourceUrl"] == "https://karin-sb.jp/static/images/blogs/pole.jpg",
+        "新規送信の本文に画像を含める",
+    )
+    image_patch = gbp_local_post.plan_request(
+        ready_record(
+            external_id=CREATED,
+            image_url="https://karin-sb.jp/static/images/blogs/pole.jpg",
+        ),
+        ACCOUNT,
+    )
+    report(
+        image_patch["method"] == "PATCH"
+        and "updateMask=summary,callToAction,media" in image_patch["url"]
+        and image_patch["body"]["media"][0]["mediaFormat"] == "PHOTO",
+        "投稿済み更新のPATCHは同じ投稿へmediaを含める",
+    )
+    report("media" not in fukuoka_req["url"] and "media" not in fukuoka_req["body"], "画像なしの送信はmediaを付けない")
 
     http = FakeHttp("ok")
     result, reason = gbp_local_post.execute_notes_gbp_submit(ready_record(), ACCOUNT, http, NOW)

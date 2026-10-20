@@ -65,6 +65,8 @@ def build_standard_post(body, link_url, image_url=""):
         "topicType": TOPIC_TYPE,
         "callToAction": {"actionType": CTA_TYPE, "url": url},
     }
+    if image:
+        payload["media"] = [{"mediaFormat": "PHOTO", "sourceUrl": image}]
     return {"ok": True, "errors": [], "payload": payload}
 
 
@@ -114,9 +116,12 @@ def plan_request(record, account_name):
             raise GbpPostRefused("保存済みの投稿IDがこのロケーションの投稿ではないため、送信しません")
         if not _POST_NAME.fullmatch(external_id):
             raise GbpPostRefused("保存済みの投稿IDが不正なため、送信しません")
+        mask = ["summary", "callToAction"]
+        if built["payload"].get("media"):
+            mask.append("media")
         return {
             "method": "PATCH",
-            "url": LOCAL_POST_URL.format(name=external_id) + "?updateMask=summary,callToAction",
+            "url": LOCAL_POST_URL.format(name=external_id) + "?updateMask=" + ",".join(mask),
             "body": built["payload"],
             "parent": parent,
         }
