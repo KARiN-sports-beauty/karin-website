@@ -4903,22 +4903,46 @@ def _gbp_screen_action(target, existing, preview):
     return None
 
 
+def _notes_public_blog_url(blog):
+    slug = (blog.get("slug") or "").strip().lstrip("/")
+    if not slug:
+        return ""
+    return f"{booking_public_base_url()}/blog/{slug}"
+
+
+def _gbp_https_asset_url(value):
+    """GBP確認用に、サイト内パスと公式サイトの http を https にする。"""
+    text = (value or "").strip()
+    if not text:
+        return ""
+    if text.startswith("https://"):
+        return text
+    if text.startswith("http://"):
+        rest = text[len("http://") :]
+        if rest == "karin-sb.jp" or rest.startswith("karin-sb.jp/"):
+            return "https://" + rest
+        return text
+    if text.startswith("/"):
+        return booking_public_base_url() + text
+    if text.startswith("static/"):
+        return f"{booking_public_base_url()}/{text}"
+    return text
+
+
 def _external_post_form_values(blog, target, existing):
     """保存済みがあればそれを、無ければ媒体別の下書きを表示する。保存はしない。"""
-    public_url = ""
-    if blog.get("slug"):
-        public_url = url_for("show_blog", slug=blog["slug"], _external=True)
+    public_url = _notes_public_blog_url(blog)
     if existing:
         return {
             "body": existing.get("body") or "",
-            "link_url": existing.get("link_url") or public_url,
-            "image_url": existing.get("image_url") or blog.get("image") or "",
+            "link_url": _gbp_https_asset_url(existing.get("link_url")) or public_url,
+            "image_url": _gbp_https_asset_url(existing.get("image_url") or ""),
             "status_label": external_posts.status_caption(existing.get("status")),
         }
     return {
         "body": external_posts.starter_body(target["key"], blog.get("title"), blog.get("excerpt"), public_url),
         "link_url": public_url,
-        "image_url": blog.get("image") or "",
+        "image_url": _gbp_https_asset_url(blog.get("image") or ""),
         "status_label": external_posts.status_caption(None),
     }
 

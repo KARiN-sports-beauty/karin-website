@@ -213,6 +213,139 @@ def main():
     report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
+    pole_blog = {
+        "id": "blog-stretch",
+        "title": "ストレッチポール",
+        "slug": "stretch-pole-posture",
+        "excerpt": "姿勢",
+        "image": "/static/images/blogs/pole.jpg",
+    }
+    tokyo_existing = {
+        "id": "row-tokyo",
+        "status": "draft",
+        "body": "東京向け保存文",
+        "link_url": "http://karin-sb.jp/blog/stretch-pole-posture",
+        "image_url": "/static/images/blogs/pole.jpg",
+        "gbp_profile": "tokyo",
+    }
+    fukuoka_existing = {
+        "id": "row-fukuoka",
+        "status": "draft",
+        "body": "福岡向け保存文",
+        "link_url": "https://karin-sb.jp/blog/stretch-pole-posture",
+        "image_url": "",
+        "gbp_profile": "fukuoka",
+    }
+    tokyo_form = appmod._external_post_form_values(pole_blog, tokyo, tokyo_existing)
+    fukuoka_form = appmod._external_post_form_values(pole_blog, fukuoka, fukuoka_existing)
+    report(tokyo_form["body"] == "東京向け保存文", "東京の保存文を再表示する")
+    report(fukuoka_form["body"] == "福岡向け保存文", "福岡の保存文を再表示する")
+    report(
+        tokyo_form["link_url"] == "https://karin-sb.jp/blog/stretch-pole-posture",
+        "東京の保存リンクはhttpsで再表示する",
+        tokyo_form["link_url"],
+    )
+    report(
+        tokyo_form["image_url"] == "https://karin-sb.jp/static/images/blogs/pole.jpg",
+        "東京の保存画像は公開httpsで再表示する",
+        tokyo_form["image_url"],
+    )
+    report(fukuoka_form["image_url"] == "", "福岡で空保存した画像は空のまま")
+    tokyo_preview = appmod._gbp_post_preview(tokyo, tokyo_form["body"], tokyo_form["link_url"], tokyo_form["image_url"])
+    fukuoka_preview = appmod._gbp_post_preview(
+        fukuoka, fukuoka_form["body"], fukuoka_form["link_url"], fukuoka_form["image_url"]
+    )
+    report(tokyo_preview["ok"] is True and fukuoka_preview["ok"] is True, "保存した東京・福岡の内容は確認済に進める")
+    with appmod.app.test_request_context("/admin/blogs/blog-stretch/posts/gbp_tokyo"):
+        tokyo_saved_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=pole_blog,
+            target=tokyo,
+            form=tokyo_form,
+            events=[],
+            gbp_preview=tokyo_preview,
+            gbp_action=appmod._gbp_screen_action(tokyo, tokyo_existing, tokyo_preview),
+            gbp_locked=False,
+        )
+        fukuoka_saved_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=pole_blog,
+            target=fukuoka,
+            form=fukuoka_form,
+            events=[],
+            gbp_preview=fukuoka_preview,
+            gbp_action=appmod._gbp_screen_action(fukuoka, fukuoka_existing, fukuoka_preview),
+            gbp_locked=False,
+        )
+    report(
+        "東京向け保存文" in tokyo_saved_html
+        and "https://karin-sb.jp/blog/stretch-pole-posture" in tokyo_saved_html
+        and "https://karin-sb.jp/static/images/blogs/pole.jpg" in tokyo_saved_html
+        and "この内容を確認済にする" in tokyo_saved_html
+        and "この内容をGoogleに投稿する" not in tokyo_saved_html,
+        "東京の保存内容と確認済ボタンを表示し、送信ボタンは出さない",
+    )
+    report(
+        "福岡向け保存文" in fukuoka_saved_html
+        and "この内容を確認済にする" in fukuoka_saved_html
+        and "この内容をGoogleに投稿する" not in fukuoka_saved_html,
+        "福岡の保存内容と確認済ボタンを表示し、送信ボタンは出さない",
+    )
+    tokyo_confirm, tokyo_confirm_reason = external_posts.prepare_notes_confirm(
+        tokyo_existing,
+        tokyo,
+        tokyo_form["body"],
+        tokyo_form["link_url"],
+        tokyo_form["image_url"],
+        "staff-1",
+        "2026-10-20T11:00:00+09:00",
+    )
+    fukuoka_confirm, fukuoka_confirm_reason = external_posts.prepare_notes_confirm(
+        fukuoka_existing,
+        fukuoka,
+        fukuoka_form["body"],
+        fukuoka_form["link_url"],
+        fukuoka_form["image_url"],
+        "staff-1",
+        "2026-10-20T11:00:00+09:00",
+    )
+    report(
+        tokyo_confirm_reason is None
+        and fukuoka_confirm_reason is None
+        and tokyo_confirm["fields"]["status"] == "ready"
+        and fukuoka_confirm["fields"]["status"] == "ready"
+        and tokyo_confirm["fields"]["gbp_profile"] == "tokyo"
+        and fukuoka_confirm["fields"]["gbp_profile"] == "fukuoka"
+        and tokyo_confirm["event"]["event"] == "confirmed"
+        and fukuoka_confirm["event"]["event"] == "confirmed",
+        "確認操作で東京と福岡を確認済にする",
+    )
+    report(
+        "外部サービスへは投稿していません" in tokyo_confirm["event"]["detail"]
+        and "succeeded" not in tokyo_confirm["event"]["event"],
+        "確認済への遷移だけではGoogleへ送信しない",
+    )
+    report(appmod._gbp_screen_action(tokyo, tokyo_existing, tokyo_preview) is None, "未確認の下書きは送信操作にしない")
+    ready_row = dict(tokyo_existing, status="ready")
+    report(appmod._gbp_screen_action(tokyo, ready_row, tokyo_preview) == "send", "確認済だけ送信操作になる")
+    draft_plan, draft_reason = appmod.gbp_local_post.begin_notes_gbp_submit(
+        {
+            "id": "row-tokyo",
+            "status": "draft",
+            "gbp_profile": "tokyo",
+            "body": tokyo_form["body"],
+            "link_url": tokyo_form["link_url"],
+            "image_url": tokyo_form["image_url"],
+        },
+        "2026-10-20T11:00:00+09:00",
+    )
+    report(draft_plan is None and "確認済み" in (draft_reason or ""), "未確認の投稿は送信できない", str(draft_reason))
+    unknown_plan, unknown_reason = appmod.gbp_local_post.begin_notes_gbp_submit(
+        {"id": "row-tokyo", "status": "unknown", "gbp_profile": "tokyo", "external_id": "accounts/1/locations/2/localPosts/3"},
+        "2026-10-20T11:00:00+09:00",
+    )
+    report(unknown_plan is None and unknown_reason, "成否未確認は再送しない", str(unknown_reason))
+
     tokyo_screen, tokyo_reason = external_posts.resolve_service_screen("tokyo", "acupuncture")
     fukuoka_screen, fukuoka_reason = external_posts.resolve_service_screen("fukuoka", "acupuncture")
     report(tokyo_reason is None and fukuoka_reason is None, "鍼灸の東京と福岡は開ける")
