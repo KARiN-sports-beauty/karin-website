@@ -110,6 +110,7 @@ class Http:
         self.posts = posts or []
         self.summary = summary
         self.calls = []
+        self.last_body = None
 
     def __call__(self, method, url, body=None, access_token=None):
         self.calls.append({"method": method, "url": url})
@@ -131,11 +132,33 @@ class Http:
             if self.mode == "list-error":
                 return 503, {"error": {"status": "UNAVAILABLE"}}
             return 200, {"localPosts": self.posts}
+        if method in {"POST", "PATCH"} and isinstance(body, dict):
+            self.last_body = body
         if method == "GET":
             name = url.split("/v4/", 1)[1]
-            return 200, {"name": name, "summary": self.summary}
+            reply = {
+                "name": name,
+                "summary": self.summary,
+                "callToAction": {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"},
+            }
+            if getattr(self, "last_body", None):
+                reply["summary"] = self.last_body.get("summary") or self.summary
+                if self.last_body.get("callToAction"):
+                    reply["callToAction"] = self.last_body["callToAction"]
+                if self.last_body.get("media"):
+                    reply["media"] = self.last_body["media"]
+            if self.mode == "get-incomplete":
+                return 200, {"name": name, "summary": reply["summary"]}
+            if self.mode == "get-timeout":
+                raise GbpPostTimeout()
+            return 200, reply
         name = CREATED if method == "POST" else url.split("/v4/", 1)[1].split("?", 1)[0]
-        return 200, {"name": name, "summary": body["summary"]}
+        reply = {"name": name, "summary": body["summary"]}
+        if body.get("callToAction"):
+            reply["callToAction"] = body["callToAction"]
+        if body.get("media"):
+            reply["media"] = body["media"]
+        return 200, reply
 
 
 def config():
@@ -222,7 +245,34 @@ def main():
     patch_db = FakeDB(updated_row)
     patched = send(patch_db, patch_http)
     report(patched["ok"] and patch_http.calls[0]["method"] == "PATCH", "投稿IDがあるときはPATCH", patched["message"])
+    report([call["method"] for call in patch_http.calls] == ["PATCH", "GET"], "PATCHのあと同じ投稿をGETして確認する")
     report(all(call["method"] != "POST" for call in patch_http.calls), "PATCHが失敗してもPOSTに戻さない")
+
+    missing_get = Http("get-incomplete")
+    missing_db = FakeDB(ready(external_id=CREATED, posted_at=EARLIER))
+    missing = send(missing_db, missing_get)
+    report(
+        not missing["ok"] and missing_db.row["status"] == "unknown",
+        "GETにリンクが無ければ投稿成功にしない",
+        missing["message"],
+    )
+    report(all(call["method"] != "POST" for call in missing_get.calls), "確認できないPATCHのあとも新規投稿しない")
+
+    get_timeout = Http("get-timeout")
+    get_timeout_db = FakeDB(ready(external_id=CREATED, posted_at=EARLIER))
+    get_unknown = send(get_timeout_db, get_timeout)
+    report(
+        not get_unknown["ok"] and get_timeout_db.row["status"] == "unknown",
+        "更新後GETができなければ成否不明",
+        get_unknown["message"],
+    )
+    report(
+        [call["method"] for call in get_timeout.calls] == ["PATCH", "GET"],
+        "PATCHのあと確認GETは1回",
+    )
+    retry_unknown = Http()
+    send(get_timeout_db, retry_unknown, record=dict(get_timeout_db.row))
+    report(retry_unknown.calls == [], "確認できない更新のあと自動再送しない")
 
     lost = Http("denied")
     lost_db = FakeDB(ready(external_id=CREATED))

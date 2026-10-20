@@ -192,20 +192,7 @@ def finish_notes_gbp_submit(record, *, http_status, body, timed_out, now, parent
     if http_status == 200 and isinstance(body, dict):
         name = body.get("name") if isinstance(body.get("name"), str) else ""
         if _POST_NAME.fullmatch(name) and name.startswith(parent + "/localPosts/"):
-            summary = body.get("summary") if isinstance(body.get("summary"), str) else ""
-            expected = (record.get("body") or "").replace("\r\n", "\n").strip()
-            if summary != expected:
-                return _outcome(
-                    record,
-                    status="unknown",
-                    external_id=external_id,
-                    posted_at=posted_at,
-                    error_message="応答の本文が送信内容と一致しません。",
-                    event="unknown",
-                    detail="応答の本文が送信内容と一致しないため、投稿済にしていません。",
-                    now=now,
-                )
-            mismatch = _response_fields_mismatch(record, body)
+            mismatch = _verify_sent_fields(record, body)
             if mismatch:
                 return _outcome(
                     record,
@@ -214,7 +201,7 @@ def finish_notes_gbp_submit(record, *, http_status, body, timed_out, now, parent
                     posted_at=posted_at,
                     error_message=mismatch,
                     event="unknown",
-                    detail="応答のリンクまたは画像が送信内容と一致しないため、投稿済にしていません。",
+                    detail="応答の本文・リンク・画像を確認できないため、投稿済にしていません。",
                     now=now,
                 )
             return _outcome(
@@ -458,6 +445,14 @@ def perform_notes_gbp_send(
         http_status, response, timed_out = None, {}, True
     except Exception:
         http_status, response, timed_out = None, {}, True
+    log_local_post_verify(
+        request["method"],
+        http_status,
+        outgoing,
+        response if isinstance(response, dict) else {},
+        parent=request["parent"],
+        expected_name=outgoing.get("external_id"),
+    )
     finished = finish_notes_gbp_submit(
         outgoing,
         http_status=http_status,
@@ -466,6 +461,14 @@ def perform_notes_gbp_send(
         now=now,
         parent=request["parent"],
     )
+    if request["method"] == "PATCH" and not timed_out and http_status == 200:
+        finished = _confirm_same_post_by_get(
+            outgoing,
+            parent=request["parent"],
+            post_exchange=post_exchange,
+            access_token=access_token,
+            now=now,
+        )
     return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
 
 
@@ -490,6 +493,14 @@ def perform_notes_gbp_check(
             request = get_request(external_id)
             http_status, response = _call_exchange(
                 post_exchange, request["method"], request["url"], access_token
+            )
+            log_local_post_verify(
+                "GET",
+                http_status,
+                record,
+                response if isinstance(response, dict) else {},
+                parent=parent,
+                expected_name=external_id,
             )
             if http_status != 200:
                 outcome = _outcome(
@@ -538,6 +549,14 @@ def perform_notes_gbp_check(
                     provisional = dict(record)
                     provisional["status"] = "unknown"
                     provisional["external_id"] = candidate
+                    log_local_post_verify(
+                        "GET",
+                        get_status,
+                        provisional,
+                        get_body if isinstance(get_body, dict) else {},
+                        parent=parent,
+                        expected_name=candidate,
+                    )
                     if get_status != 200:
                         keep_name = candidate if get_status >= 500 else None
                         outcome = _outcome(
@@ -679,25 +698,127 @@ def _unresolved_outcome(record, now, detail):
     )
 
 
-def _response_fields_mismatch(record, body):
-    """応答にリンクや画像が含まれるときだけ、送信内容と違うかを見る。"""
-    cta = body.get("callToAction") if isinstance(body.get("callToAction"), dict) else None
-    if cta is not None:
-        actual_url = cta.get("url") if isinstance(cta.get("url"), str) else ""
-        expected_url = (record.get("link_url") or "").strip()
-        if actual_url != expected_url:
-            return "応答のリンクが送信内容と一致しません。"
-    media_items = body.get("media") if isinstance(body.get("media"), list) else None
-    expected_image = (record.get("image_url") or "").strip()
-    if media_items is not None and expected_image:
+def _yes_no(value):
+    return "yes" if value else "no"
+
+
+def _name_matches(body, parent, expected_name=None):
+    name = body.get("name") if isinstance(body, dict) and isinstance(body.get("name"), str) else ""
+    if not _POST_NAME.fullmatch(name):
+        return False
+    if parent and not name.startswith(parent + "/localPosts/"):
+        return False
+    expected = (expected_name or "").strip()
+    if expected:
+        return name == expected
+    return True
+
+
+def _compare_field(expected, actual, present):
+    if not expected:
+        return "not_sent"
+    if not present:
+        return "absent"
+    if actual == expected:
+        return "match"
+    return "mismatch"
+
+
+def inspect_local_post_reply(record, body, *, parent=None, expected_name=None):
+    """照合結果だけ。URLや認証情報は含めない。"""
+    payload = body if isinstance(body, dict) else {}
+    expected_summary = (record.get("body") or "").replace("\r\n", "\n").strip()
+    actual_summary = payload.get("summary") if isinstance(payload.get("summary"), str) else None
+    cta = payload.get("callToAction") if isinstance(payload.get("callToAction"), dict) else None
+    actual_url = cta.get("url") if cta and isinstance(cta.get("url"), str) else None
+    media_items = payload.get("media") if isinstance(payload.get("media"), list) else None
+    source_urls = []
+    if media_items is not None:
         source_urls = [
             item.get("sourceUrl").strip()
             for item in media_items
             if isinstance(item, dict) and isinstance(item.get("sourceUrl"), str) and item.get("sourceUrl").strip()
         ]
-        if source_urls and expected_image not in source_urls:
-            return "応答の画像が送信内容と一致しません。"
+    expected_url = (record.get("link_url") or "").strip()
+    expected_image = (record.get("image_url") or "").strip()
+    image_actual = expected_image if expected_image in source_urls else (source_urls[0] if source_urls else None)
+    return {
+        "name_match": _yes_no(_name_matches(payload, parent, expected_name)),
+        "has_summary": _yes_no(actual_summary is not None),
+        "has_cta": _yes_no(cta is not None),
+        "has_media": _yes_no(media_items is not None),
+        "summary": _compare_field(expected_summary, actual_summary, actual_summary is not None),
+        "cta": _compare_field(expected_url, actual_url, actual_url is not None),
+        "image": _compare_field(expected_image, image_actual, media_items is not None and bool(source_urls)),
+    }
+
+
+def log_local_post_verify(kind, http_status, record, body, *, parent=None, expected_name=None):
+    info = inspect_local_post_reply(record, body, parent=parent, expected_name=expected_name)
+    print(
+        "GBP投稿確認"
+        f" kind={kind}"
+        f" status={http_status}"
+        f" name_match={info['name_match']}"
+        f" has_summary={info['has_summary']}"
+        f" has_cta={info['has_cta']}"
+        f" has_media={info['has_media']}"
+        f" summary={info['summary']}"
+        f" cta={info['cta']}"
+        f" image={info['image']}"
+    )
+    return info
+
+
+def _verify_sent_fields(record, body):
+    """本文・リンク・画像を確認する。無い項目は更新済みとみなさない。"""
+    info = inspect_local_post_reply(record, body)
+    if info["summary"] != "match":
+        if info["summary"] == "absent":
+            return "応答に本文がありません。"
+        return "応答の本文が送信内容と一致しません。"
+    if info["cta"] == "absent":
+        return "応答にリンクが含まれていないため、更新済みにしていません。"
+    if info["cta"] == "mismatch":
+        return "応答のリンクが送信内容と一致しません。"
+    if info["image"] == "absent":
+        return "応答に画像が含まれていないため、更新済みにしていません。"
+    if info["image"] == "mismatch":
+        return "応答の画像が送信内容と一致しません。"
     return None
+
+
+def _confirm_same_post_by_get(record, *, parent, post_exchange, access_token, now):
+    """同じ投稿IDをGETして照合する。できなければ成否不明。自動では再送しない。"""
+    external_id = (record.get("external_id") or "").strip()
+    if not external_id:
+        return _outcome(
+            record,
+            status="unknown",
+            external_id=None,
+            posted_at=record.get("posted_at") or None,
+            error_message="更新後の確認ができないため、投稿済にしていません。",
+            event="unknown",
+            detail="更新後の確認ができないため、投稿済にしていません。自動では再送しません。",
+            now=now,
+        )
+    try:
+        request = get_request(external_id)
+        http_status, body = _call_exchange(post_exchange, request["method"], request["url"], access_token)
+        timed_out = False
+    except GbpPostTimeout:
+        http_status, body, timed_out = None, {}, True
+    except Exception:
+        http_status, body, timed_out = None, {}, True
+    log_local_post_verify("GET", http_status, record, body if isinstance(body, dict) else {}, parent=parent, expected_name=external_id)
+    return finish_notes_gbp_submit(
+        record,
+        http_status=http_status,
+        body=body,
+        timed_out=timed_out,
+        now=now,
+        parent=parent,
+    )
 
 
 def confirm_fetched_post(record, post_body, submitted_summary, now):
@@ -706,9 +827,8 @@ def confirm_fetched_post(record, post_body, submitted_summary, now):
         raise GbpPostRefused("成否未確認、または送信中の記録だけ確定します。")
     expected_name = (record.get("external_id") or "").strip()
     name = post_body.get("name") if isinstance(post_body, dict) else ""
-    summary = post_body.get("summary") if isinstance(post_body, dict) else ""
     expected_summary = (submitted_summary or "").replace("\r\n", "\n").strip()
-    if name != expected_name or summary != expected_summary or not _POST_NAME.fullmatch(name or ""):
+    if name != expected_name or not _POST_NAME.fullmatch(name or ""):
         return _outcome(
             record,
             status="unknown",
@@ -719,7 +839,8 @@ def confirm_fetched_post(record, post_body, submitted_summary, now):
             detail="取得した投稿が送信内容と一致しないため、投稿済にしていません。",
             now=now,
         )
-    if _response_fields_mismatch(record, post_body):
+    mismatch = _verify_sent_fields(dict(record, body=expected_summary), post_body)
+    if mismatch:
         return _outcome(
             record,
             status="unknown",

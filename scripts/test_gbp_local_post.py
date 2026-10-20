@@ -58,7 +58,20 @@ class FakeHttp:
             return 200, {"summary": self.summary}
         if self.mode == "mismatch":
             return 200, {"name": self.name, "summary": "別の本文"}
-        return 200, {"name": self.name, "summary": body["summary"]}
+        if method == "GET":
+            return 200, {
+                "name": self.name,
+                "summary": self.summary,
+                "callToAction": {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"},
+            }
+        reply = {"name": self.name, "summary": body["summary"]}
+        if body.get("callToAction"):
+            reply["callToAction"] = body["callToAction"]
+        else:
+            reply["callToAction"] = {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"}
+        if body.get("media"):
+            reply["media"] = body["media"]
+        return 200, reply
 
 
 def ready_record(**extra):
@@ -174,6 +187,43 @@ def main():
         parent=PARENT,
     )
     report(stale["fields"]["status"] == "unknown", "応答のリンクや画像が古ければ投稿成功にしない")
+    incomplete = gbp_local_post.finish_notes_gbp_submit(
+        ready_record(external_id=CREATED, image_url="https://karin-sb.jp/static/images/blogs/pole.jpg"),
+        http_status=200,
+        body={"name": CREATED, "summary": "本文"},
+        timed_out=False,
+        now=LATER,
+        parent=PARENT,
+    )
+    report(incomplete["fields"]["status"] == "unknown", "リンクや画像が無い応答は投稿成功にしない")
+    log_info = gbp_local_post.inspect_local_post_reply(
+        ready_record(image_url="https://karin-sb.jp/static/images/blogs/pole.jpg"),
+        {"name": CREATED, "summary": "本文"},
+        parent=PARENT,
+        expected_name=CREATED,
+    )
+    log_text = gbp_local_post.log_local_post_verify(
+        "PATCH",
+        200,
+        ready_record(image_url="https://karin-sb.jp/static/images/blogs/pole.jpg"),
+        {"name": CREATED, "summary": "本文", "callToAction": {"url": "https://secret.example/path"}},
+        parent=PARENT,
+        expected_name=CREATED,
+    )
+    report(
+        log_info["has_cta"] == "no"
+        and log_info["has_media"] == "no"
+        and log_info["cta"] == "absent"
+        and log_info["image"] == "absent"
+        and log_text["summary"] == "match",
+        "確認ログは項目の有無と一致だけを残す",
+    )
+    report(
+        "https://" not in str(log_text)
+        and "secret.example" not in str(log_text)
+        and "karin-sb.jp" not in str(log_text),
+        "確認ログにURLを出さない",
+    )
     report("media" not in fukuoka_req["url"] and "media" not in fukuoka_req["body"], "画像なしの送信はmediaを付けない")
 
     http = FakeHttp("ok")
@@ -237,12 +287,38 @@ def main():
     )
     report(listed["candidate_name"] == CREATED and listed["fields"]["status"] == "unknown", "送信後の1件だけ候補にし、まだ投稿済にしない")
     confirmed = gbp_local_post.confirm_fetched_post(
-        {"id": "row-1", "status": "unknown", "external_id": CREATED, "body": "本文", "posted_at": None},
-        {"name": CREATED, "summary": "本文"},
+        {
+            "id": "row-1",
+            "status": "unknown",
+            "external_id": CREATED,
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "posted_at": None,
+        },
+        {
+            "name": CREATED,
+            "summary": "本文",
+            "callToAction": {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"},
+        },
         "本文",
         LATER,
     )
     report(confirmed["fields"]["status"] == "posted" and confirmed["fields"]["external_id"] == CREATED, "取得本文が一致してから投稿済")
+    incomplete_get = gbp_local_post.confirm_fetched_post(
+        {
+            "id": "row-1",
+            "status": "unknown",
+            "external_id": CREATED,
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "image_url": "https://karin-sb.jp/static/images/blogs/pole.jpg",
+            "posted_at": None,
+        },
+        {"name": CREATED, "summary": "本文"},
+        "本文",
+        LATER,
+    )
+    report(incomplete_get["fields"]["status"] == "unknown", "GETにリンクや画像が無ければ投稿済にしない")
 
     missed = gbp_local_post.reconcile_unknown(
         ready_record(status="unknown"),
