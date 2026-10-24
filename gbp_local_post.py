@@ -264,14 +264,47 @@ def execute_notes_gbp_submit(record, account_name, exchange, now):
     return finished, None
 
 
-def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, parent):
+def _list_candidates(listed_posts, *, expected, started, parent):
+    """本文が一致する同一ロケーションの投稿。送信開始時刻があるときだけ、それ以降に限定する。"""
+    candidates = []
+    unreadable = False
+    prefix = (parent or "") + "/localPosts/"
+    for item in listed_posts or []:
+        if not isinstance(item, dict):
+            continue
+        summary = item.get("summary") if isinstance(item.get("summary"), str) else ""
+        name = item.get("name") if isinstance(item.get("name"), str) else ""
+        if summary != expected or not name.startswith(prefix):
+            continue
+        if started is None:
+            candidates.append(name)
+            continue
+        created = _parse_time(item.get("createTime"))
+        if created is None:
+            unreadable = True
+            continue
+        if created >= started:
+            candidates.append(name)
+    return candidates, unreadable
+
+
+def _candidate_count_label(candidates, unreadable):
+    if unreadable or len(candidates) > 1:
+        return "many"
+    if len(candidates) == 1:
+        return "1"
+    return "0"
+
+
+def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, parent, now=None):
     """unknown または送信中の記録を、一覧から確認する。古い投稿は採用しない。再送しない。"""
     if not record or record.get("status") not in {"unknown", "posting"}:
         raise GbpPostRefused("成否未確認、または送信中の記録だけ確認します。")
     expected = (submitted_summary or "").strip()
     started = _parse_time(submitted_at)
-    if not expected or started is None:
-        raise GbpPostRefused("送信時の本文と時刻がないため、確認できません。")
+    stamp = now or submitted_at
+    if not expected:
+        raise GbpPostRefused("送信時の本文がないため、確認できません。")
     existing_name = (record.get("external_id") or "").strip()
     if existing_name:
         return _outcome(
@@ -282,23 +315,11 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
             error_message="既存の投稿IDがあるため、一覧からは確定しません。",
             event="unknown",
             detail="既存の投稿IDは残しています。その投稿を取得して確認してください。",
-            now=submitted_at,
+            now=stamp,
         )
-    candidates = []
-    unreadable = False
-    for item in listed_posts or []:
-        if not isinstance(item, dict):
-            continue
-        summary = item.get("summary") if isinstance(item.get("summary"), str) else ""
-        name = item.get("name") if isinstance(item.get("name"), str) else ""
-        if summary != expected or not name.startswith(parent + "/localPosts/"):
-            continue
-        created = _parse_time(item.get("createTime"))
-        if created is None:
-            unreadable = True
-            continue
-        if created >= started:
-            candidates.append(name)
+    candidates, unreadable = _list_candidates(
+        listed_posts, expected=expected, started=started, parent=parent
+    )
     if unreadable or len(candidates) > 1:
         return _outcome(
             record,
@@ -308,7 +329,7 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
             error_message="確認できない投稿があるため、自動では確定しません。",
             event="unknown",
             detail="一覧だけでは確定できないため、投稿済にしていません。",
-            now=submitted_at,
+            now=stamp,
         )
     if len(candidates) == 1:
         return {
@@ -317,13 +338,13 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
                 "external_id": candidates[0],
                 "posted_at": record.get("posted_at") or None,
                 "error_message": "候補は1件です。取得して本文が一致するまで投稿済にしません。",
-                "updated_at": submitted_at,
+                "updated_at": stamp,
             },
             "event": {
                 "event": "unknown",
                 "body_snapshot": expected,
                 "detail": "候補の投稿IDを保持しました。取得確認前なので投稿済にしていません。",
-                "created_at": submitted_at,
+                "created_at": stamp,
             },
             "candidate_name": candidates[0],
         }
@@ -335,7 +356,7 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
         error_message=UNRESOLVED_POST_MESSAGE,
         event="unknown",
         detail="一覧だけでは投稿を確定できません。新規送信は停止しています。",
-        now=submitted_at,
+        now=stamp,
     )
 
 
@@ -379,12 +400,12 @@ def read_local_post_page(body):
 
 
 def latest_submit_marker(record, events):
-    """直近の送信開始。履歴がなければ、その行の本文と更新時刻を使う。"""
+    """直近の送信開始。履歴がなければ本文だけ返し、updated_at は使わない。"""
     for event in events or []:
         if event.get("event") == "submit_started" and event.get("created_at"):
             summary = event.get("body_snapshot") or record.get("body") or ""
             return summary, event.get("created_at")
-    return record.get("body") or "", record.get("updated_at")
+    return record.get("body") or "", None
 
 
 def perform_notes_gbp_send(
@@ -532,9 +553,23 @@ def perform_notes_gbp_check(
             http_status, response = _call_exchange(
                 post_exchange, request["method"], request["url"], access_token
             )
-            log_local_post_verify("LIST", http_status, record, {}, parent=parent)
-            logged = True
             posts, incomplete = read_local_post_page(response)
+            listed, unreadable = _list_candidates(
+                posts,
+                expected=(summary or "").strip(),
+                started=_parse_time(submitted_at),
+                parent=parent,
+            )
+            log_local_post_verify(
+                "LIST",
+                http_status,
+                record,
+                {},
+                parent=parent,
+                candidates=_candidate_count_label(listed, unreadable),
+                incomplete=incomplete,
+            )
+            logged = True
             if http_status != 200:
                 outcome = _unresolved_outcome(record, now, "投稿一覧を取得できなかったため、確定しません。")
                 return _store_outcome(
@@ -555,6 +590,7 @@ def perform_notes_gbp_check(
                     submitted_summary=summary,
                     submitted_at=submitted_at,
                     parent=parent,
+                    now=now,
                 )
                 candidate = outcome.get("candidate_name")
                 if candidate:
@@ -799,8 +835,15 @@ def inspect_local_post_reply(record, body, *, parent=None, expected_name=None):
     }
 
 
-def log_local_post_verify(kind, http_status, record, body, *, parent=None, expected_name=None):
+def log_local_post_verify(
+    kind, http_status, record, body, *, parent=None, expected_name=None, candidates=None, incomplete=None
+):
     info = inspect_local_post_reply(record, body, parent=parent, expected_name=expected_name)
+    extra = ""
+    if candidates is not None:
+        extra += f" candidates={candidates}"
+    if incomplete is not None:
+        extra += f" incomplete={'yes' if incomplete else 'no'}"
     print(
         "GBP投稿確認"
         f" kind={kind}"
@@ -812,6 +855,7 @@ def log_local_post_verify(kind, http_status, record, body, *, parent=None, expec
         f" summary={info['summary']}"
         f" cta={info['cta']}"
         f" image={info['image']}"
+        f"{extra}"
     )
     return info
 

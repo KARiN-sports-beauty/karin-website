@@ -447,7 +447,13 @@ def main():
     listed_bad, list_error_log = captured_check(list_row, list_error, dict(list_row.row), started)
     report(list_row.row["status"] == "unknown" and [call["method"] for call in list_error.calls] == ["GET"], "一覧取得の失敗でも新規送信は停止したまま")
     report(listed_bad["message"] == gbp_local_post.UNRESOLVED_POST_MESSAGE, "一覧失敗の表示は送信停止")
-    report("kind=LIST status=503" in list_error_log and log_safe(list_error_log), "一覧失敗でもLISTログを残す")
+    report(
+        "kind=LIST status=503" in list_error_log
+        and "candidates=0" in list_error_log
+        and "incomplete=no" in list_error_log
+        and log_safe(list_error_log),
+        "一覧失敗でもLISTログを残す",
+    )
 
     empty_http = Http(posts=[])
     empty_row = FakeDB(ready(status="unknown", updated_at=NOW))
@@ -455,9 +461,78 @@ def main():
     report(
         empty_check["record"]["status"] == "unknown"
         and "kind=LIST status=200" in empty_log
+        and "candidates=0" in empty_log
+        and "incomplete=no" in empty_log
         and "kind=GET" not in empty_log
         and log_safe(empty_log),
         "投稿IDなしの確認はLISTログを残す",
+    )
+
+    one_log_http = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"}])
+    one_log_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    one_logged, one_log = captured_check(one_log_row, one_log_http, dict(one_log_row.row), started)
+    report(
+        one_logged["ok"]
+        and "candidates=1" in one_log
+        and "incomplete=no" in one_log
+        and "kind=GET" in one_log
+        and log_safe(one_log),
+        "候補1件のLISTログのあとGETする",
+    )
+
+    many_log_http = Http(posts=[
+        {"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"},
+        {"name": PARENT + "/localPosts/created2", "summary": "本文", "createTime": "2026-11-01T01:00:03Z"},
+    ])
+    many_log_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    many_logged, many_log = captured_check(many_log_row, many_log_http, dict(many_log_row.row), started)
+    report(
+        many_log_row.row["status"] == "unknown"
+        and "candidates=many" in many_log
+        and "kind=GET" not in many_log
+        and log_safe(many_log),
+        "複数候補のLISTログではGETしない",
+    )
+
+    incomplete_log_http = Http("incomplete", posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-11-01T01:00:02Z"}])
+    incomplete_log_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    incomplete_logged, incomplete_log = captured_check(
+        incomplete_log_row, incomplete_log_http, dict(incomplete_log_row.row), started
+    )
+    report(
+        incomplete_logged["record"]["status"] == "unknown"
+        and "incomplete=yes" in incomplete_log
+        and "kind=GET" not in incomplete_log
+        and log_safe(incomplete_log),
+        "一覧未完了はLISTログに残し確定しない",
+    )
+
+    no_start_http = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}])
+    no_start_row = FakeDB(ready(status="unknown", updated_at=LATER))
+    no_start_found, no_start_log = captured_check(no_start_row, no_start_http, dict(no_start_row.row), [])
+    report(
+        no_start_found["ok"]
+        and no_start_row.row["status"] == "posted"
+        and no_start_row.row["external_id"] == CREATED
+        and "candidates=1" in no_start_log
+        and "kind=GET" in no_start_log
+        and log_safe(no_start_log),
+        "送信開始時刻がなくても本文一致1件なら確認する",
+    )
+    no_start_retry = Http()
+    no_start_blocked = send(no_start_row, no_start_retry, record=dict(no_start_row.row))
+    report(no_start_retry.calls == [], "確認完了後は再送しない")
+
+    no_start_empty = Http(posts=[])
+    no_start_empty_row = FakeDB(ready(status="unknown", updated_at=LATER))
+    no_start_missed, no_start_missed_log = captured_check(
+        no_start_empty_row, no_start_empty, dict(no_start_empty_row.row), []
+    )
+    report(
+        no_start_empty_row.row["status"] == "unknown"
+        and "candidates=0" in no_start_missed_log
+        and "kind=GET" not in no_start_missed_log,
+        "送信開始時刻がなく候補0件なら要確認のまま",
     )
 
     def bad_token(method, url, headers=None, body=None):

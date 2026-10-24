@@ -275,6 +275,48 @@ def main():
     overlap, overlap_reason = gbp_local_post.execute_notes_gbp_submit(ready_record(status="posting"), ACCOUNT, posting, NOW)
     report(overlap is None and posting.calls == [], "送信中は重ねて送らない", str(overlap_reason))
 
+    marker_summary, marker_at = gbp_local_post.latest_submit_marker(
+        ready_record(status="unknown", updated_at=LATER),
+        [{"event": "submit_started", "body_snapshot": "送信文", "created_at": NOW}],
+    )
+    report(marker_summary == "送信文" and marker_at == NOW, "送信開始履歴があればその時刻を使う")
+    fallback_summary, fallback_at = gbp_local_post.latest_submit_marker(
+        ready_record(status="unknown", updated_at=LATER),
+        [{"event": "unknown", "created_at": LATER}],
+    )
+    report(fallback_summary == "本文" and fallback_at is None, "送信開始が無いときupdated_atを使わない")
+
+    no_start = gbp_local_post.reconcile_unknown(
+        ready_record(status="unknown", updated_at=LATER),
+        [{"name": CREATED, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}],
+        submitted_summary="本文",
+        submitted_at=None,
+        parent=PARENT,
+        now=LATER,
+    )
+    report(no_start.get("candidate_name") == CREATED, "送信開始時刻がなくても本文一致1件は候補にする")
+    no_start_none = gbp_local_post.reconcile_unknown(
+        ready_record(status="unknown", updated_at=LATER),
+        [{"name": OLD_TOKYO, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}],
+        submitted_summary="本文",
+        submitted_at=None,
+        parent=PARENT,
+        now=LATER,
+    )
+    report(no_start_none.get("candidate_name") is None, "送信開始時刻がなく本文不一致なら候補にしない")
+    no_start_many = gbp_local_post.reconcile_unknown(
+        ready_record(status="unknown", updated_at=LATER),
+        [
+            {"name": CREATED, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"},
+            {"name": PARENT + "/localPosts/created2", "summary": "本文", "createTime": "2026-10-02T00:00:00Z"},
+        ],
+        submitted_summary="本文",
+        submitted_at=None,
+        parent=PARENT,
+        now=LATER,
+    )
+    report(no_start_many.get("candidate_name") is None, "送信開始時刻がなく複数一致なら確定しない")
+
     listed = gbp_local_post.reconcile_unknown(
         ready_record(status="unknown"),
         [
