@@ -481,13 +481,24 @@ def perform_notes_gbp_check(
     store = _post_store(post_store)
     if not record or record.get("status") not in {"unknown", "posting"}:
         return _flow(False, record, "成否未確認、または送信中の記録だけ確認します。")
+    parent = None
     try:
         account_name, location_name, access_token = _account_and_location(record, config, token_exchange)
-    except (GbpPostRefused, gbp_read.GbpReadError) as exc:
+    except gbp_read.GbpReadError as exc:
+        log_local_post_verify("AUTH", None, record, {})
         return _flow(False, record, exc.detail)
-    parent = location_parent(account_name, location_name)
+    except GbpPostRefused as exc:
+        log_local_post_verify("ACCOUNT", None, record, {})
+        return _flow(False, record, exc.detail)
+    try:
+        parent = location_parent(account_name, location_name)
+    except GbpPostRefused as exc:
+        log_local_post_verify("ACCOUNT", None, record, {})
+        return _flow(False, record, exc.detail)
     summary, submitted_at = latest_submit_marker(record, events)
     external_id = (record.get("external_id") or "").strip()
+    check_kind = "GET" if external_id else "LIST"
+    logged = False
     try:
         if external_id:
             request = get_request(external_id)
@@ -502,6 +513,7 @@ def perform_notes_gbp_check(
                 parent=parent,
                 expected_name=external_id,
             )
+            logged = True
             if http_status != 200:
                 outcome = _outcome(
                     record,
@@ -520,6 +532,8 @@ def perform_notes_gbp_check(
             http_status, response = _call_exchange(
                 post_exchange, request["method"], request["url"], access_token
             )
+            log_local_post_verify("LIST", http_status, record, {}, parent=parent)
+            logged = True
             posts, incomplete = read_local_post_page(response)
             if http_status != 200:
                 outcome = _unresolved_outcome(record, now, "投稿一覧を取得できなかったため、確定しません。")
@@ -544,6 +558,8 @@ def perform_notes_gbp_check(
                 )
                 candidate = outcome.get("candidate_name")
                 if candidate:
+                    check_kind = "GET"
+                    logged = False
                     fetched = get_request(candidate)
                     get_status, get_body = _call_exchange(post_exchange, fetched["method"], fetched["url"], access_token)
                     provisional = dict(record)
@@ -557,6 +573,7 @@ def perform_notes_gbp_check(
                         parent=parent,
                         expected_name=candidate,
                     )
+                    logged = True
                     if get_status != 200:
                         keep_name = candidate if get_status >= 500 else None
                         outcome = _outcome(
@@ -574,9 +591,38 @@ def perform_notes_gbp_check(
                         if outcome["fields"]["status"] != "posted":
                             outcome["fields"]["external_id"] = None
     except GbpPostTimeout:
+        if not logged:
+            log_local_post_verify(
+                check_kind,
+                None,
+                record,
+                {},
+                parent=parent,
+                expected_name=external_id or None,
+            )
         return _flow(False, record, UNRESOLVED_POST_MESSAGE)
     except GbpPostRefused as exc:
+        if not logged:
+            log_local_post_verify(
+                check_kind,
+                None,
+                record,
+                {},
+                parent=parent,
+                expected_name=external_id or None,
+            )
         return _flow(False, record, exc.detail)
+    except Exception:
+        if not logged:
+            log_local_post_verify(
+                check_kind,
+                None,
+                record,
+                {},
+                parent=parent,
+                expected_name=external_id or None,
+            )
+        raise
     return _store_outcome(
         client, record, outcome, now, from_statuses=("posting", "unknown"), staff_id=staff_id, post_store=store
     )

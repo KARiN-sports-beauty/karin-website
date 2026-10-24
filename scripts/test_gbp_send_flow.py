@@ -2,8 +2,10 @@
 """GBPの送信と結果確認。Googleへは送らない。"""
 from __future__ import annotations
 
+import io
 import os
 import sys
+from contextlib import redirect_stdout
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
@@ -209,16 +211,33 @@ def send(db, http, record=None, accounts=None, more=False, now=NOW):
     )
 
 
-def check(db, http, record, events, now=LATER):
+def check(db, http, record, events, now=LATER, token=None):
     return gbp_local_post.perform_notes_gbp_check(
         db,
         record,
         config=config(),
-        token_exchange=token_exchange(),
+        token_exchange=token or token_exchange(),
         post_exchange=http,
         now=now,
         events=events,
         staff_id="staff-1",
+    )
+
+
+def captured_check(*args, **kwargs):
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        result = check(*args, **kwargs)
+    return result, buf.getvalue()
+
+
+def log_safe(text):
+    return (
+        TOKEN not in text
+        and REFRESH not in text
+        and "client-secret" not in text
+        and "https://" not in text
+        and "karin-sb.jp" not in text
     )
 
 
@@ -425,9 +444,76 @@ def main():
 
     list_error = Http("list-error")
     list_row = FakeDB(ready(status="posting", updated_at=NOW))
-    listed_bad = check(list_row, list_error, dict(list_row.row), started)
+    listed_bad, list_error_log = captured_check(list_row, list_error, dict(list_row.row), started)
     report(list_row.row["status"] == "unknown" and [call["method"] for call in list_error.calls] == ["GET"], "一覧取得の失敗でも新規送信は停止したまま")
     report(listed_bad["message"] == gbp_local_post.UNRESOLVED_POST_MESSAGE, "一覧失敗の表示は送信停止")
+    report("kind=LIST status=503" in list_error_log and log_safe(list_error_log), "一覧失敗でもLISTログを残す")
+
+    empty_http = Http(posts=[])
+    empty_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    empty_check, empty_log = captured_check(empty_row, empty_http, dict(empty_row.row), started)
+    report(
+        empty_check["record"]["status"] == "unknown"
+        and "kind=LIST status=200" in empty_log
+        and "kind=GET" not in empty_log
+        and log_safe(empty_log),
+        "投稿IDなしの確認はLISTログを残す",
+    )
+
+    def bad_token(method, url, headers=None, body=None):
+        return 401, {"error": "invalid_grant"}
+
+    auth_http = Http()
+    auth_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    auth_check, auth_log = captured_check(auth_row, auth_http, dict(auth_row.row), started, token=bad_token)
+    report(
+        not auth_check["ok"]
+        and auth_http.calls == []
+        and auth_row.row["status"] == "unknown"
+        and "kind=AUTH status=None" in auth_log
+        and log_safe(auth_log),
+        "認証失敗はAUTHログで止め、投稿取得しない",
+    )
+
+    account_http = Http()
+    account_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    account_check, account_log = captured_check(
+        account_row, account_http, dict(account_row.row), started, token=token_exchange(accounts=[])
+    )
+    report(
+        not account_check["ok"]
+        and account_http.calls == []
+        and account_row.row["status"] == "unknown"
+        and "kind=ACCOUNT status=None" in account_log
+        and log_safe(account_log),
+        "アカウント確認失敗はACCOUNTログで止め、投稿取得しない",
+    )
+
+    timed_list = Http("timeout")
+    timed_list_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    timed_list_check, timed_list_log = captured_check(timed_list_row, timed_list, dict(timed_list_row.row), started)
+    report(
+        not timed_list_check["ok"]
+        and timed_list_row.row["status"] == "unknown"
+        and "kind=LIST status=None" in timed_list_log
+        and log_safe(timed_list_log),
+        "一覧の通信例外はLISTの成否不明ログを残す",
+    )
+    timed_list_retry = Http()
+    timed_list_blocked = send(timed_list_row, timed_list_retry, record=dict(timed_list_row.row))
+    report(not timed_list_blocked["ok"] and timed_list_retry.calls == [], "確認の通信例外のあと自動再送しない")
+
+    timed_get = Http("timeout")
+    timed_get_row = FakeDB(ready(status="unknown", external_id=CREATED, updated_at=NOW))
+    timed_get_check, timed_get_log = captured_check(timed_get_row, timed_get, dict(timed_get_row.row), started)
+    report(
+        not timed_get_check["ok"]
+        and timed_get_row.row["status"] == "unknown"
+        and timed_get_row.row["external_id"] == CREATED
+        and "kind=GET status=None" in timed_get_log
+        and log_safe(timed_get_log),
+        "投稿GETのタイムアウトはGETの成否不明ログを残す",
+    )
 
     saved_late = FakeDB(ready())
     saved_late.fail_update_after = 1
