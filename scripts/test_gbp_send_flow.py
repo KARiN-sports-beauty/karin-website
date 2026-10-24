@@ -451,6 +451,8 @@ def main():
         "kind=LIST status=503" in list_error_log
         and "candidates=0" in list_error_log
         and "incomplete=no" in list_error_log
+        and "list_count=0" in list_error_log
+        and "has_started=yes" in list_error_log
         and log_safe(list_error_log),
         "一覧失敗でもLISTログを残す",
     )
@@ -463,6 +465,8 @@ def main():
         and "kind=LIST status=200" in empty_log
         and "candidates=0" in empty_log
         and "incomplete=no" in empty_log
+        and "list_count=0" in empty_log
+        and "has_started=yes" in empty_log
         and "kind=GET" not in empty_log
         and log_safe(empty_log),
         "投稿IDなしの確認はLISTログを残す",
@@ -475,6 +479,8 @@ def main():
         one_logged["ok"]
         and "candidates=1" in one_log
         and "incomplete=no" in one_log
+        and "list_count=1" in one_log
+        and "has_started=yes" in one_log
         and "kind=GET" in one_log
         and log_safe(one_log),
         "候補1件のLISTログのあとGETする",
@@ -489,6 +495,8 @@ def main():
     report(
         many_log_row.row["status"] == "unknown"
         and "candidates=many" in many_log
+        and "list_count=2" in many_log
+        and "has_started=yes" in many_log
         and "kind=GET" not in many_log
         and log_safe(many_log),
         "複数候補のLISTログではGETしない",
@@ -502,6 +510,8 @@ def main():
     report(
         incomplete_logged["record"]["status"] == "unknown"
         and "incomplete=yes" in incomplete_log
+        and "list_count=1" in incomplete_log
+        and "has_started=yes" in incomplete_log
         and "kind=GET" not in incomplete_log
         and log_safe(incomplete_log),
         "一覧未完了はLISTログに残し確定しない",
@@ -515,6 +525,8 @@ def main():
         and no_start_row.row["status"] == "posted"
         and no_start_row.row["external_id"] == CREATED
         and "candidates=1" in no_start_log
+        and "list_count=1" in no_start_log
+        and "has_started=no" in no_start_log
         and "kind=GET" in no_start_log
         and log_safe(no_start_log),
         "送信開始時刻がなくても本文一致1件なら確認する",
@@ -531,6 +543,8 @@ def main():
     report(
         no_start_empty_row.row["status"] == "unknown"
         and "candidates=0" in no_start_missed_log
+        and "list_count=0" in no_start_missed_log
+        and "has_started=no" in no_start_missed_log
         and "kind=GET" not in no_start_missed_log,
         "送信開始時刻がなく候補0件なら要確認のまま",
     )

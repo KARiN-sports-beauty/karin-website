@@ -568,6 +568,8 @@ def perform_notes_gbp_check(
                 parent=parent,
                 candidates=_candidate_count_label(listed, unreadable),
                 incomplete=incomplete,
+                list_count=len(posts),
+                has_started=_parse_time(submitted_at) is not None,
             )
             logged = True
             if http_status != 200:
@@ -836,7 +838,17 @@ def inspect_local_post_reply(record, body, *, parent=None, expected_name=None):
 
 
 def log_local_post_verify(
-    kind, http_status, record, body, *, parent=None, expected_name=None, candidates=None, incomplete=None
+    kind,
+    http_status,
+    record,
+    body,
+    *,
+    parent=None,
+    expected_name=None,
+    candidates=None,
+    incomplete=None,
+    list_count=None,
+    has_started=None,
 ):
     info = inspect_local_post_reply(record, body, parent=parent, expected_name=expected_name)
     extra = ""
@@ -844,6 +856,10 @@ def log_local_post_verify(
         extra += f" candidates={candidates}"
     if incomplete is not None:
         extra += f" incomplete={'yes' if incomplete else 'no'}"
+    if list_count is not None:
+        extra += f" list_count={list_count}"
+    if has_started is not None:
+        extra += f" has_started={'yes' if has_started else 'no'}"
     print(
         "GBP投稿確認"
         f" kind={kind}"
