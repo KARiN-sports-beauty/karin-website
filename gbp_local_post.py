@@ -154,6 +154,118 @@ def google_error_fields(body):
     return code, status
 
 
+_URL_IN_TEXT = re.compile(r"https?://[^\s\"'<>]+", re.I)
+_EMAIL_IN_TEXT = re.compile(r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", re.I)
+_BEARER_IN_TEXT = re.compile(r"(?i)bearer\s+[A-Za-z0-9._\-+=/]+")
+_TOKEN_ASSIGN = re.compile(
+    r"(?i)\b(access_token|refresh_token|client_secret|client_id|id_token)\s*[:=]\s*[^\s,;]+"
+)
+_GOOGLE_TOKEN = re.compile(r"(?i)\b(?:ya29\.|1//)[A-Za-z0-9_\-.=]+")
+_LONG_TOKEN = re.compile(r"\b[A-Za-z0-9_\-]{24,}\b")
+_SAFE_REASON = re.compile(r"^[A-Za-z0-9._/-]{1,80}$")
+_SAFE_RPC_TYPE = re.compile(r"^type\.googleapis\.com/google\.rpc\.[A-Za-z]{1,80}$")
+_SAFE_MIME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,63}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,63}$")
+_HTML_TAG = re.compile(r"<[^>]{0,200}>")
+
+
+def sanitize_google_error_message(text):
+    """ログ用。URL・認証情報・長い本文は残さない。"""
+    if not isinstance(text, str):
+        return None
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        return None
+    lowered = cleaned.lstrip().lower()
+    if lowered.startswith("<!doctype") or lowered.startswith("<html"):
+        return None
+    cleaned = _HTML_TAG.sub(" ", cleaned)
+    cleaned = _BEARER_IN_TEXT.sub("[redacted]", cleaned)
+    cleaned = _TOKEN_ASSIGN.sub(r"\1=[redacted]", cleaned)
+    cleaned = _GOOGLE_TOKEN.sub("[redacted]", cleaned)
+    cleaned = _URL_IN_TEXT.sub("[url]", cleaned)
+    cleaned = _EMAIL_IN_TEXT.sub("[email]", cleaned)
+    cleaned = _LONG_TOKEN.sub("[redacted]", cleaned)
+    cleaned = " ".join(cleaned.split())
+    if len(cleaned) > 240:
+        cleaned = cleaned[:240]
+    lowered = cleaned.lower()
+    if any(
+        marker in lowered
+        for marker in ("bearer ", "access_token=", "refresh_token=", "client_secret=", "authorization")
+    ) and "[redacted]" not in lowered:
+        return "redacted"
+    return cleaned or None
+
+
+def _safe_error_reason(value):
+    if isinstance(value, str) and _SAFE_REASON.fullmatch(value):
+        return value
+    return None
+
+
+def _safe_content_type(value):
+    if not isinstance(value, str):
+        return None
+    mime = value.split(";", 1)[0].strip().lower()
+    if _SAFE_MIME.fullmatch(mime):
+        return mime
+    return None
+
+
+def notes_error_log_fields(parsed, *, raw_text="", content_type="", json_ok=False, body_len=None):
+    """NOTES失敗時だけ。認証情報や本文は入れない。"""
+    fields = {}
+    mime = _safe_content_type(content_type)
+    if json_ok and isinstance(parsed, dict):
+        fields["body_kind"] = "json"
+        err = parsed.get("error")
+        if isinstance(err, dict):
+            message = sanitize_google_error_message(err.get("message"))
+            if message:
+                fields["error_message"] = message
+            reason = _safe_error_reason(err.get("reason"))
+            if not reason:
+                errors = err.get("errors")
+                if isinstance(errors, list) and errors and isinstance(errors[0], dict):
+                    reason = _safe_error_reason(errors[0].get("reason"))
+                    if not message:
+                        nested = sanitize_google_error_message(errors[0].get("message"))
+                        if nested:
+                            fields["error_message"] = nested
+            if not reason:
+                details = err.get("details")
+                if isinstance(details, list):
+                    for item in details:
+                        if not isinstance(item, dict):
+                            continue
+                        type_name = item.get("@type")
+                        if isinstance(type_name, str) and _SAFE_RPC_TYPE.fullmatch(type_name):
+                            fields["error_type"] = type_name.rsplit(".", 1)[-1]
+                        reason = _safe_error_reason(item.get("reason"))
+                        if reason:
+                            break
+            if reason:
+                fields["error_reason"] = reason
+        return fields
+    text = raw_text if isinstance(raw_text, str) else ""
+    stripped = text.lstrip().lower()
+    if not text.strip():
+        fields["body_kind"] = "empty"
+    elif stripped.startswith("<!doctype") or stripped.startswith("<html") or (mime or "").startswith("text/html"):
+        fields["body_kind"] = "html"
+    elif (mime or "").startswith("text/"):
+        fields["body_kind"] = "text"
+    else:
+        fields["body_kind"] = "not_json"
+    if mime:
+        fields["content_type"] = mime
+    if isinstance(body_len, int) and 0 <= body_len <= 1_000_000:
+        fields["body_len"] = body_len
+    else:
+        fields["body_len"] = min(len(text.encode("utf-8")), 1_000_000)
+    return fields
+
+
 def require_single_account(accounts):
     """1件と確認できたアカウント名だけ返す。それ以外は送信しない。"""
     if not isinstance(accounts, list) or len(accounts) != 1 or not isinstance(accounts[0], dict):
@@ -582,7 +694,21 @@ def _exchange_stage(exc):
 
 
 def log_google_exchange(
-    method, *, result, elapsed_ms=None, status=None, error=None, stage=None, error_code=None, api_status=None
+    method,
+    *,
+    result,
+    elapsed_ms=None,
+    status=None,
+    error=None,
+    stage=None,
+    error_code=None,
+    api_status=None,
+    error_message=None,
+    error_reason=None,
+    error_type=None,
+    body_kind=None,
+    content_type=None,
+    body_len=None,
 ):
     """通信診断。URL・本文・認証情報は出さない。"""
     parts = ["GBP通信", f"method={method}", f"result={result}"]
@@ -598,10 +724,24 @@ def log_google_exchange(
         parts.append(f"error_code={int(error_code)}")
     if api_status:
         parts.append(f"api_status={api_status}")
+    if error_reason and _SAFE_REASON.fullmatch(str(error_reason)):
+        parts.append(f"error_reason={error_reason}")
+    if error_type and re.fullmatch(r"[A-Za-z]{1,80}", str(error_type)):
+        parts.append(f"error_type={error_type}")
+    if body_kind in {"json", "not_json", "html", "text", "empty"}:
+        parts.append(f"body_kind={body_kind}")
+    if content_type and _SAFE_MIME.fullmatch(str(content_type)):
+        parts.append(f"content_type={content_type}")
+    if isinstance(body_len, int) and 0 <= body_len <= 1_000_000:
+        parts.append(f"body_len={body_len}")
+    if error_message:
+        safe = sanitize_google_error_message(error_message)
+        if safe:
+            parts.append(f"error_message={safe}")
     print(" ".join(parts))
 
 
-def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnose=False):
+def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnose=False, notes_error_log=False):
     """POST / PATCH / GET を1回送る。失敗しても再送しない。認証情報は残さない。"""
     if method not in {"POST", "PATCH", "GET"}:
         raise GbpPostRefused("この操作は送信しません")
@@ -630,12 +770,32 @@ def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnos
             )
         raise GbpPostTimeout()
     elapsed_ms = int((time.monotonic() - started) * 1000)
+    json_ok = False
+    raw_text = ""
     try:
         parsed = response.json()
+        json_ok = isinstance(parsed, dict)
     except ValueError:
         parsed = {}
+        raw_text = (getattr(response, "text", None) or "")[:4096]
     if not isinstance(parsed, dict):
         parsed = {}
+        json_ok = False
+        if not raw_text:
+            raw_text = (getattr(response, "text", None) or "")[:4096]
+    extra = {}
+    if diagnose and notes_error_log and response.status_code >= 400:
+        header_len = None
+        header = response.headers.get("Content-Length") if hasattr(response, "headers") else None
+        if isinstance(header, str) and header.isdigit():
+            header_len = int(header)
+        extra = notes_error_log_fields(
+            parsed,
+            raw_text=raw_text,
+            content_type=(response.headers.get("Content-Type") if hasattr(response, "headers") else "") or "",
+            json_ok=json_ok,
+            body_len=header_len,
+        )
     if diagnose:
         error_code, api_status = google_error_fields(parsed)
         log_google_exchange(
@@ -645,6 +805,7 @@ def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnos
             status=response.status_code,
             error_code=error_code,
             api_status=api_status,
+            **extra,
         )
     return response.status_code, parsed
 

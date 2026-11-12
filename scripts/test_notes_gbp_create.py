@@ -547,17 +547,33 @@ def main():
         "/static/images/notes/a.jpg",
     )
 
-    def run_diagnosed(exc=None, status=200, timeout=None, payload=None):
+    def run_diagnosed(
+        exc=None,
+        status=200,
+        timeout=None,
+        payload=None,
+        notes_error_log=False,
+        raw_text=None,
+        content_type=None,
+        json_error=False,
+    ):
         original = requests.request
         seen_timeout = {"value": None}
 
         class Reply:
             status_code = status
+            headers = {"Content-Type": content_type or "application/json"}
+            text = raw_text or ""
 
             def json(self):
+                if json_error:
+                    raise ValueError("not json")
                 if payload is not None:
                     return payload
                 return {"name": "ok"}
+
+        if raw_text is not None:
+            Reply.headers["Content-Length"] = str(len(raw_text.encode("utf-8")))
 
         def fake(method, url, **kwargs):
             seen_timeout["value"] = kwargs.get("timeout")
@@ -573,6 +589,7 @@ def main():
             "access_token": TOKEN,
             "body": secret_body,
             "diagnose": True,
+            "notes_error_log": notes_error_log,
         }
         if timeout is not None:
             kwargs["timeout"] = timeout
@@ -624,9 +641,89 @@ def main():
         five_log,
     )
     report(
-        secrets_absent(five_log) and "secret " not in five_log and "message" not in five_log,
-        "HTTP 500ログにerror.messageや秘密情報を出さない",
+        secrets_absent(five_log) and "secret " not in five_log and "error_message=" not in five_log,
+        "共通診断ログにerror.messageや秘密情報を出さない",
         five_log,
+    )
+
+    notes_err_log, notes_err_exc, notes_err_status, _notes_err_timeout = run_diagnosed(
+        status=500,
+        timeout=60,
+        notes_error_log=True,
+        payload={
+            "error": {
+                "code": 500,
+                "status": "INTERNAL",
+                "message": "Internal error encountered.",
+                "errors": [{"reason": "backendError", "message": "secret " + TOKEN}],
+                "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "MEDIA_FETCH_FAILED"}],
+            }
+        },
+    )
+    report(notes_err_exc is None and notes_err_status == 500, "NOTES失敗ログでもHTTP 500は応答として受け取る")
+    report(
+        "error_code=500" in notes_err_log
+        and "api_status=INTERNAL" in notes_err_log
+        and "error_message=Internal error encountered." in notes_err_log
+        and "error_reason=backendError" in notes_err_log
+        and "body_kind=json" in notes_err_log,
+        "NOTES失敗ログは安全なerror.messageとreasonを残す",
+        notes_err_log,
+    )
+    report(
+        secrets_absent(notes_err_log) and TOKEN not in notes_err_log,
+        "NOTES失敗ログに秘密情報や本文を出さない",
+        notes_err_log,
+    )
+
+    dirty_log, _de, _ds, _dt = run_diagnosed(
+        status=500,
+        timeout=60,
+        notes_error_log=True,
+        payload={
+            "error": {
+                "code": 500,
+                "status": "INTERNAL",
+                "message": "fetch failed https://karin-sb.jp/static/images/notes/a.jpg ya29.abcdefghijklmnopqrstuvwxyz",
+            }
+        },
+    )
+    report(
+        "error_message=" in dirty_log
+        and "[url]" in dirty_log
+        and "[redacted]" in dirty_log
+        and secrets_absent(dirty_log)
+        and "ya29." not in dirty_log,
+        "NOTES失敗ログのmessageからURLと認証情報を除く",
+        dirty_log,
+    )
+
+    html_body = "<html><body>secret " + TOKEN + " access_token=" + TOKEN + "</body></html>"
+    html_log, _he, _hs, _ht = run_diagnosed(
+        status=500,
+        timeout=60,
+        notes_error_log=True,
+        json_error=True,
+        content_type="text/html; charset=utf-8",
+        raw_text=html_body,
+    )
+    report(
+        "body_kind=html" in html_log
+        and "content_type=text/html" in html_log
+        and "body_len=" in html_log
+        and "error_message=" not in html_log
+        and secrets_absent(html_log)
+        and "<html>" not in html_log
+        and TOKEN not in html_log,
+        "JSON以外の失敗本文は種類と長さだけ残す",
+        html_log,
+    )
+
+    ok_notes_log, _oe, ok_notes_status, _ot = run_diagnosed(timeout=60, notes_error_log=True)
+    report(
+        ok_notes_status == 200 and "error_message=" not in ok_notes_log and "body_kind=" not in ok_notes_log,
+        "NOTES成功時はerror.messageを出さない",
+        ok_notes_log,
     )
 
     notes_log, notes_exc, notes_status, notes_timeout = run_diagnosed(timeout=60)
@@ -698,8 +795,15 @@ def main():
         and "post_exchange=_gbp_notes_create_exchange" in app_src
         and "diagnose=True" in app_src
         and "post_exchange=_gbp_live_exchange" in app_src
-        and "timeout=60" not in app_src.split("def _gbp_live_exchange", 1)[1].split("def _gbp_notes_create_exchange", 1)[0],
+        and "timeout=60" not in app_src.split("def _gbp_live_exchange", 1)[1].split("def _gbp_notes_create_exchange", 1)[0]
+        and "notes_error_log=True" in app_src.split("def _gbp_notes_create_exchange", 1)[1].split("def _safe_gbp_exception_text", 1)[0]
+        and "notes_error_log" not in app_src.split("def _gbp_live_exchange", 1)[1].split("def _gbp_notes_create_exchange", 1)[0],
         "NOTES専用POSTだけ60秒で、サービス投稿は従来の通信のまま",
+    )
+    report(
+        "notes_error_log=False" in src
+        and "timeout=20,diagnose=False,notes_error_log=False" in src.replace(" ", ""),
+        "google_exchangeのデフォルトはnotes_error_logオフ",
     )
 
     events_src = open(os.path.join(ROOT, "external_posts.py"), encoding="utf-8").read()
