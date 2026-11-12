@@ -34,6 +34,7 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">リンク先</label>
     <input type="text" name="link_url" value="{{ form.link_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
+  {% if target.channel != "gbp" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
     <input type="text" name="image_url" id="blog-thumb-image-input" value="{{ form.image_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="/static/images/notes/ファイル名.jpg">
@@ -42,6 +43,7 @@
     {% include "notes/_thumbnail_image_picker.html" %}
     {% endwith %}
   </div>
+  {% endif %}
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
   {% if gbp_preview %}
   <h3 class="admin-subtitle">送信内容の確認</h3>

@@ -1,7 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
 import external_posts
 import gbp_local_post
-import gbp_notes_media
 import gbp_read
 import gbp_schedule_sync
 from datetime import datetime, timedelta, timezone
@@ -480,21 +479,6 @@ def age_from_birthday_filter(value):
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 app.config["SESSION_REFRESH_EACH_REQUEST"] = True
-
-
-@app.route("/gbp-notes-media/<path:rel>", methods=["GET"])
-def serve_gbp_notes_media(rel):
-    """NOTESのGBP投稿専用。変換したJPEGだけ返す。ログイン不要。"""
-    data, _err = gbp_notes_media.jpeg_bytes(rel)
-    if not data:
-        return "", 404
-    response = make_response(data)
-    response.headers["Content-Type"] = "image/jpeg"
-    response.headers["Content-Length"] = str(len(data))
-    response.headers["Cache-Control"] = "public, max-age=86400"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers.pop("Content-Disposition", None)
-    return response
 
 
 def session_staff_is_currently_active():
@@ -5058,9 +5042,10 @@ def admin_blog_external_post(blog_id, target_key):
         try:
             body = external_posts.clean_body(request.form.get("body"))
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
-            image_url = external_posts.clean_image_ref(request.form.get("image_url"))
             if target.get("channel") == "gbp":
-                image_url = _gbp_https_asset_url(image_url)
+                image_url = (existing or {}).get("image_url") or ""
+            else:
+                image_url = external_posts.clean_image_ref(request.form.get("image_url"))
         except ValueError as exc:
             flash(str(exc), "error")
             return render_template(

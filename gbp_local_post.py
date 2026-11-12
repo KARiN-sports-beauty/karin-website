@@ -10,9 +10,6 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime, timezone
-from urllib.parse import quote, unquote, urlsplit, urlunsplit
-
-import gbp_notes_media
 
 LOCAL_POSTS_URL = "https://mybusiness.googleapis.com/v4/{parent}/localPosts"
 LOCAL_POST_URL = "https://mybusiness.googleapis.com/v4/{name}"
@@ -102,40 +99,17 @@ def plain_https_url(value):
 
 
 def notes_create_payload(body, link_url, image_url=""):
-    """NOTES専用。Markdownを外し、画像パスをエンコードした送信JSONを返す。"""
+    """NOTES専用。文章とリンクだけ送る。保存済み画像があっても media は付けない。"""
     built = build_standard_post(
         strip_markdown_links(body),
         plain_https_url(link_url),
-        plain_https_url(image_url or ""),
+        "",
     )
     if not built["ok"] or not built["payload"]:
         return built
     payload = dict(built["payload"])
-    media = payload.get("media")
-    if isinstance(media, list):
-        encoded = []
-        for item in media:
-            if not isinstance(item, dict):
-                continue
-            row = dict(item)
-            if row.get("sourceUrl"):
-                source, err = gbp_notes_media.notes_source_url(row["sourceUrl"])
-                if err:
-                    return {"ok": False, "errors": [err], "payload": None}
-                row["sourceUrl"] = source
-            encoded.append(row)
-        payload["media"] = encoded
+    payload.pop("media", None)
     return {"ok": True, "errors": [], "payload": payload}
-
-
-def public_gbp_media_url(image_url):
-    """Googleが取得しやすいよう、https画像のパスだけ百分率エンコードする。"""
-    text = (image_url or "").strip()
-    if not text.startswith("https://"):
-        return text
-    parts = urlsplit(text)
-    path = quote(unquote(parts.path), safe="/-_.~")
-    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, ""))
 
 
 def google_error_fields(body):

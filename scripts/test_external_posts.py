@@ -209,6 +209,13 @@ def main():
             gbp_send_label="重複の可能性があることを理解して再投稿する",
             gbp_repost_warning=True,
         )
+        instagram_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=external_posts.get_target("instagram"),
+            form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "未投稿"},
+            events=[],
+        )
     report("is-disabled" in draft_html and "/posts/gbp_tokyo" not in draft_html, "下書きの外部投稿はリンクではない")
     report('href="/admin/blogs/12/posts/gbp_tokyo"' in live_html, "公開記事からGBP東京へ進める")
     report('href="/admin/blogs/12/posts/gbp_fukuoka"' in live_html, "公開記事からGBP福岡へ進める")
@@ -238,11 +245,15 @@ def main():
     report("投稿結果を確定できないため、新規送信を停止中" not in send_html, "送信できる画面は送信停止の表示を出さない")
     report("この内容をGoogleに投稿する" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では送信できない")
     report(
-        "サーバー内の画像から選択" in gbp_html
-        and 'id="blog-thumb-image-input"' in gbp_html
-        and "/admin/blogs/static-images" in gbp_html
-        and "初期値は記事のサムネイルです" in gbp_html,
-        "GBP画面はサーバー内の画像から選べる",
+        "サーバー内の画像から選択" not in gbp_html
+        and 'id="blog-thumb-image-input"' not in gbp_html
+        and "初期値は記事のサムネイルです" not in gbp_html
+        and ">画像<" not in gbp_html,
+        "GBP画面に画像選択欄が残っていない",
+    )
+    report(
+        "サーバー内の画像から選択" in instagram_html and 'id="blog-thumb-image-input"' in instagram_html,
+        "Instagram画面の画像欄は残っている",
     )
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
@@ -295,9 +306,11 @@ def main():
         tokyo_form["image_url"],
     )
     report(fukuoka_form["image_url"] == "", "福岡で空保存した画像は空のまま")
-    tokyo_preview = appmod._gbp_post_preview(tokyo, tokyo_form["body"], tokyo_form["link_url"], tokyo_form["image_url"])
+    tokyo_preview = appmod._gbp_post_preview(
+        tokyo, tokyo_form["body"], tokyo_form["link_url"], tokyo_form["image_url"], notes_create=True
+    )
     fukuoka_preview = appmod._gbp_post_preview(
-        fukuoka, fukuoka_form["body"], fukuoka_form["link_url"], fukuoka_form["image_url"]
+        fukuoka, fukuoka_form["body"], fukuoka_form["link_url"], fukuoka_form["image_url"], notes_create=True
     )
     report(tokyo_preview["ok"] is True and fukuoka_preview["ok"] is True, "保存した東京・福岡の内容は確認済に進める")
     with appmod.app.test_request_context("/admin/blogs/blog-stretch/posts/gbp_tokyo"):
@@ -326,7 +339,7 @@ def main():
     report(
         "東京向け保存文" in tokyo_saved_html
         and "https://karin-sb.jp/blog/stretch-pole-posture" in tokyo_saved_html
-        and "https://karin-sb.jp/static/images/blogs/pole.jpg" in tokyo_saved_html
+        and "サーバー内の画像から選択" not in tokyo_saved_html
         and "この内容をGoogleに投稿する" in tokyo_saved_html
         and "この内容を確認済にする" not in tokyo_saved_html,
         "東京の保存内容から新規投稿できる",
@@ -338,7 +351,6 @@ def main():
         "福岡の保存内容から新規投稿できる",
     )
     ascii_thumb = "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg"
-    ascii_media = "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg"
     article_url = "https://karin-sb.jp/blog/stretch-pole-posture"
     notes_preview = appmod._gbp_post_preview(
         tokyo,
@@ -350,12 +362,11 @@ def main():
     report(
         notes_preview["ok"]
         and notes_preview["payload"]["callToAction"]["url"] == article_url
-        and notes_preview["payload"]["media"][0]["sourceUrl"] == ascii_media
-        and notes_preview["payload"]["media"][0]["mediaFormat"] == "PHOTO"
+        and "media" not in notes_preview["payload"]
         and notes_preview["payload"]["summary"] == "ストレッチポール\n" + article_url
         and "](" not in notes_preview["payload_text"]
         and "[https://" not in notes_preview["payload_text"],
-        "NOTES確認JSONのURLは生のhttps",
+        "NOTES確認JSONは文章とリンクだけでmediaを付けない",
         notes_preview.get("payload_text") or "",
     )
     md_article = "[" + article_url + "](" + article_url + ")"
@@ -370,9 +381,9 @@ def main():
     report(
         notes_md_preview["ok"]
         and notes_md_preview["payload"]["callToAction"]["url"] == article_url
-        and notes_md_preview["payload"]["media"][0]["sourceUrl"] == ascii_media
+        and "media" not in notes_md_preview["payload"]
         and notes_md_preview["payload"]["summary"] == "ストレッチポール\n" + article_url,
-        "NOTES確認はMarkdownリンクを生のhttpsに戻す",
+        "NOTES確認はMarkdownリンクを生のhttpsに戻し、mediaは付けない",
         notes_md_preview.get("payload_text") or "",
     )
     service_md_preview = appmod._gbp_post_preview(tokyo, "本文", md_article, md_thumb)
@@ -394,30 +405,19 @@ def main():
     preview_json = notes_preview_html.split("<pre", 1)[1].split("</pre>", 1)[0]
     report(
         "https://karin-sb.jp/blog/stretch-pole-posture" in preview_json
-        and "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg" in preview_json
+        and "media" not in preview_json
+        and "サーバー内の画像から選択" not in notes_preview_html
         and "](" not in preview_json
         and "[https://" not in preview_json,
-        "管理画面の送信内容確認もMarkdownリンクにしない",
+        "管理画面の送信内容確認は文章とリンクだけで画像欄が無い",
         preview_json,
     )
-    with appmod.app.test_client() as client:
-        media_res = client.get("/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg")
-        blocked = client.get("/gbp-notes-media/staff/secret.jpg")
-        no_media = appmod._gbp_post_preview(
-            tokyo, "本文だけ", article_url, "", notes_create=True
-        )
-    report(
-        media_res.status_code == 200
-        and media_res.headers.get("Content-Type", "").startswith("image/jpeg")
-        and media_res.data[:2] == b"\xff\xd8"
-        and "Content-Disposition" not in media_res.headers,
-        "GBP用画像URLはimage/jpegをログインなしで返す",
-        str(media_res.status_code) + " " + str(media_res.headers.get("Content-Type")),
+    no_media = appmod._gbp_post_preview(
+        tokyo, "本文だけ", article_url, ascii_thumb, notes_create=True
     )
-    report(blocked.status_code == 404, "許可していない画像パスは配信しない")
     report(
         no_media["ok"] and "media" not in no_media["payload"],
-        "画像なしのNOTES確認JSONはmediaを付けない",
+        "保存済み画像があってもNOTES確認JSONはmediaを付けない",
         str(no_media.get("payload")),
     )
     tokyo_confirm, tokyo_confirm_reason = external_posts.prepare_notes_confirm(
