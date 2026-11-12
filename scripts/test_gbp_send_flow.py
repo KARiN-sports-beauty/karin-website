@@ -470,6 +470,7 @@ def main():
         and "summary_mismatch=0" in empty_log
         and "name_mismatch=0" in empty_log
         and "time_mismatch=0" in empty_log
+        and "summary_present=0" in empty_log
         and "kind=GET" not in empty_log
         and log_safe(empty_log),
         "投稿IDなしの確認はLISTログを残す",
@@ -487,6 +488,7 @@ def main():
         and "summary_mismatch=0" in one_log
         and "name_mismatch=0" in one_log
         and "time_mismatch=0" in one_log
+        and "summary_present=1" in one_log
         and "kind=GET" in one_log
         and log_safe(one_log),
         "候補1件のLISTログのあとGETする",
@@ -506,6 +508,7 @@ def main():
         and "summary_mismatch=0" in many_log
         and "name_mismatch=0" in many_log
         and "time_mismatch=0" in many_log
+        and "summary_present=2" in many_log
         and "kind=GET" not in many_log
         and log_safe(many_log),
         "複数候補のLISTログではGETしない",
@@ -524,6 +527,7 @@ def main():
         and "summary_mismatch=0" in incomplete_log
         and "name_mismatch=0" in incomplete_log
         and "time_mismatch=0" in incomplete_log
+        and "summary_present=1" in incomplete_log
         and "kind=GET" not in incomplete_log
         and log_safe(incomplete_log),
         "一覧未完了はLISTログに残し確定しない",
@@ -545,6 +549,7 @@ def main():
         and "summary_mismatch=1" in classified_log
         and "name_mismatch=1" in classified_log
         and "time_mismatch=1" in classified_log
+        and "summary_present=3" in classified_log
         and "kind=GET" not in classified_log
         and log_safe(classified_log),
         "3件の除外理由を重複せずLISTログに残す",
@@ -552,6 +557,24 @@ def main():
     classified_retry = Http()
     classified_blocked = send(classified_row, classified_retry, record=dict(classified_row.row))
     report(not classified_blocked["ok"] and classified_retry.calls == [], "除外内訳があっても自動再送しない")
+
+    missing_summary_http = Http(posts=[
+        {"name": CREATED, "createTime": "2026-11-01T10:00:02Z"},
+        {"name": PARENT + "/localPosts/a", "createTime": "2026-11-01T10:00:03Z"},
+    ])
+    missing_summary_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    missing_summary, missing_summary_log = captured_check(
+        missing_summary_row, missing_summary_http, dict(missing_summary_row.row), started
+    )
+    report(
+        missing_summary["record"]["status"] == "unknown"
+        and "list_count=2" in missing_summary_log
+        and "summary_present=0" in missing_summary_log
+        and "summary_mismatch=2" in missing_summary_log
+        and "kind=GET" not in missing_summary_log
+        and log_safe(missing_summary_log),
+        "一覧にsummaryが無い件数をLISTログに残す",
+    )
 
     no_start_http = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}])
     no_start_row = FakeDB(ready(status="unknown", updated_at=LATER))

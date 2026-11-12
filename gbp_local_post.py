@@ -307,6 +307,15 @@ def _candidate_count_label(candidates, unreadable):
     return "0"
 
 
+def _summary_present_count(listed_posts):
+    """一覧のうち summary が文字列である件数。本文は残さない。"""
+    count = 0
+    for item in listed_posts or []:
+        if isinstance(item, dict) and isinstance(item.get("summary"), str):
+            count += 1
+    return count
+
+
 def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, parent, now=None):
     """unknown または送信中の記録を、一覧から確認する。古い投稿は採用しない。再送しない。"""
     if not record or record.get("status") not in {"unknown", "posting"}:
@@ -584,6 +593,7 @@ def perform_notes_gbp_check(
                 summary_mismatch=rejects["summary_mismatch"],
                 name_mismatch=rejects["name_mismatch"],
                 time_mismatch=rejects["time_mismatch"],
+                summary_present=_summary_present_count(posts),
             )
             logged = True
             if http_status != 200:
@@ -866,6 +876,7 @@ def log_local_post_verify(
     summary_mismatch=None,
     name_mismatch=None,
     time_mismatch=None,
+    summary_present=None,
 ):
     info = inspect_local_post_reply(record, body, parent=parent, expected_name=expected_name)
     extra = ""
@@ -883,6 +894,8 @@ def log_local_post_verify(
         extra += f" name_mismatch={name_mismatch}"
     if time_mismatch is not None:
         extra += f" time_mismatch={time_mismatch}"
+    if summary_present is not None:
+        extra += f" summary_present={summary_present}"
     print(
         "GBP投稿確認"
         f" kind={kind}"

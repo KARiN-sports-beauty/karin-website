@@ -378,6 +378,18 @@ def main():
         and mixed_rejects[2] == {"summary_mismatch": 1, "name_mismatch": 1, "time_mismatch": 1},
         "除外は本文・名前・時刻の順で重複せず数える",
     )
+    report(
+        gbp_local_post._summary_present_count(
+            [
+                {"name": CREATED, "summary": "別文"},
+                {"name": OLD_TOKYO},
+                {"name": PARENT + "/localPosts/old1", "summary": 1},
+                {"name": PARENT + "/localPosts/old2", "summary": ""},
+            ]
+        )
+        == 2,
+        "summaryが文字列の件数だけ数える",
+    )
 
     missed = gbp_local_post.reconcile_unknown(
         ready_record(status="unknown"),
