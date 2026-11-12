@@ -376,7 +376,7 @@ def main():
         "/static/images/notes/a.jpg",
     )
 
-    def run_diagnosed(exc=None, status=200):
+    def run_diagnosed(exc=None, status=200, timeout=None):
         original = requests.request
         seen_timeout = {"value": None}
 
@@ -396,15 +396,20 @@ def main():
         buf = io.StringIO()
         raised = None
         status_code = None
+        kwargs = {
+            "access_token": TOKEN,
+            "body": secret_body,
+            "diagnose": True,
+        }
+        if timeout is not None:
+            kwargs["timeout"] = timeout
         try:
             with redirect_stdout(buf):
                 try:
                     status_code, _payload = gbp_local_post.google_exchange(
                         "POST",
                         secret_url,
-                        access_token=TOKEN,
-                        body=secret_body,
-                        diagnose=True,
+                        **kwargs,
                     )
                 except Exception as caught:
                     raised = caught
@@ -425,10 +430,20 @@ def main():
         "通常応答では開始・ステータス・所要時間を記録する",
         ok_log,
     )
-    report(ok_timeout == 20, "timeout値は20秒のまま", str(ok_timeout))
+    report(ok_timeout == 20, "診断付きでも未指定ならtimeoutは20秒", str(ok_timeout))
     report(secrets_absent(ok_log), "通常応答ログに秘密情報や本文を出さない", ok_log)
 
-    read_log, read_exc, _read_status, _read_timeout = run_diagnosed(exc=requests.exceptions.ReadTimeout("secret " + TOKEN))
+    notes_log, notes_exc, notes_status, notes_timeout = run_diagnosed(timeout=60)
+    report(notes_exc is None and notes_status == 200 and notes_timeout == 60, "NOTES専用POSTは60秒を指定する", str(notes_timeout))
+    report(
+        "GBP通信 method=POST result=start" in notes_log and "status=200" in notes_log,
+        "NOTES専用POSTでも診断ログを出す",
+        notes_log,
+    )
+
+    read_log, read_exc, _read_status, _read_timeout = run_diagnosed(
+        exc=requests.exceptions.ReadTimeout("secret " + TOKEN), timeout=60
+    )
     report(isinstance(read_exc, GbpPostTimeout), "ReadTimeoutはGbpPostTimeoutに変換する")
     report(
         "error=ReadTimeout" in read_log and "stage=waiting" in read_log and "elapsed_ms=" in read_log,
@@ -480,12 +495,15 @@ def main():
     report("perform_hours_apply" in schedule_src, "営業時間同期の処理は残っている")
     src = open(os.path.join(ROOT, "gbp_local_post.py"), encoding="utf-8").read()
     report("def perform_notes_gbp_send" in src, "従来のPATCH送信関数は残っている")
-    report("timeout=20" in src and "timeout=20, diagnose=False" in src, "google_exchangeのtimeoutは20秒のまま")
+    report("timeout=20" in src and "timeout=20, diagnose=False" in src, "google_exchangeのデフォルトtimeoutは20秒のまま")
+    report("timeout=20" in schedule_src, "営業時間同期のtimeoutは20秒のまま")
     report(
-        "post_exchange=_gbp_notes_create_exchange" in app_src
+        "timeout=60" in app_src
+        and "post_exchange=_gbp_notes_create_exchange" in app_src
         and "diagnose=True" in app_src
-        and "post_exchange=_gbp_live_exchange" in app_src,
-        "NOTES専用POSTだけ診断ログを付け、サービス投稿は従来の通信のまま",
+        and "post_exchange=_gbp_live_exchange" in app_src
+        and "timeout=60" not in app_src.split("def _gbp_live_exchange", 1)[1].split("def _gbp_notes_create_exchange", 1)[0],
+        "NOTES専用POSTだけ60秒で、サービス投稿は従来の通信のまま",
     )
 
     events_src = open(os.path.join(ROOT, "external_posts.py"), encoding="utf-8").read()

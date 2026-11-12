@@ -4849,7 +4849,7 @@ def _gbp_live_exchange(method, url, body=None, access_token=None):
 def _gbp_notes_create_exchange(method, url, body=None, access_token=None):
     """NOTES専用POSTの通信診断用。スケジュールやサービス投稿からは呼ばない。"""
     return gbp_local_post.google_exchange(
-        method, url, access_token=access_token, body=body, diagnose=True
+        method, url, access_token=access_token, body=body, timeout=60, diagnose=True
     )
 
 
