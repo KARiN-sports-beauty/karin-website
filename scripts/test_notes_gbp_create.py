@@ -97,9 +97,11 @@ class CreateHttp:
         self.mode = mode
         self.calls = []
         self.ids = []
+        self.last_body = None
 
     def __call__(self, method, url, body=None, access_token=None):
         self.calls.append({"method": method, "url": url})
+        self.last_body = body
         if access_token != TOKEN or TOKEN in url or REFRESH in url:
             raise AssertionError("secret in request")
         if method != "POST":
@@ -107,7 +109,15 @@ class CreateHttp:
         if self.mode == "timeout":
             raise GbpPostTimeout()
         if self.mode == "server":
-            return 503, {"error": {"status": "UNAVAILABLE"}}
+            return 503, {"error": {"code": 503, "status": "UNAVAILABLE"}}
+        if self.mode == "internal":
+            return 500, {
+                "error": {
+                    "code": 500,
+                    "status": "INTERNAL",
+                    "message": "secret https://karin-sb.jp/static/images/notes/a.jpg",
+                }
+            }
         if self.mode == "denied":
             return 400, {"error": {"status": "INVALID_ARGUMENT"}}
         if self.mode == "no-name":
@@ -333,6 +343,74 @@ def main():
     report(patched["method"] == "PATCH", "既存のplan_requestは投稿IDがあるとPATCHのまま")
     report(created["method"] == "POST", "NOTES専用の作成は投稿IDがあってもPOSTする")
 
+    jp_image = "https://karin-sb.jp/static/images/notes/stretch-pole-posture.サムネイル.jpg"
+    encoded_image = "https://karin-sb.jp/static/images/notes/stretch-pole-posture.%E3%82%B5%E3%83%A0%E3%83%8D%E3%82%A4%E3%83%AB.jpg"
+    tokyo_req = gbp_local_post.plan_create_request(
+        {
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "image_url": jp_image,
+            "location_name": TOKYO,
+        },
+        ACCOUNT,
+    )
+    fukuoka_req = gbp_local_post.plan_create_request(
+        {
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "image_url": jp_image,
+            "location_name": FUKUOKA,
+        },
+        ACCOUNT,
+    )
+    report(tokyo_parent in tokyo_req["url"] and fukuoka_parent in fukuoka_req["url"], "東京と福岡は別の親リソースへPOSTする")
+    report(
+        tokyo_req["body"]["topicType"] == "STANDARD"
+        and tokyo_req["body"]["languageCode"] == "ja"
+        and tokyo_req["body"]["summary"] == "本文"
+        and tokyo_req["body"]["callToAction"] == {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"}
+        and tokyo_req["body"]["media"] == [{"mediaFormat": "PHOTO", "sourceUrl": encoded_image}]
+        and fukuoka_req["body"]["media"][0]["sourceUrl"] == encoded_image,
+        "NOTESのPOSTは本文・CTA・百分率エンコードした画像URLを含む",
+        str(tokyo_req["body"]),
+    )
+    schedule_image = gbp_local_post.plan_request(
+        {
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "image_url": jp_image,
+            "location_name": TOKYO,
+        },
+        ACCOUNT,
+    )
+    report(
+        schedule_image["body"]["media"][0]["sourceUrl"] == jp_image,
+        "従来のplan_requestの画像URLはNOTES専用エンコードを使わない",
+    )
+
+    image_http = CreateHttp()
+    image_db = FakeDB(record("tokyo", image_url=jp_image))
+    image_result = create(image_db, image_http, record("tokyo", image_url=jp_image))
+    report(
+        image_result["ok"] is True
+        and image_http.last_body["media"][0]["sourceUrl"] == encoded_image
+        and image_http.last_body["summary"] == "本文",
+        "送信時もエンコードした画像URLと本文を送る",
+        str(image_http.last_body),
+    )
+
+    five_http = CreateHttp(mode="internal")
+    five_db = FakeDB(record("tokyo"))
+    five_result = create(five_db, five_http, record("tokyo"))
+    report(
+        five_result["ok"] is False
+        and five_db.row["status"] == "unknown"
+        and five_db.row.get("external_id") is None
+        and len(five_http.calls) == 1,
+        "HTTP 500はunknownのまま自動再送しない",
+        str(five_result),
+    )
+
     no_name = CreateHttp(mode="no-name")
     no_name_db = FakeDB(record("tokyo"))
     no_name_result = create(no_name_db, no_name, record("tokyo"))
@@ -376,7 +454,7 @@ def main():
         "/static/images/notes/a.jpg",
     )
 
-    def run_diagnosed(exc=None, status=200, timeout=None):
+    def run_diagnosed(exc=None, status=200, timeout=None, payload=None):
         original = requests.request
         seen_timeout = {"value": None}
 
@@ -384,6 +462,8 @@ def main():
             status_code = status
 
             def json(self):
+                if payload is not None:
+                    return payload
                 return {"name": "ok"}
 
         def fake(method, url, **kwargs):
@@ -432,6 +512,29 @@ def main():
     )
     report(ok_timeout == 20, "診断付きでも未指定ならtimeoutは20秒", str(ok_timeout))
     report(secrets_absent(ok_log), "通常応答ログに秘密情報や本文を出さない", ok_log)
+
+    five_log, five_exc, five_status, _five_timeout = run_diagnosed(
+        status=500,
+        timeout=60,
+        payload={
+            "error": {
+                "code": 500,
+                "status": "INTERNAL",
+                "message": "secret " + TOKEN + " https://karin-sb.jp/static/images/notes/a.jpg",
+            }
+        },
+    )
+    report(five_exc is None and five_status == 500, "HTTP 500は応答として受け取る")
+    report(
+        "error_code=500" in five_log and "api_status=INTERNAL" in five_log and "elapsed_ms=" in five_log,
+        "HTTP 500ではerror.codeとerror.statusだけ記録する",
+        five_log,
+    )
+    report(
+        secrets_absent(five_log) and "secret " not in five_log and "message" not in five_log,
+        "HTTP 500ログにerror.messageや秘密情報を出さない",
+        five_log,
+    )
 
     notes_log, notes_exc, notes_status, notes_timeout = run_diagnosed(timeout=60)
     report(notes_exc is None and notes_status == 200 and notes_timeout == 60, "NOTES専用POSTは60秒を指定する", str(notes_timeout))

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime, timezone
+from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
 LOCAL_POSTS_URL = "https://mybusiness.googleapis.com/v4/{parent}/localPosts"
 LOCAL_POST_URL = "https://mybusiness.googleapis.com/v4/{name}"
@@ -79,6 +80,32 @@ def payload_text(payload):
     if not payload:
         return ""
     return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def public_gbp_media_url(image_url):
+    """Googleが取得しやすいよう、https画像のパスだけ百分率エンコードする。"""
+    text = (image_url or "").strip()
+    if not text.startswith("https://"):
+        return text
+    parts = urlsplit(text)
+    path = quote(unquote(parts.path), safe="/-_.~")
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, ""))
+
+
+def google_error_fields(body):
+    """error.code と error.status だけ。message は返さない。"""
+    if not isinstance(body, dict) or not isinstance(body.get("error"), dict):
+        return None, None
+    err = body["error"]
+    code = err.get("code")
+    if isinstance(code, str) and code.isdigit():
+        code = int(code)
+    if not isinstance(code, int) or code < 100 or code > 599:
+        code = None
+    status = err.get("status")
+    if not isinstance(status, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]{0,79}", status):
+        status = None
+    return code, status
 
 
 def require_single_account(accounts):
@@ -160,10 +187,22 @@ def plan_create_request(record, account_name):
     if not built["ok"]:
         raise GbpPostRefused(built["errors"][0])
     parent = location_parent(account_name, record.get("location_name"))
+    payload = dict(built["payload"])
+    media = payload.get("media")
+    if isinstance(media, list):
+        encoded = []
+        for item in media:
+            if not isinstance(item, dict):
+                continue
+            row = dict(item)
+            if row.get("sourceUrl"):
+                row["sourceUrl"] = public_gbp_media_url(row["sourceUrl"])
+            encoded.append(row)
+        payload["media"] = encoded
     return {
         "method": "POST",
         "url": LOCAL_POSTS_URL.format(parent=parent),
-        "body": built["payload"],
+        "body": payload,
         "parent": parent,
     }
 
@@ -508,7 +547,9 @@ def _exchange_stage(exc):
     return "unknown"
 
 
-def log_google_exchange(method, *, result, elapsed_ms=None, status=None, error=None, stage=None):
+def log_google_exchange(
+    method, *, result, elapsed_ms=None, status=None, error=None, stage=None, error_code=None, api_status=None
+):
     """通信診断。URL・本文・認証情報は出さない。"""
     parts = ["GBP通信", f"method={method}", f"result={result}"]
     if elapsed_ms is not None:
@@ -519,6 +560,10 @@ def log_google_exchange(method, *, result, elapsed_ms=None, status=None, error=N
         parts.append(f"error={error}")
     if stage:
         parts.append(f"stage={stage}")
+    if error_code is not None:
+        parts.append(f"error_code={int(error_code)}")
+    if api_status:
+        parts.append(f"api_status={api_status}")
     print(" ".join(parts))
 
 
@@ -551,14 +596,22 @@ def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnos
             )
         raise GbpPostTimeout()
     elapsed_ms = int((time.monotonic() - started) * 1000)
-    if diagnose:
-        log_google_exchange(method, result="ok", elapsed_ms=elapsed_ms, status=response.status_code)
     try:
         parsed = response.json()
     except ValueError:
         parsed = {}
     if not isinstance(parsed, dict):
         parsed = {}
+    if diagnose:
+        error_code, api_status = google_error_fields(parsed)
+        log_google_exchange(
+            method,
+            result="ok",
+            elapsed_ms=elapsed_ms,
+            status=response.status_code,
+            error_code=error_code,
+            api_status=api_status,
+        )
     return response.status_code, parsed
 
 
