@@ -264,17 +264,26 @@ def execute_notes_gbp_submit(record, account_name, exchange, now):
     return finished, None
 
 
+def _empty_list_rejects():
+    return {"summary_mismatch": 0, "name_mismatch": 0, "time_mismatch": 0}
+
+
 def _list_candidates(listed_posts, *, expected, started, parent):
     """本文が一致する同一ロケーションの投稿。送信開始時刻があるときだけ、それ以降に限定する。"""
     candidates = []
     unreadable = False
+    rejects = _empty_list_rejects()
     prefix = (parent or "") + "/localPosts/"
     for item in listed_posts or []:
         if not isinstance(item, dict):
             continue
         summary = item.get("summary") if isinstance(item.get("summary"), str) else ""
         name = item.get("name") if isinstance(item.get("name"), str) else ""
-        if summary != expected or not name.startswith(prefix):
+        if summary != expected:
+            rejects["summary_mismatch"] += 1
+            continue
+        if not name.startswith(prefix):
+            rejects["name_mismatch"] += 1
             continue
         if started is None:
             candidates.append(name)
@@ -285,7 +294,9 @@ def _list_candidates(listed_posts, *, expected, started, parent):
             continue
         if created >= started:
             candidates.append(name)
-    return candidates, unreadable
+        else:
+            rejects["time_mismatch"] += 1
+    return candidates, unreadable, rejects
 
 
 def _candidate_count_label(candidates, unreadable):
@@ -317,7 +328,7 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
             detail="既存の投稿IDは残しています。その投稿を取得して確認してください。",
             now=stamp,
         )
-    candidates, unreadable = _list_candidates(
+    candidates, unreadable, _rejects = _list_candidates(
         listed_posts, expected=expected, started=started, parent=parent
     )
     if unreadable or len(candidates) > 1:
@@ -554,7 +565,7 @@ def perform_notes_gbp_check(
                 post_exchange, request["method"], request["url"], access_token
             )
             posts, incomplete = read_local_post_page(response)
-            listed, unreadable = _list_candidates(
+            listed, unreadable, rejects = _list_candidates(
                 posts,
                 expected=(summary or "").strip(),
                 started=_parse_time(submitted_at),
@@ -570,6 +581,9 @@ def perform_notes_gbp_check(
                 incomplete=incomplete,
                 list_count=len(posts),
                 has_started=_parse_time(submitted_at) is not None,
+                summary_mismatch=rejects["summary_mismatch"],
+                name_mismatch=rejects["name_mismatch"],
+                time_mismatch=rejects["time_mismatch"],
             )
             logged = True
             if http_status != 200:
@@ -849,6 +863,9 @@ def log_local_post_verify(
     incomplete=None,
     list_count=None,
     has_started=None,
+    summary_mismatch=None,
+    name_mismatch=None,
+    time_mismatch=None,
 ):
     info = inspect_local_post_reply(record, body, parent=parent, expected_name=expected_name)
     extra = ""
@@ -860,6 +877,12 @@ def log_local_post_verify(
         extra += f" list_count={list_count}"
     if has_started is not None:
         extra += f" has_started={'yes' if has_started else 'no'}"
+    if summary_mismatch is not None:
+        extra += f" summary_mismatch={summary_mismatch}"
+    if name_mismatch is not None:
+        extra += f" name_mismatch={name_mismatch}"
+    if time_mismatch is not None:
+        extra += f" time_mismatch={time_mismatch}"
     print(
         "GBP投稿確認"
         f" kind={kind}"

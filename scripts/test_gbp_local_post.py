@@ -362,6 +362,23 @@ def main():
     )
     report(incomplete_get["fields"]["status"] == "unknown", "GETにリンクや画像が無ければ投稿済にしない")
 
+    mixed_rejects = gbp_local_post._list_candidates(
+        [
+            {"name": CREATED, "summary": "別文", "createTime": "2026-11-01T10:00:02Z"},
+            {"name": OLD_TOKYO, "summary": "本文", "createTime": "2026-11-01T10:00:02Z"},
+            {"name": PARENT + "/localPosts/old1", "summary": "本文", "createTime": "2026-10-01T00:00:00Z"},
+        ],
+        expected="本文",
+        started=gbp_local_post._parse_time(NOW),
+        parent=PARENT,
+    )
+    report(
+        mixed_rejects[0] == []
+        and mixed_rejects[1] is False
+        and mixed_rejects[2] == {"summary_mismatch": 1, "name_mismatch": 1, "time_mismatch": 1},
+        "除外は本文・名前・時刻の順で重複せず数える",
+    )
+
     missed = gbp_local_post.reconcile_unknown(
         ready_record(status="unknown"),
         [{"name": OLD_TOKYO, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}],

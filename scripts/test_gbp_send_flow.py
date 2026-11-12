@@ -467,6 +467,9 @@ def main():
         and "incomplete=no" in empty_log
         and "list_count=0" in empty_log
         and "has_started=yes" in empty_log
+        and "summary_mismatch=0" in empty_log
+        and "name_mismatch=0" in empty_log
+        and "time_mismatch=0" in empty_log
         and "kind=GET" not in empty_log
         and log_safe(empty_log),
         "投稿IDなしの確認はLISTログを残す",
@@ -481,6 +484,9 @@ def main():
         and "incomplete=no" in one_log
         and "list_count=1" in one_log
         and "has_started=yes" in one_log
+        and "summary_mismatch=0" in one_log
+        and "name_mismatch=0" in one_log
+        and "time_mismatch=0" in one_log
         and "kind=GET" in one_log
         and log_safe(one_log),
         "候補1件のLISTログのあとGETする",
@@ -497,6 +503,9 @@ def main():
         and "candidates=many" in many_log
         and "list_count=2" in many_log
         and "has_started=yes" in many_log
+        and "summary_mismatch=0" in many_log
+        and "name_mismatch=0" in many_log
+        and "time_mismatch=0" in many_log
         and "kind=GET" not in many_log
         and log_safe(many_log),
         "複数候補のLISTログではGETしない",
@@ -512,10 +521,37 @@ def main():
         and "incomplete=yes" in incomplete_log
         and "list_count=1" in incomplete_log
         and "has_started=yes" in incomplete_log
+        and "summary_mismatch=0" in incomplete_log
+        and "name_mismatch=0" in incomplete_log
+        and "time_mismatch=0" in incomplete_log
         and "kind=GET" not in incomplete_log
         and log_safe(incomplete_log),
         "一覧未完了はLISTログに残し確定しない",
     )
+
+    classified_http = Http(posts=[
+        {"name": CREATED, "summary": "別文", "createTime": "2026-11-01T10:00:02Z"},
+        {"name": OLD_TOKYO, "summary": "本文", "createTime": "2026-11-01T10:00:02Z"},
+        {"name": PARENT + "/localPosts/old1", "summary": "本文", "createTime": "2026-10-01T00:00:00Z"},
+    ])
+    classified_row = FakeDB(ready(status="unknown", updated_at=NOW))
+    classified, classified_log = captured_check(
+        classified_row, classified_http, dict(classified_row.row), started
+    )
+    report(
+        classified["record"]["status"] == "unknown"
+        and "candidates=0" in classified_log
+        and "list_count=3" in classified_log
+        and "summary_mismatch=1" in classified_log
+        and "name_mismatch=1" in classified_log
+        and "time_mismatch=1" in classified_log
+        and "kind=GET" not in classified_log
+        and log_safe(classified_log),
+        "3件の除外理由を重複せずLISTログに残す",
+    )
+    classified_retry = Http()
+    classified_blocked = send(classified_row, classified_retry, record=dict(classified_row.row))
+    report(not classified_blocked["ok"] and classified_retry.calls == [], "除外内訳があっても自動再送しない")
 
     no_start_http = Http(posts=[{"name": CREATED, "summary": "本文", "createTime": "2026-10-01T00:00:00Z"}])
     no_start_row = FakeDB(ready(status="unknown", updated_at=LATER))
