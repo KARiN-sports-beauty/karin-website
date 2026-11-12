@@ -338,6 +338,7 @@ def main():
         "福岡の保存内容から新規投稿できる",
     )
     ascii_thumb = "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg"
+    ascii_media = "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg"
     article_url = "https://karin-sb.jp/blog/stretch-pole-posture"
     notes_preview = appmod._gbp_post_preview(
         tokyo,
@@ -349,7 +350,8 @@ def main():
     report(
         notes_preview["ok"]
         and notes_preview["payload"]["callToAction"]["url"] == article_url
-        and notes_preview["payload"]["media"][0]["sourceUrl"] == ascii_thumb
+        and notes_preview["payload"]["media"][0]["sourceUrl"] == ascii_media
+        and notes_preview["payload"]["media"][0]["mediaFormat"] == "PHOTO"
         and notes_preview["payload"]["summary"] == "ストレッチポール\n" + article_url
         and "](" not in notes_preview["payload_text"]
         and "[https://" not in notes_preview["payload_text"],
@@ -368,7 +370,7 @@ def main():
     report(
         notes_md_preview["ok"]
         and notes_md_preview["payload"]["callToAction"]["url"] == article_url
-        and notes_md_preview["payload"]["media"][0]["sourceUrl"] == ascii_thumb
+        and notes_md_preview["payload"]["media"][0]["sourceUrl"] == ascii_media
         and notes_md_preview["payload"]["summary"] == "ストレッチポール\n" + article_url,
         "NOTES確認はMarkdownリンクを生のhttpsに戻す",
         notes_md_preview.get("payload_text") or "",
@@ -392,11 +394,31 @@ def main():
     preview_json = notes_preview_html.split("<pre", 1)[1].split("</pre>", 1)[0]
     report(
         "https://karin-sb.jp/blog/stretch-pole-posture" in preview_json
-        and "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg" in preview_json
+        and "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg" in preview_json
         and "](" not in preview_json
         and "[https://" not in preview_json,
         "管理画面の送信内容確認もMarkdownリンクにしない",
         preview_json,
+    )
+    with appmod.app.test_client() as client:
+        media_res = client.get("/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg")
+        blocked = client.get("/gbp-notes-media/staff/secret.jpg")
+        no_media = appmod._gbp_post_preview(
+            tokyo, "本文だけ", article_url, "", notes_create=True
+        )
+    report(
+        media_res.status_code == 200
+        and media_res.headers.get("Content-Type", "").startswith("image/jpeg")
+        and media_res.data[:2] == b"\xff\xd8"
+        and "Content-Disposition" not in media_res.headers,
+        "GBP用画像URLはimage/jpegをログインなしで返す",
+        str(media_res.status_code) + " " + str(media_res.headers.get("Content-Type")),
+    )
+    report(blocked.status_code == 404, "許可していない画像パスは配信しない")
+    report(
+        no_media["ok"] and "media" not in no_media["payload"],
+        "画像なしのNOTES確認JSONはmediaを付けない",
+        str(no_media.get("payload")),
     )
     tokyo_confirm, tokyo_confirm_reason = external_posts.prepare_notes_confirm(
         tokyo_existing,

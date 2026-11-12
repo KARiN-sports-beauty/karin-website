@@ -344,7 +344,8 @@ def main():
     report(created["method"] == "POST", "NOTES専用の作成は投稿IDがあってもPOSTする")
 
     jp_image = "https://karin-sb.jp/static/images/notes/stretch-pole-posture.サムネイル.jpg"
-    encoded_image = "https://karin-sb.jp/static/images/notes/stretch-pole-posture.%E3%82%B5%E3%83%A0%E3%83%8D%E3%82%A4%E3%83%AB.jpg"
+    encoded_image = "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture.%E3%82%B5%E3%83%A0%E3%83%8D%E3%82%A4%E3%83%AB.jpg"
+    ascii_media = "https://karin-sb.jp/gbp-notes-media/notes/stretch-pole-posture-thumbnail.jpg"
     tokyo_req = gbp_local_post.plan_create_request(
         {
             "body": "本文",
@@ -371,8 +372,24 @@ def main():
         and tokyo_req["body"]["callToAction"] == {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"}
         and tokyo_req["body"]["media"] == [{"mediaFormat": "PHOTO", "sourceUrl": encoded_image}]
         and fukuoka_req["body"]["media"][0]["sourceUrl"] == encoded_image,
-        "NOTESのPOSTは本文・CTA・百分率エンコードした画像URLを含む",
+        "NOTESのPOSTは本文・CTA・GBP用画像URLを含む",
         str(tokyo_req["body"]),
+    )
+    no_image_req = gbp_local_post.plan_create_request(
+        {
+            "body": "本文",
+            "link_url": "https://karin-sb.jp/blog/kata",
+            "image_url": "",
+            "location_name": TOKYO,
+        },
+        ACCOUNT,
+    )
+    report(
+        "media" not in no_image_req["body"]
+        and no_image_req["body"]["summary"] == "本文"
+        and no_image_req["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/kata",
+        "画像なしのNOTES POSTはmediaを付けない",
+        str(no_image_req["body"]),
     )
     schedule_image = gbp_local_post.plan_request(
         {
@@ -401,7 +418,8 @@ def main():
     ascii_text = gbp_local_post.payload_text(ascii_req["body"])
     report(
         ascii_req["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/stretch-pole-posture"
-        and ascii_req["body"]["media"][0]["sourceUrl"] == ascii_image
+        and ascii_req["body"]["media"][0]["sourceUrl"] == ascii_media
+        and ascii_req["body"]["media"][0]["mediaFormat"] == "PHOTO"
         and ascii_req["body"]["summary"] == "ストレッチポール\nhttps://karin-sb.jp/blog/stretch-pole-posture"
         and "](" not in ascii_text
         and "[https://" not in ascii_text,
@@ -422,7 +440,7 @@ def main():
     )
     report(
         md_req["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/stretch-pole-posture"
-        and md_req["body"]["media"][0]["sourceUrl"] == ascii_image
+        and md_req["body"]["media"][0]["sourceUrl"] == ascii_media
         and md_req["body"]["summary"] == "ストレッチポール\nhttps://karin-sb.jp/blog/stretch-pole-posture"
         and "](" not in gbp_local_post.payload_text(md_req["body"]),
         "NOTES送信はMarkdownリンクを生のhttps URLに戻す",
@@ -431,14 +449,46 @@ def main():
     md_schedule = gbp_local_post.build_standard_post("本文", md_url, md_image)
     report(not md_schedule["ok"], "従来の組み立てはMarkdown URLを送らない")
 
+    import gbp_notes_media
+    original_path = os.path.join(ROOT, "static", "images", "notes", "stretch-pole-posture-thumbnail.jpg")
+    original_size = os.path.getsize(original_path)
+    converted, conv_err = gbp_notes_media.jpeg_bytes("notes/stretch-pole-posture-thumbnail.jpg")
+    report(
+        conv_err is None
+        and converted
+        and converted[:2] == b"\xff\xd8"
+        and b"\xff\xc0" in converted
+        and b"\xff\xed" not in converted
+        and b"\xff\xeb" not in converted
+        and 10 * 1024 <= len(converted) <= 5 * 1024 * 1024,
+        "GBP用JPEGはbaselineで付加情報を外し、容量要件内",
+        str(conv_err or len(converted or b"")),
+    )
+    from PIL import Image
+    from io import BytesIO
+    converted_im = Image.open(BytesIO(converted))
+    converted_im.load()
+    report(
+        converted_im.format == "JPEG"
+        and converted_im.mode == "RGB"
+        and min(converted_im.size) >= 250
+        and max(converted_im.size) <= 1600,
+        "GBP用JPEGはRGBで短辺250以上・長辺1600以下",
+        str(converted_im.size),
+    )
+    report(
+        os.path.getsize(original_path) == original_size,
+        "元画像ファイルは変換しても変更しない",
+    )
+
     image_http = CreateHttp()
     image_db = FakeDB(record("tokyo", image_url=jp_image))
     image_result = create(image_db, image_http, record("tokyo", image_url=jp_image))
     report(
         image_result["ok"] is True
-        and image_http.last_body["media"][0]["sourceUrl"] == encoded_image
+        and image_http.last_body["media"] == [{"mediaFormat": "PHOTO", "sourceUrl": encoded_image}]
         and image_http.last_body["summary"] == "本文",
-        "送信時もエンコードした画像URLと本文を送る",
+        "送信時もGBP用画像URLと本文を送る",
         str(image_http.last_body),
     )
 
@@ -663,9 +713,11 @@ def main():
     report(
         "notes_create=True" not in service_route
         and "notes_create_payload" not in schedule_src
+        and "gbp_notes_media" not in schedule_src
         and "notes_create=True" not in app_src.split("def admin_gbp_schedule", 1)[1].split("def ", 1)[0],
         "鍼灸サービス・スケジュール投稿はNOTES専用のURL加工を使わない",
     )
+    report("gbp-notes-media" not in src.split("def plan_request", 1)[1].split("def get_request", 1)[0], "従来のplan_requestはGBP用変換URLを使わない")
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

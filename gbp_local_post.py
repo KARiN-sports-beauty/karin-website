@@ -12,6 +12,8 @@ import re
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
+import gbp_notes_media
+
 LOCAL_POSTS_URL = "https://mybusiness.googleapis.com/v4/{parent}/localPosts"
 LOCAL_POST_URL = "https://mybusiness.googleapis.com/v4/{name}"
 SUMMARY_LIMIT = 1500
@@ -117,7 +119,10 @@ def notes_create_payload(body, link_url, image_url=""):
                 continue
             row = dict(item)
             if row.get("sourceUrl"):
-                row["sourceUrl"] = public_gbp_media_url(row["sourceUrl"])
+                source, err = gbp_notes_media.notes_source_url(row["sourceUrl"])
+                if err:
+                    return {"ok": False, "errors": [err], "payload": None}
+                row["sourceUrl"] = source
             encoded.append(row)
         payload["media"] = encoded
     return {"ok": True, "errors": [], "payload": payload}
