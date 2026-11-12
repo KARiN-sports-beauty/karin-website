@@ -94,6 +94,7 @@ GBP_SERVICE_AREAS = {
 }
 
 LOCKED_STATUSES = frozenset({"posted", "posting", "unknown"})
+NOTES_KEEP_STATUSES = frozenset({"draft", "ready", "posted", "failed", "unknown"})
 
 EVENT_LABELS = {
     "generated": "文面を作成",
@@ -338,17 +339,22 @@ def _kept_receipt(existing):
 
 
 def prepare_notes_save(existing, target, blog_id, body, link_url, image_url, staff_id, now):
-    """保存用のフィールド。status は draft 固定。投稿済にはしない。"""
-    if existing and existing.get("status") in LOCKED_STATUSES:
+    """保存用のフィールド。投稿済にはしない。GBP NOTESは送信中以外の本文更新を許可する。"""
+    if existing and existing.get("status") == "posting":
+        return None, "送信中の記録は変更しません。"
+    if existing and existing.get("status") in LOCKED_STATUSES and target.get("channel") != "gbp":
         return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
     external_id, posted_at = _kept_receipt(existing)
+    status = "draft"
+    if existing and target.get("channel") == "gbp" and existing.get("status") in NOTES_KEEP_STATUSES:
+        status = existing.get("status")
     fields = {
         "source_kind": "notes_article",
         "blog_id": str(blog_id),
         "service_key": None,
         "channel": target["channel"],
         "gbp_profile": target["gbp_profile"],
-        "status": "draft",
+        "status": status,
         "body": body,
         "link_url": link_url or None,
         "image_url": image_url or None,
@@ -622,7 +628,7 @@ def list_post_events(client, post_id):
         .select("id,event,detail,body_snapshot,created_at,actor_staff_id")
         .eq("external_post_id", post_id)
         .order("created_at", desc=True)
-        .limit(10)
+        .limit(100)
         .execute()
     )
     events = []

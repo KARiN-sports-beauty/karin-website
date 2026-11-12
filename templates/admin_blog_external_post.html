@@ -23,7 +23,7 @@
 {% endif %}
 <p class="admin-blog-body">{{ target.guide }}</p>
 <p class="admin-blog-category">状態: {{ form.status_label }}</p>
-<p class="admin-blog-body">この画面では投稿文を確認して保存します。外部サービスへの送信は、確認済のGBPだけ、この画面のボタンで行います。未確認の内容はGoogleへ送信しません。結果が不明なときは自動で送り直しません。</p>
+<p class="admin-blog-body">この画面では投稿文を確認して保存します。GBPへの送信はこの画面のボタンで行います。同じ記事でも新しい投稿を作れます。結果が不明なときは自動で送り直しません。</p>
 
 <form method="POST" action="/admin/blogs/{{ blog.id }}/posts/{{ target.key }}" style="max-width: 800px;">
   <div style="margin-bottom: 20px;">
@@ -39,21 +39,16 @@
     <input type="text" name="image_url" value="{{ form.image_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>
-  {% if gbp_action == "check" %}
-  <p class="admin-blog-body">投稿結果を確定できないため、新規送信を停止中</p>
-  <p class="admin-blog-body">確認では新しい投稿を作りません。同じ確認を繰り返せます。</p>
-  <button type="submit" name="action" value="check" class="admin-blog-btn">Google側の投稿を確認する</button>
-  {% endif %}
   {% if gbp_preview %}
   <h3 class="admin-subtitle">送信内容の確認</h3>
   {% if gbp_preview.ok %}
-  <p class="admin-blog-body">内容が問題なければ確認済にできます。確認済のあと、明示してからGoogleへ送ります。</p>
+  <p class="admin-blog-body">内容を保存したあと、この画面のボタンでGoogleへ投稿します。投稿済からも新しい投稿を作れます。</p>
   <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ gbp_preview.payload_text }}</pre>
-  {% if not gbp_locked %}
-  <button type="submit" name="action" value="confirm" class="admin-blog-btn">この内容を確認済にする</button>
+  {% if gbp_repost_warning %}
+  <p class="admin-blog-body">結果が不明です。Google側で既に投稿されている可能性があり、再投稿すると重複する場合があります。自動では送り直しません。</p>
   {% endif %}
   {% if gbp_action == "send" %}
-  <button type="submit" name="action" value="send" class="admin-blog-btn">この内容をGoogleに投稿する</button>
+  <button type="submit" name="action" value="send" class="admin-blog-btn">{{ gbp_send_label or "この内容をGoogleに投稿する" }}</button>
   {% endif %}
   {% else %}
   <ul>

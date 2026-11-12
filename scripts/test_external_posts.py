@@ -67,9 +67,33 @@ def main():
     report("succeeded" not in fields["event"]["event"], "保存履歴は成功イベントではない")
 
     locked, lock_reason = external_posts.prepare_notes_save(
-        {"status": "posted", "id": "x"}, tokyo, 12, "本文", "", "", "staff-1", "2026-10-05T10:00:00+09:00"
+        {"status": "posted", "id": "x", "external_id": "accounts/1/locations/2/localPosts/3", "posted_at": "2026-10-05T10:00:00+09:00"},
+        tokyo,
+        12,
+        "本文",
+        "",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
     )
-    report(locked is None and lock_reason, "投稿済行は上書きしない", str(lock_reason))
+    report(
+        lock_reason is None
+        and locked["fields"]["status"] == "posted"
+        and locked["fields"]["external_id"] == "accounts/1/locations/2/localPosts/3",
+        "GBP投稿済の保存は状態と投稿IDを残す",
+        str(lock_reason),
+    )
+    ig_locked, ig_reason = external_posts.prepare_notes_save(
+        {"status": "posted", "id": "x"},
+        external_posts.get_target("instagram"),
+        12,
+        "本文",
+        "",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(ig_locked is None and ig_reason, "Instagram投稿済は上書きしない", str(ig_reason))
 
     raised = False
     try:
@@ -180,8 +204,10 @@ def main():
             form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "要確認"},
             events=[],
             gbp_preview=gbp_ok,
-            gbp_action="check",
-            gbp_locked=True,
+            gbp_action="send",
+            gbp_locked=False,
+            gbp_send_label="重複の可能性があることを理解して再投稿する",
+            gbp_repost_warning=True,
         )
     report("is-disabled" in draft_html and "/posts/gbp_tokyo" not in draft_html, "下書きの外部投稿はリンクではない")
     report('href="/admin/blogs/12/posts/gbp_tokyo"' in live_html, "公開記事からGBP東京へ進める")
@@ -192,25 +218,25 @@ def main():
     report(
         "この内容を保存" in preview_html
         and 'action="/admin/blogs/12/posts/gbp_tokyo"' in preview_html
-        and "外部サービスへの送信は" in preview_html,
+        and "GBPへの送信はこの画面のボタンで行います" in preview_html,
         "確認画面は管理画面への保存まで",
     )
     report(
-        "Googleへ送信しません" in gbp_html
-        and "この内容を確認済にする" in gbp_html
+        "自動で送り直しません" in gbp_html
+        and "この内容を確認済にする" not in gbp_html
         and "この内容をGoogleに投稿する" not in gbp_html
         and "mybusiness.googleapis.com" not in gbp_html,
-        "未確認の画面には送信ボタンが無い",
+        "操作を選んでいない画面には送信ボタンが無い",
     )
-    report("この内容をGoogleに投稿する" in send_html and "外部サービスへの送信は" in send_html, "確認済の画面に送信ボタンがある")
+    report("この内容をGoogleに投稿する" in send_html and "GBPへの送信はこの画面のボタンで行います" in send_html, "送信操作がある画面に送信ボタンがある")
     report(
-        "Google側の投稿を確認する" in check_html
-        and "この内容をGoogleに投稿する" not in check_html
-        and "投稿結果を確定できないため、新規送信を停止中" in check_html,
-        "未確認の画面は確認ボタンだけで、新規送信を止める",
+        "Google側の投稿を確認する" not in check_html
+        and "重複の可能性があることを理解して再投稿する" in check_html
+        and "再投稿すると重複する場合があります" in check_html,
+        "結果不明の画面は確認検索せず、重複注意つきで再投稿できる",
     )
-    report("投稿結果を確定できないため、新規送信を停止中" not in send_html, "確認済の画面は送信停止の表示を出さない")
-    report("この内容を確認済にする" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では確認済にできない")
+    report("投稿結果を確定できないため、新規送信を停止中" not in send_html, "送信できる画面は送信停止の表示を出さない")
+    report("この内容をGoogleに投稿する" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では送信できない")
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
     pole_blog = {
@@ -264,8 +290,9 @@ def main():
             form=tokyo_form,
             events=[],
             gbp_preview=tokyo_preview,
-            gbp_action=appmod._gbp_screen_action(tokyo, tokyo_existing, tokyo_preview),
+            gbp_action=appmod._notes_gbp_screen_action(tokyo, tokyo_existing, tokyo_preview),
             gbp_locked=False,
+            gbp_send_label=appmod._notes_gbp_send_label(tokyo_existing.get("status")),
         )
         fukuoka_saved_html = appmod.render_template(
             "admin_blog_external_post.html",
@@ -274,22 +301,23 @@ def main():
             form=fukuoka_form,
             events=[],
             gbp_preview=fukuoka_preview,
-            gbp_action=appmod._gbp_screen_action(fukuoka, fukuoka_existing, fukuoka_preview),
+            gbp_action=appmod._notes_gbp_screen_action(fukuoka, fukuoka_existing, fukuoka_preview),
             gbp_locked=False,
+            gbp_send_label=appmod._notes_gbp_send_label(fukuoka_existing.get("status")),
         )
     report(
         "東京向け保存文" in tokyo_saved_html
         and "https://karin-sb.jp/blog/stretch-pole-posture" in tokyo_saved_html
         and "https://karin-sb.jp/static/images/blogs/pole.jpg" in tokyo_saved_html
-        and "この内容を確認済にする" in tokyo_saved_html
-        and "この内容をGoogleに投稿する" not in tokyo_saved_html,
-        "東京の保存内容と確認済ボタンを表示し、送信ボタンは出さない",
+        and "この内容をGoogleに投稿する" in tokyo_saved_html
+        and "この内容を確認済にする" not in tokyo_saved_html,
+        "東京の保存内容から新規投稿できる",
     )
     report(
         "福岡向け保存文" in fukuoka_saved_html
-        and "この内容を確認済にする" in fukuoka_saved_html
-        and "この内容をGoogleに投稿する" not in fukuoka_saved_html,
-        "福岡の保存内容と確認済ボタンを表示し、送信ボタンは出さない",
+        and "この内容をGoogleに投稿する" in fukuoka_saved_html
+        and "この内容を確認済にする" not in fukuoka_saved_html,
+        "福岡の保存内容から新規投稿できる",
     )
     tokyo_confirm, tokyo_confirm_reason = external_posts.prepare_notes_confirm(
         tokyo_existing,
@@ -325,9 +353,14 @@ def main():
         and "succeeded" not in tokyo_confirm["event"]["event"],
         "確認済への遷移だけではGoogleへ送信しない",
     )
-    report(appmod._gbp_screen_action(tokyo, tokyo_existing, tokyo_preview) is None, "未確認の下書きは送信操作にしない")
+    report(appmod._gbp_screen_action(tokyo, tokyo_existing, tokyo_preview) is None, "サービス用の画面操作は下書きを送信にしない")
     ready_row = dict(tokyo_existing, status="ready")
-    report(appmod._gbp_screen_action(tokyo, ready_row, tokyo_preview) == "send", "確認済だけ送信操作になる")
+    report(appmod._gbp_screen_action(tokyo, ready_row, tokyo_preview) == "send", "サービス用の画面操作は確認済だけ送信になる")
+    report(appmod._notes_gbp_screen_action(tokyo, tokyo_existing, tokyo_preview) == "send", "NOTESの下書きは新規投稿できる")
+    report(appmod._notes_gbp_screen_action(tokyo, dict(tokyo_existing, status="posted"), tokyo_preview) == "send", "NOTESの投稿済からも新規投稿できる")
+    report(appmod._notes_gbp_screen_action(tokyo, dict(tokyo_existing, status="unknown"), tokyo_preview) == "send", "NOTESの結果不明は明示再投稿できる")
+    report(appmod._notes_gbp_screen_action(tokyo, dict(tokyo_existing, status="failed"), tokyo_preview) == "send", "NOTESの失敗は再投稿できる")
+    report(appmod._notes_gbp_screen_action(tokyo, dict(tokyo_existing, status="posting"), tokyo_preview) is None, "NOTESの送信中は重ねて送らない")
     draft_plan, draft_reason = appmod.gbp_local_post.begin_notes_gbp_submit(
         {
             "id": "row-tokyo",

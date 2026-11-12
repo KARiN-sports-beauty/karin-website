@@ -4892,6 +4892,20 @@ def _run_gbp_external_action(existing, *, mode, staff_id, now, events=None):
     )
 
 
+def _run_notes_gbp_create(existing, *, staff_id, now):
+    """KARiN.NOTES専用。毎回新規POSTする。スケジュールやサービス投稿からは呼ばない。"""
+    config = gbp_read.load_gbp_read_config()
+    return gbp_local_post.perform_notes_gbp_create(
+        supabase_admin,
+        existing,
+        config=config,
+        token_exchange=gbp_read.requests_exchange,
+        post_exchange=_gbp_live_exchange,
+        now=now,
+        staff_id=staff_id,
+    )
+
+
 def _gbp_screen_action(target, existing, preview):
     if target.get("channel") != "gbp" or not existing:
         return None
@@ -4901,6 +4915,27 @@ def _gbp_screen_action(target, existing, preview):
     if status in {"unknown", "posting"}:
         return "check"
     return None
+
+
+def _notes_gbp_screen_action(target, existing, preview):
+    if target.get("channel") != "gbp" or not existing:
+        return None
+    status = existing.get("status")
+    if status == "posting":
+        return None
+    if status in gbp_local_post.NOTES_CREATE_STATUSES and preview and preview.get("ok"):
+        return "send"
+    return None
+
+
+def _notes_gbp_send_label(status):
+    if status == "posted":
+        return "この内容で新規投稿する"
+    if status == "unknown":
+        return "重複の可能性があることを理解して再投稿する"
+    if status == "failed":
+        return "この内容を再投稿する"
+    return "この内容をGoogleに投稿する"
 
 
 def _notes_public_blog_url(blog):
@@ -4950,7 +4985,7 @@ def _external_post_form_values(blog, target, existing):
 @app.route("/admin/blogs/<blog_id>/posts/<target_key>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_external_post(blog_id, target_key):
-    """媒体別の投稿。GBPは確認済みの明示操作だけで送り、結果不明なら再送しない。"""
+    """媒体別の投稿。NOTESのGBPは毎回新規POSTする。結果不明でも自動再送しない。"""
     target = external_posts.get_target(target_key)
     if target is None:
         flash("投稿先が見つかりません", "error")
@@ -4983,18 +5018,10 @@ def admin_blog_external_post(blog_id, target_key):
         staff = session.get("staff") or {}
         now = now_iso()
         if action == "check":
-            if target.get("channel") != "gbp" or not existing:
-                flash("確認できるGBPの記録がありません", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            try:
-                result = _run_gbp_external_action(
-                    existing, mode="check", staff_id=staff.get("id"), now=now, events=events
-                )
-            except Exception:
-                print("❌ GBP投稿の確認エラー")
-                flash("投稿の確認に失敗しました。自動では再送しません。", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            flash(result["message"], "success" if result["ok"] else "error")
+            flash(
+                "この画面ではGoogle側の検索確認をしません。結果が不明なときは、重複の可能性があることを確認してから再投稿してください。",
+                "error",
+            )
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         try:
             body = external_posts.clean_body(request.form.get("body"))
@@ -5016,14 +5043,17 @@ def admin_blog_external_post(blog_id, target_key):
             )
         if action == "send":
             if target.get("channel") != "gbp" or not existing:
-                flash("確認済みのGBPだけ送信できます", "error")
+                flash("保存したGBPだけ送信できます", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            if existing.get("status") == "posting":
+                flash("送信中です。重なって送信しません。", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
             if not _gbp_saved_matches(existing, body, link_url, image_url):
-                flash("保存した内容と違うため送信しません。確認済にしてから送信してください。", "error")
+                flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
             try:
-                result = _run_gbp_external_action(
-                    existing, mode="send", staff_id=staff.get("id"), now=now
+                result = _run_notes_gbp_create(
+                    existing, staff_id=staff.get("id"), now=now
                 )
             except Exception:
                 print("❌ GBP投稿の送信エラー")
@@ -5055,27 +5085,6 @@ def admin_blog_external_post(blog_id, target_key):
                 existing, target, body, link_url, image_url, staff.get("id"), now
             )
             saved_message = f"{target['button_label']} の内容を確認済にしました。外部サービスへは投稿していません。"
-        elif existing and existing.get("status") == "posted" and target.get("channel") == "gbp":
-            preview = _gbp_post_preview(target, body, link_url, image_url)
-            if preview and not preview["ok"]:
-                flash(preview["errors"][0], "error")
-                return render_template(
-                    "admin_blog_external_post.html",
-                    blog=blog,
-                    target=target,
-                    form={
-                        "body": body,
-                        "link_url": link_url,
-                        "image_url": image_url,
-                        "status_label": external_posts.status_caption(existing.get("status")),
-                    },
-                    events=events,
-                    gbp_preview=preview,
-                )
-            prepared, reason = external_posts.prepare_notes_revision(
-                existing, target, body, link_url, image_url, staff.get("id"), now
-            )
-            saved_message = f"{target['button_label']} の内容を更新しました。投稿IDは保持しています。外部サービスへは投稿していません。"
         else:
             prepared, reason = external_posts.prepare_notes_save(
                 existing,
@@ -5088,7 +5097,11 @@ def admin_blog_external_post(blog_id, target_key):
                 now,
             )
             saved_message = f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。"
-            if prepared and prepared["fields"]["status"] != "draft":
+            if (
+                prepared
+                and target.get("channel") != "gbp"
+                and prepared["fields"]["status"] != "draft"
+            ):
                 flash("投稿文の保存に失敗しました", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         if reason:
@@ -5105,6 +5118,10 @@ def admin_blog_external_post(blog_id, target_key):
 
     form = _external_post_form_values(blog, target, existing)
     gbp_preview = _gbp_post_preview(target, form["body"], form["link_url"], form["image_url"])
+    gbp_status = (existing or {}).get("status")
+    gbp_locked = bool(gbp_status == "posting") if target.get("channel") == "gbp" else bool(
+        existing and existing.get("status") in external_posts.LOCKED_STATUSES
+    )
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
@@ -5112,8 +5129,10 @@ def admin_blog_external_post(blog_id, target_key):
         form=form,
         events=events,
         gbp_preview=gbp_preview,
-        gbp_action=_gbp_screen_action(target, existing, gbp_preview),
-        gbp_locked=bool(existing and existing.get("status") in external_posts.LOCKED_STATUSES),
+        gbp_action=_notes_gbp_screen_action(target, existing, gbp_preview),
+        gbp_locked=gbp_locked,
+        gbp_send_label=_notes_gbp_send_label(gbp_status),
+        gbp_repost_warning=bool(target.get("channel") == "gbp" and gbp_status == "unknown"),
     )
 
 

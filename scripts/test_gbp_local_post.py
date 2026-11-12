@@ -449,10 +449,10 @@ def main():
         LATER,
     )
     report(kept_reason is None and kept["fields"]["external_id"] == CREATED, "失敗行を保存し直しても投稿IDを消さない", str(kept_reason))
-    report(kept["fields"]["posted_at"] == NOW and kept["fields"]["status"] == "draft", "失敗行の保存は下書きのまま投稿日時を残す")
+    report(kept["fields"]["posted_at"] == NOW and kept["fields"]["status"] == "failed", "失敗行の保存は失敗のまま投稿日時を残す")
 
-    unknown_locked, unknown_reason = external_posts.prepare_notes_save(
-        {"status": "unknown", "id": "row-1", "external_id": CREATED},
+    unknown_kept, unknown_reason = external_posts.prepare_notes_save(
+        {"status": "unknown", "id": "row-1", "external_id": CREATED, "posted_at": NOW},
         external_posts.get_target("gbp_fukuoka"),
         12,
         "本文",
@@ -461,7 +461,13 @@ def main():
         "staff-1",
         LATER,
     )
-    report(unknown_locked is None and unknown_reason, "成否未確認は上書きしない", str(unknown_reason))
+    report(
+        unknown_reason is None
+        and unknown_kept["fields"]["status"] == "unknown"
+        and unknown_kept["fields"]["external_id"] == CREATED,
+        "成否未確認の保存は状態と投稿IDを残す",
+        str(unknown_reason),
+    )
 
     revised, revise_reason = external_posts.prepare_notes_revision(
         {"status": "posted", "id": "row-1", "blog_id": "12", "external_id": CREATED, "posted_at": NOW},
@@ -475,8 +481,8 @@ def main():
     report(revise_reason is None and revised["fields"]["external_id"] == CREATED, "投稿済みの更新でも投稿IDを残す", str(revise_reason))
     report(revised["fields"]["status"] == "ready" and "投稿していません" in revised["event"]["detail"], "更新後は確認待ちで、まだ送信しない")
 
-    still_locked, still_reason = external_posts.prepare_notes_save(
-        {"status": "posted", "id": "x"},
+    still_posted, still_reason = external_posts.prepare_notes_save(
+        {"status": "posted", "id": "x", "external_id": CREATED, "posted_at": NOW},
         external_posts.get_target("gbp_tokyo"),
         12,
         "本文",
@@ -485,7 +491,24 @@ def main():
         "staff-1",
         NOW,
     )
-    report(still_locked is None and still_reason, "通常の保存は投稿済を上書きしない", str(still_reason))
+    report(
+        still_reason is None
+        and still_posted["fields"]["status"] == "posted"
+        and still_posted["fields"]["external_id"] == CREATED,
+        "GBP投稿済の保存は投稿IDを残す",
+        str(still_reason),
+    )
+    posting_locked, posting_reason = external_posts.prepare_notes_save(
+        {"status": "posting", "id": "x"},
+        external_posts.get_target("gbp_tokyo"),
+        12,
+        "本文",
+        "",
+        "",
+        "staff-1",
+        NOW,
+    )
+    report(posting_locked is None and posting_reason, "送信中の保存は上書きしない", str(posting_reason))
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

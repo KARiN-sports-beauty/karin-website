@@ -144,6 +144,110 @@ def get_request(external_id):
     return {"method": "GET", "url": LOCAL_POST_URL.format(name=external_id), "body": None}
 
 
+NOTES_CREATE_STATUSES = frozenset({"draft", "ready", "posted", "failed", "unknown"})
+NOTES_CREATE_DUPLICATE_NOTICE = (
+    "Google側に既に投稿がある場合、新しい投稿と重複することがあります。重複の削除はGoogleビジネスプロフィール側で行います。"
+)
+
+
+def plan_create_request(record, account_name):
+    """NOTES専用。既存の投稿IDがあっても必ずPOSTする。PATCHはしない。"""
+    built = build_standard_post(
+        record.get("body"),
+        record.get("link_url"),
+        record.get("image_url") or "",
+    )
+    if not built["ok"]:
+        raise GbpPostRefused(built["errors"][0])
+    parent = location_parent(account_name, record.get("location_name"))
+    return {
+        "method": "POST",
+        "url": LOCAL_POSTS_URL.format(parent=parent),
+        "body": built["payload"],
+        "parent": parent,
+    }
+
+
+def begin_notes_gbp_create(record, now):
+    """NOTES専用の送信開始。posting 以外は明示操作で新規POSTできる。"""
+    if not record or not record.get("id"):
+        return None, "保存してから送信します。"
+    status = record.get("status")
+    if status == "posting":
+        return None, "送信中です。重なって送信しません。"
+    if status not in NOTES_CREATE_STATUSES:
+        return None, "この状態からは投稿できません。"
+    previous_id = (record.get("external_id") or "").strip() or None
+    fields = {
+        "status": "posting",
+        "error_message": None,
+        "updated_at": now,
+    }
+    detail = "送信を開始しました。成功を確認するまで投稿済にはしません。"
+    if previous_id:
+        detail = f"{detail} 前回のGoogle投稿ID: {previous_id}"
+    event = {
+        "event": "submit_started",
+        "body_snapshot": record.get("body") or "",
+        "link_url": record.get("link_url") or None,
+        "image_url": record.get("image_url") or None,
+        "detail": detail,
+        "created_at": now,
+    }
+    return {"fields": fields, "event": event, "previous_id": previous_id}, None
+
+
+def finish_notes_gbp_create(record, *, http_status, body, timed_out, now, parent):
+    """NOTES専用。POST応答の投稿IDだけで posted にする。LIST/GET/本文一致は使わない。"""
+    if timed_out or http_status is None or http_status >= 500:
+        return _outcome(
+            record,
+            status="unknown",
+            external_id=None,
+            posted_at=None,
+            error_message="結果不明。自動再送しません。",
+            event="unknown",
+            detail="結果不明。自動再送しません。" + NOTES_CREATE_DUPLICATE_NOTICE,
+            now=now,
+        )
+    if http_status == 200 and isinstance(body, dict):
+        name = body.get("name") if isinstance(body.get("name"), str) else ""
+        if _POST_NAME.fullmatch(name) and name.startswith(parent + "/localPosts/"):
+            return _outcome(
+                record,
+                status="posted",
+                external_id=name,
+                posted_at=now,
+                error_message=None,
+                event="succeeded",
+                detail=f"投稿成功を確認しました。Google投稿ID: {name}",
+                now=now,
+            )
+        return _outcome(
+            record,
+            status="unknown",
+            external_id=None,
+            posted_at=None,
+            error_message="応答にこのロケーションの投稿IDがありません。",
+            event="unknown",
+            detail="投稿IDを確認できないため、投稿済にしていません。自動では再送しません。",
+            now=now,
+        )
+    code = ""
+    if isinstance(body, dict) and isinstance(body.get("error"), dict):
+        code = str(body["error"].get("status") or "")[:80]
+    return _outcome(
+        record,
+        status="failed",
+        external_id=None,
+        posted_at=None,
+        error_message=f"投稿失敗 HTTP {http_status} {code}".strip(),
+        event="failed",
+        detail=f"投稿失敗 HTTP {http_status} {code}".strip(),
+        now=now,
+    )
+
+
 def begin_notes_gbp_submit(record, now):
     """送信開始。ready だけが新規POST、external_id 付きの ready は PATCH。"""
     if not record or not record.get("id"):
@@ -513,6 +617,96 @@ def perform_notes_gbp_send(
     return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
 
 
+def perform_notes_gbp_create(
+    client, record, *, config, token_exchange, post_exchange, now, staff_id=None, post_store=None
+):
+    """NOTES専用。毎回POSTする。スケジュールやサービス投稿からは呼ばない。"""
+    import gbp_read
+
+    store = _post_store(post_store)
+    refused = _prepare_notes_create(record, config)
+    if refused:
+        return _flow(False, record, refused)
+    begun, reason = begin_notes_gbp_create(record, now)
+    if reason:
+        return _flow(False, record, reason)
+    try:
+        account_name, location_name, access_token = _account_and_location(record, config, token_exchange)
+    except (GbpPostRefused, gbp_read.GbpReadError) as exc:
+        return _flow(False, record, exc.detail)
+    try:
+        claimed = store["update_if_status"](
+            client,
+            record["id"],
+            tuple(NOTES_CREATE_STATUSES),
+            {
+                "status": "posting",
+                "error_message": None,
+                "updated_at": now,
+            },
+        )
+    except Exception:
+        return _flow(False, record, "送信開始を保存できなかったため、Googleへは送っていません。")
+    if not claimed:
+        return _flow(False, record, "他の操作が先に状態を変えたため、送信しません。")
+    outgoing = dict(claimed)
+    outgoing["location_name"] = location_name
+    outgoing["body"] = record.get("body")
+    outgoing["link_url"] = record.get("link_url")
+    outgoing["image_url"] = record.get("image_url")
+    try:
+        store["insert_event"](
+            client,
+            claimed["id"],
+            _started_create_event(record, staff_id, now, begun.get("previous_id")),
+        )
+    except Exception:
+        return _flow(False, claimed, "送信開始の記録に失敗したため、Googleへは送っていません。再送せず、結果を確認してください。")
+    try:
+        request = plan_create_request(outgoing, account_name)
+    except GbpPostRefused as exc:
+        return _store_outcome(
+            client, outgoing, _local_failure(outgoing, exc.detail, now), now, staff_id=staff_id, post_store=store
+        )
+    if request["method"] != "POST":
+        return _store_outcome(
+            client,
+            outgoing,
+            _local_failure(outgoing, "NOTESの再投稿は新規投稿だけです。", now),
+            now,
+            staff_id=staff_id,
+            post_store=store,
+        )
+    try:
+        http_status, response = post_exchange(
+            request["method"], request["url"], body=request["body"], access_token=access_token
+        )
+        timed_out = False
+    except GbpPostTimeout:
+        http_status, response, timed_out = None, {}, True
+    except Exception:
+        http_status, response, timed_out = None, {}, True
+    log_local_post_verify(
+        "POST",
+        http_status,
+        outgoing,
+        response if isinstance(response, dict) else {},
+        parent=request["parent"],
+    )
+    finished = finish_notes_gbp_create(
+        outgoing,
+        http_status=http_status,
+        body=response,
+        timed_out=timed_out,
+        now=now,
+        parent=request["parent"],
+    )
+    result = _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
+    if (result.get("record") or {}).get("status") == "unknown":
+        result["message"] = "結果不明。自動再送しません。重複の可能性があるため、明示して再投稿してください。"
+    return result
+
+
 def perform_notes_gbp_check(
     client, record, *, config, token_exchange, post_exchange, now, events=None, staff_id=None, post_store=None
 ):
@@ -703,6 +897,36 @@ def _prepare_send(record, config):
     if not built["ok"]:
         return built["errors"][0]
     return None
+
+
+def _prepare_notes_create(record, config):
+    if not record or not record.get("id"):
+        return "保存してから送信します。"
+    if record.get("gbp_profile") not in {"tokyo", "fukuoka"}:
+        return "東京か福岡の投稿だけ送信できます。"
+    if record.get("status") == "posting":
+        return "送信中です。重なって送信しません。"
+    if record.get("status") not in NOTES_CREATE_STATUSES:
+        return "この状態からは投稿できません。"
+    built = build_standard_post(record.get("body"), record.get("link_url"), record.get("image_url") or "")
+    if not built["ok"]:
+        return built["errors"][0]
+    return None
+
+
+def _started_create_event(record, staff_id, now, previous_id=None):
+    detail = "送信を開始しました。成功を確認するまで投稿済にはしません。"
+    if previous_id:
+        detail = f"{detail} 前回のGoogle投稿ID: {previous_id}"
+    return {
+        "event": "submit_started",
+        "body_snapshot": (record.get("body") or "").replace("\r\n", "\n").strip(),
+        "link_url": record.get("link_url") or None,
+        "image_url": record.get("image_url") or None,
+        "detail": detail,
+        "actor_staff_id": staff_id or None,
+        "created_at": now,
+    }
 
 
 def _account_and_location(record, config, token_exchange):
