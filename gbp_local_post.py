@@ -82,6 +82,47 @@ def payload_text(payload):
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
+_MD_LINK = re.compile(r"\[([^\]]*)\]\((https://[^)\s]+)\)")
+
+
+def strip_markdown_links(text):
+    """本文中の Markdown リンクを、リンク先の https URL に戻す。"""
+    return _MD_LINK.sub(lambda match: match.group(2), text or "")
+
+
+def plain_https_url(value):
+    """CTA / 画像URLが Markdown リンクなら、中の https URL だけ返す。"""
+    text = (value or "").strip()
+    match = re.fullmatch(r"\[([^\]]*)\]\((https://[^)\s]+)\)", text)
+    if match:
+        return match.group(2).strip()
+    return text
+
+
+def notes_create_payload(body, link_url, image_url=""):
+    """NOTES専用。Markdownを外し、画像パスをエンコードした送信JSONを返す。"""
+    built = build_standard_post(
+        strip_markdown_links(body),
+        plain_https_url(link_url),
+        plain_https_url(image_url or ""),
+    )
+    if not built["ok"] or not built["payload"]:
+        return built
+    payload = dict(built["payload"])
+    media = payload.get("media")
+    if isinstance(media, list):
+        encoded = []
+        for item in media:
+            if not isinstance(item, dict):
+                continue
+            row = dict(item)
+            if row.get("sourceUrl"):
+                row["sourceUrl"] = public_gbp_media_url(row["sourceUrl"])
+            encoded.append(row)
+        payload["media"] = encoded
+    return {"ok": True, "errors": [], "payload": payload}
+
+
 def public_gbp_media_url(image_url):
     """Googleが取得しやすいよう、https画像のパスだけ百分率エンコードする。"""
     text = (image_url or "").strip()
@@ -179,7 +220,7 @@ NOTES_CREATE_DUPLICATE_NOTICE = (
 
 def plan_create_request(record, account_name):
     """NOTES専用。既存の投稿IDがあっても必ずPOSTする。PATCHはしない。"""
-    built = build_standard_post(
+    built = notes_create_payload(
         record.get("body"),
         record.get("link_url"),
         record.get("image_url") or "",
@@ -187,22 +228,10 @@ def plan_create_request(record, account_name):
     if not built["ok"]:
         raise GbpPostRefused(built["errors"][0])
     parent = location_parent(account_name, record.get("location_name"))
-    payload = dict(built["payload"])
-    media = payload.get("media")
-    if isinstance(media, list):
-        encoded = []
-        for item in media:
-            if not isinstance(item, dict):
-                continue
-            row = dict(item)
-            if row.get("sourceUrl"):
-                row["sourceUrl"] = public_gbp_media_url(row["sourceUrl"])
-            encoded.append(row)
-        payload["media"] = encoded
     return {
         "method": "POST",
         "url": LOCAL_POSTS_URL.format(parent=parent),
-        "body": payload,
+        "body": built["payload"],
         "parent": parent,
     }
 

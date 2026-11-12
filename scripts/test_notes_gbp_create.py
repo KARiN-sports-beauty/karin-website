@@ -388,6 +388,49 @@ def main():
         "従来のplan_requestの画像URLはNOTES専用エンコードを使わない",
     )
 
+    ascii_image = "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg"
+    ascii_req = gbp_local_post.plan_create_request(
+        {
+            "body": "ストレッチポール\nhttps://karin-sb.jp/blog/stretch-pole-posture",
+            "link_url": "https://karin-sb.jp/blog/stretch-pole-posture",
+            "image_url": ascii_image,
+            "location_name": TOKYO,
+        },
+        ACCOUNT,
+    )
+    ascii_text = gbp_local_post.payload_text(ascii_req["body"])
+    report(
+        ascii_req["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/stretch-pole-posture"
+        and ascii_req["body"]["media"][0]["sourceUrl"] == ascii_image
+        and ascii_req["body"]["summary"] == "ストレッチポール\nhttps://karin-sb.jp/blog/stretch-pole-posture"
+        and "](" not in ascii_text
+        and "[https://" not in ascii_text,
+        "英数字ファイル名の送信JSONは生のhttps URLのまま",
+        ascii_text,
+    )
+
+    md_url = "[https://karin-sb.jp/blog/stretch-pole-posture](https://karin-sb.jp/blog/stretch-pole-posture)"
+    md_image = "[https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg](https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg)"
+    md_req = gbp_local_post.plan_create_request(
+        {
+            "body": "ストレッチポール\n" + md_url,
+            "link_url": md_url,
+            "image_url": md_image,
+            "location_name": TOKYO,
+        },
+        ACCOUNT,
+    )
+    report(
+        md_req["body"]["callToAction"]["url"] == "https://karin-sb.jp/blog/stretch-pole-posture"
+        and md_req["body"]["media"][0]["sourceUrl"] == ascii_image
+        and md_req["body"]["summary"] == "ストレッチポール\nhttps://karin-sb.jp/blog/stretch-pole-posture"
+        and "](" not in gbp_local_post.payload_text(md_req["body"]),
+        "NOTES送信はMarkdownリンクを生のhttps URLに戻す",
+        str(md_req["body"]),
+    )
+    md_schedule = gbp_local_post.build_standard_post("本文", md_url, md_image)
+    report(not md_schedule["ok"], "従来の組み立てはMarkdown URLを送らない")
+
     image_http = CreateHttp()
     image_db = FakeDB(record("tokyo", image_url=jp_image))
     image_result = create(image_db, image_http, record("tokyo", image_url=jp_image))
@@ -611,6 +654,18 @@ def main():
 
     events_src = open(os.path.join(ROOT, "external_posts.py"), encoding="utf-8").read()
     report(".limit(100)" in events_src and "DELETE" not in events_src.split("def list_post_events", 1)[1].split("def save_notes_post", 1)[0], "投稿履歴の表示は100件までで、削除しない")
+    notes_route = app_src.split("def admin_blog_external_post", 1)[1].split("def admin_gbp_services", 1)[0]
+    service_route = app_src.split("def admin_gbp_service_post", 1)[1].split("def admin_gbp_schedule", 1)[0]
+    report(
+        "notes_create=True" in notes_route and "notes_create_payload" in src,
+        "NOTES画面の確認JSONは送信と同じ組み立てを使う",
+    )
+    report(
+        "notes_create=True" not in service_route
+        and "notes_create_payload" not in schedule_src
+        and "notes_create=True" not in app_src.split("def admin_gbp_schedule", 1)[1].split("def ", 1)[0],
+        "鍼灸サービス・スケジュール投稿はNOTES専用のURL加工を使わない",
+    )
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

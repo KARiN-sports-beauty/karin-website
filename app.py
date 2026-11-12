@@ -4823,11 +4823,14 @@ def admin_blog_delete(blog_id):
     return redirect("/admin/blogs")
 
 
-def _gbp_post_preview(target, body, link_url, image_url):
+def _gbp_post_preview(target, body, link_url, image_url, *, notes_create=False):
     """GBPの送信JSONを検証する。Googleへは送らない。"""
     if target.get("channel") != "gbp":
         return None
-    built = gbp_local_post.build_standard_post(body, link_url, image_url or "")
+    if notes_create:
+        built = gbp_local_post.notes_create_payload(body, link_url, image_url or "")
+    else:
+        built = gbp_local_post.build_standard_post(body, link_url, image_url or "")
     built["payload_text"] = gbp_local_post.payload_text(built["payload"])
     return built
 
@@ -5071,7 +5074,9 @@ def admin_blog_external_post(blog_id, target_key):
             flash(result["message"], "success" if result["ok"] else "error")
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         if action == "confirm":
-            preview = _gbp_post_preview(target, body, link_url, image_url)
+            preview = _gbp_post_preview(
+                target, body, link_url, image_url, notes_create=True
+            )
             if preview is None:
                 flash("この投稿先は確認済にできません", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
@@ -5126,7 +5131,13 @@ def admin_blog_external_post(blog_id, target_key):
         return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
 
     form = _external_post_form_values(blog, target, existing)
-    gbp_preview = _gbp_post_preview(target, form["body"], form["link_url"], form["image_url"])
+    gbp_preview = _gbp_post_preview(
+        target,
+        form["body"],
+        form["link_url"],
+        form["image_url"],
+        notes_create=True,
+    )
     gbp_status = (existing or {}).get("status")
     gbp_locked = bool(gbp_status == "posting") if target.get("channel") == "gbp" else bool(
         existing and existing.get("status") in external_posts.LOCKED_STATUSES

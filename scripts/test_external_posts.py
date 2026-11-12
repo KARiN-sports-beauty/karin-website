@@ -337,6 +337,67 @@ def main():
         and "この内容を確認済にする" not in fukuoka_saved_html,
         "福岡の保存内容から新規投稿できる",
     )
+    ascii_thumb = "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg"
+    article_url = "https://karin-sb.jp/blog/stretch-pole-posture"
+    notes_preview = appmod._gbp_post_preview(
+        tokyo,
+        "ストレッチポール\n" + article_url,
+        article_url,
+        ascii_thumb,
+        notes_create=True,
+    )
+    report(
+        notes_preview["ok"]
+        and notes_preview["payload"]["callToAction"]["url"] == article_url
+        and notes_preview["payload"]["media"][0]["sourceUrl"] == ascii_thumb
+        and notes_preview["payload"]["summary"] == "ストレッチポール\n" + article_url
+        and "](" not in notes_preview["payload_text"]
+        and "[https://" not in notes_preview["payload_text"],
+        "NOTES確認JSONのURLは生のhttps",
+        notes_preview.get("payload_text") or "",
+    )
+    md_article = "[" + article_url + "](" + article_url + ")"
+    md_thumb = "[" + ascii_thumb + "](" + ascii_thumb + ")"
+    notes_md_preview = appmod._gbp_post_preview(
+        tokyo,
+        "ストレッチポール\n" + md_article,
+        md_article,
+        md_thumb,
+        notes_create=True,
+    )
+    report(
+        notes_md_preview["ok"]
+        and notes_md_preview["payload"]["callToAction"]["url"] == article_url
+        and notes_md_preview["payload"]["media"][0]["sourceUrl"] == ascii_thumb
+        and notes_md_preview["payload"]["summary"] == "ストレッチポール\n" + article_url,
+        "NOTES確認はMarkdownリンクを生のhttpsに戻す",
+        notes_md_preview.get("payload_text") or "",
+    )
+    service_md_preview = appmod._gbp_post_preview(tokyo, "本文", md_article, md_thumb)
+    report(not service_md_preview["ok"], "従来の確認はMarkdown URLを送らない")
+    with appmod.app.test_request_context("/admin/blogs/blog-stretch/posts/gbp_tokyo"):
+        notes_preview_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=pole_blog,
+            target=tokyo,
+            form={
+                "body": "ストレッチポール\n" + article_url,
+                "link_url": article_url,
+                "image_url": ascii_thumb,
+                "status_label": "未投稿",
+            },
+            events=[],
+            gbp_preview=notes_preview,
+        )
+    preview_json = notes_preview_html.split("<pre", 1)[1].split("</pre>", 1)[0]
+    report(
+        "https://karin-sb.jp/blog/stretch-pole-posture" in preview_json
+        and "https://karin-sb.jp/static/images/notes/stretch-pole-posture-thumbnail.jpg" in preview_json
+        and "](" not in preview_json
+        and "[https://" not in preview_json,
+        "管理画面の送信内容確認もMarkdownリンクにしない",
+        preview_json,
+    )
     tokyo_confirm, tokyo_confirm_reason = external_posts.prepare_notes_confirm(
         tokyo_existing,
         tokyo,
