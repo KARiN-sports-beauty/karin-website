@@ -5027,6 +5027,8 @@ def admin_blog_external_post(blog_id, target_key):
             body = external_posts.clean_body(request.form.get("body"))
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
             image_url = external_posts.clean_image_ref(request.form.get("image_url"))
+            if target.get("channel") == "gbp":
+                image_url = _gbp_https_asset_url(image_url)
         except ValueError as exc:
             flash(str(exc), "error")
             return render_template(

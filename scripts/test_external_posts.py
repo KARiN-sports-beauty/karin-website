@@ -237,6 +237,13 @@ def main():
     )
     report("投稿結果を確定できないため、新規送信を停止中" not in send_html, "送信できる画面は送信停止の表示を出さない")
     report("この内容をGoogleに投稿する" not in gbp_bad_html and "公開された https" in gbp_bad_html, "不正な画像では送信できない")
+    report(
+        "サーバー内の画像から選択" in gbp_html
+        and 'id="blog-thumb-image-input"' in gbp_html
+        and "/admin/blogs/static-images" in gbp_html
+        and "初期値は記事のサムネイルです" in gbp_html,
+        "GBP画面はサーバー内の画像から選べる",
+    )
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 
     pole_blog = {
@@ -264,6 +271,17 @@ def main():
     }
     tokyo_form = appmod._external_post_form_values(pole_blog, tokyo, tokyo_existing)
     fukuoka_form = appmod._external_post_form_values(pole_blog, fukuoka, fukuoka_existing)
+    fresh_form = appmod._external_post_form_values(pole_blog, tokyo, None)
+    report(
+        fresh_form["image_url"] == "https://karin-sb.jp/static/images/blogs/pole.jpg",
+        "未保存のGBP画像は記事サムネイル",
+        fresh_form["image_url"],
+    )
+    report(
+        appmod._gbp_https_asset_url("/static/images/notes/a.jpg") == "https://karin-sb.jp/static/images/notes/a.jpg",
+        "サーバー内パスはGBP用httpsになる",
+        appmod._gbp_https_asset_url("/static/images/notes/a.jpg"),
+    )
     report(tokyo_form["body"] == "東京向け保存文", "東京の保存文を再表示する")
     report(fukuoka_form["body"] == "福岡向け保存文", "福岡の保存文を再表示する")
     report(
