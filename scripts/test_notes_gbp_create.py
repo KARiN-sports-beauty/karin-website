@@ -2,8 +2,10 @@
 """KARiN.NOTES のGBPは毎回POSTする。Googleへは送らない。"""
 from __future__ import annotations
 
+import io
 import os
 import sys
+from contextlib import redirect_stdout
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
@@ -355,13 +357,136 @@ def main():
         "NOTESの成功判定はPOSTの投稿IDだけを使う",
     )
 
+    import requests
+
+    secret_url = "https://example.invalid/localPosts?access_token=" + TOKEN
+    secret_body = {
+        "summary": "本文シークレット",
+        "callToAction": {"actionType": "LEARN_MORE", "url": "https://karin-sb.jp/blog/kata"},
+        "media": [{"mediaFormat": "PHOTO", "sourceUrl": "https://karin-sb.jp/static/images/notes/a.jpg"}],
+    }
+    forbidden = (
+        TOKEN,
+        REFRESH,
+        "本文シークレット",
+        "access_token",
+        "Bearer",
+        "karin-sb.jp",
+        "example.invalid",
+        "/static/images/notes/a.jpg",
+    )
+
+    def run_diagnosed(exc=None, status=200):
+        original = requests.request
+        seen_timeout = {"value": None}
+
+        class Reply:
+            status_code = status
+
+            def json(self):
+                return {"name": "ok"}
+
+        def fake(method, url, **kwargs):
+            seen_timeout["value"] = kwargs.get("timeout")
+            if exc is not None:
+                raise exc
+            return Reply()
+
+        requests.request = fake
+        buf = io.StringIO()
+        raised = None
+        status_code = None
+        try:
+            with redirect_stdout(buf):
+                try:
+                    status_code, _payload = gbp_local_post.google_exchange(
+                        "POST",
+                        secret_url,
+                        access_token=TOKEN,
+                        body=secret_body,
+                        diagnose=True,
+                    )
+                except Exception as caught:
+                    raised = caught
+        finally:
+            requests.request = original
+        return buf.getvalue(), raised, status_code, seen_timeout["value"]
+
+    def secrets_absent(text):
+        return not any(item in text for item in forbidden)
+
+    ok_log, ok_exc, ok_status, ok_timeout = run_diagnosed()
+    report(ok_exc is None and ok_status == 200, "診断付きPOSTはHTTP応答を返す")
+    report(
+        "GBP通信 method=POST result=start" in ok_log
+        and "GBP通信 method=POST result=ok" in ok_log
+        and "status=200" in ok_log
+        and "elapsed_ms=" in ok_log,
+        "通常応答では開始・ステータス・所要時間を記録する",
+        ok_log,
+    )
+    report(ok_timeout == 20, "timeout値は20秒のまま", str(ok_timeout))
+    report(secrets_absent(ok_log), "通常応答ログに秘密情報や本文を出さない", ok_log)
+
+    read_log, read_exc, _read_status, _read_timeout = run_diagnosed(exc=requests.exceptions.ReadTimeout("secret " + TOKEN))
+    report(isinstance(read_exc, GbpPostTimeout), "ReadTimeoutはGbpPostTimeoutに変換する")
+    report(
+        "error=ReadTimeout" in read_log and "stage=waiting" in read_log and "elapsed_ms=" in read_log,
+        "ReadTimeoutは例外クラス名と所要時間を記録する",
+        read_log,
+    )
+    report(secrets_absent(read_log), "ReadTimeoutログに秘密情報や本文を出さない", read_log)
+
+    connect_log, connect_exc, _cs, _ct = run_diagnosed(exc=requests.exceptions.ConnectTimeout("secret " + TOKEN))
+    report(isinstance(connect_exc, GbpPostTimeout), "ConnectTimeoutはGbpPostTimeoutに変換する")
+    report(
+        "error=ConnectTimeout" in connect_log and "stage=connecting" in connect_log and "elapsed_ms=" in connect_log,
+        "ConnectTimeoutは例外クラス名と所要時間を記録する",
+        connect_log,
+    )
+    report(secrets_absent(connect_log), "ConnectTimeoutログに秘密情報や本文を出さない", connect_log)
+
+    conn_log, conn_exc, _ns, _nt = run_diagnosed(exc=requests.exceptions.ConnectionError("secret " + TOKEN))
+    report(isinstance(conn_exc, GbpPostTimeout), "ConnectionErrorはGbpPostTimeoutに変換する")
+    report(
+        "error=ConnectionError" in conn_log and "stage=connecting" in conn_log and "elapsed_ms=" in conn_log,
+        "ConnectionErrorは例外クラス名と所要時間を記録する",
+        conn_log,
+    )
+    report(secrets_absent(conn_log), "ConnectionErrorログに秘密情報や本文を出さない", conn_log)
+
+    original_request = requests.request
+
+    def boom(method, url, **kwargs):
+        raise requests.ConnectionError("boom " + TOKEN)
+
+    requests.request = boom
+    silent = io.StringIO()
+    try:
+        with redirect_stdout(silent):
+            try:
+                gbp_local_post.google_exchange("POST", secret_url, access_token=TOKEN, body=secret_body)
+            except GbpPostTimeout:
+                pass
+    finally:
+        requests.request = original_request
+    report("GBP通信" not in silent.getvalue(), "診断オフの従来通信は追加ログを出さない", silent.getvalue())
+
     schedule_src = open(os.path.join(ROOT, "gbp_schedule_sync.py"), encoding="utf-8").read()
     app_src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
     report("perform_notes_gbp_send" in schedule_src and "perform_notes_gbp_create" not in schedule_src, "スケジュール投稿は従来の送信処理のまま")
     report("perform_notes_gbp_check" in schedule_src, "スケジュール投稿の確認処理は残っている")
     report("_run_gbp_external_action" in app_src and "admin_gbp_service_post" in app_src, "鍼灸サービス投稿は従来の送信処理を使う")
     report("perform_hours_apply" in schedule_src, "営業時間同期の処理は残っている")
-    report("def perform_notes_gbp_send" in open(os.path.join(ROOT, "gbp_local_post.py"), encoding="utf-8").read(), "従来のPATCH送信関数は残っている")
+    src = open(os.path.join(ROOT, "gbp_local_post.py"), encoding="utf-8").read()
+    report("def perform_notes_gbp_send" in src, "従来のPATCH送信関数は残っている")
+    report("timeout=20" in src and "timeout=20, diagnose=False" in src, "google_exchangeのtimeoutは20秒のまま")
+    report(
+        "post_exchange=_gbp_notes_create_exchange" in app_src
+        and "diagnose=True" in app_src
+        and "post_exchange=_gbp_live_exchange" in app_src,
+        "NOTES専用POSTだけ診断ログを付け、サービス投稿は従来の通信のまま",
+    )
 
     events_src = open(os.path.join(ROOT, "external_posts.py"), encoding="utf-8").read()
     report(".limit(100)" in events_src and "DELETE" not in events_src.split("def list_post_events", 1)[1].split("def save_notes_post", 1)[0], "投稿履歴の表示は100件までで、削除しない")

@@ -4846,6 +4846,13 @@ def _gbp_live_exchange(method, url, body=None, access_token=None):
     return gbp_local_post.google_exchange(method, url, access_token=access_token, body=body)
 
 
+def _gbp_notes_create_exchange(method, url, body=None, access_token=None):
+    """NOTES専用POSTの通信診断用。スケジュールやサービス投稿からは呼ばない。"""
+    return gbp_local_post.google_exchange(
+        method, url, access_token=access_token, body=body, diagnose=True
+    )
+
+
 def _safe_gbp_exception_text(exc):
     """ログ用。認証情報や長い本文は残さない。"""
     text = " ".join(str(exc).split())
@@ -4900,7 +4907,7 @@ def _run_notes_gbp_create(existing, *, staff_id, now):
         existing,
         config=config,
         token_exchange=gbp_read.requests_exchange,
-        post_exchange=_gbp_live_exchange,
+        post_exchange=_gbp_notes_create_exchange,
         now=now,
         staff_id=staff_id,
     )

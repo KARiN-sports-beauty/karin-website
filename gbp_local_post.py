@@ -487,10 +487,46 @@ def reconcile_unknown(record, listed_posts, *, submitted_summary, submitted_at, 
 UNRESOLVED_POST_MESSAGE = "投稿結果を確定できないため、新規送信を停止中"
 
 
-def google_exchange(method, url, *, access_token, body=None, timeout=20):
+def _exchange_stage(exc):
+    """接続・応答待ちの区別。判別できない場合は unknown。"""
+    import requests
+
+    if isinstance(exc, requests.exceptions.ConnectTimeout):
+        return "connecting"
+    if isinstance(exc, (requests.exceptions.ReadTimeout, requests.exceptions.Timeout)):
+        return "waiting"
+    if isinstance(
+        exc,
+        (
+            requests.exceptions.ChunkedEncodingError,
+            requests.exceptions.ContentDecodingError,
+        ),
+    ):
+        return "waiting"
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        return "connecting"
+    return "unknown"
+
+
+def log_google_exchange(method, *, result, elapsed_ms=None, status=None, error=None, stage=None):
+    """通信診断。URL・本文・認証情報は出さない。"""
+    parts = ["GBP通信", f"method={method}", f"result={result}"]
+    if elapsed_ms is not None:
+        parts.append(f"elapsed_ms={int(elapsed_ms)}")
+    if status is not None:
+        parts.append(f"status={status}")
+    if error:
+        parts.append(f"error={error}")
+    if stage:
+        parts.append(f"stage={stage}")
+    print(" ".join(parts))
+
+
+def google_exchange(method, url, *, access_token, body=None, timeout=20, diagnose=False):
     """POST / PATCH / GET を1回送る。失敗しても再送しない。認証情報は残さない。"""
     if method not in {"POST", "PATCH", "GET"}:
         raise GbpPostRefused("この操作は送信しません")
+    import time
     import requests
 
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -498,10 +534,25 @@ def google_exchange(method, url, *, access_token, body=None, timeout=20):
     if body is not None:
         headers["Content-Type"] = "application/json"
         kwargs["json"] = body
+    started = time.monotonic()
+    if diagnose:
+        log_google_exchange(method, result="start")
     try:
         response = requests.request(method, url, **kwargs)
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        if diagnose:
+            log_google_exchange(
+                method,
+                result="error",
+                elapsed_ms=elapsed_ms,
+                error=type(exc).__name__,
+                stage=_exchange_stage(exc),
+            )
         raise GbpPostTimeout()
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+    if diagnose:
+        log_google_exchange(method, result="ok", elapsed_ms=elapsed_ms, status=response.status_code)
     try:
         parsed = response.json()
     except ValueError:
@@ -684,7 +735,13 @@ def perform_notes_gbp_create(
         timed_out = False
     except GbpPostTimeout:
         http_status, response, timed_out = None, {}, True
-    except Exception:
+    except Exception as exc:
+        log_google_exchange(
+            request["method"],
+            result="error",
+            error=type(exc).__name__,
+            stage="unknown",
+        )
         http_status, response, timed_out = None, {}, True
     log_local_post_verify(
         "POST",
