@@ -216,6 +216,27 @@ def main():
             form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "未投稿"},
             events=[],
         )
+        facebook = external_posts.get_target("facebook")
+        facebook_preview = appmod._facebook_post_preview(facebook, "本文", "https://karin-sb.jp/blog/a")
+        facebook_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=facebook,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "", "status_label": "下書き保存"},
+            events=[],
+            facebook_preview=facebook_preview,
+            facebook_action="send",
+            facebook_send_label="この内容をFacebookに投稿する",
+        )
+        facebook_locked_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=facebook,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "", "status_label": "投稿済"},
+            events=[],
+            facebook_preview=facebook_preview,
+            facebook_action=None,
+        )
     report("is-disabled" in draft_html and "/posts/gbp_tokyo" not in draft_html, "下書きの外部投稿はリンクではない")
     report('href="/admin/blogs/12/posts/gbp_tokyo"' in live_html, "公開記事からGBP東京へ進める")
     report('href="/admin/blogs/12/posts/gbp_fukuoka"' in live_html, "公開記事からGBP福岡へ進める")
@@ -254,6 +275,42 @@ def main():
     report(
         "サーバー内の画像から選択" in instagram_html and 'id="blog-thumb-image-input"' in instagram_html,
         "Instagram画面の画像欄は残っている",
+    )
+    report(
+        "この内容をFacebookに投稿する" not in instagram_html
+        and "保存した内容だけをFacebookへ投稿できます" not in instagram_html,
+        "Instagram画面にFacebook送信ボタンは無い",
+    )
+    report(
+        "この内容をFacebookに投稿する" not in send_html
+        and "この内容をGoogleに投稿する" in send_html,
+        "GBP送信画面にFacebook送信ボタンは無い",
+    )
+    report(
+        'name="action" value="save"' in facebook_html
+        and "この内容をFacebookに投稿する" in facebook_html
+        and "message:" in facebook_html
+        and "https://karin-sb.jp/blog/a" in facebook_html
+        and "保存した内容だけをFacebookへ投稿できます" in facebook_html,
+        "Facebook画面は保存と送信を分け、本文とリンクを確認できる",
+    )
+    report(
+        "この内容をFacebookに投稿する" not in facebook_locked_html
+        and "投稿済みと成否未確認は再送しません" in facebook_locked_html,
+        "Facebookの投稿済画面は送信できない",
+    )
+    report(
+        appmod._facebook_post_preview(external_posts.get_target("instagram"), "本文", "https://karin-sb.jp/blog/a") is None
+        and appmod._facebook_post_preview(tokyo, "本文", "https://karin-sb.jp/") is None,
+        "InstagramとGBPにFacebook確認は出ない",
+    )
+    report(
+        appmod._notes_facebook_screen_action(facebook, {"status": "draft", "id": "1"}, facebook_preview) == "send"
+        and appmod._notes_facebook_screen_action(facebook, {"status": "failed", "id": "1"}, facebook_preview) == "send"
+        and appmod._notes_facebook_screen_action(facebook, {"status": "posted", "id": "1"}, facebook_preview) is None
+        and appmod._notes_facebook_screen_action(facebook, {"status": "unknown", "id": "1"}, facebook_preview) is None
+        and appmod._notes_facebook_screen_action(external_posts.get_target("instagram"), {"status": "draft", "id": "1"}, facebook_preview) is None,
+        "Facebookは下書きと失敗だけ送信でき、Instagramは対象外",
     )
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 

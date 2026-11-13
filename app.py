@@ -3,6 +3,7 @@ import external_posts
 import gbp_local_post
 import gbp_read
 import gbp_schedule_sync
+import meta_graph
 from datetime import datetime, timedelta, timezone
 import calendar
 JST = timezone(timedelta(hours=9))
@@ -4954,6 +4955,42 @@ def _notes_gbp_send_label(status):
     return "この内容をGoogleに投稿する"
 
 
+def _facebook_post_preview(target, body, link_url):
+    """Facebookの送信内容を画面確認する。Metaへは送らない。"""
+    if target.get("channel") != "facebook":
+        return None
+    return meta_graph.facebook_preview(body, link_url)
+
+
+def _notes_facebook_screen_action(target, existing, preview):
+    if target.get("channel") != "facebook" or not existing:
+        return None
+    if existing.get("status") not in meta_graph.FACEBOOK_SEND_STATUSES:
+        return None
+    if preview and preview.get("ok"):
+        return "send"
+    return None
+
+
+def _notes_facebook_send_label(status):
+    if status == "failed":
+        return "この内容を再投稿する"
+    return "この内容をFacebookに投稿する"
+
+
+def _run_notes_facebook_create(existing, *, staff_id, now):
+    """KARiN.NOTES専用。保存済みFacebookだけ投稿する。InstagramとGBPからは呼ばない。"""
+    config = meta_graph.load_facebook_config()
+    return meta_graph.perform_notes_facebook_create(
+        supabase_admin,
+        existing,
+        config=config,
+        post_exchange=meta_graph.facebook_feed_exchange,
+        now=now,
+        staff_id=staff_id,
+    )
+
+
 def _notes_public_blog_url(blog):
     slug = (blog.get("slug") or "").strip().lstrip("/")
     if not slug:
@@ -5061,6 +5098,27 @@ def admin_blog_external_post(blog_id, target_key):
                 events=events,
             )
         if action == "send":
+            if target.get("channel") == "facebook":
+                if not existing:
+                    flash("保存したFacebookだけ送信できます", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                allowed, reason = meta_graph.can_send_facebook_record(existing)
+                if not allowed:
+                    flash(reason, "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                if not _gbp_saved_matches(existing, body, link_url, image_url):
+                    flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                try:
+                    result = _run_notes_facebook_create(
+                        existing, staff_id=staff.get("id"), now=now
+                    )
+                except Exception:
+                    print("❌ Facebook投稿の送信エラー")
+                    flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                flash(result["message"], "success" if result["ok"] else "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
             if target.get("channel") != "gbp" or not existing:
                 flash("保存したGBPだけ送信できます", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
@@ -5149,6 +5207,7 @@ def admin_blog_external_post(blog_id, target_key):
     gbp_locked = bool(gbp_status == "posting") if target.get("channel") == "gbp" else bool(
         existing and existing.get("status") in external_posts.LOCKED_STATUSES
     )
+    facebook_preview = _facebook_post_preview(target, form["body"], form["link_url"])
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
@@ -5160,6 +5219,9 @@ def admin_blog_external_post(blog_id, target_key):
         gbp_locked=gbp_locked,
         gbp_send_label=_notes_gbp_send_label(gbp_status),
         gbp_repost_warning=bool(target.get("channel") == "gbp" and gbp_status == "unknown"),
+        facebook_preview=facebook_preview,
+        facebook_action=_notes_facebook_screen_action(target, existing, facebook_preview),
+        facebook_send_label=_notes_facebook_send_label(gbp_status),
     )
 
 
