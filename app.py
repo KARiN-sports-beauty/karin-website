@@ -4986,6 +4986,7 @@ def _run_notes_facebook_create(existing, *, staff_id, now):
         existing,
         config=config,
         post_exchange=meta_graph.facebook_feed_exchange,
+        get_exchange=meta_graph.facebook_accounts_exchange,
         now=now,
         staff_id=staff_id,
     )

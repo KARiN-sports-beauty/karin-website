@@ -18,6 +18,7 @@ FAILED = 0
 PASSED = 0
 NOW = "2026-11-13T15:00:00+09:00"
 TOKEN = "EAAtestsecretvalue000000000000"
+PAGE_TOKEN = "EAApageaccesssecretvalue0000000"
 PAGE_ID = "61595470022494"
 POST_ID = "61595470022494_111222333"
 
@@ -89,31 +90,63 @@ class FakeDB:
         return Query(self)
 
 
+def _assert_no_secret(url, body=None):
+    text = url or ""
+    if TOKEN in text or PAGE_TOKEN in text:
+        raise AssertionError("secret in url")
+    if "access_token=" in text.lower():
+        raise AssertionError("token query")
+    if body and "access_token" in body:
+        raise AssertionError("token in body")
+
+
+class AccountsHttp:
+    def __init__(self, mode="ok"):
+        self.mode = mode
+        self.calls = []
+
+    def __call__(self, url, *, access_token, params=None):
+        self.calls.append({"url": url, "params": dict(params or {})})
+        _assert_no_secret(url)
+        if access_token != TOKEN:
+            raise AssertionError("unexpected system token")
+        if self.mode == "timeout":
+            raise MetaGraphTimeout()
+        if self.mode == "denied":
+            return 403, {"error": {"message": f"Bearer {TOKEN}", "code": 200}}
+        if self.mode == "empty":
+            return 200, {"data": []}
+        if self.mode == "other_page":
+            return 200, {"data": [{"id": "999999", "access_token": PAGE_TOKEN}]}
+        if self.mode == "no_token":
+            return 200, {"data": [{"id": PAGE_ID}]}
+        if "/me/accounts" not in (url or ""):
+            raise AssertionError("accounts url")
+        return 200, {"data": [{"id": PAGE_ID, "access_token": PAGE_TOKEN}]}
+
+
 class FeedHttp:
     def __init__(self, mode="ok"):
         self.mode = mode
         self.calls = []
         self.last_body = None
         self.last_url = None
+        self.last_token = None
 
     def __call__(self, url, *, access_token, body):
         self.calls.append({"url": url, "body": dict(body or {})})
         self.last_url = url
         self.last_body = body
-        if access_token != TOKEN:
-            raise AssertionError("unexpected token")
-        if TOKEN in (url or ""):
-            raise AssertionError("secret in url")
-        if "access_token=" in (url or "").lower():
-            raise AssertionError("token query")
-        if body and "access_token" in body:
-            raise AssertionError("token in body")
+        self.last_token = access_token
+        _assert_no_secret(url, body)
+        if access_token != PAGE_TOKEN:
+            raise AssertionError("feed must use page token")
         if self.mode == "timeout":
             raise MetaGraphTimeout()
         if self.mode == "server":
-            return 500, {"error": {"message": f"Bearer {TOKEN}", "code": 1}}
+            return 500, {"error": {"message": f"Bearer {PAGE_TOKEN}", "code": 1}}
         if self.mode == "denied":
-            return 403, {"error": {"message": f"Invalid OAuth access token {TOKEN}", "code": 190}}
+            return 403, {"error": {"message": f"Invalid OAuth access token {PAGE_TOKEN}", "code": 190}}
         if self.mode == "noid":
             return 200, {"success": True}
         return 200, {"id": POST_ID}
@@ -144,8 +177,14 @@ def sample_config(**overrides):
     return config
 
 
-def run_create(record, http, config=None):
+def secrets_absent(*texts):
+    blob = "\n".join(text or "" for text in texts)
+    return TOKEN not in blob and PAGE_TOKEN not in blob and "EAAtest" not in blob and "EAApage" not in blob
+
+
+def run_create(record, http, config=None, get_http=None):
     db = FakeDB(record)
+    accounts = get_http if get_http is not None else AccountsHttp("ok")
     stdout = io.StringIO()
     with redirect_stdout(stdout):
         result = meta_graph.perform_notes_facebook_create(
@@ -153,13 +192,22 @@ def run_create(record, http, config=None):
             record,
             config=config or sample_config(),
             post_exchange=http,
+            get_exchange=accounts,
             now=NOW,
             staff_id="staff-1",
         )
     log = stdout.getvalue()
-    if TOKEN in log:
+    if not secrets_absent(log):
         raise AssertionError("secret in log")
-    return result, db, log
+    stored = " ".join(
+        [
+            str(db.row.get("error_message") or ""),
+            " ".join(str(item.get("detail") or "") for item in db.events),
+        ]
+    )
+    if not secrets_absent(stored):
+        raise AssertionError("secret in db")
+    return result, db, log, accounts
 
 
 def main():
@@ -207,8 +255,14 @@ def main():
         dirty or "",
     )
 
+    picked = meta_graph.select_page_access_token(
+        {"data": [{"id": "999", "access_token": PAGE_TOKEN}, {"id": PAGE_ID, "access_token": PAGE_TOKEN}]},
+        PAGE_ID,
+    )
+    report(picked == PAGE_TOKEN, "対象ページIDのトークンだけ選ぶ")
+
     ok_http = FeedHttp("ok")
-    ok_result, ok_db, ok_log = run_create(sample_record(), ok_http)
+    ok_result, ok_db, ok_log, ok_accounts = run_create(sample_record(), ok_http)
     report(ok_result["ok"] and ok_db.row["status"] == "posted", "正常レスポンスで posted")
     report(ok_db.row["external_id"] == POST_ID and ok_db.row["posted_at"] == NOW, "投稿IDと投稿日時を保存")
     report(
@@ -216,75 +270,121 @@ def main():
         "message と link だけ送る",
         str(ok_http.last_body),
     )
-    report(len(ok_http.calls) == 1 and TOKEN not in ok_log and "EAAtest" not in ok_log, "成功時のログにトークンがない")
+    report(
+        ok_http.last_token == PAGE_TOKEN
+        and len(ok_accounts.calls) == 1
+        and ok_accounts.calls[0]["params"] == {"fields": "id,access_token"}
+        and "/me/accounts" in ok_accounts.calls[0]["url"],
+        "Page Access Token を使って feed にPOSTする",
+    )
+    report(secrets_absent(ok_log) and len(ok_http.calls) == 1, "成功時のログにトークンがない")
     events = [item.get("event") for item in ok_db.events]
     report(events == ["submit_started", "succeeded"], "成功時は開始と成功の履歴", str(events))
 
     denied_http = FeedHttp("denied")
-    denied_result, denied_db, denied_log = run_create(sample_record(), denied_http)
+    denied_result, denied_db, denied_log, _denied_acc = run_create(sample_record(), denied_http)
     report(not denied_result["ok"] and denied_db.row["status"] == "failed", "4xxで failed")
     report(denied_db.row.get("external_id") is None and denied_db.row.get("posted_at") is None, "失敗では投稿済にしない")
-    report(TOKEN not in (denied_db.row.get("error_message") or "") and TOKEN not in denied_log, "4xxの保存とログにトークンがない")
+    report(secrets_absent(denied_db.row.get("error_message") or "", denied_log), "4xxの保存とログにトークンがない")
 
     server_http = FeedHttp("server")
-    server_result, server_db, server_log = run_create(sample_record(), server_http)
+    server_result, server_db, server_log, _server_acc = run_create(sample_record(), server_http)
     report(not server_result["ok"] and server_db.row["status"] == "unknown", "5xxで unknown")
     report("自動再送しません" in (server_result["message"] or ""), "5xxは自動再送しない")
-    report(TOKEN not in server_log, "5xxのログにトークンがない")
+    report(secrets_absent(server_log), "5xxのログにトークンがない")
 
     timeout_http = FeedHttp("timeout")
-    timeout_result, timeout_db, _timeout_log = run_create(sample_record(), timeout_http)
+    timeout_result, timeout_db, _timeout_log, _timeout_acc = run_create(sample_record(), timeout_http)
     report(not timeout_result["ok"] and timeout_db.row["status"] == "unknown", "タイムアウトで unknown")
     report(timeout_db.row.get("external_id") is None, "タイムアウトでは投稿IDを書かない")
 
     noid_http = FeedHttp("noid")
-    noid_result, noid_db, _noid_log = run_create(sample_record(), noid_http)
+    noid_result, noid_db, _noid_log, _noid_acc = run_create(sample_record(), noid_http)
     report(not noid_result["ok"] and noid_db.row["status"] == "unknown", "投稿IDがない200は unknown")
 
+    mismatch_http = FeedHttp("ok")
+    mismatch_acc = AccountsHttp("other_page")
+    mismatch_result, mismatch_db, mismatch_log, _macc = run_create(
+        sample_record(), mismatch_http, get_http=mismatch_acc
+    )
+    report(not mismatch_result["ok"] and mismatch_http.calls == [], "対象ページIDが違うときは投稿しない")
+    report(mismatch_db.row["status"] == "failed", "対象ページ不一致は failed に記録する")
+    report("FACEBOOK_PAGE_ID" in (mismatch_result["message"] or "") and secrets_absent(mismatch_log), "不一致の失敗文にトークンがない")
+
+    denied_acc_http = FeedHttp("ok")
+    denied_acc = AccountsHttp("denied")
+    denied_acc_result, denied_acc_db, denied_acc_log, _dacc = run_create(
+        sample_record(), denied_acc_http, get_http=denied_acc
+    )
+    report(not denied_acc_result["ok"] and denied_acc_http.calls == [], "トークン取得失敗では投稿しない")
+    report(denied_acc_db.row["status"] == "failed", "トークン取得失敗は failed に記録する")
+    report("pages_read_engagement" in (denied_acc_result["message"] or "") and secrets_absent(denied_acc_log), "取得失敗の記録にトークンがない")
+    report(
+        [item.get("event") for item in denied_acc_db.events] == ["failed"],
+        "取得失敗では送信開始イベントを残さない",
+    )
+
+    empty_http = FeedHttp("ok")
+    empty_result, empty_db, _empty_log, _empty_acc = run_create(
+        sample_record(), empty_http, get_http=AccountsHttp("empty")
+    )
+    report(not empty_result["ok"] and empty_http.calls == [] and empty_db.row["status"] == "failed", "ページ一覧が空なら投稿しない")
+
     missing_http = FeedHttp("ok")
-    missing_result, missing_db, missing_log = run_create(
+    missing_acc = AccountsHttp("ok")
+    missing_result, missing_db, missing_log, _miss_acc = run_create(
         sample_record(),
         missing_http,
         config={"access_token": "", "page_id": ""},
+        get_http=missing_acc,
     )
-    report(not missing_result["ok"] and missing_http.calls == [], "環境変数不足では送信しない")
+    report(not missing_result["ok"] and missing_http.calls == [] and missing_acc.calls == [], "環境変数不足では送信しない")
     report(missing_db.row["status"] == "draft" and not missing_db.updates, "設定不足では状態を変えない")
-    report("設定が不足" in (missing_result["message"] or "") and TOKEN not in missing_log, "設定不足の文言にトークンがない")
+    report("設定が不足" in (missing_result["message"] or "") and secrets_absent(missing_log), "設定不足の文言にトークンがない")
 
     posted_http = FeedHttp("ok")
-    posted_result, posted_db, _posted_log = run_create(
+    posted_acc = AccountsHttp("ok")
+    posted_result, posted_db, _posted_log, _posted_acc = run_create(
         sample_record(status="posted", external_id=POST_ID, posted_at=NOW),
         posted_http,
+        get_http=posted_acc,
     )
-    report(not posted_result["ok"] and posted_http.calls == [], "posted は再送できない")
+    report(not posted_result["ok"] and posted_http.calls == [] and posted_acc.calls == [], "posted は再送できない")
     report(posted_db.row["status"] == "posted", "posted の状態は変えない")
 
     unknown_http = FeedHttp("ok")
-    unknown_result, unknown_db, _unknown_log = run_create(
+    unknown_acc = AccountsHttp("ok")
+    unknown_result, unknown_db, _unknown_log, _unknown_acc = run_create(
         sample_record(status="unknown"),
         unknown_http,
+        get_http=unknown_acc,
     )
-    report(not unknown_result["ok"] and unknown_http.calls == [], "unknown は再送できない")
+    report(not unknown_result["ok"] and unknown_http.calls == [] and unknown_acc.calls == [], "unknown は再送できない")
     report(unknown_db.row["status"] == "unknown", "unknown の状態は変えない")
 
     failed_http = FeedHttp("ok")
-    failed_result, failed_db, _failed_log = run_create(sample_record(status="failed"), failed_http)
+    failed_result, failed_db, _failed_log, _failed_acc = run_create(sample_record(status="failed"), failed_http)
     report(failed_result["ok"] and failed_db.row["status"] == "posted", "failed は再送できる")
 
     instagram_http = FeedHttp("ok")
-    instagram_result, instagram_db, _ig_log = run_create(
+    instagram_acc = AccountsHttp("ok")
+    instagram_result, instagram_db, _ig_log, _ig_acc = run_create(
         sample_record(channel="instagram"),
         instagram_http,
+        get_http=instagram_acc,
     )
-    report(not instagram_result["ok"] and instagram_http.calls == [], "Instagramの行はFacebook送信しない")
+    report(
+        not instagram_result["ok"] and instagram_http.calls == [] and instagram_acc.calls == [],
+        "Instagramの行はFacebook送信しない",
+    )
     report(instagram_db.row["channel"] == "instagram" and instagram_db.row["status"] == "draft", "Instagramの状態は変えない")
 
     gbp_http = FeedHttp("ok")
-    gbp_result, gbp_db, _gbp_log = run_create(
+    gbp_result, gbp_db, _gbp_log, gbp_acc = run_create(
         sample_record(channel="gbp", gbp_profile="tokyo"),
         gbp_http,
     )
-    report(not gbp_result["ok"] and gbp_http.calls == [], "GBPの行はFacebook送信しない")
+    report(not gbp_result["ok"] and gbp_http.calls == [] and gbp_acc.calls == [], "GBPの行はFacebook送信しない")
 
     payload = meta_graph.build_facebook_feed_payload("本文", "https://karin-sb.jp/blog/a")
     report(payload == {"message": "本文", "link": "https://karin-sb.jp/blog/a"}, "送信ペイロードにトークンを入れない")
@@ -323,6 +423,41 @@ def main():
         and header_auth.startswith("Bearer ")
         and captured.get("timeout") == 30,
         "実送信口はヘッダー認証で、クエリと本文にトークンを置かない",
+    )
+
+    captured_get = {}
+
+    class FakeGetResponse:
+        status_code = 200
+
+        def json(self):
+            return {"data": [{"id": PAGE_ID, "access_token": PAGE_TOKEN}]}
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        captured_get["url"] = url
+        captured_get["params"] = params
+        captured_get["headers"] = headers
+        captured_get["timeout"] = timeout
+        return FakeGetResponse()
+
+    original_get = meta_graph.requests.get
+    meta_graph.requests.get = fake_get
+    try:
+        status, body = meta_graph.facebook_accounts_exchange(
+            meta_graph.facebook_accounts_url(),
+            access_token=TOKEN,
+            params={"fields": "id,access_token"},
+        )
+    finally:
+        meta_graph.requests.get = original_get
+    get_auth = (captured_get.get("headers") or {}).get("Authorization") or ""
+    report(
+        status == 200
+        and TOKEN not in (captured_get.get("url") or "")
+        and "access_token" not in (captured_get.get("params") or {})
+        and get_auth.startswith("Bearer ")
+        and captured_get.get("params") == {"fields": "id,access_token"},
+        "ページ一覧取得もヘッダー認証で、クエリにトークンを置かない",
     )
 
     print(f"\n{PASSED} passed, {FAILED} failed")

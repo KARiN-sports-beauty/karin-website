@@ -93,6 +93,64 @@ def facebook_feed_url(page_id):
     return f"{GRAPH_HOST}/{GRAPH_VERSION}/{page}/feed"
 
 
+def facebook_accounts_url():
+    return f"{GRAPH_HOST}/{GRAPH_VERSION}/me/accounts"
+
+
+def select_page_access_token(body, page_id):
+    """対象ページの Page Access Token だけ返す。例外文にトークンは入れない。"""
+    page = (page_id or "").strip()
+    if not _PAGE_ID.fullmatch(page):
+        raise MetaGraphRefused("FacebookページIDが不正なため、送信しません。")
+    data = body.get("data") if isinstance(body, dict) else None
+    if not isinstance(data, list):
+        raise MetaGraphRefused("対象のFacebookページの投稿トークンを取得できませんでした。")
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("id") or "").strip() != page:
+            continue
+        token = item.get("access_token")
+        if isinstance(token, str) and token.strip():
+            return token.strip()
+        raise MetaGraphRefused(
+            "対象ページの Page Access Token を取得できませんでした。pages_read_engagement とページへのコンテンツ権限を確認してください。"
+        )
+    raise MetaGraphRefused(
+        "指定したFacebookページが見つかりません。FACEBOOK_PAGE_ID とシステムユーザーへのページ割り当てを確認してください。"
+    )
+
+
+def fetch_page_access_token(config, *, get_exchange):
+    """システムユーザートークンで /me/accounts し、FACEBOOK_PAGE_ID の Page トークンだけ返す。"""
+    if missing_facebook_env(config):
+        raise MetaGraphRefused("Facebook投稿の設定が不足しているため、送信しません。")
+    page_id = (config.get("page_id") or "").strip()
+    system_token = (config.get("access_token") or "").strip()
+    try:
+        http_status, body = get_exchange(
+            facebook_accounts_url(),
+            access_token=system_token,
+            params={"fields": "id,access_token"},
+        )
+    except MetaGraphTimeout:
+        raise MetaGraphRefused(
+            "対象のFacebookページの投稿トークンを取得できませんでした。Facebookへは送っていません。"
+        ) from None
+    except MetaGraphRefused:
+        raise
+    except Exception:
+        raise MetaGraphRefused(
+            "対象のFacebookページの投稿トークンを取得できませんでした。Facebookへは送っていません。"
+        ) from None
+    if http_status != 200:
+        raise MetaGraphRefused(
+            f"対象のFacebookページの投稿トークンを取得できませんでした HTTP {http_status}。"
+            " pages_read_engagement を確認してください。"
+        )
+    return select_page_access_token(body, page_id)
+
+
 def facebook_preview(body, link_url):
     """送信JSONは作らない。画面確認用。Metaへは送らない。"""
     errors = []
@@ -214,10 +272,19 @@ def finish_notes_facebook_create(record, *, http_status, body, timed_out, now):
 
 
 def perform_notes_facebook_create(
-    client, record, *, config, post_exchange, now, staff_id=None, post_store=None
+    client,
+    record,
+    *,
+    config,
+    post_exchange,
+    now,
+    staff_id=None,
+    post_store=None,
+    get_exchange=None,
 ):
-    """保存済みFacebookだけPOSTする。成功するまで posted にしない。自動再送しない。"""
+    """保存済みFacebookだけPOSTする。Page Access Tokenはメモリ上だけ使う。"""
     store = _post_store(post_store)
+    getter = get_exchange or facebook_accounts_exchange
     allowed, reason = can_send_facebook_record(record)
     if not allowed:
         return _flow(False, record, reason)
@@ -227,11 +294,11 @@ def perform_notes_facebook_create(
     try:
         url = facebook_feed_url(config.get("page_id"))
         payload = build_facebook_feed_payload(record.get("body"), record.get("link_url"))
-        access_token = (config.get("access_token") or "").strip()
-        if not access_token:
-            return _flow(False, record, "Facebook投稿の設定が不足しているため、送信しません。")
+        page_token = fetch_page_access_token(config, get_exchange=getter)
     except MetaGraphRefused as exc:
-        return _flow(False, record, exc.detail)
+        return _record_unsent_failure(
+            client, record, exc.detail, now, staff_id=staff_id, post_store=store
+        )
 
     begun, reason = begin_notes_facebook_create(record, now)
     if reason:
@@ -262,7 +329,7 @@ def perform_notes_facebook_create(
             "送信開始の記録に失敗したため、Facebookへは送っていません。再送せず、結果を確認してください。",
         )
     try:
-        http_status, response = post_exchange(url, access_token=access_token, body=payload)
+        http_status, response = post_exchange(url, access_token=page_token, body=payload)
         timed_out = False
     except MetaGraphTimeout:
         http_status, response, timed_out = None, {}, True
@@ -298,6 +365,34 @@ def facebook_feed_exchange(url, *, access_token, body, timeout=FEED_TIMEOUT_SECO
         raise MetaGraphTimeout() from None
     except requests.RequestException:
         raise MetaGraphTimeout() from None
+    return response.status_code, _parse_graph_json(response)
+
+
+def facebook_accounts_exchange(url, *, access_token, params=None, timeout=FEED_TIMEOUT_SECONDS):
+    """システムユーザートークンでページ一覧を取る。トークンはヘッダーだけ。"""
+    token = (access_token or "").strip()
+    if not token:
+        raise MetaGraphRefused("Facebook投稿の設定が不足しているため、送信しません。")
+    if "access_token=" in (url or "").lower():
+        raise MetaGraphRefused("送信先が不正なため、Facebookへは送りません。")
+    query = dict(params or {})
+    if "access_token" in query:
+        raise MetaGraphRefused("送信先が不正なため、Facebookへは送りません。")
+    try:
+        response = requests.get(
+            url,
+            params=query,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=timeout,
+        )
+    except requests.Timeout:
+        raise MetaGraphTimeout() from None
+    except requests.RequestException:
+        raise MetaGraphTimeout() from None
+    return response.status_code, _parse_graph_json(response)
+
+
+def _parse_graph_json(response):
     parsed = {}
     try:
         parsed = response.json()
@@ -305,7 +400,31 @@ def facebook_feed_exchange(url, *, access_token, body, timeout=FEED_TIMEOUT_SECO
         parsed = {}
     if not isinstance(parsed, dict):
         parsed = {}
-    return response.status_code, parsed
+    return parsed
+
+
+def _record_unsent_failure(client, record, detail, now, staff_id=None, post_store=None):
+    """Page トークンが取れないなど、Feed に送る前の失敗。unknown にはしない。"""
+    message = (detail or "").strip() or "Facebookへは送っていません。"
+    if "Facebookへは送っていません" not in message:
+        message = f"{message} Facebookへは送っていません。"
+    outcome = _outcome(
+        record,
+        status="failed",
+        error_message=message,
+        event="failed",
+        detail=message,
+        now=now,
+    )
+    return _store_outcome(
+        client,
+        record,
+        outcome,
+        now,
+        from_statuses=tuple(FACEBOOK_SEND_STATUSES),
+        staff_id=staff_id,
+        post_store=post_store,
+    )
 
 
 def _require_https_link(value):
