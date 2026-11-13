@@ -1,0 +1,11 @@
+{# 記事ページの og:image だけ絶対URLにする。表示用の blog.image は変えない。 #}
+{% set og_image = (blog.image or "")|trim %}
+{% if og_image.startswith("https://") or og_image.startswith("http://") %}
+{% elif og_image.startswith("/") %}
+{% set og_image = "https://karin-sb.jp" ~ og_image %}
+{% elif og_image.startswith("static/") %}
+{% set og_image = "https://karin-sb.jp/" ~ og_image %}
+{% else %}
+{% set og_image = "https://karin-sb.jp/static/images/logoname.jpg" %}
+{% endif %}
+<meta property="og:image" content="{{ og_image }}">

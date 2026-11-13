@@ -57,6 +57,12 @@ def main():
     report(len(set(bodies.values())) == 4, "初期文面は投稿先ごとに異なる")
     report("東京で施術" in bodies["gbp_tokyo"] and "福岡で施術" in bodies["gbp_fukuoka"], "GBPは地域が違う")
     report("料金" not in "".join(bodies.values()), "初期文面に料金を作らない")
+    report(
+        "https://karin-sb.jp/blog/kata" not in bodies["facebook"]
+        and "https://karin-sb.jp/blog/kata" in bodies["instagram"]
+        and "https://karin-sb.jp/blog/kata" in bodies["gbp_tokyo"],
+        "Facebook初期文面だけ記事URLを入れない",
+    )
 
     fields, reason = external_posts.prepare_notes_save(
         None, tokyo, 12, "本文", "https://karin-sb.jp/blog/kata", "/static/images/a.jpg", "staff-1", "2026-10-05T10:00:00+09:00"
@@ -291,8 +297,11 @@ def main():
         and "この内容をFacebookに投稿する" in facebook_html
         and "message:" in facebook_html
         and "https://karin-sb.jp/blog/a" in facebook_html
-        and "保存した内容だけをFacebookへ投稿できます" in facebook_html,
-        "Facebook画面は保存と送信を分け、本文とリンクを確認できる",
+        and "保存した内容だけをFacebookへ投稿できます" in facebook_html
+        and "サーバー内の画像から選択" not in facebook_html
+        and 'id="blog-thumb-image-input"' not in facebook_html
+        and "初期値は記事のサムネイルです" not in facebook_html,
+        "Facebook画面は保存と送信を分け、本文とリンクを確認でき、画像欄は無い",
     )
     report(
         "この内容をFacebookに投稿する" not in facebook_locked_html

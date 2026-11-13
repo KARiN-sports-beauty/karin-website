@@ -24,7 +24,7 @@
 <p class="admin-blog-body">{{ target.guide }}</p>
 <p class="admin-blog-category">状態: {{ form.status_label }}</p>
 {% if target.channel == "facebook" %}
-<p class="admin-blog-body">この画面では投稿文を確認して保存します。保存した内容だけをFacebookへ投稿できます。投稿済みと成否未確認は再送しません。</p>
+<p class="admin-blog-body">この画面では投稿文を確認して保存します。保存した内容だけをFacebookへ投稿できます。記事URLはリンク先に入れ、サムネイルは記事ページのOGPからFacebookが取得します。投稿済みと成否未確認は再送しません。</p>
 {% else %}
 <p class="admin-blog-body">この画面では投稿文を確認して保存します。GBPへの送信はこの画面のボタンで行います。同じ記事でも新しい投稿を作れます。結果が不明なときは自動で送り直しません。</p>
 {% endif %}
@@ -38,7 +38,7 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">リンク先</label>
     <input type="text" name="link_url" value="{{ form.link_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
-  {% if target.channel != "gbp" %}
+  {% if target.channel == "instagram" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
     <input type="text" name="image_url" id="blog-thumb-image-input" value="{{ form.image_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="/static/images/notes/ファイル名.jpg">

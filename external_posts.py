@@ -281,13 +281,14 @@ def starter_body(target_key, title, excerpt, link_url):
         lines = [heading, lead, "福岡で施術をご検討の方へ。内容は記事にまとめています。", url]
     elif target_key == "instagram":
         lines = [heading, lead, "記事に詳しく書いています。", url]
-    else:
+    elif target_key == "facebook":
         lines = [
             heading,
             lead,
             "KARiN.NOTESに記事を公開しました。考えかたや整え方は、記事の中で紹介しています。",
-            url,
         ]
+    else:
+        lines = [heading, lead, url]
     return "\n\n".join(line for line in lines if line)
 
 

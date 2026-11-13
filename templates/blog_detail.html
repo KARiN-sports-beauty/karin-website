@@ -18,11 +18,7 @@
   <meta property="og:url" content="https://karin-sb.jp/blog/{{ blog.slug }}">
   <meta property="og:site_name" content="KARiN. ~Sports & Beauty~">
 
-  {% if blog.image %}
-    <meta property="og:image" content="{{ blog.image }}">
-  {% else %}
-    <meta property="og:image" content="https://karin-sb.jp/static/images/logoname.jpg">
-  {% endif %}
+  {% include "notes/_article_og_image.html" %}
 
   <meta name="twitter:card" content="summary_large_image">
 

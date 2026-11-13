@@ -5079,7 +5079,7 @@ def admin_blog_external_post(blog_id, target_key):
         try:
             body = external_posts.clean_body(request.form.get("body"))
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
-            if target.get("channel") == "gbp":
+            if target.get("channel") in {"gbp", "facebook"}:
                 image_url = (existing or {}).get("image_url") or ""
             else:
                 image_url = external_posts.clean_image_ref(request.form.get("image_url"))
