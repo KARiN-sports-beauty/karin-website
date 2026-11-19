@@ -340,14 +340,12 @@ def _kept_receipt(existing):
 
 
 def prepare_notes_save(existing, target, blog_id, body, link_url, image_url, staff_id, now):
-    """保存用のフィールド。投稿済にはしない。GBP NOTESは送信中以外の本文更新を許可する。"""
+    """保存用のフィールド。投稿済にはしない。送信中以外は本文を更新し、既存の投稿状態は維持する。"""
     if existing and existing.get("status") == "posting":
         return None, "送信中の記録は変更しません。"
-    if existing and existing.get("status") in LOCKED_STATUSES and target.get("channel") != "gbp":
-        return None, "投稿済み、送信中、または成否未確認の記録は、この画面からは変更しません。"
     external_id, posted_at = _kept_receipt(existing)
     status = "draft"
-    if existing and target.get("channel") == "gbp" and existing.get("status") in NOTES_KEEP_STATUSES:
+    if existing and existing.get("status") in NOTES_KEEP_STATUSES:
         status = existing.get("status")
     fields = {
         "source_kind": "notes_article",

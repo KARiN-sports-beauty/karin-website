@@ -89,17 +89,116 @@ def main():
         "GBP投稿済の保存は状態と投稿IDを残す",
         str(lock_reason),
     )
-    ig_locked, ig_reason = external_posts.prepare_notes_save(
-        {"status": "posted", "id": "x"},
+    ig_saved, ig_reason = external_posts.prepare_notes_save(
+        {
+            "status": "posted",
+            "id": "x",
+            "external_id": "17890",
+            "posted_at": "2026-10-05T10:00:00+09:00",
+        },
         external_posts.get_target("instagram"),
         12,
-        "本文",
+        "修正した本文",
+        "https://karin-sb.jp/blog/kata",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(
+        ig_reason is None
+        and ig_saved["fields"]["status"] == "posted"
+        and ig_saved["fields"]["external_id"] == "17890"
+        and ig_saved["fields"]["posted_at"] == "2026-10-05T10:00:00+09:00"
+        and ig_saved["fields"]["body"] == "修正した本文",
+        "Instagram投稿済の保存は状態と投稿IDを残す",
+        str(ig_reason),
+    )
+    facebook_saved, facebook_reason = external_posts.prepare_notes_save(
+        {
+            "status": "posted",
+            "id": "fb-1",
+            "external_id": "61595470022494_111222333",
+            "posted_at": "2026-10-05T10:00:00+09:00",
+        },
+        external_posts.get_target("facebook"),
+        12,
+        "修正したFacebook本文",
+        "https://karin-sb.jp/blog/kata",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(
+        facebook_reason is None
+        and facebook_saved["fields"]["status"] == "posted"
+        and facebook_saved["fields"]["external_id"] == "61595470022494_111222333"
+        and facebook_saved["fields"]["body"] == "修正したFacebook本文",
+        "Facebook投稿済の保存は状態と投稿IDを残す",
+        str(facebook_reason),
+    )
+    facebook_unknown_saved, facebook_unknown_reason = external_posts.prepare_notes_save(
+        {
+            "status": "unknown",
+            "id": "fb-1",
+            "external_id": "61595470022494_111222333",
+            "posted_at": "2026-10-05T10:00:00+09:00",
+        },
+        external_posts.get_target("facebook"),
+        12,
+        "未確認のあと修正",
+        "https://karin-sb.jp/blog/kata",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(
+        facebook_unknown_reason is None
+        and facebook_unknown_saved["fields"]["status"] == "unknown"
+        and facebook_unknown_saved["fields"]["external_id"] == "61595470022494_111222333",
+        "Facebookの成否未確認でも保存でき、状態と投稿IDを残す",
+        str(facebook_unknown_reason),
+    )
+    facebook_failed_saved, facebook_failed_reason = external_posts.prepare_notes_save(
+        {"status": "failed", "id": "fb-1", "external_id": None, "posted_at": None},
+        external_posts.get_target("facebook"),
+        12,
+        "失敗後の修正",
+        "https://karin-sb.jp/blog/kata",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(
+        facebook_failed_reason is None and facebook_failed_saved["fields"]["status"] == "failed",
+        "Facebook失敗後の保存は failed のまま残す",
+        str(facebook_failed_reason),
+    )
+    facebook_posting, facebook_posting_reason = external_posts.prepare_notes_save(
+        {"status": "posting", "id": "fb-1"},
+        external_posts.get_target("facebook"),
+        12,
+        "送信中は保存しない",
+        "https://karin-sb.jp/blog/kata",
+        "",
+        "staff-1",
+        "2026-10-05T10:00:00+09:00",
+    )
+    report(
+        facebook_posting is None and facebook_posting_reason,
+        "Facebook送信中は保存しない",
+        str(facebook_posting_reason),
+    )
+    ig_posting, ig_posting_reason = external_posts.prepare_notes_save(
+        {"status": "posting", "id": "ig-1"},
+        external_posts.get_target("instagram"),
+        12,
+        "送信中は保存しない",
         "",
         "",
         "staff-1",
         "2026-10-05T10:00:00+09:00",
     )
-    report(ig_locked is None and ig_reason, "Instagram投稿済は上書きしない", str(ig_reason))
+    report(ig_posting is None and ig_posting_reason, "Instagram送信中は保存しない", str(ig_posting_reason))
 
     raised = False
     try:
@@ -234,11 +333,33 @@ def main():
             facebook_action="send",
             facebook_send_label="この内容をFacebookに投稿する",
         )
-        facebook_locked_html = appmod.render_template(
+        facebook_posted_html = appmod.render_template(
             "admin_blog_external_post.html",
             blog=live_blog,
             target=facebook,
             form={"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "", "status_label": "投稿済"},
+            events=[],
+            facebook_preview=facebook_preview,
+            facebook_action="send",
+            facebook_send_label="この内容で新規投稿する",
+            facebook_posted_warning=True,
+        )
+        facebook_unknown_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=facebook,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "", "status_label": "要確認"},
+            events=[],
+            facebook_preview=facebook_preview,
+            facebook_action="send",
+            facebook_send_label="重複の可能性があることを理解して再投稿する",
+            facebook_unknown_warning=True,
+        )
+        facebook_posting_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=facebook,
+            form={"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "", "status_label": "送信中"},
             events=[],
             facebook_preview=facebook_preview,
             facebook_action=None,
@@ -284,6 +405,8 @@ def main():
     )
     report(
         "この内容をFacebookに投稿する" not in instagram_html
+        and "この内容で新規投稿する" not in instagram_html
+        and 'name="action" value="send"' not in instagram_html
         and "保存した内容だけをFacebookへ投稿できます" not in instagram_html,
         "Instagram画面にFacebook送信ボタンは無い",
     )
@@ -304,9 +427,21 @@ def main():
         "Facebook画面は保存と送信を分け、本文とリンクを確認でき、画像欄は無い",
     )
     report(
-        "この内容をFacebookに投稿する" not in facebook_locked_html
-        and "投稿済みと成否未確認は再送しません" in facebook_locked_html,
-        "Facebookの投稿済画面は送信できない",
+        "この内容で新規投稿する" in facebook_posted_html
+        and "新しいFacebook投稿を作ります" in facebook_posted_html
+        and "投稿済みと成否未確認は再送しません" not in facebook_posted_html,
+        "Facebookの投稿済画面は警告つきで新規投稿できる",
+    )
+    report(
+        "重複の可能性があることを理解して再投稿する" in facebook_unknown_html
+        and "前回の成否が未確認です" in facebook_unknown_html,
+        "Facebookの成否未確認画面は警告つきで再投稿できる",
+    )
+    report(
+        'name="action" value="send"' not in facebook_posting_html
+        and "この内容をFacebookに投稿する" not in facebook_posting_html
+        and "この内容で新規投稿する" not in facebook_posting_html,
+        "Facebook送信中の画面は送信できない",
     )
     report(
         appmod._facebook_post_preview(external_posts.get_target("instagram"), "本文", "https://karin-sb.jp/blog/a") is None
@@ -316,10 +451,17 @@ def main():
     report(
         appmod._notes_facebook_screen_action(facebook, {"status": "draft", "id": "1"}, facebook_preview) == "send"
         and appmod._notes_facebook_screen_action(facebook, {"status": "failed", "id": "1"}, facebook_preview) == "send"
-        and appmod._notes_facebook_screen_action(facebook, {"status": "posted", "id": "1"}, facebook_preview) is None
-        and appmod._notes_facebook_screen_action(facebook, {"status": "unknown", "id": "1"}, facebook_preview) is None
+        and appmod._notes_facebook_screen_action(facebook, {"status": "posted", "id": "1"}, facebook_preview) == "send"
+        and appmod._notes_facebook_screen_action(facebook, {"status": "unknown", "id": "1"}, facebook_preview) == "send"
+        and appmod._notes_facebook_screen_action(facebook, {"status": "posting", "id": "1"}, facebook_preview) is None
         and appmod._notes_facebook_screen_action(external_posts.get_target("instagram"), {"status": "draft", "id": "1"}, facebook_preview) is None,
-        "Facebookは下書きと失敗だけ送信でき、Instagramは対象外",
+        "Facebookは投稿済と未確認も明示送信でき、送信中とInstagramは対象外",
+    )
+    report(
+        appmod._notes_facebook_send_label("posted") == "この内容で新規投稿する"
+        and appmod._notes_facebook_send_label("unknown") == "重複の可能性があることを理解して再投稿する"
+        and appmod._notes_facebook_send_label("failed") == "この内容を再投稿する",
+        "Facebook送信ボタンの文言は状態ごとに分かれる",
     )
     report(appmod.gbp_period_key(2026, 10, "H1") == "2026-10-H1", "半月キーは従来どおり")
 

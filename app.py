@@ -4973,6 +4973,10 @@ def _notes_facebook_screen_action(target, existing, preview):
 
 
 def _notes_facebook_send_label(status):
+    if status == "posted":
+        return "この内容で新規投稿する"
+    if status == "unknown":
+        return "重複の可能性があることを理解して再投稿する"
     if status == "failed":
         return "この内容を再投稿する"
     return "この内容をFacebookに投稿する"
@@ -5177,13 +5181,6 @@ def admin_blog_external_post(blog_id, target_key):
                 now,
             )
             saved_message = f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。"
-            if (
-                prepared
-                and target.get("channel") != "gbp"
-                and prepared["fields"]["status"] != "draft"
-            ):
-                flash("投稿文の保存に失敗しました", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
         if reason:
             flash(reason, "error")
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
@@ -5205,9 +5202,7 @@ def admin_blog_external_post(blog_id, target_key):
         notes_create=True,
     )
     gbp_status = (existing or {}).get("status")
-    gbp_locked = bool(gbp_status == "posting") if target.get("channel") == "gbp" else bool(
-        existing and existing.get("status") in external_posts.LOCKED_STATUSES
-    )
+    gbp_locked = bool(existing and existing.get("status") == "posting")
     facebook_preview = _facebook_post_preview(target, form["body"], form["link_url"])
     return render_template(
         "admin_blog_external_post.html",
@@ -5223,6 +5218,8 @@ def admin_blog_external_post(blog_id, target_key):
         facebook_preview=facebook_preview,
         facebook_action=_notes_facebook_screen_action(target, existing, facebook_preview),
         facebook_send_label=_notes_facebook_send_label(gbp_status),
+        facebook_posted_warning=bool(target.get("channel") == "facebook" and gbp_status == "posted"),
+        facebook_unknown_warning=bool(target.get("channel") == "facebook" and gbp_status == "unknown"),
     )
 
 

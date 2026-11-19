@@ -15,7 +15,7 @@ import requests
 GRAPH_VERSION = "v27.0"
 GRAPH_HOST = "https://graph.facebook.com"
 FEED_TIMEOUT_SECONDS = 30
-FACEBOOK_SEND_STATUSES = frozenset({"draft", "ready", "failed"})
+FACEBOOK_SEND_STATUSES = frozenset({"draft", "ready", "failed", "posted", "unknown"})
 _PAGE_ID = re.compile(r"^[0-9]{1,32}$")
 _POST_ID = re.compile(r"^[0-9]+_[0-9]+$")
 _HTML_TAG = re.compile(r"<[^>]{0,200}>")
@@ -189,10 +189,6 @@ def can_send_facebook_record(record):
     status = record.get("status")
     if status == "posting":
         return False, "送信中です。重なって送信しません。"
-    if status == "posted":
-        return False, "投稿済みの記録は再送しません。"
-    if status == "unknown":
-        return False, "結果が未確認です。自動では再送しません。"
     if status not in FACEBOOK_SEND_STATUSES:
         return False, "この状態からは投稿できません。"
     return True, None
@@ -202,6 +198,10 @@ def begin_notes_facebook_create(record, now):
     allowed, reason = can_send_facebook_record(record)
     if not allowed:
         return None, reason
+    previous_id = (record.get("external_id") or "").strip() or None
+    detail = "送信を開始しました。成功を確認するまで投稿済にはしません。"
+    if previous_id:
+        detail = f"{detail} 前回のFacebook投稿ID: {previous_id}"
     return {
         "fields": {
             "status": "posting",
@@ -213,18 +213,22 @@ def begin_notes_facebook_create(record, now):
             "body_snapshot": record.get("body") or "",
             "link_url": record.get("link_url") or None,
             "image_url": record.get("image_url") or None,
-            "detail": "送信を開始しました。成功を確認するまで投稿済にはしません。",
+            "detail": detail,
             "created_at": now,
         },
+        "previous_id": previous_id,
     }, None
 
 
 def finish_notes_facebook_create(record, *, http_status, body, timed_out, now):
     """投稿IDがある200だけ posted。4xxは failed。5xx・タイムアウト・IDなしは unknown。"""
+    previous_id, previous_at = _kept_facebook_receipt(record)
     if timed_out or http_status is None or http_status >= 500:
         return _outcome(
             record,
             status="unknown",
+            external_id=previous_id,
+            posted_at=previous_at,
             error_message="結果不明。自動再送しません。",
             event="unknown",
             detail="結果不明。自動再送しません。Facebook側で投稿の有無を確認してください。",
@@ -246,6 +250,8 @@ def finish_notes_facebook_create(record, *, http_status, body, timed_out, now):
         return _outcome(
             record,
             status="unknown",
+            external_id=previous_id,
+            posted_at=previous_at,
             error_message="応答に投稿IDがありません。",
             event="unknown",
             detail="投稿IDを確認できないため、投稿済にしていません。自動では再送しません。",
@@ -256,6 +262,8 @@ def finish_notes_facebook_create(record, *, http_status, body, timed_out, now):
         return _outcome(
             record,
             status="failed",
+            external_id=previous_id,
+            posted_at=previous_at,
             error_message=message,
             event="failed",
             detail=message,
@@ -264,6 +272,8 @@ def finish_notes_facebook_create(record, *, http_status, body, timed_out, now):
     return _outcome(
         record,
         status="unknown",
+        external_id=previous_id,
+        posted_at=previous_at,
         error_message="結果不明。自動再送しません。",
         event="unknown",
         detail="結果不明。自動再送しません。",
@@ -318,6 +328,8 @@ def perform_notes_facebook_create(
     outgoing["body"] = record.get("body")
     outgoing["link_url"] = record.get("link_url")
     outgoing["image_url"] = record.get("image_url")
+    outgoing["external_id"] = record.get("external_id")
+    outgoing["posted_at"] = record.get("posted_at")
     try:
         event = dict(begun["event"])
         event["actor_staff_id"] = staff_id or None
@@ -408,9 +420,12 @@ def _record_unsent_failure(client, record, detail, now, staff_id=None, post_stor
     message = (detail or "").strip() or "Facebookへは送っていません。"
     if "Facebookへは送っていません" not in message:
         message = f"{message} Facebookへは送っていません。"
+    previous_id, previous_at = _kept_facebook_receipt(record)
     outcome = _outcome(
         record,
         status="failed",
+        external_id=previous_id,
+        posted_at=previous_at,
         error_message=message,
         event="failed",
         detail=message,
@@ -464,6 +479,21 @@ def _log_facebook_outcome(http_status, finished):
     if error_message:
         parts.append(f"error_message={error_message}")
     print(" ".join(parts))
+
+
+def _kept_facebook_receipt(record):
+    """再投稿が成功するまで、前回の投稿IDと投稿日時は消さない。"""
+    if not record:
+        return None, None
+    external_id = record.get("external_id")
+    posted_at = record.get("posted_at")
+    if not isinstance(external_id, str) or not external_id.strip():
+        external_id = None
+    else:
+        external_id = external_id.strip()
+    if not isinstance(posted_at, str) or not posted_at.strip():
+        posted_at = None
+    return external_id, posted_at
 
 
 def _outcome(record, *, status, error_message, event, detail, now, external_id=None, posted_at=None):

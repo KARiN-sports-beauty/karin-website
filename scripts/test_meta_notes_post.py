@@ -21,6 +21,7 @@ TOKEN = "EAAtestsecretvalue000000000000"
 PAGE_TOKEN = "EAApageaccesssecretvalue0000000"
 PAGE_ID = "61595470022494"
 POST_ID = "61595470022494_111222333"
+POST_ID_NEW = "61595470022494_999888777"
 
 
 def report(ok, name, detail=""):
@@ -126,8 +127,9 @@ class AccountsHttp:
 
 
 class FeedHttp:
-    def __init__(self, mode="ok"):
+    def __init__(self, mode="ok", post_id=POST_ID):
         self.mode = mode
+        self.post_id = post_id
         self.calls = []
         self.last_body = None
         self.last_url = None
@@ -149,7 +151,7 @@ class FeedHttp:
             return 403, {"error": {"message": f"Invalid OAuth access token {PAGE_TOKEN}", "code": 190}}
         if self.mode == "noid":
             return 200, {"success": True}
-        return 200, {"id": POST_ID}
+        return 200, {"id": self.post_id}
 
 
 def sample_record(**overrides):
@@ -342,25 +344,86 @@ def main():
     report(missing_db.row["status"] == "draft" and not missing_db.updates, "設定不足では状態を変えない")
     report("設定が不足" in (missing_result["message"] or "") and secrets_absent(missing_log), "設定不足の文言にトークンがない")
 
-    posted_http = FeedHttp("ok")
+    posted_http = FeedHttp("ok", post_id=POST_ID_NEW)
     posted_acc = AccountsHttp("ok")
     posted_result, posted_db, _posted_log, _posted_acc = run_create(
         sample_record(status="posted", external_id=POST_ID, posted_at=NOW),
         posted_http,
         get_http=posted_acc,
     )
-    report(not posted_result["ok"] and posted_http.calls == [] and posted_acc.calls == [], "posted は再送できない")
-    report(posted_db.row["status"] == "posted", "posted の状態は変えない")
+    posted_started = " ".join(
+        item.get("detail") or "" for item in posted_db.events if item.get("event") == "submit_started"
+    )
+    report(
+        posted_result["ok"] and len(posted_http.calls) == 1 and len(posted_acc.calls) == 1,
+        "posted は明示操作で新規投稿できる",
+    )
+    report(
+        posted_db.row["status"] == "posted"
+        and posted_db.row["external_id"] == POST_ID_NEW
+        and POST_ID in posted_started
+        and POST_ID_NEW not in posted_started,
+        "再投稿開始時は前回IDを履歴に残し、成功時だけ最新IDへ更新する",
+        posted_started,
+    )
 
-    unknown_http = FeedHttp("ok")
+    unknown_http = FeedHttp("ok", post_id=POST_ID_NEW)
     unknown_acc = AccountsHttp("ok")
     unknown_result, unknown_db, _unknown_log, _unknown_acc = run_create(
-        sample_record(status="unknown"),
+        sample_record(status="unknown", external_id=POST_ID, posted_at=NOW),
         unknown_http,
         get_http=unknown_acc,
     )
-    report(not unknown_result["ok"] and unknown_http.calls == [] and unknown_acc.calls == [], "unknown は再送できない")
-    report(unknown_db.row["status"] == "unknown", "unknown の状態は変えない")
+    unknown_started = " ".join(
+        item.get("detail") or "" for item in unknown_db.events if item.get("event") == "submit_started"
+    )
+    report(unknown_result["ok"] and len(unknown_http.calls) == 1, "unknown は明示操作で新規投稿できる")
+    report(
+        unknown_db.row["external_id"] == POST_ID_NEW and POST_ID in unknown_started,
+        "unknown の再投稿成功でも前回IDは履歴に残り、最新IDへ更新する",
+        unknown_started,
+    )
+
+    posting_http = FeedHttp("ok")
+    posting_acc = AccountsHttp("ok")
+    posting_result, posting_db, _posting_log, _posting_acc = run_create(
+        sample_record(status="posting", external_id=POST_ID, posted_at=NOW),
+        posting_http,
+        get_http=posting_acc,
+    )
+    report(
+        not posting_result["ok"] and posting_http.calls == [] and posting_acc.calls == [],
+        "posting は再送できない",
+    )
+    report(
+        posting_db.row["status"] == "posting" and posting_db.row["external_id"] == POST_ID,
+        "posting の状態と投稿IDは変えない",
+    )
+
+    denied_posted_http = FeedHttp("denied")
+    denied_posted_result, denied_posted_db, _denied_posted_log, _denied_posted_acc = run_create(
+        sample_record(status="posted", external_id=POST_ID, posted_at=NOW),
+        denied_posted_http,
+    )
+    report(
+        not denied_posted_result["ok"]
+        and denied_posted_db.row["status"] == "failed"
+        and denied_posted_db.row["external_id"] == POST_ID
+        and denied_posted_db.row["posted_at"] == NOW,
+        "再投稿が4xxでも前回の投稿IDは残す",
+    )
+
+    timeout_posted_http = FeedHttp("timeout")
+    timeout_posted_result, timeout_posted_db, _timeout_posted_log, _timeout_posted_acc = run_create(
+        sample_record(status="posted", external_id=POST_ID, posted_at=NOW),
+        timeout_posted_http,
+    )
+    report(
+        not timeout_posted_result["ok"]
+        and timeout_posted_db.row["status"] == "unknown"
+        and timeout_posted_db.row["external_id"] == POST_ID,
+        "再投稿が結果不明でも前回の投稿IDは残す",
+    )
 
     failed_http = FeedHttp("ok")
     failed_result, failed_db, _failed_log, _failed_acc = run_create(sample_record(status="failed"), failed_http)
