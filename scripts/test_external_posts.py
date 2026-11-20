@@ -216,6 +216,14 @@ def main():
     app_src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
     report("publish_external_post" not in app_src, "管理ルートは送信口を呼ばない")
     report("def build_gbp_schedule_entries" in app_src, "予定組み立て関数は残っている")
+    preview_at = app_src.find('if action == "preview_draft"')
+    skip_at = app_src.find('if action != "preview_draft"')
+    save_at = app_src.find("external_posts.save_notes_post")
+    report(
+        0 <= preview_at < skip_at < save_at,
+        "新しい下書き表示は保存処理の外で行う",
+        str((preview_at, skip_at, save_at)),
+    )
 
     import app as appmod
 
@@ -484,6 +492,37 @@ def main():
         and "リンク先" not in instagram_send_html
         and 'type="hidden" name="link_url"' in instagram_html,
         "Instagram画面にリンク先入力欄を出さない",
+    )
+    report(
+        "新しい下書きを表示" in instagram_html
+        and 'name="action" value="preview_draft"' in instagram_html
+        and "新しい下書きを表示" not in facebook_html
+        and "新しい下書きを表示" not in gbp_html,
+        "新しい下書きボタンはInstagram画面だけにある",
+    )
+    with appmod.app.test_request_context("/admin/blogs/12/posts/instagram"):
+        instagram_compare_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=instagram,
+            form={
+                "body": "保存済みの文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
+                "status_label": "下書き保存",
+            },
+            events=[],
+            instagram_new_draft="新しい生成文",
+        )
+    saved_start = instagram_compare_html.find('name="body"')
+    saved_block = instagram_compare_html[saved_start:saved_start + 400] if saved_start >= 0 else ""
+    report(
+        "保存済みの文" in saved_block
+        and "新しい生成文" not in saved_block
+        and "新しい下書き（未保存）" in instagram_compare_html
+        and "新しい生成文" in instagram_compare_html
+        and "上の投稿文欄と保存済みデータは変わっていません" in instagram_compare_html,
+        "新しい下書きは保存済み投稿文と分けて表示する",
     )
     report(
         "リンク先" in gbp_html

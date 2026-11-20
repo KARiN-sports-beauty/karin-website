@@ -5206,6 +5206,18 @@ def _external_post_form_values(blog, target, existing):
     }
 
 
+def _notes_instagram_new_draft(blog):
+    """記事からInstagram用の新しい下書きを作る。保存はしない。"""
+    return external_posts.starter_body(
+        "instagram",
+        (blog or {}).get("title"),
+        (blog or {}).get("excerpt"),
+        _notes_public_blog_url(blog or {}),
+        body=(blog or {}).get("body"),
+        tags=(blog or {}).get("tags_list") or (blog or {}).get("tags"),
+    )
+
+
 @app.route("/admin/blogs/<blog_id>/posts/<target_key>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_external_post(blog_id, target_key):
@@ -5237,152 +5249,159 @@ def admin_blog_external_post(blog_id, target_key):
         print("❌ 外部投稿の読み込みエラー:", exc)
         flash("保存済みの投稿文を読み込めませんでした", "error")
 
+    instagram_new_draft = None
     if request.method == "POST":
         action = (request.form.get("action") or "save").strip()
         staff = session.get("staff") or {}
         now = now_iso()
-        if action == "check":
+        if action == "preview_draft":
+            if target.get("channel") != "instagram":
+                flash("この投稿先では新しい下書きを表示できません", "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            instagram_new_draft = _notes_instagram_new_draft(blog)
+        elif action == "check":
             flash(
                 "この画面ではGoogle側の検索確認をしません。結果が不明なときは、重複の可能性があることを確認してから再投稿してください。",
                 "error",
             )
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        try:
-            body = external_posts.clean_body(request.form.get("body"))
-            link_url = external_posts.clean_http_url(request.form.get("link_url"))
-            if target.get("channel") in {"gbp", "facebook"}:
-                image_url = (existing or {}).get("image_url") or ""
-            elif target.get("channel") == "instagram":
-                image_url = external_posts.clean_instagram_image_refs(request.form.get("image_url"))
-            else:
-                image_url = external_posts.clean_image_ref(request.form.get("image_url"))
-        except ValueError as exc:
-            flash(str(exc), "error")
-            error_form = {
-                "body": request.form.get("body") or "",
-                "link_url": request.form.get("link_url") or "",
-                "image_url": request.form.get("image_url") or "",
-                "status_label": external_posts.status_caption((existing or {}).get("status")),
-            }
-            return render_template(
-                "admin_blog_external_post.html",
-                blog=blog,
-                target=target,
-                form=error_form,
-                events=events,
-                **(_instagram_picker_kwargs(blog, error_form["image_url"]) if target.get("channel") == "instagram" else {}),
-            )
-        if action == "send":
-            if target.get("channel") == "facebook":
-                if not existing:
-                    flash("保存したFacebookだけ送信できます", "error")
+        if action != "preview_draft":
+            try:
+                body = external_posts.clean_body(request.form.get("body"))
+                link_url = external_posts.clean_http_url(request.form.get("link_url"))
+                if target.get("channel") in {"gbp", "facebook"}:
+                    image_url = (existing or {}).get("image_url") or ""
+                elif target.get("channel") == "instagram":
+                    image_url = external_posts.clean_instagram_image_refs(request.form.get("image_url"))
+                else:
+                    image_url = external_posts.clean_image_ref(request.form.get("image_url"))
+            except ValueError as exc:
+                flash(str(exc), "error")
+                error_form = {
+                    "body": request.form.get("body") or "",
+                    "link_url": request.form.get("link_url") or "",
+                    "image_url": request.form.get("image_url") or "",
+                    "status_label": external_posts.status_caption((existing or {}).get("status")),
+                }
+                return render_template(
+                    "admin_blog_external_post.html",
+                    blog=blog,
+                    target=target,
+                    form=error_form,
+                    events=events,
+                    **(_instagram_picker_kwargs(blog, error_form["image_url"]) if target.get("channel") == "instagram" else {}),
+                )
+            if action == "send":
+                if target.get("channel") == "facebook":
+                    if not existing:
+                        flash("保存したFacebookだけ送信できます", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    allowed, reason = meta_graph.can_send_facebook_record(existing)
+                    if not allowed:
+                        flash(reason, "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    if not _gbp_saved_matches(existing, body, link_url, image_url):
+                        flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    try:
+                        result = _run_notes_facebook_create(
+                            existing, staff_id=staff.get("id"), now=now
+                        )
+                    except Exception:
+                        print("❌ Facebook投稿の送信エラー")
+                        flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    flash(result["message"], "success" if result["ok"] else "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                allowed, reason = meta_graph.can_send_facebook_record(existing)
-                if not allowed:
-                    flash(reason, "error")
+                if target.get("channel") == "instagram":
+                    if not existing:
+                        flash("保存したInstagramだけ送信できます", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    allowed, reason = instagram_graph.can_send_instagram_record(existing)
+                    if not allowed:
+                        flash(reason, "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    if not _instagram_saved_matches(existing, body, link_url, image_url):
+                        flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    try:
+                        result = _run_notes_instagram_create(
+                            existing, staff_id=staff.get("id"), now=now
+                        )
+                    except Exception:
+                        print("❌ Instagram投稿の送信エラー")
+                        flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                    flash(result["message"], "success" if result["ok"] else "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                if target.get("channel") != "gbp" or not existing:
+                    flash("保存したGBPだけ送信できます", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                if existing.get("status") == "posting":
+                    flash("送信中です。重なって送信しません。", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 if not _gbp_saved_matches(existing, body, link_url, image_url):
                     flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 try:
-                    result = _run_notes_facebook_create(
+                    result = _run_notes_gbp_create(
                         existing, staff_id=staff.get("id"), now=now
                     )
                 except Exception:
-                    print("❌ Facebook投稿の送信エラー")
+                    print("❌ GBP投稿の送信エラー")
                     flash("投稿処理に失敗しました。自動では再送しません。", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 flash(result["message"], "success" if result["ok"] else "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            if target.get("channel") == "instagram":
-                if not existing:
-                    flash("保存したInstagramだけ送信できます", "error")
+            if action == "confirm":
+                preview = _gbp_post_preview(
+                    target, body, link_url, image_url, notes_create=True
+                )
+                if preview is None:
+                    flash("この投稿先は確認済にできません", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                allowed, reason = instagram_graph.can_send_instagram_record(existing)
-                if not allowed:
-                    flash(reason, "error")
-                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                if not _instagram_saved_matches(existing, body, link_url, image_url):
-                    flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
-                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                try:
-                    result = _run_notes_instagram_create(
-                        existing, staff_id=staff.get("id"), now=now
+                if not preview["ok"]:
+                    flash(preview["errors"][0], "error")
+                    return render_template(
+                        "admin_blog_external_post.html",
+                        blog=blog,
+                        target=target,
+                        form={
+                            "body": body,
+                            "link_url": link_url,
+                            "image_url": image_url,
+                            "status_label": external_posts.status_caption((existing or {}).get("status")),
+                        },
+                        events=events,
+                        gbp_preview=preview,
                     )
-                except Exception:
-                    print("❌ Instagram投稿の送信エラー")
-                    flash("投稿処理に失敗しました。自動では再送しません。", "error")
-                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                flash(result["message"], "success" if result["ok"] else "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            if target.get("channel") != "gbp" or not existing:
-                flash("保存したGBPだけ送信できます", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            if existing.get("status") == "posting":
-                flash("送信中です。重なって送信しません。", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            if not _gbp_saved_matches(existing, body, link_url, image_url):
-                flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                prepared, reason = external_posts.prepare_notes_confirm(
+                    existing, target, body, link_url, image_url, staff.get("id"), now
+                )
+                saved_message = f"{target['button_label']} の内容を確認済にしました。外部サービスへは投稿していません。"
+            else:
+                prepared, reason = external_posts.prepare_notes_save(
+                    existing,
+                    target,
+                    blog["id"],
+                    body,
+                    link_url,
+                    image_url,
+                    staff.get("id"),
+                    now,
+                )
+                saved_message = f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。"
+            if reason:
+                flash(reason, "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
             try:
-                result = _run_notes_gbp_create(
-                    existing, staff_id=staff.get("id"), now=now
-                )
-            except Exception:
-                print("❌ GBP投稿の送信エラー")
-                flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                external_posts.save_notes_post(supabase_admin, existing, prepared)
+            except Exception as exc:
+                print("❌ 外部投稿の保存エラー:", exc)
+                flash(f"投稿文の保存に失敗しました: {exc}", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            flash(result["message"], "success" if result["ok"] else "error")
+            flash(saved_message, "success")
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        if action == "confirm":
-            preview = _gbp_post_preview(
-                target, body, link_url, image_url, notes_create=True
-            )
-            if preview is None:
-                flash("この投稿先は確認済にできません", "error")
-                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-            if not preview["ok"]:
-                flash(preview["errors"][0], "error")
-                return render_template(
-                    "admin_blog_external_post.html",
-                    blog=blog,
-                    target=target,
-                    form={
-                        "body": body,
-                        "link_url": link_url,
-                        "image_url": image_url,
-                        "status_label": external_posts.status_caption((existing or {}).get("status")),
-                    },
-                    events=events,
-                    gbp_preview=preview,
-                )
-            prepared, reason = external_posts.prepare_notes_confirm(
-                existing, target, body, link_url, image_url, staff.get("id"), now
-            )
-            saved_message = f"{target['button_label']} の内容を確認済にしました。外部サービスへは投稿していません。"
-        else:
-            prepared, reason = external_posts.prepare_notes_save(
-                existing,
-                target,
-                blog["id"],
-                body,
-                link_url,
-                image_url,
-                staff.get("id"),
-                now,
-            )
-            saved_message = f"{target['button_label']} の投稿文を保存しました。外部サービスへは投稿していません。"
-        if reason:
-            flash(reason, "error")
-            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        try:
-            external_posts.save_notes_post(supabase_admin, existing, prepared)
-        except Exception as exc:
-            print("❌ 外部投稿の保存エラー:", exc)
-            flash(f"投稿文の保存に失敗しました: {exc}", "error")
-            return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-        flash(saved_message, "success")
-        return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
 
     form = _external_post_form_values(blog, target, existing)
     gbp_preview = _gbp_post_preview(
@@ -5417,6 +5436,7 @@ def admin_blog_external_post(blog_id, target_key):
         instagram_send_label=_notes_instagram_send_label(gbp_status),
         instagram_posted_warning=bool(target.get("channel") == "instagram" and gbp_status == "posted"),
         instagram_unknown_warning=bool(target.get("channel") == "instagram" and gbp_status == "unknown"),
+        instagram_new_draft=instagram_new_draft if target.get("channel") == "instagram" else None,
         **(_instagram_picker_kwargs(blog, form["image_url"]) if target.get("channel") == "instagram" else {}),
     )
 

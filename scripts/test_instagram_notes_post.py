@@ -523,6 +523,20 @@ def test_caption_and_images():
     )
     report(kept["body"] == "保存済みの文", "保存済みのInstagram投稿文は初期生成で上書きしない")
     report(kept["image_url"] == PUBLIC_IMAGE, "保存済みの1枚画像は公開httpsで再表示する")
+    generated = appmod._notes_instagram_new_draft(ig_blog)
+    report(
+        generated == external_posts.starter_body(
+            "instagram",
+            ig_blog["title"],
+            ig_blog["excerpt"],
+            "",
+            body=ig_blog["body"],
+            tags=ig_blog["tags_list"],
+        ),
+        "新しい下書きは starter_body と同じ文章になる",
+    )
+    report(generated != kept["body"] and "肩の話" in generated, "新しい下書きは保存済み文面と区別できる")
+    report(kept["body"] == "保存済みの文", "下書き生成後も保存済みフォームの本文は変わらない")
     gbp_fresh = appmod._external_post_form_values(ig_blog, tokyo, None)
     report(article_url in gbp_fresh["body"] or "/blog/kata" in gbp_fresh["link_url"], "GBPの未保存文面は従来どおり記事へ案内する")
     report("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in gbp_fresh["body"], "GBP文面にInstagram誘導を入れない")
