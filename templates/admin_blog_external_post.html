@@ -36,10 +36,14 @@
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">投稿文</label>
     <textarea name="body" rows="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">{{ form.body or "" }}</textarea>
   </div>
+  {% if target.channel != "instagram" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">リンク先</label>
     <input type="text" name="link_url" value="{{ form.link_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
   </div>
+  {% else %}
+  <input type="hidden" name="link_url" value="{{ form.link_url or "" }}">
+  {% endif %}
   {% if target.channel == "instagram" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>

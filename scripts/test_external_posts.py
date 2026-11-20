@@ -480,6 +480,19 @@ def main():
         "Instagram画面の画像欄は複数選択になっている",
     )
     report(
+        "リンク先" not in instagram_html
+        and "リンク先" not in instagram_send_html
+        and 'type="hidden" name="link_url"' in instagram_html,
+        "Instagram画面にリンク先入力欄を出さない",
+    )
+    report(
+        "リンク先" in gbp_html
+        and "リンク先" in facebook_html
+        and 'type="text" name="link_url"' in gbp_html
+        and 'type="text" name="link_url"' in facebook_html,
+        "FacebookとGBPの画面は従来どおりリンク先を表示する",
+    )
+    report(
         "記事の画像" not in facebook_html
         and "ig-selected-images" not in facebook_html
         and "記事の画像" not in gbp_html
