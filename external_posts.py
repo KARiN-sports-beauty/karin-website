@@ -307,6 +307,26 @@ def _plain_article_text(html):
     return re.sub(r"\s+", " ", text).strip()
 
 
+_INSTAGRAM_JP_CHARS = (
+    r"ぁ-んァ-ヶｦ-ﾟ一-龥々ー"
+    r"、。・．，！？「」『』（）〔〕［］【】〜～：；…‥"
+)
+
+
+def _collapse_instagram_jp_spaces(text):
+    """HTMLタグを空白に置換したあと残る、日本語まわりの不要な半角スペースを除く。
+
+    英単語の区切り、URL、数値とラテン単位（例: 10 cm）のスペースは残す。
+    """
+    if not text:
+        return ""
+    jp = f"[{_INSTAGRAM_JP_CHARS}]"
+    text = re.sub(rf"(?<={jp}) (?={jp})", "", text)
+    text = re.sub(rf"(?<={jp}) (?=\d)", "", text)
+    text = re.sub(rf"(?<=\d) (?={jp})", "", text)
+    return text
+
+
 def _instagram_hashtags(tags):
     values = tags if isinstance(tags, (list, tuple)) else []
     if isinstance(tags, str):
@@ -345,7 +365,7 @@ def _complete_sentences(text):
 
 
 def _ensure_sentence(text):
-    item = re.sub(r"\s+", " ", text or "").strip()
+    item = _collapse_instagram_jp_spaces(re.sub(r"\s+", " ", text or "").strip())
     if not item:
         return ""
     if re.search(r"[。！？]$", item):

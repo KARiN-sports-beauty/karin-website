@@ -315,6 +315,68 @@ def run_create(record, post_http, *, config=None, accounts=None, status=None, **
     return result, db, log, accounts_http, status_http
 
 
+def test_instagram_caption_spaces():
+    article_url = "https://karin-sb.jp/blog/stretch-pole-posture"
+    stretch_html = (
+        "<p>「猫背が気になる」「姿勢を良くしたい」と思ったとき、"
+        "ストレッチポールを使ったことがある方も多いのではないでしょうか。</p>"
+        "<p>ストレッチポールは、ただ上に寝ているだけでも身体をリラックスさせるきっかけになりますが、"
+        "そこから<strong>身体を実際に動かしてみること</strong>も大切です。</p>"
+        "<p>今回は、ストレッチポールを使って肩まわりや肩甲骨を動かしながら、"
+        "姿勢の変化を感じていく基本的なエクササイズを紹介します。</p>"
+        "<p>それぞれの動きは<strong>10回程度</strong>を目安に行ってみましょう。</p>"
+        "<p>歩幅の目安は 10 cm です。BCAA 5 g を目安にします。</p>"
+        "<p>詳しくは https://karin-sb.jp/blog/stretch-pole-posture を見てください。</p>"
+    )
+    stretch_text = external_posts.starter_body(
+        "instagram",
+        "ストレッチポールで姿勢改善？自宅でできる基本エクササイズ",
+        "ストレッチポールを使って、猫背や姿勢が気になる方でも自宅でできる基本エクササイズを紹介します。",
+        article_url,
+        body=stretch_html,
+        tags=["セルフケア", "運動"],
+    )
+    report(
+        "そこから身体を実際に動かしてみることも大切です。" in stretch_text,
+        "ストレッチポール記事の強調タグ由来の半角スペースを除く",
+        stretch_text,
+    )
+    report(
+        "そこから 身体" not in stretch_text and "こと も大切" not in stretch_text,
+        "日本語の文字と助詞の間に半角スペースを残さない",
+        stretch_text,
+    )
+    report(stretch_text.count("・") == 3, "箇条書きは途中で切らず3件まで使う", str(stretch_text.count("・")))
+    report("…" not in stretch_text, "箇条書きを文の途中で切らない")
+    report(
+        stretch_text.count("ストレッチポールを使って、猫背や姿勢が気になる方でも自宅でできる基本エクササイズを紹介します") == 1,
+        "概要と同じ説明を箇条書きで重複させない",
+    )
+    report(
+        "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" in stretch_text,
+        "スペース修正後もプロフィール誘導を維持する",
+    )
+    report("#セルフケア" in stretch_text and "#運動" in stretch_text, "スペース修正後も記事タグのハッシュタグを維持する")
+
+    unit_html = (
+        "<p>歩幅の目安は 10 cm です。</p>"
+        "<p>BCAA 5 g を目安にします。</p>"
+        "<p>回数は<strong>10回程度</strong>です。</p>"
+    )
+    unit_text = external_posts.starter_body(
+        "instagram",
+        "単位の話",
+        "数値と単位のスペースを確認します。",
+        article_url,
+        body=unit_html,
+        tags=["運動"],
+    )
+    report("10 cm" in unit_text, "数値とラテン単位の半角スペースは残す", unit_text)
+    report("BCAA 5 g" in unit_text, "英数字の半角スペースは残す", unit_text)
+    report("回数は10回程度です。" in unit_text, "数値に付く日本語は自然につなげる", unit_text)
+    report("https://karin-sb.jp/blog/stretch-pole-posture" not in unit_text, "Instagram初期文面に記事URLを入れない")
+
+
 def test_caption_and_images():
     article_url = "https://karin-sb.jp/blog/kata"
     ig_text = external_posts.starter_body(
@@ -752,6 +814,7 @@ def test_carousel():
 
 def main():
     test_caption_and_images()
+    test_instagram_caption_spaces()
     test_carousel()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)
