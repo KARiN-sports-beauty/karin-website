@@ -315,42 +315,115 @@ def _instagram_hashtags(tags):
     hashtags = []
     for raw in values:
         token = _HASHTAG_KEEP.sub("", unescape(str(raw or "")))
-        if not token or token.isdigit() or token.lower() in seen:
+        if not token or token.isdigit() or len(token) < 2 or token.lower() in seen:
             continue
         seen.add(token.lower())
         hashtags.append("#" + token[:50])
-        if len(hashtags) >= 30:
+        if len(hashtags) >= 5:
             break
     return hashtags
 
 
+def _sentence_key(text):
+    return re.sub(r"[\s。．.！？!?,、，・]", "", text or "").lower()
+
+
+def _complete_sentences(text):
+    """句点までを1文とする。途中で切れた末尾は使わない。"""
+    flat = re.sub(r"\s+", " ", text or "").strip()
+    if not flat:
+        return []
+    parts = re.split(r"(?<=[。！？])", flat)
+    sentences = []
+    for part in parts:
+        item = part.strip()
+        if not item:
+            continue
+        if re.search(r"[。！？]$", item):
+            sentences.append(item)
+    return sentences
+
+
+def _ensure_sentence(text):
+    item = re.sub(r"\s+", " ", text or "").strip()
+    if not item:
+        return ""
+    if re.search(r"[。！？]$", item):
+        return item
+    return item + "。"
+
+
+def _html_blocks(html):
+    blocks = []
+    for raw in re.findall(
+        r"<li[^>]*>.*?</li>|<p[^>]*>.*?</p>",
+        html or "",
+        flags=re.I | re.S,
+    ):
+        text = _plain_article_text(raw)
+        if text:
+            blocks.append(text)
+    if not blocks:
+        for raw in re.findall(r"<h[2-3][^>]*>.*?</h[2-3]>", html or "", flags=re.I | re.S):
+            text = _plain_article_text(raw)
+            if text:
+                blocks.append(text)
+    if not blocks:
+        plain = _plain_article_text(html)
+        if plain:
+            blocks.append(plain)
+    return blocks
+
+
+def _unique_sentences(candidates, skipped):
+    used = [_sentence_key(item) for item in skipped if _sentence_key(item)]
+    result = []
+    for raw in candidates:
+        for sentence in _complete_sentences(_ensure_sentence(raw)):
+            key = _sentence_key(sentence)
+            if len(key) < 6:
+                continue
+            if any(key == seen or key in seen or seen in key for seen in used if seen):
+                continue
+            used.append(key)
+            result.append(sentence)
+    return result
+
+
+def _join_caption(parts):
+    return "\n\n".join(part for part in parts if part)
+
+
 def _starter_instagram_body(title, excerpt, body, tags):
-    """Instagram未保存時の下書き。記事URLは入れない。"""
+    """Instagram未保存時の下書き。重複を避け、文の途中では切らない。"""
     heading = (title or "").strip() or "KARiN.NOTES"
-    hook = _clip(excerpt, 180)
-    summary = ""
-    plain = _plain_article_text(body)
-    excerpt_flat = re.sub(r"\s+", " ", excerpt or "").strip()
-    if plain:
-        comparable = plain
-        if excerpt_flat and comparable.startswith(excerpt_flat):
-            comparable = comparable[len(excerpt_flat) :].strip()
-        if comparable and comparable != hook:
-            summary = _clip(comparable, 220)
-            if summary.rstrip("…") == hook.rstrip("…"):
-                summary = ""
+    excerpt_text = re.sub(r"\s+", " ", excerpt or "").strip()
+    intro = _ensure_sentence(excerpt_text) if excerpt_text else ""
+    if intro and _sentence_key(intro) == _sentence_key(heading):
+        intro = ""
+    points = _unique_sentences(_html_blocks(body), [heading, intro])
+    selected = points[:3]
     hashtags = _instagram_hashtags(tags)
-    lines = [heading, hook, summary, INSTAGRAM_NOTES_CTA]
-    if hashtags:
-        lines.append(" ".join(hashtags))
-    text = "\n\n".join(line for line in lines if line)
-    if len(text) <= INSTAGRAM_CAPTION_MAX:
-        return text
-    if hashtags:
-        text = "\n\n".join(line for line in [heading, hook, summary, INSTAGRAM_NOTES_CTA] if line)
-    if len(text) <= INSTAGRAM_CAPTION_MAX:
-        return text
-    return _clip(text.replace("\n\n", " "), INSTAGRAM_CAPTION_MAX)
+    cta = INSTAGRAM_NOTES_CTA
+
+    def build(point_lines, tag_line):
+        bullets = "\n".join("・" + item for item in point_lines)
+        return _join_caption([heading, intro, bullets, cta, tag_line])
+
+    tag_line = " ".join(hashtags)
+    text = build(selected, tag_line)
+    while selected and len(text) > 600 and len(selected) > 2:
+        selected = selected[:-1]
+        text = build(selected, tag_line)
+    if len(text) > INSTAGRAM_CAPTION_MAX and tag_line:
+        tag_line = ""
+        text = build(selected, tag_line)
+    while selected and len(text) > INSTAGRAM_CAPTION_MAX:
+        selected = selected[:-1]
+        text = build(selected, tag_line)
+    if len(text) > INSTAGRAM_CAPTION_MAX:
+        text = _join_caption([heading, intro, cta])
+    return text
 
 
 def clean_body(value):

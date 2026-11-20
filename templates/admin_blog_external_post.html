@@ -26,7 +26,7 @@
 {% if target.channel == "facebook" %}
 <p class="admin-blog-body">この画面では投稿文を確認して保存します。保存した内容だけをFacebookへ投稿できます。記事URLはリンク先に入れ、サムネイルは記事ページのOGPからFacebookが取得します。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
 {% elif target.channel == "instagram" %}
-<p class="admin-blog-body">この画面では投稿文と画像を確認して保存します。保存した内容だけをInstagramへ画像付きで投稿できます。投稿文には記事URLを入れず、プロフィールのリンクからKARiN.NOTESへ案内します。通常フィードではクリックできるリンクカードにはなりません。1枚のときは今の方法で投稿できます。2枚以上の送信は次の段階です。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
+<p class="admin-blog-body">この画面では投稿文と画像を確認して保存します。保存した内容だけをInstagramへ画像付きで投稿できます。投稿文には記事URLを入れず、プロフィールのリンクからKARiN.NOTESへ案内します。通常フィードではクリックできるリンクカードにはなりません。1枚は単一画像、2〜10枚はカルーセルで投稿します。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
 {% else %}
 <p class="admin-blog-body">この画面では投稿文を確認して保存します。GBPへの送信はこの画面のボタンで行います。同じ記事でも新しい投稿を作れます。結果が不明なときは自動で送り直しません。</p>
 {% endif %}
@@ -43,7 +43,7 @@
   {% if target.channel == "instagram" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
-    <p class="admin-blog-body" style="margin: 0 0 8px;">JPEGを1〜10枚選べます。1枚目がカルーセルの表紙です。同じ画像は重複して選べません。</p>
+    <p class="admin-blog-body" style="margin: 0 0 8px;">JPEGを1〜10枚選べます。1枚目が表紙です。カルーセルでは1枚目の縦横比が全体の表示に使われ、2枚目以降も同じ比率でトリミングされます。同じ画像は重複して選べません。</p>
     {% include "notes/_instagram_image_picker.html" %}
   </div>
   {% endif %}
@@ -53,7 +53,17 @@
   {% if instagram_preview.ok %}
   <p class="admin-blog-body">内容を保存したあと、この画面のボタンでInstagramへ投稿します。投稿済みから送ると新しい投稿になります。自動では送り直しません。</p>
   <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ instagram_preview.payload_text }}</pre>
-  {% if instagram_preview.image_url %}
+  {% if instagram_preview.image_urls and instagram_preview.image_urls|length > 1 %}
+  <p class="admin-blog-body">カルーセル {{ instagram_preview.image_urls|length }}枚です。1枚目が表紙で、全体の縦横比は1枚目に合わせられます。</p>
+  <div style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px;">
+    {% for url in instagram_preview.image_urls %}
+    <div style="flex: 0 0 120px; text-align: center;">
+      <img src="{{ url }}" alt="Instagram投稿画像{{ loop.index }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e6ed; background: #fff;">
+      <p class="admin-blog-body" style="margin: 4px 0 0; font-size: 0.8rem;">{% if loop.first %}表紙{% else %}{{ loop.index }}枚目{% endif %}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% elif instagram_preview.image_url %}
   <p class="admin-blog-body">画像: {{ instagram_preview.image_url }}</p>
   <img src="{{ instagram_preview.image_url }}" alt="Instagram投稿画像" style="max-width: 240px; max-height: 240px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e6ed; background: #fff;">
   {% endif %}

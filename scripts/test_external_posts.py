@@ -475,7 +475,8 @@ def main():
         and 'id="blog-thumb-image-input"' in instagram_html
         and "記事の画像" in instagram_html
         and "選択中の画像" in instagram_html
-        and "1枚目がカルーセルの表紙" in instagram_html,
+        and "1枚目が表紙" in instagram_html
+        and "縦横比" in instagram_html,
         "Instagram画面の画像欄は複数選択になっている",
     )
     report(

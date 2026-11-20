@@ -5095,24 +5095,7 @@ def _instagram_post_preview(target, body, image_url):
     """Instagramの送信内容を画面確認する。Metaへは送らない。"""
     if target.get("channel") != "instagram":
         return None
-    urls = external_posts.parse_instagram_image_urls(image_url)
-    if len(urls) >= 2:
-        caption = (body or "").replace("\r\n", "\n").strip()
-        errors = []
-        if not caption:
-            errors.append("投稿文を入力してください")
-        elif len(caption) > instagram_graph.CAPTION_MAX:
-            errors.append("投稿文は2200文字以内にしてください")
-        errors.append("複数画像のInstagram送信は次の段階です。選択した画像は保存できます。")
-        return {
-            "ok": False,
-            "errors": errors,
-            "payload_text": "",
-            "caption": caption,
-            "image_url": urls[0],
-            "image_urls": urls,
-        }
-    return instagram_graph.instagram_preview(body, urls[0] if urls else "")
+    return instagram_graph.instagram_preview(body, image_url)
 
 
 def _notes_instagram_screen_action(target, existing, preview):
@@ -5321,9 +5304,6 @@ def admin_blog_external_post(blog_id, target_key):
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 if not _instagram_saved_matches(existing, body, link_url, image_url):
                     flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
-                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
-                if len(external_posts.parse_instagram_image_urls(existing.get("image_url"))) != 1:
-                    flash("複数画像のInstagram送信は次の段階です。選択した画像は保存できます。", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 try:
                     result = _run_notes_instagram_create(

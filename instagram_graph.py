@@ -1,4 +1,4 @@
-"""KARiN.NOTES の Instagram フィード投稿（単一画像）。
+"""KARiN.NOTES の Instagram フィード投稿（単一画像とカルーセル）。
 
 Facebook と GBP は扱わない。このモジュールを読み込んだだけでは Meta へ送信しない。
 Page Access Token は /me/accounts から取得し、システムユーザートークンは Instagram API に直接渡さない。
@@ -24,6 +24,8 @@ REQUEST_TIMEOUT_SECONDS = 30
 CONTAINER_WAIT_SECONDS = 60
 CONTAINER_POLL_SECONDS = 2
 CAPTION_MAX = 2200
+CAROUSEL_MIN = 2
+CAROUSEL_MAX = 10
 PUBLIC_ORIGIN = "https://karin-sb.jp"
 INSTAGRAM_SEND_STATUSES = frozenset({"draft", "ready", "failed", "posted", "unknown"})
 _IG_ID = re.compile(r"^[0-9]{5,32}$")
@@ -75,6 +77,13 @@ def public_instagram_image_url(value):
     return _encode_image_url(url)
 
 
+def instagram_image_urls(value):
+    """保存値を公開httpsのJPEG URLリストにする。1枚の既存保存も読む。"""
+    import external_posts
+
+    return external_posts.parse_instagram_image_urls(value)
+
+
 def instagram_preview(body, image_url):
     """送信JSONは作らない。画面確認用。Metaへは送らない。"""
     errors = []
@@ -83,11 +92,14 @@ def instagram_preview(body, image_url):
         errors.append("投稿文を入力してください")
     elif len(caption) > CAPTION_MAX:
         errors.append("投稿文は2200文字以内にしてください")
-    image = public_instagram_image_url(image_url)
-    if not image:
+    urls = instagram_image_urls(image_url)
+    if not urls:
         errors.append("画像は公開された https のJPEGにしてください")
-    else:
+    elif len(urls) > CAROUSEL_MAX:
+        errors.append("Instagramの画像は10枚以内にしてください")
+    for image in urls:
         errors.extend(_image_constraint_errors(image))
+    image = urls[0] if urls else ""
     if errors:
         return {
             "ok": False,
@@ -95,14 +107,22 @@ def instagram_preview(body, image_url):
             "payload_text": "",
             "caption": caption,
             "image_url": image,
+            "image_urls": urls,
         }
-    payload_text = f"caption:\n{caption}\n\nimage_url:\n{image}"
+    if len(urls) == 1:
+        payload_text = f"caption:\n{caption}\n\nimage_url:\n{image}"
+    else:
+        listed = "\n".join(f"{index}. {url}" for index, url in enumerate(urls, start=1))
+        payload_text = (
+            f"caption:\n{caption}\n\nmedia_type: CAROUSEL\nimage_url:\n{listed}"
+        )
     return {
         "ok": True,
         "errors": [],
         "payload_text": payload_text,
         "caption": caption,
         "image_url": image,
+        "image_urls": urls,
     }
 
 
@@ -110,7 +130,39 @@ def build_instagram_media_payload(body, image_url):
     preview = instagram_preview(body, image_url)
     if not preview["ok"]:
         raise MetaGraphRefused(preview["errors"][0])
+    urls = preview.get("image_urls") or []
+    if len(urls) != 1:
+        raise MetaGraphRefused("単一画像の送信処理は1枚のときだけ使います。")
     return {"image_url": preview["image_url"], "caption": preview["caption"]}
+
+
+def build_instagram_child_payload(image_url):
+    image = public_instagram_image_url(image_url)
+    if not image:
+        raise MetaGraphRefused("画像は公開された https のJPEGにしてください")
+    errors = _image_constraint_errors(image)
+    if errors:
+        raise MetaGraphRefused(errors[0])
+    return {"image_url": image, "is_carousel_item": "true"}
+
+
+def build_instagram_carousel_payload(body, child_ids):
+    caption = (body or "").replace("\r\n", "\n").strip()
+    if not caption:
+        raise MetaGraphRefused("投稿文を入力してください")
+    if len(caption) > CAPTION_MAX:
+        raise MetaGraphRefused("投稿文は2200文字以内にしてください")
+    children = [item.strip() for item in child_ids if (item or "").strip()]
+    if len(children) < CAROUSEL_MIN or len(children) > CAROUSEL_MAX:
+        raise MetaGraphRefused("カルーセルは2〜10枚の画像が必要です。")
+    for item in children:
+        if not _IG_ID.fullmatch(item):
+            raise MetaGraphRefused("作成中の画像IDが不正なため、送信しません。")
+    return {
+        "media_type": "CAROUSEL",
+        "children": ",".join(children),
+        "caption": caption,
+    }
 
 
 def instagram_media_url(ig_user_id):
@@ -313,6 +365,102 @@ def fetch_instagram_page_token(config, *, get_exchange):
     return meta_graph.select_page_access_token(body, page_id)
 
 
+def _post_media_container(post_exchange, url, page_token, payload, outgoing, now):
+    """1つのメディアコンテナを作る。成功時はID、失敗時は保存用outcome。"""
+    try:
+        http_status, response = post_exchange(url, access_token=page_token, body=payload)
+        timed_out = False
+    except MetaGraphTimeout:
+        http_status, response, timed_out = None, {}, True
+    except Exception:
+        print("Instagram投稿 error=Exception")
+        http_status, response, timed_out = None, {}, True
+    if timed_out or http_status is None or http_status >= 500:
+        finished = finish_notes_instagram_create(
+            outgoing, http_status=http_status, body=response, timed_out=True, now=now
+        )
+        return None, finished, http_status
+    if http_status != 200:
+        finished = finish_notes_instagram_create(
+            outgoing, http_status=http_status, body=response, timed_out=False, now=now
+        )
+        return None, finished, http_status
+    creation_id = _instagram_media_id(response)
+    if not creation_id:
+        finished = finish_notes_instagram_create(
+            outgoing, http_status=200, body={}, timed_out=False, now=now
+        )
+        return None, finished, http_status
+    return creation_id, None, http_status
+
+
+def _wait_media_container(
+    creation_id,
+    *,
+    get_exchange,
+    page_token,
+    sleep_fn,
+    max_wait_seconds,
+    poll_interval_seconds,
+    outgoing,
+    now,
+):
+    try:
+        wait_instagram_container(
+            creation_id,
+            get_exchange=get_exchange,
+            access_token=page_token,
+            sleep_fn=sleep_fn,
+            max_wait_seconds=max_wait_seconds,
+            poll_interval_seconds=poll_interval_seconds,
+        )
+    except MetaGraphRefused as exc:
+        previous_id, previous_at = _kept_instagram_receipt(outgoing)
+        return _outcome(
+            outgoing,
+            status="failed",
+            external_id=previous_id,
+            posted_at=previous_at,
+            error_message=exc.detail,
+            event="failed",
+            detail=exc.detail,
+            now=now,
+        )
+    except (MetaGraphTimeout, Exception):
+        return finish_notes_instagram_create(
+            outgoing, http_status=None, body={}, timed_out=True, now=now
+        )
+    return None
+
+
+def _publish_media_container(post_exchange, publish_url, page_token, creation_id, outgoing, now):
+    try:
+        http_status, response = post_exchange(
+            publish_url,
+            access_token=page_token,
+            body={"creation_id": creation_id},
+        )
+        timed_out = False
+    except MetaGraphTimeout:
+        http_status, response, timed_out = None, {}, True
+    except Exception:
+        print("Instagram投稿 error=Exception")
+        http_status, response, timed_out = None, {}, True
+    finished = finish_notes_instagram_create(
+        outgoing,
+        http_status=http_status,
+        body=response,
+        timed_out=timed_out,
+        now=now,
+    )
+    return finished, http_status
+
+
+def _store_logged_outcome(client, outgoing, finished, now, *, http_status, staff_id, post_store):
+    _log_instagram_outcome(http_status, finished)
+    return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=post_store)
+
+
 def perform_notes_instagram_create(
     client,
     record,
@@ -341,7 +489,16 @@ def perform_notes_instagram_create(
     try:
         media_url = instagram_media_url(config.get("ig_user_id"))
         publish_url = instagram_publish_url(config.get("ig_user_id"))
-        payload = build_instagram_media_payload(record.get("body"), record.get("image_url"))
+        preview = instagram_preview(record.get("body"), record.get("image_url"))
+        if not preview["ok"]:
+            raise MetaGraphRefused(preview["errors"][0])
+        urls = preview.get("image_urls") or []
+        if len(urls) == 1:
+            payloads = [build_instagram_media_payload(record.get("body"), urls[0])]
+        elif CAROUSEL_MIN <= len(urls) <= CAROUSEL_MAX:
+            payloads = [build_instagram_child_payload(url) for url in urls]
+        else:
+            raise MetaGraphRefused("Instagramの画像は1〜10枚にしてください")
         page_token = fetch_instagram_page_token(config, get_exchange=accounts)
     except MetaGraphRefused as exc:
         return _record_unsent_failure(
@@ -379,43 +536,53 @@ def perform_notes_instagram_create(
             "送信開始の記録に失敗したため、Instagramへは送っていません。再送せず、結果を確認してください。",
         )
 
-    try:
-        http_status, response = post_exchange(media_url, access_token=page_token, body=payload)
-        timed_out = False
-    except MetaGraphTimeout:
-        http_status, response, timed_out = None, {}, True
-    except Exception:
-        print("Instagram投稿 error=Exception")
-        http_status, response, timed_out = None, {}, True
-    if timed_out or http_status is None or http_status >= 500:
-        finished = finish_notes_instagram_create(
-            outgoing, http_status=http_status, body=response, timed_out=True, now=now
+    wait_kwargs = {
+        "get_exchange": getter,
+        "page_token": page_token,
+        "sleep_fn": sleep_fn,
+        "max_wait_seconds": max_wait_seconds,
+        "poll_interval_seconds": poll_interval_seconds,
+        "outgoing": outgoing,
+        "now": now,
+    }
+    if len(urls) == 1:
+        creation_id, finished, http_status = _post_media_container(
+            post_exchange, media_url, page_token, payloads[0], outgoing, now
         )
-        _log_instagram_outcome(http_status, finished)
-        return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
-    if http_status != 200:
-        finished = finish_notes_instagram_create(
-            outgoing, http_status=http_status, body=response, timed_out=False, now=now
+        if finished:
+            return _store_logged_outcome(
+                client, outgoing, finished, now, http_status=http_status, staff_id=staff_id, post_store=store
+            )
+        finished = _wait_media_container(creation_id, **wait_kwargs)
+        if finished:
+            return _store_logged_outcome(
+                client, outgoing, finished, now, http_status=None, staff_id=staff_id, post_store=store
+            )
+        finished, http_status = _publish_media_container(
+            post_exchange, publish_url, page_token, creation_id, outgoing, now
         )
-        _log_instagram_outcome(http_status, finished)
-        return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
-    creation_id = _instagram_media_id(response)
-    if not creation_id:
-        finished = finish_notes_instagram_create(
-            outgoing, http_status=200, body={}, timed_out=False, now=now
+        return _store_logged_outcome(
+            client, outgoing, finished, now, http_status=http_status, staff_id=staff_id, post_store=store
         )
-        _log_instagram_outcome(http_status, finished)
-        return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
+
+    child_ids = []
+    for payload in payloads:
+        creation_id, finished, http_status = _post_media_container(
+            post_exchange, media_url, page_token, payload, outgoing, now
+        )
+        if finished:
+            return _store_logged_outcome(
+                client, outgoing, finished, now, http_status=http_status, staff_id=staff_id, post_store=store
+            )
+        finished = _wait_media_container(creation_id, **wait_kwargs)
+        if finished:
+            return _store_logged_outcome(
+                client, outgoing, finished, now, http_status=None, staff_id=staff_id, post_store=store
+            )
+        child_ids.append(creation_id)
 
     try:
-        wait_instagram_container(
-            creation_id,
-            get_exchange=getter,
-            access_token=page_token,
-            sleep_fn=sleep_fn,
-            max_wait_seconds=max_wait_seconds,
-            poll_interval_seconds=poll_interval_seconds,
-        )
+        parent_payload = build_instagram_carousel_payload(record.get("body"), child_ids)
     except MetaGraphRefused as exc:
         previous_id, previous_at = _kept_instagram_receipt(outgoing)
         finished = _outcome(
@@ -428,36 +595,27 @@ def perform_notes_instagram_create(
             detail=exc.detail,
             now=now,
         )
-        _log_instagram_outcome(None, finished)
-        return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
-    except (MetaGraphTimeout, Exception):
-        finished = finish_notes_instagram_create(
-            outgoing, http_status=None, body={}, timed_out=True, now=now
+        return _store_logged_outcome(
+            client, outgoing, finished, now, http_status=None, staff_id=staff_id, post_store=store
         )
-        _log_instagram_outcome(None, finished)
-        return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
-
-    try:
-        http_status, response = post_exchange(
-            publish_url,
-            access_token=page_token,
-            body={"creation_id": creation_id},
-        )
-        timed_out = False
-    except MetaGraphTimeout:
-        http_status, response, timed_out = None, {}, True
-    except Exception:
-        print("Instagram投稿 error=Exception")
-        http_status, response, timed_out = None, {}, True
-    finished = finish_notes_instagram_create(
-        outgoing,
-        http_status=http_status,
-        body=response,
-        timed_out=timed_out,
-        now=now,
+    parent_id, finished, http_status = _post_media_container(
+        post_exchange, media_url, page_token, parent_payload, outgoing, now
     )
-    _log_instagram_outcome(http_status, finished)
-    return _store_outcome(client, outgoing, finished, now, staff_id=staff_id, post_store=store)
+    if finished:
+        return _store_logged_outcome(
+            client, outgoing, finished, now, http_status=http_status, staff_id=staff_id, post_store=store
+        )
+    finished = _wait_media_container(parent_id, **wait_kwargs)
+    if finished:
+        return _store_logged_outcome(
+            client, outgoing, finished, now, http_status=None, staff_id=staff_id, post_store=store
+        )
+    finished, http_status = _publish_media_container(
+        post_exchange, publish_url, page_token, parent_id, outgoing, now
+    )
+    return _store_logged_outcome(
+        client, outgoing, finished, now, http_status=http_status, staff_id=staff_id, post_store=store
+    )
 
 
 def instagram_post_exchange(url, *, access_token, body, timeout=REQUEST_TIMEOUT_SECONDS):

@@ -28,8 +28,10 @@ IG_USER = "17841400000000000"
 CREATION_ID = "17890000000000001"
 MEDIA_ID = "17890000000000099"
 MEDIA_ID_NEW = "17890000000000100"
+PARENT_ID = "17892000000000001"
 IMAGE = "/static/images/notes/a.jpg"
 PUBLIC_IMAGE = "https://karin-sb.jp/static/images/notes/a.jpg"
+PUBLIC_IMAGE_B = "https://karin-sb.jp/static/images/notes/b.jpg"
 
 
 def report(ok, name, detail=""):
@@ -133,14 +135,26 @@ class AccountsHttp:
 
 
 class MediaHttp:
-    def __init__(self, create="ok", publish="ok", create_id=CREATION_ID, media_id=MEDIA_ID):
+    def __init__(
+        self,
+        create="ok",
+        publish="ok",
+        create_id=CREATION_ID,
+        media_id=MEDIA_ID,
+        parent="ok",
+        child_fail_at=None,
+    ):
         self.create = create
         self.publish = publish
         self.create_id = create_id
         self.media_id = media_id
+        self.parent = parent
+        self.child_fail_at = child_fail_at
         self.calls = []
         self.last_create = None
         self.last_publish = None
+        self.last_parent = None
+        self.child_ids = []
 
     def __call__(self, url, *, access_token, body):
         self.calls.append({"url": url, "body": dict(body or {})})
@@ -155,15 +169,39 @@ class MediaHttp:
             return self._create()
         raise AssertionError("unexpected post url")
 
-    def _create(self):
-        if self.create == "timeout":
+    def _fail_create(self, mode):
+        if mode == "timeout":
             raise MetaGraphTimeout()
-        if self.create == "server":
+        if mode == "server":
             return 500, {"error": {"message": f"Bearer {PAGE_TOKEN}", "code": 1}}
-        if self.create == "denied":
+        if mode == "denied":
             return 403, {"error": {"message": f"Invalid OAuth access token {PAGE_TOKEN}", "code": 190}}
-        if self.create == "noid":
+        if mode == "noid":
             return 200, {"success": True}
+        if mode == "skip":
+            raise AssertionError("create should not be called")
+        return None
+
+    def _create(self):
+        payload = dict(self.last_create or {})
+        if str(payload.get("is_carousel_item") or "").lower() == "true":
+            next_index = len(self.child_ids) + 1
+            if self.child_fail_at == next_index:
+                failed = self._fail_create(self.create)
+                if failed is not None:
+                    return failed
+            child_id = f"17891{next_index:012d}"
+            self.child_ids.append(child_id)
+            return 200, {"id": child_id}
+        if str(payload.get("media_type") or "").upper() == "CAROUSEL":
+            self.last_parent = payload
+            failed = self._fail_create(self.parent)
+            if failed is not None:
+                return failed
+            return 200, {"id": PARENT_ID}
+        failed = self._fail_create(self.create)
+        if failed is not None:
+            return failed
         return 200, {"id": self.create_id}
 
     def _publish(self):
@@ -181,8 +219,9 @@ class MediaHttp:
 
 
 class StatusHttp:
-    def __init__(self, mode="FINISHED"):
+    def __init__(self, mode="FINISHED", by_id=None):
         self.mode = mode
+        self.by_id = dict(by_id or {})
         self.calls = []
 
     def __call__(self, url, *, access_token, params=None):
@@ -190,15 +229,21 @@ class StatusHttp:
         _assert_no_secret(url)
         if access_token != PAGE_TOKEN:
             raise AssertionError("status must use page token")
-        if CREATION_ID not in (url or ""):
+        found = ""
+        for part in (url or "").split("/"):
+            token = part.split("?")[0]
+            if token.isdigit() and 5 <= len(token) <= 32:
+                found = token
+        if not found:
             raise AssertionError("status url")
-        if self.mode == "timeout":
+        mode = self.by_id.get(found, self.mode)
+        if mode == "timeout":
             raise MetaGraphTimeout()
-        if self.mode == "IN_PROGRESS":
+        if mode == "IN_PROGRESS":
             return 200, {"status_code": "IN_PROGRESS"}
-        if self.mode == "ERROR":
+        if mode == "ERROR":
             return 200, {"status_code": "ERROR"}
-        if self.mode == "denied":
+        if mode == "denied":
             return 400, {"error": {"message": f"Bearer {PAGE_TOKEN}"}}
         return 200, {"status_code": "FINISHED"}
 
@@ -283,12 +328,47 @@ def test_caption_and_images():
     report(article_url not in ig_text, "Instagram初期文面に記事URLを入れない")
     report("肩の話" in ig_text and "つながって見る" in ig_text, "Instagram初期文面はタイトルと概要を使う")
     report("背中や腕の使い方も関係します" in ig_text, "Instagram初期文面は本文の要点を足す")
+    report(ig_text.count("つながって見る") == 1, "導入と本文抜粋を重複させない")
+    report("…" not in ig_text, "Instagram初期文面は途中で切らない")
+    report(ig_text.rstrip().endswith("整体") or "ご覧ください。" in ig_text, "自然な文末で終わる")
     report(
         "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" in ig_text,
         "Instagram初期文面の末尾はプロフィール誘導",
     )
     report("#肩こり" in ig_text and "#整体" in ig_text, "Instagram初期文面は記事タグからハッシュタグを付ける")
     report(ig_text.count("#肩こり") == 1, "同じハッシュタグは重複しない")
+    long_html = (
+        "<h2>身体はつながっている</h2>"
+        "<p>痛い場所だけを見るのではなく、全身の使い方から考えます。</p>"
+        "<h2>日常の動き</h2>"
+        "<p>同じ姿勢が続くと、肩だけでなく背中や股関節にも負担が集まります。</p>"
+        "<h2>整え方</h2>"
+        "<p>まず呼吸と胸の動きを確認し、そのあと肩まわりをゆるめていきます。</p>"
+    )
+    long_text = external_posts.starter_body(
+        "instagram",
+        "肩のつらさを、肩だけで見ない",
+        "肩のつらさは、肩だけの問題ではないことがあります。",
+        article_url,
+        body=long_html,
+        tags=["肩こり", "身体のつながり", "整体", "不要タグ", "別タグ", "さらに"],
+    )
+    report(article_url not in long_text, "長い記事でも記事URLを入れない")
+    report("…" not in long_text, "長い記事でも文の途中で切らない")
+    report(long_text.count("・") == 3, "重要なポイントを2〜3個紹介する", str(long_text.count("・")))
+    report(
+        "全身の使い方から考えます。" in long_text
+        and "負担が集まります。" in long_text
+        and "ゆるめていきます。" in long_text,
+        "ポイントは見出し配下の文を自然な文末のまま使う",
+    )
+    report(long_text.count("肩だけの問題ではないことがあります") == 1, "概要を本文ポイントと重複させない")
+    report(long_text.count("#") <= 5, "ハッシュタグは記事タグから絞る", str(long_text.count("#")))
+    report(
+        long_text.index("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。")
+        < long_text.find("#肩こり"),
+        "誘導文のあとにハッシュタグを置く",
+    )
     fb_text = external_posts.starter_body("facebook", "肩の話", "つながって見る", article_url)
     gbp_text = external_posts.starter_body("gbp_tokyo", "肩の話", "つながって見る", article_url)
     report(article_url not in fb_text and article_url in gbp_text, "FacebookとGBPの初期文面ルールは変えない")
@@ -397,9 +477,10 @@ def test_caption_and_images():
     preview_two = appmod._instagram_post_preview(instagram, "本文", cleaned)
     report(
         preview_two
-        and not preview_two["ok"]
-        and any("次の段階" in item for item in preview_two["errors"]),
-        "2枚以上は保存できても今回は送信確認しない",
+        and preview_two["ok"]
+        and preview_two.get("image_urls") == [PUBLIC_IMAGE, PUBLIC_IMAGE_B]
+        and "CAROUSEL" in preview_two["payload_text"],
+        "2枚はカルーセルとして確認できる",
         str((preview_two or {}).get("errors")),
     )
     report(appmod._instagram_post_preview(facebook, "本文", one) is None, "FacebookにInstagram確認は出ない")
@@ -454,8 +535,210 @@ def test_caption_and_images():
     )
 
 
+def carousel_record(count=2, **overrides):
+    urls = [f"https://karin-sb.jp/static/images/notes/{index}.jpg" for index in range(count)]
+    return sample_record(image_url="\n".join(urls), **overrides)
+
+
+def media_calls(post_http, **required):
+    found = []
+    for call in post_http.calls:
+        body = call.get("body") or {}
+        if all(body.get(key) == value for key, value in required.items()):
+            found.append(body)
+    return found
+
+
+def test_carousel():
+    two_http = MediaHttp()
+    two_result, two_db, _two_log, _acc, two_status = run_create(carousel_record(2), two_http)
+    child_payloads = media_calls(two_http, is_carousel_item="true")
+    report(two_result["ok"] and two_db.row["status"] == "posted", "2枚カルーセルは公開成功で posted")
+    report(two_db.row["external_id"] == MEDIA_ID, "カルーセル成功時はメディアIDを保存する")
+    report(
+        [item.get("image_url") for item in child_payloads]
+        == [
+            "https://karin-sb.jp/static/images/notes/0.jpg",
+            "https://karin-sb.jp/static/images/notes/1.jpg",
+        ]
+        and all("caption" not in item for item in child_payloads),
+        "子コンテナは選択順の画像だけで、captionを付けない",
+        str([item.get("image_url") for item in child_payloads]),
+    )
+    report(
+        two_http.last_parent
+        == {
+            "media_type": "CAROUSEL",
+            "children": f"{two_http.child_ids[0]},{two_http.child_ids[1]}",
+            "caption": sample_record()["body"],
+        },
+        "親コンテナは子IDを同じ順で渡し、captionを付ける",
+        str(two_http.last_parent),
+    )
+    report(two_http.last_publish == {"creation_id": PARENT_ID}, "カルーセルは親IDを公開する")
+    report(
+        len(two_http.calls) == 4 and len(two_status.calls) == 3,
+        "2枚は子2・親1・公開1と、完了確認3回",
+        str((len(two_http.calls), len(two_status.calls))),
+    )
+
+    ten_http = MediaHttp()
+    ten_result, ten_db, _ten_log, _acc, ten_status = run_create(carousel_record(10), ten_http)
+    ten_children = media_calls(ten_http, is_carousel_item="true")
+    report(ten_result["ok"] and ten_db.row["status"] == "posted", "10枚カルーセルも公開できる")
+    report(len(ten_children) == 10 and len(ten_http.child_ids) == 10, "10枚は子コンテナを10個作る")
+    report(
+        ten_http.last_parent.get("children") == ",".join(ten_http.child_ids),
+        "10枚でも投稿順を維持する",
+        str(ten_http.last_parent),
+    )
+    report(
+        len(ten_http.calls) == 12 and len(ten_status.calls) == 11,
+        "10枚は子10・親1・公開1と、完了確認11回",
+        str((len(ten_http.calls), len(ten_status.calls))),
+    )
+
+    child_denied = MediaHttp(create="denied", child_fail_at=2, parent="skip", publish="skip")
+    denied_result, denied_db, _log, _acc, denied_status = run_create(carousel_record(2), child_denied)
+    report(not denied_result["ok"] and denied_db.row["status"] == "failed", "子コンテナの4xxは failed")
+    report(
+        child_denied.last_parent is None and child_denied.last_publish is None,
+        "子の失敗では親も公開もしない",
+    )
+
+    child_timeout = MediaHttp(create="timeout", child_fail_at=2, parent="skip", publish="skip")
+    cto_result, cto_db, _log, _acc, cto_status = run_create(carousel_record(2), child_timeout)
+    report(not cto_result["ok"] and cto_db.row["status"] == "unknown", "子コンテナ作成のタイムアウトは unknown")
+    report("自動再送しません" in (cto_result["message"] or ""), "子のタイムアウトは自動再送しない")
+    report(child_timeout.last_parent is None and child_timeout.last_publish is None, "子のタイムアウトでは公開しない")
+
+    error_status = StatusHttp("FINISHED", by_id={"17891000000000002": "ERROR"})
+    error_http = MediaHttp(parent="skip", publish="skip")
+    error_result, error_db, _log, _acc, _st = run_create(
+        carousel_record(2), error_http, status=error_status
+    )
+    report(not error_result["ok"] and error_db.row["status"] == "failed", "子コンテナのERRORは failed")
+    report(error_http.last_parent is None and error_http.last_publish is None, "子のERRORでは親を作らない")
+
+    wait_status = StatusHttp("FINISHED", by_id={"17891000000000002": "IN_PROGRESS"})
+    wait_http = MediaHttp(parent="skip", publish="skip")
+    wait_result, wait_db, _log, _acc, _st = run_create(
+        carousel_record(2),
+        wait_http,
+        status=wait_status,
+        max_wait_seconds=0,
+    )
+    report(not wait_result["ok"] and wait_db.row["status"] == "unknown", "子コンテナの処理タイムアウトは unknown")
+    report(wait_http.last_publish is None, "子の待機タイムアウトでは公開しない")
+
+    parent_denied = MediaHttp(parent="denied", publish="skip")
+    pd_result, pd_db, _log, _acc, _st = run_create(carousel_record(2), parent_denied)
+    report(not pd_result["ok"] and pd_db.row["status"] == "failed", "親コンテナの4xxは failed")
+    report(parent_denied.last_publish is None and len(parent_denied.child_ids) == 2, "親の失敗では公開せず、子は作っている")
+
+    parent_timeout = MediaHttp(parent="timeout", publish="skip")
+    pto_result, pto_db, _log, _acc, _st = run_create(carousel_record(2), parent_timeout)
+    report(not pto_result["ok"] and pto_db.row["status"] == "unknown", "親コンテナ作成のタイムアウトは unknown")
+    report(parent_timeout.last_publish is None, "親のタイムアウトでは公開しない")
+
+    parent_wait = StatusHttp("FINISHED", by_id={PARENT_ID: "IN_PROGRESS"})
+    pw_http = MediaHttp(publish="skip")
+    pw_result, pw_db, _log, _acc, _st = run_create(
+        carousel_record(2),
+        pw_http,
+        status=parent_wait,
+        max_wait_seconds=0,
+    )
+    report(not pw_result["ok"] and pw_db.row["status"] == "unknown", "親コンテナの処理タイムアウトは unknown")
+    report(pw_http.last_publish is None, "親の待機タイムアウトでは公開しない")
+
+    posted_http = MediaHttp(media_id=MEDIA_ID_NEW)
+    posted_result, posted_db, _log, _acc, _st = run_create(
+        carousel_record(2, status="posted", external_id=MEDIA_ID, posted_at=NOW),
+        posted_http,
+    )
+    posted_started = " ".join(
+        item.get("detail") or "" for item in posted_db.events if item.get("event") == "submit_started"
+    )
+    report(posted_result["ok"] and posted_db.row["external_id"] == MEDIA_ID_NEW, "カルーセルの投稿済からも明示再投稿できる")
+    report(MEDIA_ID in posted_started, "カルーセル再投稿でも前回IDは履歴に残る")
+
+    unknown_http = MediaHttp(media_id=MEDIA_ID_NEW)
+    unknown_result, unknown_db, _log, _acc, _st = run_create(
+        carousel_record(2, status="unknown", external_id=MEDIA_ID, posted_at=NOW),
+        unknown_http,
+    )
+    report(
+        unknown_result["ok"] and unknown_db.row["external_id"] == MEDIA_ID_NEW,
+        "カルーセルのunknownも明示操作のときだけ再投稿する",
+    )
+
+    posting_http = MediaHttp(parent="skip", publish="skip")
+    posting_acc = AccountsHttp("ok")
+    posting_result, posting_db, _log, posting_acc, _st = run_create(
+        carousel_record(2, status="posting", external_id=MEDIA_ID, posted_at=NOW),
+        posting_http,
+        accounts=posting_acc,
+    )
+    report(
+        not posting_result["ok"] and posting_http.calls == [] and posting_acc.calls == [],
+        "カルーセルも posting 中は再送しない",
+    )
+
+    facebook_http = MediaHttp(parent="skip", publish="skip")
+    facebook_acc = AccountsHttp("ok")
+    facebook_result, facebook_db, _log, facebook_acc, facebook_st = run_create(
+        carousel_record(2, channel="facebook"),
+        facebook_http,
+        accounts=facebook_acc,
+    )
+    report(
+        not facebook_result["ok"] and facebook_http.calls == [] and facebook_acc.calls == [],
+        "Facebookの行はカルーセル送信しない",
+    )
+    report(facebook_db.row["channel"] == "facebook" and facebook_db.row["status"] == "draft", "Facebookの状態は変えない")
+
+    gbp_http = MediaHttp(parent="skip", publish="skip")
+    gbp_acc = AccountsHttp("ok")
+    gbp_result, gbp_db, _log, gbp_acc, gbp_st = run_create(
+        carousel_record(2, channel="gbp"),
+        gbp_http,
+        accounts=gbp_acc,
+    )
+    report(not gbp_result["ok"] and gbp_http.calls == [] and gbp_acc.calls == [], "GBPの行はカルーセル送信しない")
+
+    with appmod.app.test_request_context("/admin/blogs/12/posts/instagram"):
+        send_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog={"id": 12, "title": "公開記事", "slug": "live-one"},
+            target=external_posts.get_target("instagram"),
+            form={
+                "body": "本文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": f"{PUBLIC_IMAGE}\n{PUBLIC_IMAGE_B}",
+                "status_label": "下書き保存",
+            },
+            events=[],
+            instagram_preview=appmod._instagram_post_preview(
+                external_posts.get_target("instagram"),
+                "本文",
+                f"{PUBLIC_IMAGE}\n{PUBLIC_IMAGE_B}",
+            ),
+            instagram_action="send",
+            instagram_send_label="この内容をInstagramに投稿する",
+        )
+    report(
+        "この内容をInstagramに投稿する" in send_html
+        and "カルーセル 2枚" in send_html
+        and "1枚目が表紙" in send_html
+        and "この内容をFacebookに投稿する" not in send_html,
+        "2枚保存後もInstagram投稿ボタンを出す",
+    )
+
+
 def main():
     test_caption_and_images()
+    test_carousel()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)
     report(
