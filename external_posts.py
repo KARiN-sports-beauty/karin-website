@@ -14,7 +14,8 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urlparse
+from html import unescape
+from urllib.parse import unquote, urlparse
 
 
 class ExternalPostNotConnected(Exception):
@@ -95,6 +96,13 @@ GBP_SERVICE_AREAS = {
 
 LOCKED_STATUSES = frozenset({"posted", "posting", "unknown"})
 NOTES_KEEP_STATUSES = frozenset({"draft", "ready", "posted", "failed", "unknown"})
+INSTAGRAM_IMAGE_MAX_COUNT = 10
+INSTAGRAM_IMAGE_STORE_MAX = 20000
+INSTAGRAM_NOTES_CTA = "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。"
+INSTAGRAM_CAPTION_MAX = 2200
+_IMG_SRC = re.compile(r"<img\b[^>]*?\bsrc\s*=\s*[\"']([^\"']+)[\"']", re.I)
+_JPEG_PATH = re.compile(r"\.(?:jpe?g)$", re.I)
+_HASHTAG_KEEP = re.compile(r"[^\w]", re.UNICODE)
 
 EVENT_LABELS = {
     "generated": "文面を作成",
@@ -268,9 +276,8 @@ def _clip(text, limit):
     return flat[:limit].rstrip() + "…"
 
 
-def starter_body(target_key, title, excerpt, link_url):
-    """媒体ごとの下書き。AIは呼ばない。記事のタイトルと導入文だけを材料にする。"""
-    target = get_target(target_key)
+def starter_body(target_key, title, excerpt, link_url, body=None, tags=None):
+    """媒体ごとの下書き。AIは呼ばない。保存済みの文面はここでは作らない。"""
     heading = (title or "").strip() or "KARiN.NOTES"
     lead_limit = {"gbp_tokyo": 80, "gbp_fukuoka": 80, "instagram": 140, "facebook": 280}
     lead = _clip(excerpt, lead_limit.get(target_key, 120))
@@ -280,7 +287,7 @@ def starter_body(target_key, title, excerpt, link_url):
     elif target_key == "gbp_fukuoka":
         lines = [heading, lead, "福岡で施術をご検討の方へ。内容は記事にまとめています。", url]
     elif target_key == "instagram":
-        lines = [heading, lead, "記事に詳しく書いています。", url]
+        return _starter_instagram_body(title, excerpt, body, tags)
     elif target_key == "facebook":
         lines = [
             heading,
@@ -290,6 +297,60 @@ def starter_body(target_key, title, excerpt, link_url):
     else:
         lines = [heading, lead, url]
     return "\n\n".join(line for line in lines if line)
+
+
+def _plain_article_text(html):
+    text = re.sub(r"(?is)<script[^>]*>.*?</script>", " ", html or "")
+    text = re.sub(r"(?is)<style[^>]*>.*?</style>", " ", text)
+    text = re.sub(r"(?s)<[^>]+>", " ", text)
+    text = unescape(text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _instagram_hashtags(tags):
+    values = tags if isinstance(tags, (list, tuple)) else []
+    if isinstance(tags, str):
+        values = [tags]
+    seen = set()
+    hashtags = []
+    for raw in values:
+        token = _HASHTAG_KEEP.sub("", unescape(str(raw or "")))
+        if not token or token.isdigit() or token.lower() in seen:
+            continue
+        seen.add(token.lower())
+        hashtags.append("#" + token[:50])
+        if len(hashtags) >= 30:
+            break
+    return hashtags
+
+
+def _starter_instagram_body(title, excerpt, body, tags):
+    """Instagram未保存時の下書き。記事URLは入れない。"""
+    heading = (title or "").strip() or "KARiN.NOTES"
+    hook = _clip(excerpt, 180)
+    summary = ""
+    plain = _plain_article_text(body)
+    excerpt_flat = re.sub(r"\s+", " ", excerpt or "").strip()
+    if plain:
+        comparable = plain
+        if excerpt_flat and comparable.startswith(excerpt_flat):
+            comparable = comparable[len(excerpt_flat) :].strip()
+        if comparable and comparable != hook:
+            summary = _clip(comparable, 220)
+            if summary.rstrip("…") == hook.rstrip("…"):
+                summary = ""
+    hashtags = _instagram_hashtags(tags)
+    lines = [heading, hook, summary, INSTAGRAM_NOTES_CTA]
+    if hashtags:
+        lines.append(" ".join(hashtags))
+    text = "\n\n".join(line for line in lines if line)
+    if len(text) <= INSTAGRAM_CAPTION_MAX:
+        return text
+    if hashtags:
+        text = "\n\n".join(line for line in [heading, hook, summary, INSTAGRAM_NOTES_CTA] if line)
+    if len(text) <= INSTAGRAM_CAPTION_MAX:
+        return text
+    return _clip(text.replace("\n\n", " "), INSTAGRAM_CAPTION_MAX)
 
 
 def clean_body(value):
@@ -322,6 +383,102 @@ def clean_image_ref(value):
     if text.startswith(("https://", "http://", "/static/", "static/")):
         return text
     raise ValueError("画像は https のURLか、/static/ から始まるパスにしてください")
+
+
+def parse_instagram_image_urls(value):
+    """Instagramの image_url だけを順序付きURLにする。既存の1枚保存も読む。"""
+    if value is None:
+        texts = []
+    elif isinstance(value, (list, tuple)):
+        texts = [str(item) for item in value]
+    else:
+        text = str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
+        texts = text.split("\n") if text else []
+    import instagram_graph
+
+    urls = []
+    seen = set()
+    for item in texts:
+        public = instagram_graph.public_instagram_image_url((item or "").strip())
+        if not public or public in seen:
+            continue
+        seen.add(public)
+        urls.append(public)
+    return urls
+
+
+def join_instagram_image_urls(urls):
+    return "\n".join(url for url in urls if url)
+
+
+def instagram_jpeg_public_url(value):
+    import instagram_graph
+
+    public = instagram_graph.public_instagram_image_url(value)
+    if not public:
+        return ""
+    path = unquote(urlparse(public).path or "")
+    if not _JPEG_PATH.search(path):
+        return ""
+    return public
+
+
+def instagram_image_preview_src(public_url):
+    parsed = urlparse(public_url or "")
+    if parsed.netloc == "karin-sb.jp" and (parsed.path or "").startswith("/static/"):
+        return unquote(parsed.path)
+    return public_url or ""
+
+
+def instagram_image_label(public_url):
+    path = unquote(urlparse(public_url or "").path or "")
+    name = path.rsplit("/", 1)[-1]
+    return name or public_url or ""
+
+
+def clean_instagram_image_refs(value):
+    """Instagram保存専用。1〜10枚のJPEG公開URL。clean_image_ref の2000字制限は使わない。"""
+    urls = parse_instagram_image_urls(value)
+    if not urls:
+        raise ValueError("Instagramの画像を1枚以上選んでください")
+    if len(urls) > INSTAGRAM_IMAGE_MAX_COUNT:
+        raise ValueError("Instagramの画像は10枚以内にしてください")
+    jpegs = []
+    for url in urls:
+        jpeg = instagram_jpeg_public_url(url)
+        if not jpeg:
+            raise ValueError("Instagramの画像はJPEGにしてください")
+        jpegs.append(jpeg)
+    joined = join_instagram_image_urls(jpegs)
+    if len(joined) > INSTAGRAM_IMAGE_STORE_MAX:
+        raise ValueError("画像の指定が長すぎます")
+    return joined
+
+
+def instagram_article_image_candidates(image, body):
+    """記事サムネイルと本文 img から、JPEGの公開URL候補を返す。"""
+    thumb = instagram_jpeg_public_url(image)
+    raws = []
+    if image:
+        raws.append(image)
+    for src in _IMG_SRC.findall(body or ""):
+        raws.append(unescape((src or "").strip()))
+    items = []
+    seen = set()
+    for raw in raws:
+        public = instagram_jpeg_public_url(raw)
+        if not public or public in seen:
+            continue
+        seen.add(public)
+        items.append(
+            {
+                "url": public,
+                "preview": instagram_image_preview_src(public),
+                "name": instagram_image_label(public),
+                "location": "thumbnail" if public == thumb else "body",
+            }
+        )
+    return items
 
 
 def _kept_receipt(existing):

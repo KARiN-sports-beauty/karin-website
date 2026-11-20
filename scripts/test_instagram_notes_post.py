@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
 import sys
+import tempfile
 from contextlib import redirect_stdout
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+import app as appmod
+import external_posts
 import instagram_graph
 from meta_graph import MetaGraphTimeout
 
@@ -266,7 +270,192 @@ def run_create(record, post_http, *, config=None, accounts=None, status=None, **
     return result, db, log, accounts_http, status_http
 
 
+def test_caption_and_images():
+    article_url = "https://karin-sb.jp/blog/kata"
+    ig_text = external_posts.starter_body(
+        "instagram",
+        "肩の話",
+        "つながって見る",
+        article_url,
+        body="<p>つながって見る</p><p>肩だけでなく、背中や腕の使い方も関係します。</p>",
+        tags=["肩こり", "整体", "肩こり"],
+    )
+    report(article_url not in ig_text, "Instagram初期文面に記事URLを入れない")
+    report("肩の話" in ig_text and "つながって見る" in ig_text, "Instagram初期文面はタイトルと概要を使う")
+    report("背中や腕の使い方も関係します" in ig_text, "Instagram初期文面は本文の要点を足す")
+    report(
+        "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" in ig_text,
+        "Instagram初期文面の末尾はプロフィール誘導",
+    )
+    report("#肩こり" in ig_text and "#整体" in ig_text, "Instagram初期文面は記事タグからハッシュタグを付ける")
+    report(ig_text.count("#肩こり") == 1, "同じハッシュタグは重複しない")
+    fb_text = external_posts.starter_body("facebook", "肩の話", "つながって見る", article_url)
+    gbp_text = external_posts.starter_body("gbp_tokyo", "肩の話", "つながって見る", article_url)
+    report(article_url not in fb_text and article_url in gbp_text, "FacebookとGBPの初期文面ルールは変えない")
+    report("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in fb_text, "Facebook初期文面にInstagram誘導を入れない")
+
+    saved = external_posts.starter_body("instagram", "別タイトル", "別概要", article_url)
+    report("別タイトル" in saved, "未保存の初期生成は呼び出した材料だけを使う")
+
+    candidates = external_posts.instagram_article_image_candidates(
+        "/static/images/notes/thumb.jpg",
+        '<p>本文</p><img src="/static/images/notes/body.jpg" alt="a">'
+        '<img src="/static/images/notes/skip.png">'
+        '<img src="/static/images/notes/thumb.jpg">',
+    )
+    urls = [item["url"] for item in candidates]
+    report(
+        urls == [
+            "https://karin-sb.jp/static/images/notes/thumb.jpg",
+            "https://karin-sb.jp/static/images/notes/body.jpg",
+        ],
+        "記事候補はサムネイルと本文JPEGだけで、重複とPNGは除く",
+        str(urls),
+    )
+    report(candidates[0]["location"] == "thumbnail" and candidates[1]["location"] == "body", "記事候補の出所が分かる")
+
+    tmp = tempfile.mkdtemp()
+    try:
+        notes = os.path.join(tmp, "notes")
+        dedicated = os.path.join(notes, "instagram")
+        os.makedirs(dedicated)
+        open(os.path.join(notes, "keep.jpg"), "w").close()
+        open(os.path.join(notes, "skip.png"), "w").close()
+        open(os.path.join(dedicated, "special.jpeg"), "w").close()
+        open(os.path.join(tmp, "leftover.jpg"), "w").close()
+        open(os.path.join(tmp, "treatment.jpg"), "w").close()
+        listed = appmod.list_instagram_server_images(images_root=tmp)
+        names = [item["name"] for item in listed]
+        locations = {item["name"]: item["location"] for item in listed}
+        report("keep.jpg" in names and "special.jpeg" in names and "leftover.jpg" in names, "サーバー候補はnotesと専用フォルダと未移動JPEG")
+        report("skip.png" not in names and "treatment.jpg" not in names, "サーバー候補からPNGとサイト用画像を除く")
+        report(locations.get("special.jpeg") == "instagram" and locations.get("keep.jpg") == "notes", "サーバー候補の場所が分かる")
+    finally:
+        shutil.rmtree(tmp)
+
+    one = "/static/images/notes/a.jpg"
+    parsed_one = external_posts.parse_instagram_image_urls(one)
+    report(
+        parsed_one == [PUBLIC_IMAGE],
+        "既存の1枚image_urlを公開httpsとして読む",
+        str(parsed_one),
+    )
+    two_saved = PUBLIC_IMAGE + "\nhttps://karin-sb.jp/static/images/notes/b.jpg"
+    parsed_two = external_posts.parse_instagram_image_urls(two_saved)
+    report(
+        parsed_two == [PUBLIC_IMAGE, "https://karin-sb.jp/static/images/notes/b.jpg"],
+        "改行区切りの複数URLを順に読む",
+        str(parsed_two),
+    )
+    report(
+        external_posts.parse_instagram_image_urls(two_saved + "\n" + PUBLIC_IMAGE)
+        == [PUBLIC_IMAGE, "https://karin-sb.jp/static/images/notes/b.jpg"],
+        "同じ画像は保存時も重複しない",
+    )
+    cleaned = external_posts.clean_instagram_image_refs([one, "/static/images/notes/b.jpg"])
+    report(
+        cleaned == PUBLIC_IMAGE + "\nhttps://karin-sb.jp/static/images/notes/b.jpg",
+        "Instagram保存は公開httpsを改行でつなぐ",
+        cleaned,
+    )
+    report(external_posts.clean_image_ref(one) == one, "GBP/Facebook用のclean_image_refは1枚のまま")
+    empty_error = ""
+    try:
+        external_posts.clean_instagram_image_refs("")
+    except ValueError as exc:
+        empty_error = str(exc)
+    report("1枚以上" in empty_error, "0枚はInstagram保存できない", empty_error)
+    png_error = ""
+    try:
+        external_posts.clean_instagram_image_refs("/static/images/notes/a.png")
+    except ValueError as exc:
+        png_error = str(exc)
+    report("JPEG" in png_error, "PNGはInstagram保存できない", png_error)
+    many = [f"/static/images/notes/{index}.jpg" for index in range(11)]
+    many_error = ""
+    try:
+        external_posts.clean_instagram_image_refs(many)
+    except ValueError as exc:
+        many_error = str(exc)
+    report("10枚以内" in many_error, "11枚はInstagram保存できない", many_error)
+    long_urls = [
+        f"https://karin-sb.jp/static/images/notes/{'a' * 180}{index}.jpg"
+        for index in range(10)
+    ]
+    joined_long = external_posts.clean_instagram_image_refs(long_urls)
+    report(
+        len(joined_long) > 2000 and joined_long.count("\n") == 9,
+        "Instagramだけ2000文字を超える複数URLを保存できる",
+        str(len(joined_long)),
+    )
+
+    instagram = external_posts.get_target("instagram")
+    facebook = external_posts.get_target("facebook")
+    tokyo = external_posts.get_target("gbp_tokyo")
+    preview_one = appmod._instagram_post_preview(instagram, "本文", one)
+    report(preview_one and preview_one["ok"], "1枚のInstagram確認は従来どおり送れる")
+    preview_two = appmod._instagram_post_preview(instagram, "本文", cleaned)
+    report(
+        preview_two
+        and not preview_two["ok"]
+        and any("次の段階" in item for item in preview_two["errors"]),
+        "2枚以上は保存できても今回は送信確認しない",
+        str((preview_two or {}).get("errors")),
+    )
+    report(appmod._instagram_post_preview(facebook, "本文", one) is None, "FacebookにInstagram確認は出ない")
+    report(
+        appmod._instagram_saved_matches(
+            {"body": "本文", "link_url": article_url, "image_url": one},
+            "本文",
+            article_url,
+            PUBLIC_IMAGE,
+        ),
+        "1枚の相対パスと公開httpsは同じ保存内容として扱う",
+    )
+    report(
+        appmod._instagram_saved_matches(
+            {"body": "本文", "link_url": article_url, "image_url": cleaned},
+            "本文",
+            article_url,
+            [one, "/static/images/notes/b.jpg"],
+        ),
+        "複数画像も正規化して保存内容と照合する",
+    )
+    ig_blog = {
+        "id": "12",
+        "title": "肩の話",
+        "slug": "kata",
+        "excerpt": "つながって見る",
+        "body": "<p>肩だけでなく、背中も見ます。</p><img src='/static/images/notes/body.jpg'>",
+        "image": "/static/images/notes/a.jpg",
+        "tags_list": ["肩こり"],
+    }
+    fresh = appmod._external_post_form_values(ig_blog, instagram, None)
+    report("肩の話" in fresh["body"] and "つながって見る" in fresh["body"], "未保存フォームはタイトルと概要を使う")
+    report(article_url not in fresh["body"], "未保存のInstagram投稿文に記事URLを入れない", fresh["body"])
+    report("#肩こり" in fresh["body"], "未保存のInstagram投稿文にハッシュタグを付ける")
+    report(fresh["image_url"] == PUBLIC_IMAGE, "未保存のInstagram画像は記事サムネイルのJPEG", fresh["image_url"])
+    kept = appmod._external_post_form_values(
+        ig_blog,
+        instagram,
+        {"status": "draft", "body": "保存済みの文", "link_url": article_url, "image_url": one},
+    )
+    report(kept["body"] == "保存済みの文", "保存済みのInstagram投稿文は初期生成で上書きしない")
+    report(kept["image_url"] == PUBLIC_IMAGE, "保存済みの1枚画像は公開httpsで再表示する")
+    gbp_fresh = appmod._external_post_form_values(ig_blog, tokyo, None)
+    report(article_url in gbp_fresh["body"] or "/blog/kata" in gbp_fresh["link_url"], "GBPの未保存文面は従来どおり記事へ案内する")
+    report("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in gbp_fresh["body"], "GBP文面にInstagram誘導を入れない")
+    fb_fresh = appmod._external_post_form_values(ig_blog, facebook, None)
+    report("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in fb_fresh["body"], "Facebook文面にInstagram誘導を入れない")
+    report(
+        appmod._facebook_post_preview(instagram, "本文", article_url) is None
+        and appmod._gbp_post_preview(instagram, "本文", article_url, cleaned, notes_create=True) is None,
+        "Instagram画面にFacebookとGBPの送信確認は出ない",
+    )
+
+
 def main():
+    test_caption_and_images()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)
     report(

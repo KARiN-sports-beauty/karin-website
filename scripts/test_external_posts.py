@@ -59,9 +59,15 @@ def main():
     report("料金" not in "".join(bodies.values()), "初期文面に料金を作らない")
     report(
         "https://karin-sb.jp/blog/kata" not in bodies["facebook"]
-        and "https://karin-sb.jp/blog/kata" in bodies["instagram"]
+        and "https://karin-sb.jp/blog/kata" not in bodies["instagram"]
         and "https://karin-sb.jp/blog/kata" in bodies["gbp_tokyo"],
-        "Facebook初期文面だけ記事URLを入れない",
+        "FacebookとInstagramの初期文面には記事URLを入れない",
+    )
+    report(
+        "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" in bodies["instagram"]
+        and "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in bodies["facebook"]
+        and "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in bodies["gbp_tokyo"],
+        "Instagram初期文面だけプロフィール誘導を付ける",
     )
 
     fields, reason = external_posts.prepare_notes_save(
@@ -465,8 +471,19 @@ def main():
         "GBP画面に画像選択欄が残っていない",
     )
     report(
-        "サーバー内の画像から選択" in instagram_html and 'id="blog-thumb-image-input"' in instagram_html,
-        "Instagram画面の画像欄は残っている",
+        "サーバー内の画像から選択" in instagram_html
+        and 'id="blog-thumb-image-input"' in instagram_html
+        and "記事の画像" in instagram_html
+        and "選択中の画像" in instagram_html
+        and "1枚目がカルーセルの表紙" in instagram_html,
+        "Instagram画面の画像欄は複数選択になっている",
+    )
+    report(
+        "記事の画像" not in facebook_html
+        and "ig-selected-images" not in facebook_html
+        and "記事の画像" not in gbp_html
+        and "ig-selected-images" not in gbp_html,
+        "FacebookとGBPの画面にInstagramの複数画像UIは出ない",
     )
     report(
         "この内容をFacebookに投稿する" not in instagram_html

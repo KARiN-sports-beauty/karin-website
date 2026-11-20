@@ -26,7 +26,7 @@
 {% if target.channel == "facebook" %}
 <p class="admin-blog-body">この画面では投稿文を確認して保存します。保存した内容だけをFacebookへ投稿できます。記事URLはリンク先に入れ、サムネイルは記事ページのOGPからFacebookが取得します。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
 {% elif target.channel == "instagram" %}
-<p class="admin-blog-body">この画面では投稿文と画像を確認して保存します。保存した内容だけをInstagramへ画像付きで投稿できます。記事URLは投稿文に含めますが、Instagramの通常フィードではクリックできるリンクカードにはなりません。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
+<p class="admin-blog-body">この画面では投稿文と画像を確認して保存します。保存した内容だけをInstagramへ画像付きで投稿できます。投稿文には記事URLを入れず、プロフィールのリンクからKARiN.NOTESへ案内します。通常フィードではクリックできるリンクカードにはなりません。1枚のときは今の方法で投稿できます。2枚以上の送信は次の段階です。投稿済みから送ると新しい投稿になります。成否が未確認のときは、既に投稿されている可能性があるため、確認してから再投稿してください。自動では送り直しません。</p>
 {% else %}
 <p class="admin-blog-body">この画面では投稿文を確認して保存します。GBPへの送信はこの画面のボタンで行います。同じ記事でも新しい投稿を作れます。結果が不明なときは自動で送り直しません。</p>
 {% endif %}
@@ -43,11 +43,8 @@
   {% if target.channel == "instagram" %}
   <div style="margin-bottom: 20px;">
     <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">画像</label>
-    <input type="text" name="image_url" id="blog-thumb-image-input" value="{{ form.image_url or "" }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="/static/images/notes/ファイル名.jpg">
-    <p class="admin-blog-body" style="margin: 6px 0 0;">初期値は記事のサムネイルです。サーバー内の画像から変更できます。</p>
-    {% with preview_src=form.image_url or '' %}
-    {% include "notes/_thumbnail_image_picker.html" %}
-    {% endwith %}
+    <p class="admin-blog-body" style="margin: 0 0 8px;">JPEGを1〜10枚選べます。1枚目がカルーセルの表紙です。同じ画像は重複して選べません。</p>
+    {% include "notes/_instagram_image_picker.html" %}
   </div>
   {% endif %}
   <button type="submit" name="action" value="save" class="admin-blog-btn">この内容を保存</button>

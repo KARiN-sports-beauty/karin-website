@@ -4002,9 +4002,103 @@ def _notes_images_dir():
     return os.path.join(_static_images_root(), "notes")
 
 
+def _instagram_notes_images_dir():
+    return os.path.join(_notes_images_dir(), "instagram")
+
+
 def _is_site_image_name(name):
     lower = (name or "").lower()
     return any(lower.startswith(prefix) for prefix in _SITE_IMAGE_NAME_PREFIXES)
+
+
+def _append_instagram_jpeg_dir(directory, url_prefix, location, items, seen, limit=200):
+    if not os.path.isdir(directory):
+        return
+    for name in sorted(os.listdir(directory), reverse=True):
+        if len(items) >= limit:
+            return
+        if name.startswith("."):
+            continue
+        ext = os.path.splitext(name)[1].lower()
+        if ext not in {".jpg", ".jpeg"}:
+            continue
+        path = os.path.join(directory, name)
+        if not os.path.isfile(path):
+            continue
+        public = external_posts.instagram_jpeg_public_url(url_prefix + name)
+        if not public or public in seen:
+            continue
+        seen.add(public)
+        items.append(
+            {
+                "url": public,
+                "preview": external_posts.instagram_image_preview_src(public),
+                "name": name,
+                "location": location,
+            }
+        )
+
+
+def list_instagram_server_images(images_root=None, limit=200):
+    """Instagram候補: notes、Instagram専用フォルダ、未移動の直下JPEG。"""
+    root = images_root or _static_images_root()
+    notes_dir = os.path.join(root, "notes") if images_root else _notes_images_dir()
+    dedicated = os.path.join(notes_dir, "instagram")
+    items = []
+    seen = set()
+    _append_instagram_jpeg_dir(notes_dir, "/static/images/notes/", "notes", items, seen, limit)
+    _append_instagram_jpeg_dir(
+        dedicated, "/static/images/notes/instagram/", "instagram", items, seen, limit
+    )
+    leftover_root = root
+    if os.path.isdir(leftover_root):
+        for name in sorted(os.listdir(leftover_root), reverse=True):
+            if len(items) >= limit:
+                break
+            if name.startswith(".") or _is_site_image_name(name):
+                continue
+            ext = os.path.splitext(name)[1].lower()
+            if ext not in {".jpg", ".jpeg"}:
+                continue
+            path = os.path.join(leftover_root, name)
+            if not os.path.isfile(path):
+                continue
+            public = external_posts.instagram_jpeg_public_url("/static/images/" + name)
+            if not public or public in seen:
+                continue
+            seen.add(public)
+            items.append(
+                {
+                    "url": public,
+                    "preview": external_posts.instagram_image_preview_src(public),
+                    "name": name,
+                    "location": "root",
+                }
+            )
+    return items
+
+
+def _instagram_selected_image_items(image_url):
+    items = []
+    for public in external_posts.parse_instagram_image_urls(image_url):
+        items.append(
+            {
+                "url": public,
+                "preview": external_posts.instagram_image_preview_src(public),
+                "name": external_posts.instagram_image_label(public),
+            }
+        )
+    return items
+
+
+def _instagram_picker_kwargs(blog, image_url=""):
+    return {
+        "instagram_article_images": external_posts.instagram_article_image_candidates(
+            (blog or {}).get("image"), (blog or {}).get("body")
+        ),
+        "instagram_server_images": list_instagram_server_images(),
+        "instagram_selected_images": _instagram_selected_image_items(image_url),
+    }
 
 
 def _sanitize_profile_image_key(raw_key):
@@ -5001,7 +5095,24 @@ def _instagram_post_preview(target, body, image_url):
     """Instagramの送信内容を画面確認する。Metaへは送らない。"""
     if target.get("channel") != "instagram":
         return None
-    return instagram_graph.instagram_preview(body, image_url)
+    urls = external_posts.parse_instagram_image_urls(image_url)
+    if len(urls) >= 2:
+        caption = (body or "").replace("\r\n", "\n").strip()
+        errors = []
+        if not caption:
+            errors.append("投稿文を入力してください")
+        elif len(caption) > instagram_graph.CAPTION_MAX:
+            errors.append("投稿文は2200文字以内にしてください")
+        errors.append("複数画像のInstagram送信は次の段階です。選択した画像は保存できます。")
+        return {
+            "ok": False,
+            "errors": errors,
+            "payload_text": "",
+            "caption": caption,
+            "image_url": urls[0],
+            "image_urls": urls,
+        }
+    return instagram_graph.instagram_preview(body, urls[0] if urls else "")
 
 
 def _notes_instagram_screen_action(target, existing, preview):
@@ -5027,11 +5138,12 @@ def _notes_instagram_send_label(status):
 def _instagram_saved_matches(existing, body, link_url, image_url):
     def norm(value):
         return (value or "").strip()
+    saved_urls = external_posts.parse_instagram_image_urls((existing or {}).get("image_url"))
+    form_urls = external_posts.parse_instagram_image_urls(image_url)
     return (
-        norm(existing.get("body")) == norm(body)
-        and norm(existing.get("link_url")) == norm(link_url)
-        and instagram_graph.public_instagram_image_url(existing.get("image_url"))
-        == instagram_graph.public_instagram_image_url(image_url)
+        norm((existing or {}).get("body")) == norm(body)
+        and norm((existing or {}).get("link_url")) == norm(link_url)
+        and saved_urls == form_urls
     )
 
 
@@ -5080,16 +5192,33 @@ def _external_post_form_values(blog, target, existing):
     """保存済みがあればそれを、無ければ媒体別の下書きを表示する。保存はしない。"""
     public_url = _notes_public_blog_url(blog)
     if existing:
+        image_url = existing.get("image_url") or ""
+        if target.get("channel") == "instagram":
+            image_url = external_posts.join_instagram_image_urls(
+                external_posts.parse_instagram_image_urls(image_url)
+            )
+        else:
+            image_url = _gbp_https_asset_url(image_url)
         return {
             "body": existing.get("body") or "",
             "link_url": _gbp_https_asset_url(existing.get("link_url")) or public_url,
-            "image_url": _gbp_https_asset_url(existing.get("image_url") or ""),
+            "image_url": image_url,
             "status_label": external_posts.status_caption(existing.get("status")),
         }
+    image_url = _gbp_https_asset_url(blog.get("image") or "")
+    if target.get("channel") == "instagram":
+        image_url = external_posts.instagram_jpeg_public_url(blog.get("image") or "")
     return {
-        "body": external_posts.starter_body(target["key"], blog.get("title"), blog.get("excerpt"), public_url),
+        "body": external_posts.starter_body(
+            target["key"],
+            blog.get("title"),
+            blog.get("excerpt"),
+            public_url,
+            body=blog.get("body"),
+            tags=blog.get("tags_list") or blog.get("tags"),
+        ),
         "link_url": public_url,
-        "image_url": _gbp_https_asset_url(blog.get("image") or ""),
+        "image_url": image_url,
         "status_label": external_posts.status_caption(None),
     }
 
@@ -5140,21 +5269,25 @@ def admin_blog_external_post(blog_id, target_key):
             link_url = external_posts.clean_http_url(request.form.get("link_url"))
             if target.get("channel") in {"gbp", "facebook"}:
                 image_url = (existing or {}).get("image_url") or ""
+            elif target.get("channel") == "instagram":
+                image_url = external_posts.clean_instagram_image_refs(request.form.get("image_url"))
             else:
                 image_url = external_posts.clean_image_ref(request.form.get("image_url"))
         except ValueError as exc:
             flash(str(exc), "error")
+            error_form = {
+                "body": request.form.get("body") or "",
+                "link_url": request.form.get("link_url") or "",
+                "image_url": request.form.get("image_url") or "",
+                "status_label": external_posts.status_caption((existing or {}).get("status")),
+            }
             return render_template(
                 "admin_blog_external_post.html",
                 blog=blog,
                 target=target,
-                form={
-                    "body": request.form.get("body") or "",
-                    "link_url": request.form.get("link_url") or "",
-                    "image_url": request.form.get("image_url") or "",
-                    "status_label": external_posts.status_caption((existing or {}).get("status")),
-                },
+                form=error_form,
                 events=events,
+                **(_instagram_picker_kwargs(blog, error_form["image_url"]) if target.get("channel") == "instagram" else {}),
             )
         if action == "send":
             if target.get("channel") == "facebook":
@@ -5188,6 +5321,9 @@ def admin_blog_external_post(blog_id, target_key):
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 if not _instagram_saved_matches(existing, body, link_url, image_url):
                     flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                if len(external_posts.parse_instagram_image_urls(existing.get("image_url"))) != 1:
+                    flash("複数画像のInstagram送信は次の段階です。選択した画像は保存できます。", "error")
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 try:
                     result = _run_notes_instagram_create(
@@ -5301,6 +5437,7 @@ def admin_blog_external_post(blog_id, target_key):
         instagram_send_label=_notes_instagram_send_label(gbp_status),
         instagram_posted_warning=bool(target.get("channel") == "instagram" and gbp_status == "posted"),
         instagram_unknown_warning=bool(target.get("channel") == "instagram" and gbp_status == "unknown"),
+        **(_instagram_picker_kwargs(blog, form["image_url"]) if target.get("channel") == "instagram" else {}),
     )
 
 
