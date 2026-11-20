@@ -3,6 +3,7 @@ import external_posts
 import gbp_local_post
 import gbp_read
 import gbp_schedule_sync
+import instagram_graph
 import meta_graph
 from datetime import datetime, timedelta, timezone
 import calendar
@@ -4996,6 +4997,59 @@ def _run_notes_facebook_create(existing, *, staff_id, now):
     )
 
 
+def _instagram_post_preview(target, body, image_url):
+    """Instagramの送信内容を画面確認する。Metaへは送らない。"""
+    if target.get("channel") != "instagram":
+        return None
+    return instagram_graph.instagram_preview(body, image_url)
+
+
+def _notes_instagram_screen_action(target, existing, preview):
+    if target.get("channel") != "instagram" or not existing:
+        return None
+    if existing.get("status") not in instagram_graph.INSTAGRAM_SEND_STATUSES:
+        return None
+    if preview and preview.get("ok"):
+        return "send"
+    return None
+
+
+def _notes_instagram_send_label(status):
+    if status == "posted":
+        return "この内容で新規投稿する"
+    if status == "unknown":
+        return "重複の可能性があることを理解して再投稿する"
+    if status == "failed":
+        return "この内容を再投稿する"
+    return "この内容をInstagramに投稿する"
+
+
+def _instagram_saved_matches(existing, body, link_url, image_url):
+    def norm(value):
+        return (value or "").strip()
+    return (
+        norm(existing.get("body")) == norm(body)
+        and norm(existing.get("link_url")) == norm(link_url)
+        and instagram_graph.public_instagram_image_url(existing.get("image_url"))
+        == instagram_graph.public_instagram_image_url(image_url)
+    )
+
+
+def _run_notes_instagram_create(existing, *, staff_id, now):
+    """KARiN.NOTES専用。保存済みInstagramだけ投稿する。FacebookとGBPからは呼ばない。"""
+    config = instagram_graph.load_instagram_config()
+    return instagram_graph.perform_notes_instagram_create(
+        supabase_admin,
+        existing,
+        config=config,
+        post_exchange=instagram_graph.instagram_post_exchange,
+        accounts_exchange=meta_graph.facebook_accounts_exchange,
+        get_exchange=instagram_graph.instagram_get_exchange,
+        now=now,
+        staff_id=staff_id,
+    )
+
+
 def _notes_public_blog_url(blog):
     slug = (blog.get("slug") or "").strip().lstrip("/")
     if not slug:
@@ -5124,6 +5178,27 @@ def admin_blog_external_post(blog_id, target_key):
                     return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
                 flash(result["message"], "success" if result["ok"] else "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+            if target.get("channel") == "instagram":
+                if not existing:
+                    flash("保存したInstagramだけ送信できます", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                allowed, reason = instagram_graph.can_send_instagram_record(existing)
+                if not allowed:
+                    flash(reason, "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                if not _instagram_saved_matches(existing, body, link_url, image_url):
+                    flash("保存した内容と違うため送信しません。保存してから投稿してください。", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                try:
+                    result = _run_notes_instagram_create(
+                        existing, staff_id=staff.get("id"), now=now
+                    )
+                except Exception:
+                    print("❌ Instagram投稿の送信エラー")
+                    flash("投稿処理に失敗しました。自動では再送しません。", "error")
+                    return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
+                flash(result["message"], "success" if result["ok"] else "error")
+                return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
             if target.get("channel") != "gbp" or not existing:
                 flash("保存したGBPだけ送信できます", "error")
                 return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
@@ -5204,6 +5279,7 @@ def admin_blog_external_post(blog_id, target_key):
     gbp_status = (existing or {}).get("status")
     gbp_locked = bool(existing and existing.get("status") == "posting")
     facebook_preview = _facebook_post_preview(target, form["body"], form["link_url"])
+    instagram_preview = _instagram_post_preview(target, form["body"], form["image_url"])
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
@@ -5220,6 +5296,11 @@ def admin_blog_external_post(blog_id, target_key):
         facebook_send_label=_notes_facebook_send_label(gbp_status),
         facebook_posted_warning=bool(target.get("channel") == "facebook" and gbp_status == "posted"),
         facebook_unknown_warning=bool(target.get("channel") == "facebook" and gbp_status == "unknown"),
+        instagram_preview=instagram_preview,
+        instagram_action=_notes_instagram_screen_action(target, existing, instagram_preview),
+        instagram_send_label=_notes_instagram_send_label(gbp_status),
+        instagram_posted_warning=bool(target.get("channel") == "instagram" and gbp_status == "posted"),
+        instagram_unknown_warning=bool(target.get("channel") == "instagram" and gbp_status == "unknown"),
     )
 
 

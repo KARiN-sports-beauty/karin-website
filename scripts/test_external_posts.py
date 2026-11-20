@@ -314,12 +314,77 @@ def main():
             gbp_send_label="重複の可能性があることを理解して再投稿する",
             gbp_repost_warning=True,
         )
+        instagram = external_posts.get_target("instagram")
         instagram_html = appmod.render_template(
             "admin_blog_external_post.html",
             blog=live_blog,
-            target=external_posts.get_target("instagram"),
+            target=instagram,
             form={"body": "本文", "link_url": "https://karin-sb.jp/", "image_url": "", "status_label": "未投稿"},
             events=[],
+        )
+        instagram_preview = appmod._instagram_post_preview(
+            instagram, "本文", "https://karin-sb.jp/static/images/notes/a.jpg"
+        )
+        instagram_send_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=instagram,
+            form={
+                "body": "本文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
+                "status_label": "下書き保存",
+            },
+            events=[],
+            instagram_preview=instagram_preview,
+            instagram_action="send",
+            instagram_send_label="この内容をInstagramに投稿する",
+        )
+        instagram_posted_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=instagram,
+            form={
+                "body": "本文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
+                "status_label": "投稿済",
+            },
+            events=[],
+            instagram_preview=instagram_preview,
+            instagram_action="send",
+            instagram_send_label="この内容で新規投稿する",
+            instagram_posted_warning=True,
+        )
+        instagram_unknown_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=instagram,
+            form={
+                "body": "本文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
+                "status_label": "要確認",
+            },
+            events=[],
+            instagram_preview=instagram_preview,
+            instagram_action="send",
+            instagram_send_label="重複の可能性があることを理解して再投稿する",
+            instagram_unknown_warning=True,
+        )
+        instagram_posting_html = appmod.render_template(
+            "admin_blog_external_post.html",
+            blog=live_blog,
+            target=instagram,
+            form={
+                "body": "本文",
+                "link_url": "https://karin-sb.jp/blog/a",
+                "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
+                "status_label": "送信中",
+            },
+            events=[],
+            instagram_preview=instagram_preview,
+            instagram_action=None,
         )
         facebook = external_posts.get_target("facebook")
         facebook_preview = appmod._facebook_post_preview(facebook, "本文", "https://karin-sb.jp/blog/a")
@@ -407,13 +472,46 @@ def main():
         "この内容をFacebookに投稿する" not in instagram_html
         and "この内容で新規投稿する" not in instagram_html
         and 'name="action" value="send"' not in instagram_html
-        and "保存した内容だけをFacebookへ投稿できます" not in instagram_html,
-        "Instagram画面にFacebook送信ボタンは無い",
+        and "保存した内容だけをFacebookへ投稿できます" not in instagram_html
+        and "GBPへの送信はこの画面のボタンで行います" not in instagram_html
+        and "リンクカードにはなりません" in instagram_html,
+        "Instagram画面にFacebook送信ボタンは無く、Instagram向けの説明がある",
+    )
+    report(
+        'name="action" value="save"' in instagram_send_html
+        and "この内容をInstagramに投稿する" in instagram_send_html
+        and "caption:" in instagram_send_html
+        and "image_url:" in instagram_send_html
+        and "https://karin-sb.jp/static/images/notes/a.jpg" in instagram_send_html
+        and "この内容をFacebookに投稿する" not in instagram_send_html
+        and "この内容をGoogleに投稿する" not in instagram_send_html,
+        "Instagram画面は保存と送信を分け、キャプションと画像URLを確認できる",
+    )
+    report(
+        "この内容で新規投稿する" in instagram_posted_html
+        and "新しいInstagram投稿を作ります" in instagram_posted_html,
+        "Instagramの投稿済画面は警告つきで新規投稿できる",
+    )
+    report(
+        "重複の可能性があることを理解して再投稿する" in instagram_unknown_html
+        and "前回の成否が未確認です" in instagram_unknown_html,
+        "Instagramの成否未確認画面は警告つきで再投稿できる",
+    )
+    report(
+        'name="action" value="send"' not in instagram_posting_html
+        and "この内容をInstagramに投稿する" not in instagram_posting_html
+        and "この内容で新規投稿する" not in instagram_posting_html,
+        "Instagram送信中の画面は送信できない",
     )
     report(
         "この内容をFacebookに投稿する" not in send_html
         and "この内容をGoogleに投稿する" in send_html,
         "GBP送信画面にFacebook送信ボタンは無い",
+    )
+    report(
+        "この内容をInstagramに投稿する" not in send_html
+        and "この内容をInstagramに投稿する" not in facebook_html,
+        "GBPとFacebookの送信画面にInstagram送信ボタンは無い",
     )
     report(
         'name="action" value="save"' in facebook_html
@@ -447,6 +545,41 @@ def main():
         appmod._facebook_post_preview(external_posts.get_target("instagram"), "本文", "https://karin-sb.jp/blog/a") is None
         and appmod._facebook_post_preview(tokyo, "本文", "https://karin-sb.jp/") is None,
         "InstagramとGBPにFacebook確認は出ない",
+    )
+    report(
+        appmod._instagram_post_preview(facebook, "本文", "https://karin-sb.jp/static/images/notes/a.jpg") is None
+        and appmod._instagram_post_preview(tokyo, "本文", "https://karin-sb.jp/static/images/notes/a.jpg") is None,
+        "FacebookとGBPにInstagram確認は出ない",
+    )
+    report(
+        appmod._notes_instagram_screen_action(instagram, {"status": "draft", "id": "1"}, instagram_preview) == "send"
+        and appmod._notes_instagram_screen_action(instagram, {"status": "failed", "id": "1"}, instagram_preview) == "send"
+        and appmod._notes_instagram_screen_action(instagram, {"status": "posted", "id": "1"}, instagram_preview) == "send"
+        and appmod._notes_instagram_screen_action(instagram, {"status": "unknown", "id": "1"}, instagram_preview) == "send"
+        and appmod._notes_instagram_screen_action(instagram, {"status": "posting", "id": "1"}, instagram_preview) is None
+        and appmod._notes_instagram_screen_action(facebook, {"status": "draft", "id": "1"}, instagram_preview) is None,
+        "Instagramは投稿済と未確認も明示送信でき、送信中とFacebookは対象外",
+    )
+    report(
+        appmod._notes_instagram_send_label("posted") == "この内容で新規投稿する"
+        and appmod._notes_instagram_send_label("unknown") == "重複の可能性があることを理解して再投稿する"
+        and appmod._notes_instagram_send_label("failed") == "この内容を再投稿する",
+        "Instagram送信ボタンの文言は状態ごとに分かれる",
+    )
+    report(
+        appmod._instagram_saved_matches(
+            {"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "/static/images/notes/a.jpg"},
+            "本文",
+            "https://karin-sb.jp/blog/a",
+            "https://karin-sb.jp/static/images/notes/a.jpg",
+        )
+        and not appmod._instagram_saved_matches(
+            {"body": "本文", "link_url": "https://karin-sb.jp/blog/a", "image_url": "/static/images/notes/a.jpg"},
+            "別の本文",
+            "https://karin-sb.jp/blog/a",
+            "https://karin-sb.jp/static/images/notes/a.jpg",
+        ),
+        "Instagramは保存内容と画面内容が一致するときだけ送れる",
     )
     report(
         appmod._notes_facebook_screen_action(facebook, {"status": "draft", "id": "1"}, facebook_preview) == "send"
