@@ -327,6 +327,29 @@ def _collapse_instagram_jp_spaces(text):
     return text
 
 
+_INSTAGRAM_TOPIC_TAGS = (
+    "ストレッチポール",
+    "姿勢改善",
+    "エクササイズ",
+    "肩甲骨",
+    "猫背",
+    "セルフケア",
+    "肩こり",
+    "整体",
+    "鍼灸",
+    "コンディショニング",
+    "トレーニング",
+    "筋膜",
+    "呼吸",
+    "骨盤",
+    "股関節",
+    "姿勢",
+    "運動",
+    "身体のつながり",
+)
+_INSTAGRAM_ONCE_MARKERS = ("頑張", "姿勢を良く", "変えようとし", "改善しよう")
+
+
 def _instagram_hashtags(tags):
     values = tags if isinstance(tags, (list, tuple)) else []
     if isinstance(tags, str):
@@ -342,6 +365,27 @@ def _instagram_hashtags(tags):
         if len(hashtags) >= 5:
             break
     return hashtags
+
+
+def _instagram_topic_tags(title, excerpt, body):
+    source = " ".join(
+        [
+            title or "",
+            excerpt or "",
+            _plain_article_text(body or ""),
+        ]
+    )
+    return [word for word in _INSTAGRAM_TOPIC_TAGS if word in source]
+
+
+def _instagram_caption_hashtags(tags, title, excerpt, body):
+    values = []
+    if isinstance(tags, (list, tuple)):
+        values.extend(tags)
+    elif isinstance(tags, str) and tags:
+        values.append(tags)
+    values.extend(_instagram_topic_tags(title, excerpt, body))
+    return _instagram_hashtags(values)
 
 
 def _sentence_key(text):
@@ -373,76 +417,270 @@ def _ensure_sentence(text):
     return item + "。"
 
 
-def _html_blocks(html):
-    blocks = []
-    for raw in re.findall(
-        r"<li[^>]*>.*?</li>|<p[^>]*>.*?</p>",
-        html or "",
-        flags=re.I | re.S,
-    ):
-        text = _plain_article_text(raw)
-        if text:
-            blocks.append(text)
-    if not blocks:
-        for raw in re.findall(r"<h[2-3][^>]*>.*?</h[2-3]>", html or "", flags=re.I | re.S):
-            text = _plain_article_text(raw)
-            if text:
-                blocks.append(text)
-    if not blocks:
-        plain = _plain_article_text(html)
-        if plain:
-            blocks.append(plain)
-    return blocks
-
-
-def _unique_sentences(candidates, skipped):
-    used = [_sentence_key(item) for item in skipped if _sentence_key(item)]
-    result = []
-    for raw in candidates:
-        for sentence in _complete_sentences(_ensure_sentence(raw)):
-            key = _sentence_key(sentence)
-            if len(key) < 6:
-                continue
-            if any(key == seen or key in seen or seen in key for seen in used if seen):
-                continue
-            used.append(key)
-            result.append(sentence)
-    return result
-
-
 def _join_caption(parts):
     return "\n\n".join(part for part in parts if part)
 
 
-def _starter_instagram_body(title, excerpt, body, tags):
-    """Instagram未保存時の下書き。重複を避け、文の途中では切らない。"""
+def _join_instagram_sentences(sentences):
+    chunks = []
+    for index, raw in enumerate(sentences):
+        item = _ensure_sentence(raw)
+        if not item:
+            continue
+        if index == 0:
+            item = re.sub(r"^(そして、|また、|今回は、)", "", item)
+        chunks.append(item)
+    return _collapse_instagram_jp_spaces("".join(chunks))
+
+
+def _shares_instagram_span(left, right, size=14):
+    first = _sentence_key(left)
+    second = _sentence_key(right)
+    if not first or not second:
+        return False
+    if first == second or first in second or second in first:
+        return True
+    if len(first) < size or len(second) < size:
+        return False
+    return any(first[index:index + size] in second for index in range(len(first) - size + 1))
+
+
+def _instagram_used_overlap(sentence, used):
+    key = _sentence_key(sentence)
+    if not key or len(key) < 6:
+        return True
+    for seen in used:
+        if not seen:
+            continue
+        if key == seen or key in seen or seen in key:
+            return True
+        if len(key) >= 14 and len(seen) >= 14:
+            if any(key[index:index + 14] in seen for index in range(len(key) - 13)):
+                return True
+    return False
+
+
+def _instagram_article_units(html):
+    units = []
+    heading = ""
+    found = False
+    for raw in re.findall(
+        r"<h[2-3][^>]*>.*?</h[2-3]>|<li[^>]*>.*?</li>|<p[^>]*>.*?</p>",
+        html or "",
+        flags=re.I | re.S,
+    ):
+        text = _plain_article_text(raw)
+        if not text:
+            continue
+        found = True
+        if re.match(r"<h[2-3]", raw, flags=re.I):
+            heading = text
+            continue
+        units.append({"text": text, "heading": heading})
+    if not found:
+        plain = _plain_article_text(html)
+        if plain:
+            units.append({"text": plain, "heading": ""})
+    return units
+
+
+def _instagram_skip_sentence(sentence):
+    text = sentence or ""
+    key = _sentence_key(text)
+    if len(key) < 8:
+        return True
+    if "→" in text or "➡" in text:
+        return True
+    if re.search(r"https?://", text, flags=re.I):
+        return True
+    if re.search(r"(でしょうか。?$)", text):
+        return True
+    if re.search(r"今回は[、,]?.{0,80}紹介します", text):
+        return True
+    if text.endswith("かもしれません。"):
+        return True
+    if re.match(r"^(もちろん、|ただ、)", text) and not re.search(
+        r"(わけでは|ではなく|ありません)", text
+    ):
+        return True
+    if re.search(r"(対応エリア|営業時間|定休日|完全予約制|090-|info@karin)", text):
+        return True
+    if re.search(r"(藤田|フジタ)", text) and len(text) < 40:
+        return True
+    if len(text) < 36 and not re.search(r"(です|ます|でしょう|ません|ましょう|ください)", text):
+        return True
+    return False
+
+
+def _instagram_once_markers(sentence):
+    text = sentence or ""
+    return [marker for marker in _INSTAGRAM_ONCE_MARKERS if marker in text]
+
+
+def _instagram_once_overlap(sentence, used_markers):
+    return any(marker in used_markers for marker in _instagram_once_markers(sentence))
+
+
+def _instagram_sentence_role(sentence, index, total, heading):
+    text = sentence or ""
+    place = index / max(total, 1)
+    heading_text = heading or ""
+    if "まとめ" in heading_text or "おわり" in heading_text:
+        return "close"
+    if re.search(r"頑張", text) and re.search(r"(姿勢|身体|変化)", text):
+        return "close"
+    if re.search(r"(まずは|行ってみ|してみましょう|仰向け|目安|回数|肩甲骨)", text):
+        return "practice"
+    if place >= 0.72 or re.search(r"(始めてみ|必要はありません|つなげる|取り入れて)", text):
+        return "close"
+    if re.search(r"(大切|ではなく|わけでは|ではありません|感じること|考え方)", text):
+        return "think"
+    if place < 0.38:
+        return "think"
+    if place < 0.72:
+        return "practice"
+    return "close"
+
+
+def _instagram_practice_score(item):
+    text = item["text"]
+    score = 0
+    if "まずは" in text:
+        score += 3
+    if re.search(r"(肩甲骨|肩まわり|仰向け|床)", text):
+        score += 2
+    if re.search(r"(目安|10回|回数)", text):
+        score += 3
+    if "確認" in text:
+        score += 1
+    return score
+
+
+def _collect_instagram_sentences(body, skipped):
+    used = [_sentence_key(item) for item in skipped if _sentence_key(item)]
+    collected = []
+    units = _instagram_article_units(body)
+    pending = []
+    for unit in units:
+        for sentence in _complete_sentences(_ensure_sentence(unit["text"])):
+            if _instagram_skip_sentence(sentence):
+                continue
+            if any(_shares_instagram_span(sentence, item) for item in skipped if item):
+                continue
+            if _instagram_used_overlap(sentence, used):
+                continue
+            used.append(_sentence_key(sentence))
+            pending.append({"text": sentence, "heading": unit["heading"]})
+    total = len(pending)
+    for index, item in enumerate(pending):
+        collected.append(
+            {
+                "text": item["text"],
+                "heading": item["heading"],
+                "index": index,
+                "role": _instagram_sentence_role(item["text"], index, total, item["heading"]),
+            }
+        )
+    return collected
+
+
+def _take_instagram_role(items, role, limit, extra_used, used_markers):
+    chosen = []
+    for item in items:
+        if item["role"] != role:
+            continue
+        if _instagram_used_overlap(item["text"], extra_used):
+            continue
+        if _instagram_once_overlap(item["text"], used_markers):
+            continue
+        extra_used.append(_sentence_key(item["text"]))
+        used_markers.update(_instagram_once_markers(item["text"]))
+        chosen.append(item)
+        if len(chosen) >= limit:
+            break
+    return chosen
+
+
+def _instagram_prose_paragraphs(title, excerpt, body):
+    """記事の役割ごとに要点を選び、箇条書きではなく段落へつなぐ。"""
     heading = (title or "").strip() or "KARiN.NOTES"
-    excerpt_text = re.sub(r"\s+", " ", excerpt or "").strip()
-    intro = _ensure_sentence(excerpt_text) if excerpt_text else ""
-    if intro and _sentence_key(intro) == _sentence_key(heading):
-        intro = ""
-    points = _unique_sentences(_html_blocks(body), [heading, intro])
-    selected = points[:3]
-    hashtags = _instagram_hashtags(tags)
+    excerpt_text = _collapse_instagram_jp_spaces(re.sub(r"\s+", " ", excerpt or "").strip())
+    opening = _ensure_sentence(excerpt_text) if excerpt_text else ""
+    if opening and _sentence_key(opening) == _sentence_key(heading):
+        opening = ""
+    skipped = [heading, opening]
+    items = _collect_instagram_sentences(body, skipped)
+    used = [_sentence_key(item) for item in skipped if _sentence_key(item)]
+    used_markers = set()
+    think_items = _take_instagram_role(items, "think", 2, used, used_markers)
+    practice_pool = [item for item in items if item["role"] == "practice"]
+    practice_pool.sort(key=lambda item: (-_instagram_practice_score(item), item["index"]))
+    practice_items = []
+    saw_count = False
+    for item in practice_pool:
+        if _instagram_used_overlap(item["text"], used):
+            continue
+        if _instagram_once_overlap(item["text"], used_markers):
+            continue
+        if re.search(r"(10回|回数)", item["text"]):
+            if saw_count:
+                continue
+            saw_count = True
+        used.append(_sentence_key(item["text"]))
+        used_markers.update(_instagram_once_markers(item["text"]))
+        practice_items.append(item)
+        if len(practice_items) >= 3:
+            break
+    practice_items.sort(key=lambda item: item["index"])
+    close_items = _take_instagram_role(list(reversed(items)), "close", 1, used, used_markers)
+    leftovers = [item for item in items if not _instagram_used_overlap(item["text"], used)]
+    if not think_items and leftovers:
+        think_items = [leftovers.pop(0)]
+        used.append(_sentence_key(think_items[0]["text"]))
+    if not practice_items and leftovers:
+        practice_items = leftovers[:2]
+        for item in practice_items:
+            used.append(_sentence_key(item["text"]))
+
+    paragraphs = []
+    if opening:
+        paragraphs.append(opening)
+    think_text = _join_instagram_sentences(item["text"] for item in think_items)
+    practice_text = _join_instagram_sentences(item["text"] for item in practice_items)
+    close_text = _join_instagram_sentences(item["text"] for item in close_items)
+    if think_text and practice_text and len(think_text) < 80:
+        paragraphs.append(_collapse_instagram_jp_spaces(think_text + practice_text))
+        practice_text = ""
+    elif think_text:
+        paragraphs.append(think_text)
+    if practice_text:
+        paragraphs.append(practice_text)
+    if close_text:
+        paragraphs.append(close_text)
+    if not paragraphs and heading:
+        paragraphs.append(heading)
+    return heading, paragraphs
+
+
+def _starter_instagram_body(title, excerpt, body, tags):
+    """Instagram未保存時の下書き。記事の要点を自然な文章へ再構成する。"""
+    heading, paragraphs = _instagram_prose_paragraphs(title, excerpt, body)
+    hashtags = _instagram_caption_hashtags(tags, title, excerpt, body)
     cta = INSTAGRAM_NOTES_CTA
-
-    def build(point_lines, tag_line):
-        bullets = "\n".join("・" + item for item in point_lines)
-        return _join_caption([heading, intro, bullets, cta, tag_line])
-
     tag_line = " ".join(hashtags)
-    text = build(selected, tag_line)
-    while selected and len(text) > 600 and len(selected) > 2:
-        selected = selected[:-1]
-        text = build(selected, tag_line)
+
+    def build(parts, tags_text):
+        return _join_caption([heading, *parts, cta, tags_text])
+
+    text = build(paragraphs, tag_line)
+    while paragraphs and len(text) > INSTAGRAM_CAPTION_MAX and len(paragraphs) > 1:
+        paragraphs = paragraphs[:-1]
+        text = build(paragraphs, tag_line)
     if len(text) > INSTAGRAM_CAPTION_MAX and tag_line:
         tag_line = ""
-        text = build(selected, tag_line)
-    while selected and len(text) > INSTAGRAM_CAPTION_MAX:
-        selected = selected[:-1]
-        text = build(selected, tag_line)
+        text = build(paragraphs, tag_line)
     if len(text) > INSTAGRAM_CAPTION_MAX:
-        text = _join_caption([heading, intro, cta])
+        text = _join_caption([heading, paragraphs[0] if paragraphs else "", cta])
     return text
 
 

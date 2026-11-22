@@ -324,9 +324,14 @@ def test_instagram_caption_spaces():
         "そこから<strong>身体を実際に動かしてみること</strong>も大切です。</p>"
         "<p>今回は、ストレッチポールを使って肩まわりや肩甲骨を動かしながら、"
         "姿勢の変化を感じていく基本的なエクササイズを紹介します。</p>"
+        "<p>ポイントは、最初から「姿勢を良くしよう」と頑張ることではありません。</p>"
+        "<p><strong>寝る → 感じる → 動かす → もう一度寝る → 変化を感じる。</strong></p>"
+        "<p>ただ、ストレッチポールに乗っただけで姿勢が変わるわけではありません。</p>"
+        "<p>いきなりエクササイズを始めるのではなく、まずは床に仰向けになってみましょう。</p>"
         "<p>それぞれの動きは<strong>10回程度</strong>を目安に行ってみましょう。</p>"
-        "<p>歩幅の目安は 10 cm です。BCAA 5 g を目安にします。</p>"
-        "<p>詳しくは https://karin-sb.jp/blog/stretch-pole-posture を見てください。</p>"
+        "<h2>まとめ｜ストレッチポールで身体の変化を感じてみよう</h2>"
+        "<p>「姿勢を良くしなければ」と頑張るのではなく、まずは自分の身体がどう動いて、"
+        "どう変化するのかを感じてみるところから始めてみましょう。</p>"
     )
     stretch_text = external_posts.starter_body(
         "instagram",
@@ -346,17 +351,49 @@ def test_instagram_caption_spaces():
         "日本語の文字と助詞の間に半角スペースを残さない",
         stretch_text,
     )
-    report(stretch_text.count("・") == 3, "箇条書きは途中で切らず3件まで使う", str(stretch_text.count("・")))
-    report("…" not in stretch_text, "箇条書きを文の途中で切らない")
+    report(
+        not any(line.startswith("・") for line in stretch_text.splitlines()),
+        "Instagram初期文面は箇条書きにしない",
+        stretch_text,
+    )
+    report("…" not in stretch_text, "Instagram初期文面は途中で切らない")
     report(
         stretch_text.count("ストレッチポールを使って、猫背や姿勢が気になる方でも自宅でできる基本エクササイズを紹介します") == 1,
-        "概要と同じ説明を箇条書きで重複させない",
+        "冒頭の概要と同じ説明を本文で繰り返さない",
+    )
+    report(
+        "今回は、ストレッチポールを使って肩まわりや肩甲骨を動かしながら" not in stretch_text,
+        "記事冒頭の紹介文を本文へ重ねない",
+        stretch_text,
+    )
+    report(
+        "床に仰向け" in stretch_text or "10回程度" in stretch_text,
+        "記事の具体的な実践内容を自然な文章として残す",
+        stretch_text,
+    )
+    report("→" not in stretch_text and "➡" not in stretch_text, "矢印の手順書きを投稿文に入れない", stretch_text)
+    report(stretch_text.count("頑張") == 1, "同じ考え方を複数の段落で繰り返さない", stretch_text)
+    report(
+        "始めてみましょう" in stretch_text or "頑張ることではありません" in stretch_text,
+        "実践するときの考え方を締めとして残す",
+        stretch_text,
+    )
+    report(
+        stretch_text.count("\n\n") >= 3,
+        "要点を自然な段落としてつなぐ",
+        stretch_text,
     )
     report(
         "詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" in stretch_text,
         "スペース修正後もプロフィール誘導を維持する",
     )
     report("#セルフケア" in stretch_text and "#運動" in stretch_text, "スペース修正後も記事タグのハッシュタグを維持する")
+    report(
+        4 <= stretch_text.count("#") <= 5,
+        "記事のテーマからハッシュタグを5個程度付ける",
+        str(stretch_text.count("#")),
+    )
+    report("#ストレッチポール" in stretch_text, "タイトルや本文に出るテーマをハッシュタグにする")
 
     unit_html = (
         "<p>歩幅の目安は 10 cm です。</p>"
@@ -417,12 +454,16 @@ def test_caption_and_images():
     )
     report(article_url not in long_text, "長い記事でも記事URLを入れない")
     report("…" not in long_text, "長い記事でも文の途中で切らない")
-    report(long_text.count("・") == 3, "重要なポイントを2〜3個紹介する", str(long_text.count("・")))
+    report(
+        not any(line.startswith("・") for line in long_text.splitlines()),
+        "長い記事でも箇条書きにせず文章でつなぐ",
+        long_text,
+    )
     report(
         "全身の使い方から考えます。" in long_text
         and "負担が集まります。" in long_text
         and "ゆるめていきます。" in long_text,
-        "ポイントは見出し配下の文を自然な文末のまま使う",
+        "見出し配下の具体的な内容を自然な文末のまま残す",
     )
     report(long_text.count("肩だけの問題ではないことがあります") == 1, "概要を本文ポイントと重複させない")
     report(long_text.count("#") <= 5, "ハッシュタグは記事タグから絞る", str(long_text.count("#")))
