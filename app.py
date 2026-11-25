@@ -1025,6 +1025,67 @@ def snap_reservation_datetime_naive(dt_naive):
     snapped = round(total / BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES
     h, mi = divmod(int(snapped), 60)
     return dt_naive.replace(hour=h, minute=mi, second=0, microsecond=0)
+
+
+def parse_admin_reservation_clock(time_param, default_hour=9, default_minute=0):
+    """管理画面の開始時刻。24:00〜26:00もHH:MMで返す。"""
+    minutes = parse_booking_hm_to_minutes(time_param) if time_param else None
+    if minutes is None:
+        minutes = int(default_hour) * 60 + int(default_minute)
+    minutes = int(round(minutes / BOOKING_SLOT_STEP_MINUTES) * BOOKING_SLOT_STEP_MINUTES)
+    max_min = RESERVATION_TIMELINE_END_HOUR * 60
+    minutes = max(0, min(max_min, minutes))
+    hour, minute = divmod(minutes, 60)
+    return f"{hour:02d}:{minute:02d}"
+
+
+def admin_reservation_form_datetime_parts(date_param, time_param, default_hour=9, default_minute=0):
+    """クリック日時などから、日付・時刻・送信用値を作る。"""
+    try:
+        day = datetime.strptime((date_param or "")[:10], "%Y-%m-%d").date()
+    except Exception:
+        return "", "", ""
+    clock = parse_admin_reservation_clock(time_param, default_hour, default_minute)
+    date_s = day.strftime("%Y-%m-%d")
+    return date_s, clock, f"{date_s}T{clock}"
+
+
+def admin_reservation_default_end_clock(start_clock, fallback="19:00"):
+    """予定・休憩・帯同の終了時刻。開始の1時間後を初期値にする。"""
+    minutes = parse_booking_hm_to_minutes(start_clock) if start_clock else None
+    if minutes is None:
+        return fallback
+    end = minutes + 60
+    max_min = RESERVATION_TIMELINE_END_HOUR * 60
+    if end > max_min:
+        end = max_min
+    if end <= minutes:
+        return parse_admin_reservation_clock(start_clock)
+    hour, minute = divmod(end, 60)
+    return f"{hour:02d}:{minute:02d}"
+
+
+def parse_admin_reservation_form_datetime(reserved_at_str, default_hour=9, default_minute=0):
+    """管理画面の予約日時。YYYY-MM-DDTHH:MM（24時超可）をJSTのdatetimeにする。"""
+    raw = (reserved_at_str or "").strip().replace(" ", "T")
+    if not raw:
+        return None
+    if "T" in raw:
+        date_part, time_part = raw.split("T", 1)
+        clock = parse_admin_reservation_clock(time_part[:5], default_hour, default_minute)
+    else:
+        date_part = raw[:10]
+        clock = parse_admin_reservation_clock("", default_hour, default_minute)
+    try:
+        day = datetime.strptime(date_part[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+    hour, minute = [int(part) for part in clock.split(":")]
+    return datetime.combine(day, datetime.min.time()).replace(tzinfo=JST) + timedelta(
+        hours=hour, minutes=minute
+    )
+
+
 # 現時点からこの分数以内の枠は Web 予約不可（○×△上は ×）
 # 理由: 予約直後に気づけない／施術中で対応できない可能性があるため
 BOOKING_MIN_LEAD_MINUTES = 12 * 60
@@ -8345,26 +8406,10 @@ def admin_reservations_new():
             date_param = request.args.get("date", "")
             time_param = request.args.get("time", "")
             initial_staff_name = (request.args.get("staff_name", "") or "").strip()
-            initial_date = None
-            if date_param:
-                try:
-                    # YYYY-MM-DD形式をdatetime-local形式に変換
-                    date_obj = datetime.strptime(date_param, "%Y-%m-%d")
-                    hour = 9
-                    minute = 0
-                    if time_param:
-                        try:
-                            hm = datetime.strptime(time_param, "%H:%M")
-                            snapped = snap_reservation_datetime_naive(
-                                date_obj.replace(hour=hm.hour, minute=hm.minute)
-                            )
-                            hour = snapped.hour
-                            minute = snapped.minute
-                        except Exception:
-                            pass
-                    initial_date = date_obj.replace(hour=hour, minute=minute).strftime("%Y-%m-%dT%H:%M")
-                except:
-                    pass
+            initial_date_part, initial_time_part, initial_date = admin_reservation_form_datetime_parts(
+                date_param, time_param
+            )
+            initial_end_time = admin_reservation_default_end_clock(initial_time_part) if initial_time_part else "19:00"
             
             # 患者一覧取得（autocomplete用）
             patients = load_patients_for_autocomplete()
@@ -8411,6 +8456,9 @@ def admin_reservations_new():
                 staff_name=selected_staff_name,
                 staff_list=staff_list,
                 initial_date=initial_date,
+                initial_date_part=initial_date_part,
+                initial_time_part=initial_time_part,
+                initial_end_time=initial_end_time,
                 viewer_is_admin=viewer_is_admin,
             )
         except Exception as e:
@@ -8479,18 +8527,14 @@ def admin_reservations_new():
             return redirect("/admin/reservations/new")
         
         try:
-            if "T" in reserved_at_str:
-                dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
-                dt_naive = snap_reservation_datetime_naive(dt_naive)
-            else:
-                dpart = reserved_at_str[:10]
-                dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
-                # 帯同で日付のみの場合は 10:00 開始（従来データ互換）
-                default_h, default_m = (10, 0) if place_type == "field" else (9, 0)
-                if place_type == "break":
-                    default_h, default_m = (9, 0)
-                dt_naive = dt_naive.replace(hour=default_h, minute=default_m, second=0, microsecond=0)
-            dt_jst = dt_naive.replace(tzinfo=JST)
+            default_h, default_m = (10, 0) if place_type == "field" else (9, 0)
+            if place_type == "break":
+                default_h, default_m = (9, 0)
+            dt_jst = parse_admin_reservation_form_datetime(
+                reserved_at_str, default_h, default_m
+            )
+            if dt_jst is None:
+                raise ValueError("empty datetime")
             reserved_at_iso = dt_jst.isoformat()
         except Exception:
             flash("予約日時の形式が正しくありません", "error")
@@ -9057,6 +9101,8 @@ def admin_reservations_edit(reservation_id):
                     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                     dt_jst = dt.astimezone(JST)
                     reservation["reserved_at_display_local"] = dt_jst.strftime("%Y-%m-%dT%H:%M")
+                    reservation["reserved_at_date_part"] = dt_jst.strftime("%Y-%m-%d")
+                    reservation["reserved_at_time_part"] = dt_jst.strftime("%H:%M")
                     if reservation.get("place_type") in RESERVATION_NON_PATIENT_PLACE_TYPES:
                         default_dur = 540 if reservation.get("place_type") == "field" else 60
                         dur_m = int(reservation.get("duration_minutes") or default_dur)
@@ -9065,9 +9111,13 @@ def admin_reservations_edit(reservation_id):
                         reservation["field_end_time_display"] = "19:00"
                 else:
                     reservation["reserved_at_display_local"] = ""
+                    reservation["reserved_at_date_part"] = ""
+                    reservation["reserved_at_time_part"] = ""
                     reservation["field_end_time_display"] = "19:00"
             except Exception:
                 reservation["reserved_at_display_local"] = ""
+                reservation["reserved_at_date_part"] = ""
+                reservation["reserved_at_time_part"] = ""
                 reservation["field_end_time_display"] = "19:00"
             
             # nominated_staff_idsをJSONからパース
@@ -9169,17 +9219,13 @@ def admin_reservations_edit(reservation_id):
             return redirect(f"/admin/reservations/{reservation_id}/edit")
         
         form_place_type_early = request.form.get("place_type", "").strip()
-        # datetime-local または 日付のみをISO形式に変換
         try:
-            if "T" in reserved_at_str:
-                dt_naive = datetime.strptime(reserved_at_str[:16], "%Y-%m-%dT%H:%M")
-                dt_naive = snap_reservation_datetime_naive(dt_naive)
-            else:
-                dpart = reserved_at_str[:10]
-                dt_naive = datetime.strptime(dpart, "%Y-%m-%d")
-                default_h, default_m = (10, 0) if form_place_type_early == "field" else (9, 0)
-                dt_naive = dt_naive.replace(hour=default_h, minute=default_m, second=0, microsecond=0)
-            dt_jst = dt_naive.replace(tzinfo=JST)
+            default_h, default_m = (10, 0) if form_place_type_early == "field" else (9, 0)
+            dt_jst = parse_admin_reservation_form_datetime(
+                reserved_at_str, default_h, default_m
+            )
+            if dt_jst is None:
+                raise ValueError("empty datetime")
             reserved_at_iso = dt_jst.isoformat()
         except Exception:
             flash("予約日時の形式が正しくありません", "error")

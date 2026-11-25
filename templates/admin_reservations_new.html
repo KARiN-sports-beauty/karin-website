@@ -25,6 +25,30 @@
       <option value="break">休憩</option>
     </select>
   </div>
+
+  <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; position: relative;">
+    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始日時</label>
+    <div class="admin-reservation-start-pickers">
+      <div class="admin-reservation-native-input-wrap">
+        <input type="text" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="2026-11-25" value="{{ initial_date_part or '' }}">
+      </div>
+      <div class="admin-reservation-native-input-wrap">
+        <input type="text" id="reserved_at_time" class="admin-reservation-start-time" aria-label="開始時刻" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="14:00" value="{{ initial_time_part or '' }}">
+      </div>
+    </div>
+    <input type="hidden" name="reserved_at" id="reserved_at" value="{{ initial_date or '' }}">
+    <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">日付は 2026-11-25、時刻は 14:00 の形式で入力できます（24:00〜26:00可）。院内・出張・帯同・予定・休憩で同じ開始日時です。</small>
+  </div>
+
+  <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
+    <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">終了時刻</label>
+    <div class="admin-reservation-start-pickers">
+      <div class="admin-reservation-native-input-wrap">
+        <input type="text" name="field_end_time" id="field_end_time" class="admin-reservation-start-time" aria-label="終了時刻" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:00" value="{{ initial_end_time or '19:00' }}">
+      </div>
+    </div>
+    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可。翌日早朝は 01:00 等でも可）。</small>
+  </div>
   
   <!-- 患者選択方式 -->
   <div id="patient_selection_section" style="margin-bottom: 20px; display: none;">
@@ -86,39 +110,6 @@
         <textarea name="patient_memo" id="new_patient_memo" rows="2" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
       </div>
     </div>
-  </div>
-  
-  <div id="reservation_datetime_section" class="reservation-datetime-section" style="margin-bottom: 20px; display: none; position: relative;">
-    <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">予約日時</label>
-    <div class="admin-reservation-start-pickers">
-      <div class="admin-reservation-native-input-wrap">
-        <input type="date" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日">
-      </div>
-      <div class="admin-reservation-native-input-wrap">
-        <input type="time" id="reserved_at_time" class="admin-reservation-start-time" step="900" aria-label="開始時刻">
-      </div>
-    </div>
-    <input type="datetime-local" name="reserved_at" id="reserved_at" required class="reservation-datetime-input admin-reservation-datetime-sr" step="900"{% if initial_date %} value="{{ initial_date }}"{% endif %}>
-  </div>
-
-  <div id="field_duration_section" style="margin-bottom: 20px; display: none;">
-    <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">帯同時間（終了）</label>
-    <div class="admin-reservation-end-time-pickers" role="group" aria-labelledby="field_end_time_label">
-      <select id="field_end_hour" aria-label="終了時" class="admin-reservation-end-time-select">
-        {% for h in range(0, 27) %}
-        <option value="{{ '%02d'|format(h) }}"{% if h == 19 %} selected{% endif %}>{{ '%02d'|format(h) }}</option>
-        {% endfor %}
-      </select>
-      <span class="admin-reservation-end-time-sep" aria-hidden="true">:</span>
-      <select id="field_end_minute" aria-label="終了分" class="admin-reservation-end-time-select">
-        <option value="00" selected>00</option>
-        <option value="15">15</option>
-        <option value="30">30</option>
-        <option value="45">45</option>
-      </select>
-    </div>
-    <input type="hidden" name="field_end_time" id="field_end_time" value="19:00">
-    <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可。翌日早朝は 01:00 等でも可）。</small>
   </div>
   
   <div id="area_section" style="margin-bottom: 20px; display: none;">
@@ -723,13 +714,14 @@ function isNonPatientPlaceType(placeType) {
 function setTimeBlockEndDefaults() {
   const reservedAtInput = document.getElementById('reserved_at');
   const fend = document.getElementById('field_end_time');
-  if (!reservedAtInput || !fend || !reservedAtInput.value || reservedAtInput.value.length < 16) return;
-  const hm = reservedAtInput.value.substring(11, 16).split(':');
-  const startMin = parseInt(hm[0], 10) * 60 + parseInt(hm[1], 10);
+  if (!reservedAtInput || !fend || !reservedAtInput.value) return;
+  const timePart = reservedAtInput.value.replace(' ', 'T').split('T')[1] || '';
+  const startMin = typeof parseExtendedHmToMinute === 'function' ? parseExtendedHmToMinute(timePart) : null;
+  if (startMin === null) return;
   const endMin = Math.min(26 * 60, startMin + 60);
-  const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
-  const em = String(endMin % 60).padStart(2, '0');
-  fend.value = `${eh}:${em}`;
+  fend.value = typeof formatExtendedHm === 'function'
+    ? formatExtendedHm(endMin)
+    : `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
   if (typeof syncFieldEndTimePickersFromInput === 'function') syncFieldEndTimePickersFromInput();
 }
 
@@ -763,39 +755,30 @@ function updatePlaceTypeFields() {
   if (frameSection) frameSection.style.display = hideNomination ? 'none' : frameSection.style.display;
   if (adminPriceWrap) adminPriceWrap.style.display = isNonPatientPlaceType(placeType) ? 'none' : 'block';
   if (staffNameSelect) staffNameSelect.setAttribute('required', 'required');
+  const reservedAtLabel = document.getElementById('reserved_at_label');
+  if (reservedAtLabel) reservedAtLabel.textContent = '開始日時';
+  if (datetimeSection) datetimeSection.style.display = 'block';
 
   // 院内/出張の場合：患者選択以降を表示
   if (placeType === 'in_house' || placeType === 'visit') {
     if (fieldDur) fieldDur.style.display = 'none';
     if (patientSection) patientSection.style.display = 'block';
-    if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'block';
     if (menuSection) menuSection.style.display = 'block';
     if (additionalMenuSection) additionalMenuSection.style.display = 'block';
     
-    const reservedAtLabel = document.getElementById('reserved_at_label');
-    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
     const patientIdInput = document.getElementById('patient_id');
     const reservedAtInput = document.getElementById('reserved_at');
     const areaSelect = document.getElementById('area');
     const menuSelect = document.getElementById('menu');
     if (patientIdInput) patientIdInput.setAttribute('required', 'required');
-    if (reservedAtInput) {
-      reservedAtInput.setAttribute('required', 'required');
-      if (reservedAtInput.type === 'date' && reservedAtInput.value) {
-        reservedAtInput.type = 'datetime-local';
-        reservedAtInput.value = reservedAtInput.value + 'T09:00';
-      } else if (reservedAtInput.type !== 'datetime-local') {
-        reservedAtInput.type = 'datetime-local';
-      }
-    }
+    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
     if (areaSelect) areaSelect.setAttribute('required', 'required');
     if (menuSelect) menuSelect.setAttribute('required', 'required');
   }
-  // 帯同：患者なし・帯同日時・所要時間
+  // 帯同：患者なし・開始日時・所要時間
   else if (placeType === 'field') {
     if (patientSection) patientSection.style.display = 'none';
-    if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
@@ -812,33 +795,17 @@ function updatePlaceTypeFields() {
     if (menuSelect) menuSelect.removeAttribute('required');
     
     const reservedAtInput = document.getElementById('reserved_at');
-    const reservedAtLabel = document.getElementById('reserved_at_label');
-    if (reservedAtLabel) reservedAtLabel.textContent = '帯同日時';
-    if (reservedAtInput) {
-      reservedAtInput.setAttribute('required', 'required');
-      if (reservedAtInput.type === 'date' && reservedAtInput.value) {
-        reservedAtInput.type = 'datetime-local';
-        reservedAtInput.value = reservedAtInput.value + 'T10:00';
-      } else {
-        reservedAtInput.type = 'datetime-local';
-      }
-      let cur = reservedAtInput.value;
-      if (cur && cur.length >= 16 && cur.endsWith('T09:00')) {
-        reservedAtInput.value = cur.substring(0, 11) + '10:00';
-      }
-    }
+    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
     const fend = document.getElementById('field_end_time');
     if (fieldEndLabel) fieldEndLabel.textContent = '帯同時間（終了）';
     if (fieldDurHint) fieldDurHint.textContent = '開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。';
     if (fend && !fend.value) {
-      fend.value = '19:00';
-      if (typeof syncFieldEndTimePickersFromInput === 'function') syncFieldEndTimePickersFromInput();
+      setTimeBlockEndDefaults();
     }
   }
   // 休憩・予定：時間・担当・理由
   else if (placeType === 'break' || placeType === 'personal') {
     if (patientSection) patientSection.style.display = 'none';
-    if (datetimeSection) datetimeSection.style.display = 'block';
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
@@ -847,42 +814,28 @@ function updatePlaceTypeFields() {
     if (frameSection) frameSection.style.display = 'none';
 
     const reservedAtInput = document.getElementById('reserved_at');
-    const reservedAtLabel = document.getElementById('reserved_at_label');
-    const startLabel = placeType === 'break' ? '休憩時間（開始）' : '予定時間（開始）';
     const endLabel = placeType === 'break' ? '休憩時間（終了）' : '予定時間（終了）';
-    const cardLabel = placeType === 'break' ? '休憩' : '予定';
-    if (reservedAtLabel) reservedAtLabel.textContent = startLabel;
     if (fieldEndLabel) fieldEndLabel.textContent = endLabel;
     if (fieldDurHint) {
       fieldDurHint.textContent = '開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。';
     }
-    if (reservedAtInput) {
-      reservedAtInput.setAttribute('required', 'required');
-      reservedAtInput.type = 'datetime-local';
-    }
+    if (reservedAtInput) reservedAtInput.setAttribute('required', 'required');
     setTimeBlockEndDefaults();
   }
-  // 未選択の場合：すべて非表示
+  // 未選択の場合：開始日時以外を非表示
   else {
     if (fieldDur) fieldDur.style.display = 'none';
     if (patientSection) patientSection.style.display = 'none';
-    if (datetimeSection) datetimeSection.style.display = 'none';
     if (areaSection) areaSection.style.display = 'none';
     if (menuSection) menuSection.style.display = 'none';
     if (additionalMenuSection) additionalMenuSection.style.display = 'none';
-    const reservedAtLabel = document.getElementById('reserved_at_label');
     const reservedAtInput = document.getElementById('reserved_at');
-    if (reservedAtLabel) reservedAtLabel.textContent = '予約日時';
-    if (reservedAtInput && reservedAtInput.type === 'date') {
-      reservedAtInput.type = 'datetime-local';
-    }
+    if (reservedAtInput) reservedAtInput.removeAttribute('required');
   }
 
   // 現場名は出張/帯同の場合のみ表示
-  if (placeType === 'visit' || placeType === 'field') {
-    placeNameWrapper.style.display = 'block';
-  } else {
-    placeNameWrapper.style.display = 'none';
+  if (placeNameWrapper) {
+    placeNameWrapper.style.display = (placeType === 'visit' || placeType === 'field') ? 'block' : 'none';
   }
 
   if (typeof refreshAdminReservationMenus === 'function') {
@@ -953,14 +906,10 @@ document.querySelector('form').addEventListener('submit', function(e) {
   if (fieldEndInput) snapExtendedTimeInput(fieldEndInput);
 
   const reservedAt = reservedAtInput ? reservedAtInput.value : '';
-  console.log('🔍 予約日時:', reservedAt);
+  console.log('🔍 開始日時:', reservedAt);
   if (!reservedAt) {
     e.preventDefault();
-    let msg = '予約日時を入力してください';
-    if (placeTypeSubmit === 'field') msg = '帯同日時を入力してください';
-    else if (placeTypeSubmit === 'break') msg = '休憩時間（開始）を入力してください';
-    else if (placeTypeSubmit === 'personal') msg = '予定時間（開始）を入力してください';
-    alert(msg);
+    alert('開始日時を入力してください');
     return false;
   }
 

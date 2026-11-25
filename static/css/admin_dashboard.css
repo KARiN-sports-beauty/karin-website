@@ -375,6 +375,10 @@
   background: #fff;
 }
 
+.admin-reservation-start-time {
+  min-width: 6rem;
+}
+
 .admin-reservation-datetime-sr {
   position: absolute;
   width: 1px;

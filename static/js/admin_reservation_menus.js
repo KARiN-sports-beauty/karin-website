@@ -147,20 +147,24 @@ function getFieldEndTimePickers() {
 
 function writeFieldEndTimeFromPickers() {
   const { hourEl, minEl, hidden } = getFieldEndTimePickers();
-  if (!hourEl || !minEl || !hidden) return;
-  hidden.value = `${hourEl.value}:${minEl.value}`;
+  if (!hidden) return;
+  if (hourEl && minEl) {
+    hidden.value = `${hourEl.value}:${minEl.value}`;
+  }
 }
 
 function syncFieldEndTimePickersFromInput() {
   const { hourEl, minEl, hidden } = getFieldEndTimePickers();
-  if (!hourEl || !minEl || !hidden) return;
+  if (!hidden) return;
   let total = parseExtendedHmToMinute(hidden.value.trim());
-  if (total === null) total = 19 * 60;
+  if (total === null) return;
   const hm = formatExtendedHm(snapTotalMinutesToStep(total));
   hidden.value = hm;
-  const parts = hm.split(':');
-  hourEl.value = parts[0];
-  minEl.value = parts[1];
+  if (hourEl && minEl) {
+    const parts = hm.split(':');
+    hourEl.value = parts[0];
+    minEl.value = parts[1];
+  }
 }
 
 function snapExtendedTimeInput(input) {
@@ -173,13 +177,28 @@ function snapExtendedTimeInput(input) {
   if (input.id === 'field_end_time') syncFieldEndTimePickersFromInput();
 }
 
+function formatReservationDateInput(raw) {
+  const digits = String(raw || '').replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
+function formatReservationTimeInput(raw) {
+  const digits = String(raw || '').replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
 function snapDatetimeLocalInput(input) {
-  if (!input || !input.value || input.value.length < 16) return;
-  const [datePart, timePart] = input.value.split('T');
-  const [h, m] = timePart.split(':').map((v) => parseInt(v, 10));
-  if (Number.isNaN(h) || Number.isNaN(m)) return;
-  const snapped = snapTotalMinutesToStep(h * 60 + m);
-  input.value = `${datePart}T${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+  if (!input || !input.value) return;
+  const raw = input.value.replace(' ', 'T');
+  const parts = raw.split('T');
+  if (!parts[0] || parts[0].length < 10) return;
+  const datePart = parts[0].slice(0, 10);
+  const total = parseExtendedHmToMinute(parts[1] || '');
+  if (total === null) return;
+  input.value = `${datePart}T${formatExtendedHm(snapTotalMinutesToStep(total))}`;
   syncReservedAtPartsFromInput();
 }
 
@@ -193,17 +212,26 @@ function getReservedAtParts() {
 
 function syncReservedAtPartsFromInput() {
   const { dateEl, timeEl, input } = getReservedAtParts();
-  if (!dateEl || !timeEl || !input || !input.value || input.value.length < 16) return;
-  dateEl.value = input.value.slice(0, 10);
-  timeEl.value = input.value.slice(11, 16);
+  if (!dateEl || !timeEl || !input || !input.value) return;
+  const raw = input.value.replace(' ', 'T');
+  const parts = raw.split('T');
+  if (parts[0] && parts[0].length >= 10) dateEl.value = parts[0].slice(0, 10);
+  if (parts[1]) {
+    const total = parseExtendedHmToMinute(parts[1]);
+    if (total !== null) timeEl.value = formatExtendedHm(total);
+  }
 }
 
 function syncReservedAtFromParts() {
   const { dateEl, timeEl, input } = getReservedAtParts();
   if (!dateEl || !timeEl || !input) return;
-  if (!dateEl.value || !timeEl.value) return;
-  input.value = `${dateEl.value}T${timeEl.value.slice(0, 5)}`;
-  snapDatetimeLocalInput(input);
+  const dateValue = formatReservationDateInput(dateEl.value);
+  if (dateValue.length === 10) dateEl.value = dateValue;
+  const total = parseExtendedHmToMinute(timeEl.value);
+  if (dateValue.length < 10 || total === null) return;
+  const clock = formatExtendedHm(snapTotalMinutesToStep(total));
+  timeEl.value = clock;
+  input.value = `${dateValue}T${clock}`;
 }
 
 function bindReservationDatetimeInput(input) {
@@ -217,9 +245,26 @@ function bindReservationDatetimeInput(input) {
   const timeEl = document.getElementById('reserved_at_time');
   if (dateEl && timeEl && !dateEl.dataset.timePartBound) {
     dateEl.dataset.timePartBound = '1';
+    dateEl.addEventListener('input', () => {
+      dateEl.value = formatReservationDateInput(dateEl.value);
+      const total = parseExtendedHmToMinute(timeEl.value);
+      if (input && dateEl.value.length === 10 && total !== null) {
+        input.value = `${dateEl.value}T${formatExtendedHm(total)}`;
+      }
+    });
+    timeEl.addEventListener('input', () => {
+      timeEl.value = formatReservationTimeInput(timeEl.value);
+      const total = parseExtendedHmToMinute(timeEl.value);
+      if (input && dateEl.value.length === 10 && total !== null && timeEl.value.length >= 4) {
+        input.value = `${dateEl.value}T${formatExtendedHm(total)}`;
+      }
+    });
     dateEl.addEventListener('change', syncReservedAtFromParts);
     timeEl.addEventListener('change', syncReservedAtFromParts);
-    syncReservedAtPartsFromInput();
+    dateEl.addEventListener('blur', syncReservedAtFromParts);
+    timeEl.addEventListener('blur', syncReservedAtFromParts);
+    if (input && input.value) syncReservedAtPartsFromInput();
+    else syncReservedAtFromParts();
   }
 }
 
@@ -238,14 +283,12 @@ function bindReservationTimeInputs() {
       minEl.addEventListener('change', onPick);
     }
     syncFieldEndTimePickersFromInput();
-    return;
   }
 
   if (fieldEndInput.dataset.timeStepBound) return;
   fieldEndInput.dataset.timeStepBound = '1';
   fieldEndInput.addEventListener('input', () => {
-    const digits = fieldEndInput.value.replace(/\D/g, '').slice(0, 4);
-    fieldEndInput.value = digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
+    fieldEndInput.value = formatReservationTimeInput(fieldEndInput.value);
   });
   fieldEndInput.addEventListener('change', () => snapExtendedTimeInput(fieldEndInput));
   fieldEndInput.addEventListener('blur', () => snapExtendedTimeInput(fieldEndInput));
