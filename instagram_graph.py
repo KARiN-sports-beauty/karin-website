@@ -11,6 +11,7 @@ import os
 import re
 import struct
 import time
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from urllib.parse import quote, unquote, urlparse, urlunparse
 
 import requests
@@ -27,8 +28,10 @@ CAPTION_MAX = 2200
 CAROUSEL_MIN = 2
 CAROUSEL_MAX = 10
 PUBLIC_ORIGIN = "https://karin-sb.jp"
+IG_MEDIA_PREFIX = "/ig-media/"
 INSTAGRAM_SEND_STATUSES = frozenset({"draft", "ready", "failed", "posted", "unknown"})
 _IG_ID = re.compile(r"^[0-9]{5,32}$")
+_IG_MEDIA_TOKEN = re.compile(r"^[A-Za-z0-9_-]+$")
 _IMAGE_EXT = re.compile(r"\.(?:jpe?g)$", re.I)
 _ASPECT_MIN = 0.8
 _ASPECT_MAX = 1.91
@@ -75,6 +78,57 @@ def public_instagram_image_url(value):
     else:
         return ""
     return _encode_image_url(url)
+
+
+def instagram_graph_image_url(value):
+    """Instagram API に渡す取得URL。日本語ファイル名は ASCII の /ig-media/ にする。"""
+    public = public_instagram_image_url(value)
+    if not public:
+        return ""
+    path = unquote(urlparse(public).path or "")
+    if path.isascii():
+        return public
+    token = ig_media_token_from_static_path(path)
+    if not token:
+        return ""
+    return f"{PUBLIC_ORIGIN}{IG_MEDIA_PREFIX}{token}.jpg"
+
+
+def ig_media_token_from_static_path(path):
+    text = (path or "").strip()
+    if not _safe_static_jpeg_path(text):
+        return ""
+    return urlsafe_b64encode(text.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def static_path_from_ig_media_token(token):
+    raw = (token or "").strip()
+    if not raw or not _IG_MEDIA_TOKEN.fullmatch(raw):
+        return ""
+    pad = "=" * ((4 - len(raw) % 4) % 4)
+    try:
+        decoded = urlsafe_b64decode(raw + pad).decode("utf-8")
+    except Exception:
+        return ""
+    if not _safe_static_jpeg_path(decoded):
+        return ""
+    return decoded
+
+
+def local_path_from_ig_media_token(token):
+    path = static_path_from_ig_media_token(token)
+    if not path:
+        return None
+    return _local_static_path(PUBLIC_ORIGIN + path)
+
+
+def _safe_static_jpeg_path(path):
+    text = (path or "").strip()
+    if not text.startswith("/static/") or ".." in text:
+        return False
+    if text != os.path.normpath(text).replace("\\", "/"):
+        return False
+    return bool(_IMAGE_EXT.search(text))
 
 
 def instagram_image_urls(value):
@@ -133,7 +187,14 @@ def build_instagram_media_payload(body, image_url):
     urls = preview.get("image_urls") or []
     if len(urls) != 1:
         raise MetaGraphRefused("単一画像の送信処理は1枚のときだけ使います。")
-    return {"image_url": preview["image_url"], "caption": preview["caption"]}
+    image = instagram_graph_image_url(preview["image_url"])
+    if not image:
+        raise MetaGraphRefused("画像は公開された https のJPEGにしてください")
+    return {
+        "image_url": image,
+        "caption": preview["caption"],
+        "media_type": "IMAGE",
+    }
 
 
 def build_instagram_child_payload(image_url):
@@ -143,7 +204,14 @@ def build_instagram_child_payload(image_url):
     errors = _image_constraint_errors(image)
     if errors:
         raise MetaGraphRefused(errors[0])
-    return {"image_url": image, "is_carousel_item": "true"}
+    fetch_url = instagram_graph_image_url(image)
+    if not fetch_url:
+        raise MetaGraphRefused("画像は公開された https のJPEGにしてください")
+    return {
+        "image_url": fetch_url,
+        "is_carousel_item": "true",
+        "media_type": "IMAGE",
+    }
 
 
 def build_instagram_carousel_payload(body, child_ids):

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file, session, jsonify, flash, abort
 import external_posts
 import gbp_local_post
 import gbp_read
@@ -7718,6 +7718,21 @@ def robots_txt():
         "Sitemap: https://karin-sb.jp/sitemap.xml"
     ]
     return "\n".join(lines), 200, {"Content-Type": "text/plain"}
+
+
+@app.route("/ig-media/<token>.jpg")
+def instagram_media_file(token):
+    """Instagram API 向けの ASCII 専用JPEG。認証なし。日本語ファイル名の取得失敗を避ける。"""
+    path = instagram_graph.local_path_from_ig_media_token(token)
+    if not path:
+        abort(404)
+    return send_file(
+        path,
+        mimetype="image/jpeg",
+        as_attachment=False,
+        download_name="image.jpg",
+        max_age=86400,
+    )
 
 
 

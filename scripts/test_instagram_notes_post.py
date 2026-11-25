@@ -694,7 +694,8 @@ def test_carousel():
             "https://karin-sb.jp/static/images/notes/0.jpg",
             "https://karin-sb.jp/static/images/notes/1.jpg",
         ]
-        and all("caption" not in item for item in child_payloads),
+        and all("caption" not in item for item in child_payloads)
+        and all(item.get("media_type") == "IMAGE" for item in child_payloads),
         "子コンテナは選択順の画像だけで、captionを付けない",
         str([item.get("image_url") for item in child_payloads]),
     )
@@ -869,10 +870,80 @@ def test_carousel():
     )
 
 
+def test_instagram_graph_fetch_url():
+    ascii_url = instagram_graph.instagram_graph_image_url(IMAGE)
+    report(ascii_url == PUBLIC_IMAGE, "ASCIIファイルは /static/ のままGraphへ渡す", ascii_url)
+
+    japanese = "/static/images/notes/stretch-pole-posture.サムネイル.jpg"
+    fetch_url = instagram_graph.instagram_graph_image_url(japanese)
+    report(
+        fetch_url.startswith("https://karin-sb.jp/ig-media/")
+        and fetch_url.endswith(".jpg")
+        and fetch_url.isascii()
+        and "%" not in fetch_url,
+        "日本語ファイル名はASCIIの /ig-media/ URLにする",
+        fetch_url,
+    )
+    token = fetch_url.rsplit("/", 1)[-1].removesuffix(".jpg")
+    restored = instagram_graph.static_path_from_ig_media_token(token)
+    report(restored == japanese, "ig-mediaトークンは元のstaticパスに戻せる", restored)
+    local = instagram_graph.local_path_from_ig_media_token(token)
+    report(bool(local) and os.path.isfile(local), "ig-mediaトークンは実ファイルを指す")
+
+    child = instagram_graph.build_instagram_child_payload(japanese)
+    report(
+        child.get("image_url") == fetch_url
+        and child.get("is_carousel_item") == "true"
+        and child.get("media_type") == "IMAGE"
+        and "caption" not in child,
+        "カルーセル子はIMAGEとASCII取得URLだけ送る",
+        str(child),
+    )
+    single = instagram_graph.build_instagram_media_payload("本文", japanese)
+    report(
+        single.get("image_url") == fetch_url
+        and single.get("media_type") == "IMAGE"
+        and single.get("caption") == "本文",
+        "単一画像も日本語ファイルは /ig-media/ にする",
+        str(single),
+    )
+
+    saved = instagram_graph.public_instagram_image_url(japanese)
+    preview = instagram_graph.instagram_preview("本文", japanese)
+    report(
+        preview["ok"] and saved in preview["payload_text"] and "/ig-media/" not in preview["payload_text"],
+        "確認画面は保存用の公開URLのままにする",
+    )
+
+    traversal = instagram_graph.ig_media_token_from_static_path("/static/../instagram_graph.py")
+    report(not traversal, "static外のパスはig-mediaトークンにしない")
+    report(instagram_graph.local_path_from_ig_media_token("not-valid") is None, "不正トークンはファイルを返さない")
+    report(
+        instagram_graph.local_path_from_ig_media_token(
+            instagram_graph.ig_media_token_from_static_path("/static/images/notes/missing-ig-test.jpg")
+        )
+        is None,
+        "存在しないJPEGはig-mediaで開けない",
+    )
+
+    client = appmod.app.test_client()
+    response = client.get(f"/ig-media/{token}.jpg")
+    report(
+        response.status_code == 200
+        and response.mimetype == "image/jpeg"
+        and (response.data or b"").startswith(b"\xff\xd8"),
+        "ig-mediaは認証なしでJPEGを返す",
+        str(response.status_code),
+    )
+    missing = client.get("/ig-media/not-valid.jpg")
+    report(missing.status_code == 404, "不正なig-mediaは404")
+
+
 def main():
     test_caption_and_images()
     test_instagram_caption_spaces()
     test_carousel()
+    test_instagram_graph_fetch_url()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)
     report(
@@ -909,8 +980,8 @@ def main():
 
     payload = instagram_graph.build_instagram_media_payload("本文", IMAGE)
     report(
-        payload == {"image_url": PUBLIC_IMAGE, "caption": "本文"},
-        "送信ペイロードはimage_urlとcaptionだけ",
+        payload == {"image_url": PUBLIC_IMAGE, "caption": "本文", "media_type": "IMAGE"},
+        "単一画像の送信はIMAGEのimage_urlとcaption",
     )
 
     url = instagram_graph.instagram_media_url(IG_USER)
@@ -952,7 +1023,12 @@ def main():
     report(result["ok"] and db.row["status"] == "posted", "公開成功で posted")
     report(db.row["external_id"] == MEDIA_ID and db.row["posted_at"] == NOW, "InstagramメディアIDと投稿日時を保存")
     report(
-        post_http.last_create == {"image_url": PUBLIC_IMAGE, "caption": sample_record()["body"]}
+        post_http.last_create
+        == {
+            "image_url": PUBLIC_IMAGE,
+            "caption": sample_record()["body"],
+            "media_type": "IMAGE",
+        }
         and post_http.last_publish == {"creation_id": CREATION_ID},
         "コンテナ作成のあと media_publish する",
     )
