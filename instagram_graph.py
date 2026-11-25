@@ -32,6 +32,14 @@ IG_MEDIA_PREFIX = "/ig-media/"
 INSTAGRAM_SEND_STATUSES = frozenset({"draft", "ready", "failed", "posted", "unknown"})
 _IG_ID = re.compile(r"^[0-9]{5,32}$")
 _IG_MEDIA_TOKEN = re.compile(r"^[A-Za-z0-9_-]+$")
+_IG_MEDIA_TOKEN_PATH = re.compile(r"(?i)(/ig-media/)[A-Za-z0-9_-]+(\.jpe?g)$")
+_DIAG_BEARER = re.compile(r"(?i)bearer\s+[A-Za-z0-9._\-+=/]+")
+_DIAG_TOKEN_ASSIGN = re.compile(
+    r"(?i)\b(access_token|refresh_token|client_secret|authorization)\s*[:=]\s*[^\s,;]+"
+)
+_DIAG_EAA = re.compile(r"\bEAA[A-Za-z0-9]+")
+_DIAG_HTTP_URL = re.compile(r"https?://[^\s\"'<>]+", re.I)
+_FBTRACE = re.compile(r"^[A-Za-z0-9_-]{6,64}$")
 _IMAGE_EXT = re.compile(r"\.(?:jpe?g)$", re.I)
 _ASPECT_MIN = 0.8
 _ASPECT_MAX = 1.91
@@ -293,7 +301,7 @@ def begin_notes_instagram_create(record, now):
     }, None
 
 
-def finish_notes_instagram_create(record, *, http_status, body, timed_out, now):
+def finish_notes_instagram_create(record, *, http_status, body, timed_out, now, request_payload=None):
     """公開IDがある200だけ posted。4xxは failed。5xx・タイムアウト・IDなしは unknown。"""
     previous_id, previous_at = _kept_instagram_receipt(record)
     if timed_out or http_status is None or http_status >= 500:
@@ -339,7 +347,7 @@ def finish_notes_instagram_create(record, *, http_status, body, timed_out, now):
             posted_at=previous_at,
             error_message=message,
             event="failed",
-            detail=message,
+            detail=_instagram_failure_detail(message, body, request_payload),
             now=now,
         )
     return _outcome(
@@ -450,7 +458,12 @@ def _post_media_container(post_exchange, url, page_token, payload, outgoing, now
         return None, finished, http_status
     if http_status != 200:
         finished = finish_notes_instagram_create(
-            outgoing, http_status=http_status, body=response, timed_out=False, now=now
+            outgoing,
+            http_status=http_status,
+            body=response,
+            timed_out=False,
+            now=now,
+            request_payload=payload if 400 <= (http_status or 0) < 500 else None,
         )
         return None, finished, http_status
     creation_id = _instagram_media_id(response)
@@ -872,13 +885,125 @@ def _instagram_error_text(body, http_status):
     return f"投稿失敗 HTTP {http_status}"
 
 
+def instagram_diag_url(value):
+    """診断用。ホストとパスは残し、ig-mediaトークンとクエリは残さない。"""
+    text = (value or "").strip()
+    if not text:
+        return ""
+    parsed = urlparse(text)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return ""
+    host = parsed.netloc.split("@")[-1]
+    if not host:
+        return ""
+    path = parsed.path or ""
+    path = _IG_MEDIA_TOKEN_PATH.sub(r"\1[token]\2", path)
+    return f"https://{host}{path}"
+
+
+def _sanitize_diag_text(text):
+    if text is None:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        return ""
+    lowered = cleaned.lstrip().lower()
+    if lowered.startswith("<!doctype") or lowered.startswith("<html"):
+        return ""
+    cleaned = _DIAG_BEARER.sub("[redacted]", cleaned)
+    cleaned = _DIAG_TOKEN_ASSIGN.sub(r"\1=[redacted]", cleaned)
+    cleaned = _DIAG_EAA.sub("[redacted]", cleaned)
+    cleaned = _DIAG_HTTP_URL.sub(lambda match: instagram_diag_url(match.group(0)) or "[url]", cleaned)
+    cleaned = " ".join(cleaned.split())
+    lowered = cleaned.lower()
+    if any(
+        marker in lowered
+        for marker in ("bearer ", "access_token=", "authorization", "eaa")
+    ) and "[redacted]" not in lowered:
+        return "redacted"
+    if len(cleaned) > 500:
+        cleaned = cleaned[:500]
+    return cleaned
+
+
+def _diag_scalar(value):
+    if value is None or isinstance(value, bool):
+        return ""
+    if isinstance(value, int):
+        return str(value)
+    text = str(value).strip()
+    if not text or len(text) > 80 or any(ch.isspace() for ch in text):
+        return ""
+    if text.lower().startswith("eaa"):
+        return "[redacted]"
+    return text
+
+
+def _instagram_request_diag(payload):
+    if not isinstance(payload, dict):
+        return ""
+    parts = []
+    carousel_item = str(payload.get("is_carousel_item") or "").lower() == "true"
+    media_type = str(payload.get("media_type") or "").strip()
+    if carousel_item:
+        parts.append("step=carousel_item")
+        parts.append("is_carousel_item=true")
+    elif media_type.upper() == "CAROUSEL":
+        parts.append("step=carousel_parent")
+    elif payload.get("image_url"):
+        parts.append("step=single_image")
+    if media_type:
+        safe_type = _diag_scalar(media_type)
+        if safe_type:
+            parts.append(f"media_type={safe_type}")
+    image = instagram_diag_url(payload.get("image_url"))
+    if image:
+        parts.append(f"image_url={image}")
+    return " ".join(parts)
+
+
+def _instagram_failure_detail(message, body, request_payload=None):
+    """ユーザー向け文言は先頭に残し、Meta応答と送信パラメータを続けて記録する。"""
+    parts = [message] if message else []
+    err = body.get("error") if isinstance(body, dict) else None
+    if isinstance(err, dict):
+        code = _diag_scalar(err.get("code"))
+        if code:
+            parts.append(f"code={code}")
+        subcode = _diag_scalar(err.get("error_subcode"))
+        if subcode:
+            parts.append(f"error_subcode={subcode}")
+        err_type = _diag_scalar(err.get("type"))
+        if err_type:
+            parts.append(f"type={err_type}")
+        title = _sanitize_diag_text(err.get("error_user_title"))
+        if title:
+            parts.append(f"error_user_title={title}")
+        user_msg = _sanitize_diag_text(err.get("error_user_msg"))
+        if user_msg:
+            parts.append(f"error_user_msg={user_msg}")
+        fbtrace = str(err.get("fbtrace_id") or "").strip()
+        if _FBTRACE.fullmatch(fbtrace) and not fbtrace.lower().startswith("eaa"):
+            parts.append(f"fbtrace_id={fbtrace}")
+    request_diag = _instagram_request_diag(request_payload)
+    if request_diag:
+        parts.append(request_diag)
+    return " ".join(parts).strip() or message
+
+
 def _log_instagram_outcome(http_status, finished):
     fields = (finished or {}).get("fields") or {}
+    event = (finished or {}).get("event") or {}
     status = fields.get("status") or ""
     error_message = meta_graph.sanitize_meta_error_message(fields.get("error_message") or "")
     parts = [f"Instagram投稿 HTTP {http_status}", f"status={status}"]
     if error_message:
         parts.append(f"error_message={error_message}")
+    detail = event.get("detail") or ""
+    if detail and detail != (fields.get("error_message") or ""):
+        parts.append(detail)
     print(" ".join(parts))
 
 

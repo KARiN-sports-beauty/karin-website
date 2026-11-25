@@ -176,6 +176,25 @@ class MediaHttp:
             return 500, {"error": {"message": f"Bearer {PAGE_TOKEN}", "code": 1}}
         if mode == "denied":
             return 403, {"error": {"message": f"Invalid OAuth access token {PAGE_TOKEN}", "code": 190}}
+        if mode == "photo_video":
+            ig_token = (
+                "L3N0YXRpYy9pbWFnZXMvbm90ZXMvc3RyZXRjaC1wb2xlLXBvc3R1cmUu"
+                "44K144Og44ON44Kk44OrLmpwZw"
+            )
+            return 400, {
+                "error": {
+                    "message": "Only photo or video can be accepted as media type.",
+                    "type": "OAuthException",
+                    "code": 9004,
+                    "error_subcode": 2207052,
+                    "error_user_title": "Media download has failed",
+                    "error_user_msg": (
+                        "The media could not be fetched from this URI: "
+                        f"https://karin-sb.jp/ig-media/{ig_token}.jpg"
+                    ),
+                    "fbtrace_id": "AaBbCcDdEeFfGgHhIiJjKk",
+                }
+            }
         if mode == "noid":
             return 200, {"success": True}
         if mode == "skip":
@@ -939,11 +958,80 @@ def test_instagram_graph_fetch_url():
     report(missing.status_code == 404, "不正なig-mediaは404")
 
 
+def test_instagram_failure_diag():
+    ig_token = (
+        "L3N0YXRpYy9pbWFnZXMvbm90ZXMvc3RyZXRjaC1wb2xlLXBvc3R1cmUu"
+        "44K144Og44ON44Kk44OrLmpwZw"
+    )
+    raw = f"https://karin-sb.jp/ig-media/{ig_token}.jpg"
+    report(
+        instagram_graph.instagram_diag_url(raw) == "https://karin-sb.jp/ig-media/[token].jpg",
+        "診断用URLはig-mediaトークンを伏せる",
+        instagram_graph.instagram_diag_url(raw),
+    )
+    report(
+        instagram_graph.instagram_diag_url(PUBLIC_IMAGE) == PUBLIC_IMAGE,
+        "診断用URLはASCIIの /static/ パスを残す",
+    )
+    report(
+        instagram_graph.instagram_diag_url(raw + "?access_token=" + TOKEN)
+        == "https://karin-sb.jp/ig-media/[token].jpg",
+        "診断用URLからクエリは落とす",
+    )
+
+    http = MediaHttp(create="photo_video", child_fail_at=1, parent="skip", publish="skip")
+    result, db, log, _acc, status = run_create(carousel_record(5), http)
+    failed = [item for item in db.events if item.get("event") == "failed"]
+    detail = (failed[-1].get("detail") if failed else "") or ""
+    user_error = db.row.get("error_message") or ""
+    report(not result["ok"] and db.row["status"] == "failed", "1枚目の子コンテナ400は failed")
+    report(
+        user_error == "投稿失敗 HTTP 400 Only photo or video can be accepted as media type.",
+        "ユーザー向けエラーは従来の短文のまま",
+        user_error,
+    )
+    report("code=" not in user_error and "fbtrace_id=" not in user_error, "ユーザー向けエラーに診断項目を混ぜない")
+    report(
+        "code=9004" in detail
+        and "error_subcode=2207052" in detail
+        and "error_user_title=Media download has failed" in detail
+        and "error_user_msg=" in detail
+        and "fbtrace_id=AaBbCcDdEeFfGgHhIiJjKk" in detail,
+        "失敗履歴にMetaのcode/subcode/user文/fbtraceを残す",
+        detail,
+    )
+    report(
+        "step=carousel_item" in detail
+        and "is_carousel_item=true" in detail
+        and "media_type=IMAGE" in detail
+        and "image_url=https://karin-sb.jp/static/images/notes/0.jpg" in detail,
+        "失敗履歴に1枚目へ送った送信パラメータを残す",
+        detail,
+    )
+    report(
+        "ig-media/[token].jpg" in detail
+        and ig_token not in detail
+        and ig_token not in log
+        and TOKEN not in detail
+        and PAGE_TOKEN not in detail,
+        "診断ログのig-mediaトークンと秘密情報を伏せる",
+    )
+    report(
+        "code=9004" in log
+        and "step=carousel_item" in log
+        and secrets_absent(log, user_error, detail),
+        "stdoutにも同じ診断を出し、トークンは出さない",
+    )
+    report(http.last_parent is None and http.last_publish is None and status.calls == [], "1枚目失敗では親も公開もしない")
+    report((result.get("message") or "") == user_error, "画面へ返す失敗文も短文のまま")
+
+
 def main():
     test_caption_and_images()
     test_instagram_caption_spaces()
     test_carousel()
     test_instagram_graph_fetch_url()
+    test_instagram_failure_diag()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)
     report(
