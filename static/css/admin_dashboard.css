@@ -478,7 +478,7 @@
 
   #admin-reservation-form .admin-reservation-native-input-wrap,
   #admin-reservation-edit-form .admin-reservation-native-input-wrap {
-    overflow: hidden;
+    overflow: visible;
     border-radius: 8px;
   }
 

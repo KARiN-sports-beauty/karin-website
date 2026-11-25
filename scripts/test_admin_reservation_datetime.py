@@ -125,6 +125,14 @@ def main():
         and "reservedAtLabel.textContent = '帯同日時'" not in edit_html,
         "編集の区分切替でも開始ラベルを変えない",
     )
+    menus_js = open(os.path.join(ROOT, "static/js/admin_reservation_menus.js"), encoding="utf-8").read()
+    report(
+        "selectReservationFieldOnFocus" in menus_js
+        and "dateEl.addEventListener('input'" not in menus_js
+        and "timeEl.addEventListener('input'" not in menus_js,
+        "編集中は入力のたびに値を作り直さない",
+    )
+    report('maxlength="8"' in edit_html and 'maxlength="5"' not in edit_html, "編集の時刻欄は5文字で打ち直せなくしない")
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

@@ -60,10 +60,10 @@
     <label id="reserved_at_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">開始日時</label>
     <div class="admin-reservation-start-pickers">
       <div class="admin-reservation-native-input-wrap">
-        <input type="text" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="2026-11-25" value="{{ reservation.reserved_at_date_part or '' }}">
+        <input type="text" id="reserved_at_date" class="admin-reservation-start-date" aria-label="開始日" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="2026-11-25" value="{{ reservation.reserved_at_date_part or '' }}">
       </div>
       <div class="admin-reservation-native-input-wrap">
-        <input type="text" id="reserved_at_time" class="admin-reservation-start-time" aria-label="開始時刻" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="14:00" value="{{ reservation.reserved_at_time_part or '' }}">
+        <input type="text" id="reserved_at_time" class="admin-reservation-start-time" aria-label="開始時刻" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="14:00" value="{{ reservation.reserved_at_time_part or '' }}">
       </div>
     </div>
     <input type="hidden" name="reserved_at" id="reserved_at" value="{{ reservation.reserved_at_display_local or '' }}">
@@ -74,7 +74,7 @@
     <label id="field_end_time_label" class="form-field" style="display: block; margin-bottom: 6px; font-weight: 600; color: #1E3A5F;">{% if reservation.place_type == 'break' %}休憩時間（終了）{% elif reservation.place_type == 'personal' %}予定時間（終了）{% else %}帯同時間（終了）{% endif %}</label>
     <div class="admin-reservation-start-pickers">
       <div class="admin-reservation-native-input-wrap">
-        <input type="text" name="field_end_time" id="field_end_time" class="admin-reservation-start-time" aria-label="終了時刻" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:00" value="{{ reservation.field_end_time_display or '' }}">
+        <input type="text" name="field_end_time" id="field_end_time" class="admin-reservation-start-time" aria-label="終了時刻" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="15:00" value="{{ reservation.field_end_time_display or '' }}">
       </div>
     </div>
     <small id="field_duration_hint" style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">{% if reservation.place_type == 'break' %}開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。{% elif reservation.place_type == 'personal' %}開始・終了を指定します（24:00〜26:00で深夜跨ぎ可）。{% else %}開始は上の日時、終了はここで指定します（24:00〜26:00で深夜跨ぎ可）。{% endif %}</small>

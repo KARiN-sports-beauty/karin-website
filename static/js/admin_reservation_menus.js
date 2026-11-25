@@ -234,6 +234,18 @@ function syncReservedAtFromParts() {
   input.value = `${dateValue}T${clock}`;
 }
 
+function selectReservationFieldOnFocus(input) {
+  if (!input || input.dataset.focusSelectBound) return;
+  input.dataset.focusSelectBound = '1';
+  input.addEventListener('focus', () => {
+    try {
+      input.select();
+    } catch (err) {
+      /* Safari などで選択できない場合は手入力を優先する */
+    }
+  });
+}
+
 function bindReservationDatetimeInput(input) {
   if (input && !input.dataset.timeStepBound) {
     input.dataset.timeStepBound = '1';
@@ -245,20 +257,8 @@ function bindReservationDatetimeInput(input) {
   const timeEl = document.getElementById('reserved_at_time');
   if (dateEl && timeEl && !dateEl.dataset.timePartBound) {
     dateEl.dataset.timePartBound = '1';
-    dateEl.addEventListener('input', () => {
-      dateEl.value = formatReservationDateInput(dateEl.value);
-      const total = parseExtendedHmToMinute(timeEl.value);
-      if (input && dateEl.value.length === 10 && total !== null) {
-        input.value = `${dateEl.value}T${formatExtendedHm(total)}`;
-      }
-    });
-    timeEl.addEventListener('input', () => {
-      timeEl.value = formatReservationTimeInput(timeEl.value);
-      const total = parseExtendedHmToMinute(timeEl.value);
-      if (input && dateEl.value.length === 10 && total !== null && timeEl.value.length >= 4) {
-        input.value = `${dateEl.value}T${formatExtendedHm(total)}`;
-      }
-    });
+    selectReservationFieldOnFocus(dateEl);
+    selectReservationFieldOnFocus(timeEl);
     dateEl.addEventListener('change', syncReservedAtFromParts);
     timeEl.addEventListener('change', syncReservedAtFromParts);
     dateEl.addEventListener('blur', syncReservedAtFromParts);
@@ -287,9 +287,7 @@ function bindReservationTimeInputs() {
 
   if (fieldEndInput.dataset.timeStepBound) return;
   fieldEndInput.dataset.timeStepBound = '1';
-  fieldEndInput.addEventListener('input', () => {
-    fieldEndInput.value = formatReservationTimeInput(fieldEndInput.value);
-  });
+  selectReservationFieldOnFocus(fieldEndInput);
   fieldEndInput.addEventListener('change', () => snapExtendedTimeInput(fieldEndInput));
   fieldEndInput.addEventListener('blur', () => snapExtendedTimeInput(fieldEndInput));
   snapExtendedTimeInput(fieldEndInput);
