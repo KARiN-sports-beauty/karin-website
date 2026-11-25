@@ -133,6 +133,13 @@ def main():
         "編集中は入力のたびに値を作り直さない",
     )
     report('maxlength="8"' in edit_html and 'maxlength="5"' not in edit_html, "編集の時刻欄は5文字で打ち直せなくしない")
+    css = open(os.path.join(ROOT, "static/css/admin_dashboard.css"), encoding="utf-8").read()
+    wrap_css = css.split(".admin-reservation-start-pickers .admin-reservation-native-input-wrap", 1)[-1][:500]
+    report(
+        "flex: 1 1 0" not in wrap_css and "min-height: 44px" in css,
+        "狭い画面でも開始・終了欄の高さを0にしない",
+        wrap_css[:120],
+    )
 
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
