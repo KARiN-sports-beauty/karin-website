@@ -56,9 +56,7 @@
   <button type="submit" name="action" value="preview_draft" class="admin-blog-btn-white" style="margin-left: 8px;">新しい下書きを表示</button>
   {% endif %}
   {% if instagram_new_draft %}
-  <h3 class="admin-subtitle">新しい下書き（未保存）</h3>
-  <p class="admin-blog-body">これは表示のみです。上の投稿文欄と保存済みデータは変わっていません。採用する場合は内容を確認して投稿文欄へコピーし、「この内容を保存」を押してください。</p>
-  <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px;">{{ instagram_new_draft }}</pre>
+  <p class="admin-blog-body">投稿文欄に新しい下書きを入れました。まだ保存していません。「この内容を保存」を押すまで、保存済みデータは変わりません。保存する前はInstagramへ送れません。</p>
   {% endif %}
   {% if instagram_preview %}
   <h3 class="admin-subtitle">送信内容の確認</h3>

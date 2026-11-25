@@ -506,23 +506,25 @@ def main():
             blog=live_blog,
             target=instagram,
             form={
-                "body": "保存済みの文",
+                "body": "新しい生成文",
                 "link_url": "https://karin-sb.jp/blog/a",
                 "image_url": "https://karin-sb.jp/static/images/notes/a.jpg",
                 "status_label": "下書き保存",
             },
             events=[],
             instagram_new_draft="新しい生成文",
+            instagram_preview=instagram_preview,
+            instagram_action=None,
         )
     saved_start = instagram_compare_html.find('name="body"')
     saved_block = instagram_compare_html[saved_start:saved_start + 400] if saved_start >= 0 else ""
     report(
-        "保存済みの文" in saved_block
-        and "新しい生成文" not in saved_block
-        and "新しい下書き（未保存）" in instagram_compare_html
-        and "新しい生成文" in instagram_compare_html
-        and "上の投稿文欄と保存済みデータは変わっていません" in instagram_compare_html,
-        "新しい下書きは保存済み投稿文と分けて表示する",
+        "新しい生成文" in saved_block
+        and "新しい下書き（未保存）" not in instagram_compare_html
+        and "まだ保存していません" in instagram_compare_html
+        and "投稿文欄へコピー" not in instagram_compare_html
+        and 'name="action" value="send"' not in instagram_compare_html,
+        "新しい下書きは投稿文欄に入り、保存前は送信しない",
     )
     report(
         "リンク先" in gbp_html

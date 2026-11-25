@@ -5279,6 +5279,15 @@ def _notes_instagram_new_draft(blog):
     )
 
 
+def _notes_instagram_apply_new_draft(form, draft):
+    """生成文を画面の投稿文欄へ入れる。保存はしない。"""
+    if not draft:
+        return form
+    updated = dict(form or {})
+    updated["body"] = draft
+    return updated
+
+
 @app.route("/admin/blogs/<blog_id>/posts/<target_key>", methods=["GET", "POST"])
 @staff_section_required("blogs")
 def admin_blog_external_post(blog_id, target_key):
@@ -5465,6 +5474,8 @@ def admin_blog_external_post(blog_id, target_key):
             return redirect(f"/admin/blogs/{blog_id}/posts/{target_key}")
 
     form = _external_post_form_values(blog, target, existing)
+    if instagram_new_draft:
+        form = _notes_instagram_apply_new_draft(form, instagram_new_draft)
     gbp_preview = _gbp_post_preview(
         target,
         form["body"],
@@ -5476,6 +5487,9 @@ def admin_blog_external_post(blog_id, target_key):
     gbp_locked = bool(existing and existing.get("status") == "posting")
     facebook_preview = _facebook_post_preview(target, form["body"], form["link_url"])
     instagram_preview = _instagram_post_preview(target, form["body"], form["image_url"])
+    instagram_action = None
+    if not instagram_new_draft:
+        instagram_action = _notes_instagram_screen_action(target, existing, instagram_preview)
     return render_template(
         "admin_blog_external_post.html",
         blog=blog,
@@ -5493,7 +5507,7 @@ def admin_blog_external_post(blog_id, target_key):
         facebook_posted_warning=bool(target.get("channel") == "facebook" and gbp_status == "posted"),
         facebook_unknown_warning=bool(target.get("channel") == "facebook" and gbp_status == "unknown"),
         instagram_preview=instagram_preview,
-        instagram_action=_notes_instagram_screen_action(target, existing, instagram_preview),
+        instagram_action=instagram_action,
         instagram_send_label=_notes_instagram_send_label(gbp_status),
         instagram_posted_warning=bool(target.get("channel") == "instagram" and gbp_status == "posted"),
         instagram_unknown_warning=bool(target.get("channel") == "instagram" and gbp_status == "unknown"),

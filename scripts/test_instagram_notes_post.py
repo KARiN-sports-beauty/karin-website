@@ -639,7 +639,23 @@ def test_caption_and_images():
         "新しい下書きは starter_body と同じ文章になる",
     )
     report(generated != kept["body"] and "肩の話" in generated, "新しい下書きは保存済み文面と区別できる")
-    report(kept["body"] == "保存済みの文", "下書き生成後も保存済みフォームの本文は変わらない")
+    report(kept["body"] == "保存済みの文", "GETの保存済み投稿文は初期生成で上書きしない")
+    shown = appmod._notes_instagram_apply_new_draft(kept, generated)
+    report(shown["body"] == generated, "新しい下書きは投稿文欄へ入れる")
+    report(kept["body"] == "保存済みの文", "生成だけでは元のフォーム値は変えない")
+    report(
+        appmod._notes_instagram_apply_new_draft(kept, "") is kept,
+        "生成文が空なら投稿文欄は変えない",
+    )
+    report(
+        not appmod._instagram_saved_matches(
+            {"body": "保存済みの文", "link_url": article_url, "image_url": one},
+            shown["body"],
+            article_url,
+            one,
+        ),
+        "未保存の新しい下書きでは送信照合に通らない",
+    )
     gbp_fresh = appmod._external_post_form_values(ig_blog, tokyo, None)
     report(article_url in gbp_fresh["body"] or "/blog/kata" in gbp_fresh["link_url"], "GBPの未保存文面は従来どおり記事へ案内する")
     report("詳しくはプロフィールのリンクから、KARiN.NOTESをご覧ください。" not in gbp_fresh["body"], "GBP文面にInstagram誘導を入れない")
