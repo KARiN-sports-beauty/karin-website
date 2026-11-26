@@ -963,7 +963,6 @@ def test_instagram_media_access_log():
     fetch_url = instagram_graph.instagram_graph_image_url(japanese)
     token = fetch_url.rsplit("/", 1)[-1].removesuffix(".jpg")
     local = instagram_graph.local_path_from_ig_media_token(token)
-    size = os.path.getsize(local)
     client = appmod.app.test_client()
     stdout = io.StringIO()
     with redirect_stdout(stdout):
@@ -975,11 +974,12 @@ def test_instagram_media_access_log():
             },
         )
     log = stdout.getvalue()
+    sent = len(response.data or b"")
     report(response.status_code == 200, "アクセスログ用の200はJPEGを返す")
     report(
         "Instagram画像GET" in log
         and "status=200" in log
-        and f"bytes={size}" in log
+        and f"bytes={sent}" in log
         and "facebookexternalhit/1.1" in log
         and "time=" in log
         and "T" in log
@@ -1030,6 +1030,58 @@ def test_instagram_media_access_log():
         ua_part,
     )
     report(appmod._instagram_media_ua("foo\r\nbar") == "foo bar", "User-Agentの改行は空白にまとめる")
+
+
+def test_instagram_delivery_jpeg():
+    from PIL import Image
+
+    japanese = "/static/images/notes/stretch-pole-posture.サムネイル.jpg"
+    fetch_url = instagram_graph.instagram_graph_image_url(japanese)
+    token = fetch_url.rsplit("/", 1)[-1].removesuffix(".jpg")
+    local = instagram_graph.local_path_from_ig_media_token(token)
+    original_size = os.path.getsize(local)
+    original_wh = instagram_graph._jpeg_size(local)
+    delivered = instagram_graph.instagram_delivery_jpeg(local)
+    delivered_wh = instagram_graph._jpeg_size_from_bytes(delivered)
+    report(original_wh[0] == 1672, "元のサムネイル幅は1672のまま", str(original_wh))
+    report(os.path.getsize(local) == original_size, "配信用の縮小は元ファイルを書き換えない")
+    report(
+        delivered
+        and delivered.startswith(b"\xff\xd8")
+        and delivered_wh[0] == instagram_graph.IG_MEDIA_MAX_WIDTH
+        and delivered_wh[0] <= 1440
+        and abs(delivered_wh[1] / delivered_wh[0] - original_wh[1] / original_wh[0]) < 0.02,
+        "配信用JPEGは幅1440以下で縦横比を維持する",
+        str(delivered_wh),
+    )
+
+    client = appmod.app.test_client()
+    stdout = io.StringIO()
+    with redirect_stdout(stdout):
+        response = client.get(f"/ig-media/{token}.jpg")
+    log = stdout.getvalue()
+    ctype = (response.headers.get("Content-Type") or "").split(";")[0].strip()
+    disposition = response.headers.get("Content-Disposition") or ""
+    report(
+        response.status_code == 200
+        and ctype == "image/jpeg"
+        and str(response.headers.get("Content-Length")) == str(len(response.data))
+        and "image.jpg" in disposition
+        and "サムネイル" not in disposition
+        and (response.data or b"").startswith(b"\xff\xd8"),
+        "ig-mediaの応答はimage/jpegでASCIIのファイル名",
+        str({"type": ctype, "length": response.headers.get("Content-Length"), "disp": disposition}),
+    )
+    report(token not in log and "サムネイル" not in log, "縮小後のアクセスログにもトークンを出さない")
+
+    small_path = os.path.join(tempfile.gettempdir(), "karin-ig-small.jpg")
+    Image.new("RGB", (800, 450), (20, 40, 60)).save(small_path, format="JPEG", quality=90)
+    try:
+        small_bytes = open(small_path, "rb").read()
+        same = instagram_graph.instagram_delivery_jpeg(small_path)
+        report(same == small_bytes, "幅1440以下はそのまま返す")
+    finally:
+        os.remove(small_path)
 
 
 def test_instagram_failure_diag():
@@ -1106,6 +1158,7 @@ def main():
     test_carousel()
     test_instagram_graph_fetch_url()
     test_instagram_media_access_log()
+    test_instagram_delivery_jpeg()
     test_instagram_failure_diag()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)

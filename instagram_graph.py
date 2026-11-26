@@ -12,6 +12,7 @@ import re
 import struct
 import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from io import BytesIO
 from urllib.parse import quote, unquote, urlparse, urlunparse
 
 import requests
@@ -44,6 +45,8 @@ _IMAGE_EXT = re.compile(r"\.(?:jpe?g)$", re.I)
 _ASPECT_MIN = 0.8
 _ASPECT_MAX = 1.91
 _MIN_WIDTH = 320
+IG_MEDIA_MAX_WIDTH = 1440
+_IG_MEDIA_JPEG_QUALITY = 90
 _MAX_BYTES = 8 * 1024 * 1024
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -128,6 +131,44 @@ def local_path_from_ig_media_token(token):
     if not path:
         return None
     return _local_static_path(PUBLIC_ORIGIN + path)
+
+
+def instagram_delivery_jpeg(path):
+    """Instagram配信用JPEG。幅が1440を超えるときだけ縮小する。元ファイルは書き換えない。"""
+    if not path or not os.path.isfile(path):
+        return None
+    size = _jpeg_size(path)
+    if not size:
+        return None
+    width, _height = size
+    if width <= IG_MEDIA_MAX_WIDTH:
+        try:
+            with open(path, "rb") as handle:
+                return handle.read()
+        except OSError:
+            return None
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        return None
+    try:
+        with Image.open(path) as src:
+            image = ImageOps.exif_transpose(src)
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            new_height = max(1, round(image.height * IG_MEDIA_MAX_WIDTH / image.width))
+            image = image.resize((IG_MEDIA_MAX_WIDTH, new_height), Image.Resampling.LANCZOS)
+            output = BytesIO()
+            image.save(
+                output,
+                format="JPEG",
+                quality=_IG_MEDIA_JPEG_QUALITY,
+                optimize=True,
+                progressive=False,
+            )
+        return output.getvalue()
+    except Exception:
+        return None
 
 
 def _safe_static_jpeg_path(path):
@@ -812,10 +853,12 @@ def _local_static_path(url):
 
 def _jpeg_size(path):
     with open(path, "rb") as handle:
-        header = handle.read(2)
-        if header != b"\xff\xd8":
-            return None
-        data = header + handle.read()
+        return _jpeg_size_from_bytes(handle.read())
+
+
+def _jpeg_size_from_bytes(data):
+    if not data or data[:2] != b"\xff\xd8":
+        return None
     index = 0
     while index < len(data) - 8:
         if data[index] == 0xFF and data[index + 1] in (0xC0, 0xC1, 0xC2):

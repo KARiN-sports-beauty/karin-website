@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file, session, jsonify, flash, abort
+from io import BytesIO
 import external_posts
 import gbp_local_post
 import gbp_read
@@ -7741,12 +7742,13 @@ def _log_instagram_media_get(status, content_length):
 def instagram_media_file(token):
     """Instagram API 向けの ASCII 専用JPEG。認証なし。日本語ファイル名の取得失敗を避ける。"""
     path = instagram_graph.local_path_from_ig_media_token(token)
-    if not path:
+    data = instagram_graph.instagram_delivery_jpeg(path) if path else None
+    if not data:
         _log_instagram_media_get(404, 0)
         abort(404)
-    _log_instagram_media_get(200, os.path.getsize(path))
+    _log_instagram_media_get(200, len(data))
     return send_file(
-        path,
+        BytesIO(data),
         mimetype="image/jpeg",
         as_attachment=False,
         download_name="image.jpg",
