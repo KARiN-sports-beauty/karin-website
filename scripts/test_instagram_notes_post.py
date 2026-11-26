@@ -958,6 +958,80 @@ def test_instagram_graph_fetch_url():
     report(missing.status_code == 404, "不正なig-mediaは404")
 
 
+def test_instagram_media_access_log():
+    japanese = "/static/images/notes/stretch-pole-posture.サムネイル.jpg"
+    fetch_url = instagram_graph.instagram_graph_image_url(japanese)
+    token = fetch_url.rsplit("/", 1)[-1].removesuffix(".jpg")
+    local = instagram_graph.local_path_from_ig_media_token(token)
+    size = os.path.getsize(local)
+    client = appmod.app.test_client()
+    stdout = io.StringIO()
+    with redirect_stdout(stdout):
+        response = client.get(
+            f"/ig-media/{token}.jpg",
+            headers={
+                "User-Agent": "facebookexternalhit/1.1",
+                "Authorization": f"Bearer {TOKEN}",
+            },
+        )
+    log = stdout.getvalue()
+    report(response.status_code == 200, "アクセスログ用の200はJPEGを返す")
+    report(
+        "Instagram画像GET" in log
+        and "status=200" in log
+        and f"bytes={size}" in log
+        and "facebookexternalhit/1.1" in log
+        and "time=" in log
+        and "T" in log
+        and "Z" in log,
+        "200のアクセスログは時刻・status・bytes・UA",
+        log.strip(),
+    )
+    report(
+        token not in log
+        and "stretch-pole-posture" not in log
+        and "サムネイル" not in log
+        and "/ig-media/" not in log
+        and TOKEN not in log
+        and "Bearer" not in log
+        and "Authorization" not in log
+        and "Cookie" not in log,
+        "アクセスログにトークン・パス・ファイル名・秘密情報を出さない",
+        log.strip(),
+    )
+
+    stdout_404 = io.StringIO()
+    with redirect_stdout(stdout_404):
+        missing = client.get(
+            "/ig-media/not-valid.jpg",
+            headers={"User-Agent": "Facebot"},
+        )
+    log_404 = stdout_404.getvalue()
+    report(missing.status_code == 404, "アクセスログ用の404も返す")
+    report(
+        "Instagram画像GET" in log_404
+        and "status=404" in log_404
+        and "bytes=0" in log_404
+        and "Facebot" in log_404
+        and "not-valid" not in log_404
+        and "/ig-media/" not in log_404,
+        "404も時刻・status・bytes・UAを記録し、トークン相当は出さない",
+        log_404.strip(),
+    )
+
+    long_ua = "A" * 80 + "B" * 80
+    stdout_ua = io.StringIO()
+    with redirect_stdout(stdout_ua):
+        client.get("/ig-media/not-valid.jpg", headers={"User-Agent": long_ua})
+    ua_part = stdout_ua.getvalue().split(" ua=", 1)[-1].strip()
+    report(
+        "\n" not in ua_part and len(ua_part) == 120 and ua_part == ("A" * 80 + "B" * 40),
+        "User-Agentは120文字で切る",
+        ua_part,
+    )
+    report(appmod._instagram_media_ua("foo\r\nbar") == "foo bar", "User-Agentの改行は空白にまとめる")
+
+
 def test_instagram_failure_diag():
     ig_token = (
         "L3N0YXRpYy9pbWFnZXMvbm90ZXMvc3RyZXRjaC1wb2xlLXBvc3R1cmUu"
@@ -1031,6 +1105,7 @@ def main():
     test_instagram_caption_spaces()
     test_carousel()
     test_instagram_graph_fetch_url()
+    test_instagram_media_access_log()
     test_instagram_failure_diag()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
     report(converted == PUBLIC_IMAGE, "相対パスは公開httpsに変換する", converted)

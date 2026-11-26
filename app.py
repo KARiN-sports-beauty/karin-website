@@ -7720,12 +7720,31 @@ def robots_txt():
     return "\n".join(lines), 200, {"Content-Type": "text/plain"}
 
 
+_IG_MEDIA_UA_MAX = 120
+
+
+def _instagram_media_ua(value):
+    text = " ".join(str(value or "").replace("\r", " ").replace("\n", " ").split())
+    if len(text) > _IG_MEDIA_UA_MAX:
+        return text[:_IG_MEDIA_UA_MAX]
+    return text
+
+
+def _log_instagram_media_get(status, content_length):
+    """トークン・パス・ファイル名は出さない。Render stdout 用。"""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ua = _instagram_media_ua(request.headers.get("User-Agent"))
+    print(f"Instagram画像GET time={now} status={int(status)} bytes={int(content_length or 0)} ua={ua}")
+
+
 @app.route("/ig-media/<token>.jpg")
 def instagram_media_file(token):
     """Instagram API 向けの ASCII 専用JPEG。認証なし。日本語ファイル名の取得失敗を避ける。"""
     path = instagram_graph.local_path_from_ig_media_token(token)
     if not path:
+        _log_instagram_media_get(404, 0)
         abort(404)
+    _log_instagram_media_get(200, os.path.getsize(path))
     return send_file(
         path,
         mimetype="image/jpeg",
