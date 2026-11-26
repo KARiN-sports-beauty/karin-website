@@ -7722,6 +7722,9 @@ def robots_txt():
 
 
 _IG_MEDIA_UA_MAX = 120
+_IG_MEDIA_RANGE_SPEC = re.compile(r"(?i)^bytes\s*=\s*(\d*-\d*(?:\s*,\s*\d*-\d*)*)\s*$")
+_IG_MEDIA_CONTENT_RANGE = re.compile(r"(?i)^bytes\s+(\d+-\d+/(?:\d+|\*))\s*$")
+_IG_MEDIA_MIME = re.compile(r"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$")
 
 
 def _instagram_media_ua(value):
@@ -7731,11 +7734,78 @@ def _instagram_media_ua(value):
     return text
 
 
+def _instagram_media_header_text(value):
+    return " ".join(str(value or "").replace("\r", " ").replace("\n", " ").split())
+
+
+def _instagram_media_range_log(value):
+    """Rangeの有無と範囲部分だけ。トークンやURLは出さない。"""
+    text = _instagram_media_header_text(value)
+    if not text:
+        return "none"
+    match = _IG_MEDIA_RANGE_SPEC.fullmatch(text)
+    if not match:
+        return "present"
+    ranges = match.group(1).replace(" ", "")
+    if not ranges or len(ranges) > 64:
+        return "present"
+    return ranges
+
+
+def _instagram_media_content_range_log(value):
+    """Content-Rangeの範囲部分だけ。無いときは空。"""
+    text = _instagram_media_header_text(value)
+    if not text:
+        return ""
+    match = _IG_MEDIA_CONTENT_RANGE.fullmatch(text)
+    if not match:
+        return "present"
+    return match.group(1)
+
+
+def _instagram_media_content_length_log(value):
+    text = _instagram_media_header_text(value)
+    if text.isdigit():
+        return str(int(text))
+    return "-"
+
+
+def _instagram_media_content_type_log(value):
+    text = _instagram_media_header_text(value).split(";", 1)[0].strip().lower()
+    if _IG_MEDIA_MIME.fullmatch(text) and len(text) <= 40:
+        return text
+    return "-" if not text else "other"
+
+
 def _log_instagram_media_get(status, content_length):
     """トークン・パス・ファイル名は出さない。Render stdout 用。"""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     ua = _instagram_media_ua(request.headers.get("User-Agent"))
     print(f"Instagram画像GET time={now} status={int(status)} bytes={int(content_length or 0)} ua={ua}")
+
+
+def _log_instagram_media_response(response):
+    """send_file後の実際のHTTP応答。画像生成サイズのログとは別行。"""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    status = int(getattr(response, "status_code", 0) or 0)
+    headers = getattr(response, "headers", None)
+    content_length = _instagram_media_content_length_log(
+        headers.get("Content-Length") if headers is not None else None
+    )
+    content_type = _instagram_media_content_type_log(
+        headers.get("Content-Type") if headers is not None else None
+    )
+    range_log = _instagram_media_range_log(request.headers.get("Range"))
+    content_range = _instagram_media_content_range_log(
+        headers.get("Content-Range") if headers is not None else None
+    )
+    line = (
+        f"Instagram画像応答 time={now} status={status} range={range_log} "
+        f"content_length={content_length} content_type={content_type}"
+    )
+    if content_range:
+        line += f" content_range={content_range}"
+    print(line)
 
 
 @app.route("/ig-media/<token>.jpg")
@@ -7747,13 +7817,15 @@ def instagram_media_file(token):
         _log_instagram_media_get(404, 0)
         abort(404)
     _log_instagram_media_get(200, len(data))
-    return send_file(
+    response = send_file(
         BytesIO(data),
         mimetype="image/jpeg",
         as_attachment=False,
         download_name="image.jpg",
         max_age=86400,
     )
+    _log_instagram_media_response(response)
+    return response
 
 
 

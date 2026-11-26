@@ -1032,6 +1032,123 @@ def test_instagram_media_access_log():
     report(appmod._instagram_media_ua("foo\r\nbar") == "foo bar", "User-Agentの改行は空白にまとめる")
 
 
+def test_instagram_media_response_log():
+    japanese = "/static/images/notes/stretch-pole-posture.サムネイル.jpg"
+    fetch_url = instagram_graph.instagram_graph_image_url(japanese)
+    token = fetch_url.rsplit("/", 1)[-1].removesuffix(".jpg")
+    client = appmod.app.test_client()
+
+    stdout = io.StringIO()
+    with redirect_stdout(stdout):
+        response = client.get(
+            f"/ig-media/{token}.jpg",
+            headers={
+                "User-Agent": "facebookexternalhit/1.1",
+                "Authorization": f"Bearer {TOKEN}",
+            },
+        )
+    log = stdout.getvalue()
+    full_len = len(response.data or b"")
+    response_lines = [line for line in log.splitlines() if line.startswith("Instagram画像応答 ")]
+    get_lines = [line for line in log.splitlines() if line.startswith("Instagram画像GET ")]
+    response_log = response_lines[-1] if response_lines else ""
+    report(response.status_code == 200, "通常GETの実応答は200")
+    report(
+        str(response.headers.get("Content-Length")) == str(full_len) and full_len > 8192,
+        "通常GETのContent-Lengthは画像全体",
+        str(response.headers.get("Content-Length")),
+    )
+    report(
+        len(get_lines) == 1
+        and f"status=200" in get_lines[0]
+        and f"bytes={full_len}" in get_lines[0],
+        "画像生成サイズのログは従来どおり残す",
+        get_lines[0] if get_lines else log.strip(),
+    )
+    report(
+        len(response_lines) == 1
+        and "status=200" in response_log
+        and "range=none" in response_log
+        and f"content_length={full_len}" in response_log
+        and "content_type=image/jpeg" in response_log
+        and "content_range=" not in response_log
+        and "time=" in response_log
+        and "T" in response_log
+        and "Z" in response_log,
+        "通常GETの応答ログは200・全文サイズ・Rangeなし",
+        response_log,
+    )
+    report(
+        token not in log
+        and fetch_url not in log
+        and "stretch-pole-posture" not in log
+        and "サムネイル" not in log
+        and "/ig-media/" not in log
+        and "/static/" not in log
+        and TOKEN not in log
+        and "Bearer" not in log
+        and "Authorization" not in log
+        and "Cookie" not in log,
+        "応答ログにトークン・URL・ファイル名・秘密情報を出さない",
+        log.strip(),
+    )
+
+    stdout_range = io.StringIO()
+    with redirect_stdout(stdout_range):
+        ranged = client.get(
+            f"/ig-media/{token}.jpg",
+            headers={"Range": "bytes=0-8191", "User-Agent": "facebookexternalhit/1.1"},
+        )
+    log_range = stdout_range.getvalue()
+    range_lines = [line for line in log_range.splitlines() if line.startswith("Instagram画像応答 ")]
+    range_get_lines = [line for line in log_range.splitlines() if line.startswith("Instagram画像GET ")]
+    range_log = range_lines[-1] if range_lines else ""
+    content_range = ranged.headers.get("Content-Range") or ""
+    report(ranged.status_code == 206, "Range GETの実応答は206", str(ranged.status_code))
+    report(
+        str(ranged.headers.get("Content-Length")) == "8192"
+        and len(ranged.data or b"") == 8192
+        and content_range == f"bytes 0-8191/{full_len}",
+        "Range GETは部分応答のContent-LengthとContent-Range",
+        str({"length": ranged.headers.get("Content-Length"), "range": content_range}),
+    )
+    report(
+        range_get_lines
+        and f"status=200" in range_get_lines[0]
+        and f"bytes={full_len}" in range_get_lines[0],
+        "Range GETでも生成サイズログは全文の200のまま",
+        range_get_lines[0] if range_get_lines else log_range.strip(),
+    )
+    report(
+        "status=206" in range_log
+        and "range=0-8191" in range_log
+        and "content_length=8192" in range_log
+        and "content_type=image/jpeg" in range_log
+        and f"content_range=0-8191/{full_len}" in range_log,
+        "Range GETの応答ログは206と部分範囲",
+        range_log,
+    )
+    report(
+        token not in log_range
+        and fetch_url not in log_range
+        and "stretch-pole-posture" not in log_range
+        and "サムネイル" not in log_range
+        and "/ig-media/" not in log_range
+        and "bytes=0-8191" not in range_log,
+        "Range GETのログにもトークン・URL・ファイル名を出さない",
+        log_range.strip(),
+    )
+
+    report(appmod._instagram_media_range_log(None) == "none", "Rangeなしはnone")
+    report(appmod._instagram_media_range_log("bytes=0-8191") == "0-8191", "Rangeは範囲部分だけ")
+    report(appmod._instagram_media_range_log("bytes=0-8191, 8192-16383") == "0-8191,8192-16383", "複数Rangeも範囲だけ")
+    report(
+        appmod._instagram_media_range_log(f"bytes=0-8191 /ig-media/{token}.jpg") == "present",
+        "Rangeにパスが混ざったら値は出さない",
+    )
+    report(appmod._instagram_media_content_range_log("bytes 0-8191/178079") == "0-8191/178079", "Content-Rangeは範囲だけ")
+
+
 def test_instagram_delivery_jpeg():
     from PIL import Image
 
@@ -1158,6 +1275,7 @@ def main():
     test_carousel()
     test_instagram_graph_fetch_url()
     test_instagram_media_access_log()
+    test_instagram_media_response_log()
     test_instagram_delivery_jpeg()
     test_instagram_failure_diag()
     converted = instagram_graph.public_instagram_image_url(IMAGE)
